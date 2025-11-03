@@ -12,6 +12,7 @@ let allReservationsCache = [];
 let bookingStepIndex = 0;
 let bookingCurrentMonth = new Date();
 const bookingToday = new Date();
+let bookingCalendarInitiated = false;
 
 const bodyEl = document.body;
 const prefersReducedMotionQuery = window.matchMedia
@@ -65,6 +66,8 @@ const bookingNextMonthBtn = document.getElementById('bookingNextMonth');
 const bookingRoomSearchInput = document.getElementById('bookingRoomSearch');
 const bookingCityFilterInput = document.getElementById('bookingCityFilter');
 const bookingStateFilterInput = document.getElementById('bookingStateFilter');
+const bookingTitleInput = bookingForm?.querySelector('input[name="title"]');
+const bookingDescriptionInput = bookingForm?.querySelector('textarea[name="description"]');
 
 const reservationsContainer = document.getElementById('reservationsContainer');
 
@@ -904,6 +907,7 @@ function resetBookingForm(preserveMessage = false) {
   if (bookingMessage && !preserveMessage) bookingMessage.textContent = '';
   bookingCurrentMonth = new Date();
   if (bookingCalendarGrid) renderBookingCalendar(bookingCurrentMonth);
+  bookingCalendarInitiated = true;
 }
 
 async function carregarVisitantes(clientId) {
