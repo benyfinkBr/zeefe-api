@@ -1,0 +1,264 @@
+const API_BASE = 'api';
+let roomsData = [];
+let amenitiesMap = {};
+
+const roomsContainer = document.getElementById('rooms-container');
+const filterButtons = document.querySelectorAll('.filter-btn');
+const modalOverlay = document.getElementById('roomModal');
+const modalCloseTop = document.getElementById('roomModalClose');
+const modalCloseFooter = document.getElementById('roomModalCloseFooter');
+const modalTitle = document.getElementById('roomModalTitle');
+const modalDescription = document.getElementById('roomModalDescription');
+const modalCapacity = document.getElementById('roomModalCapacity');
+const modalStatus = document.getElementById('roomModalStatus');
+const modalLocation = document.getElementById('roomModalLocation');
+const modalRate = document.getElementById('roomModalRate');
+const modalGallery = document.getElementById('roomModalGallery');
+const modalAmenities = document.getElementById('roomModalAmenities');
+const modalReserve = document.getElementById('roomModalReserve');
+
+init();
+
+async function init() {
+  try {
+    const [rooms, amenities] = await Promise.all([fetchRooms(), fetchAmenities()]);
+    roomsData = rooms;
+    amenitiesMap = amenities;
+    renderRooms('all');
+  } catch (err) {
+    console.error(err);
+    roomsContainer.innerHTML = '<p>Erro ao carregar salas. Tente novamente mais tarde.</p>';
+  }
+
+  filterButtons.forEach(button => {
+    button.addEventListener('click', () => {
+      filterButtons.forEach(btn => btn.classList.remove('active'));
+      button.classList.add('active');
+      renderRooms(button.dataset.filter);
+    });
+  });
+
+  [modalCloseTop, modalCloseFooter].forEach(btn => btn.addEventListener('click', closeModal));
+  modalOverlay.addEventListener('click', event => {
+    if (event.target === modalOverlay) closeModal();
+  });
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && modalOverlay.classList.contains('show')) {
+      closeModal();
+    }
+  });
+}
+
+async function fetchRooms() {
+  const res = await fetch(`${API_BASE}/apiget.php?table=rooms`, { credentials: 'include' });
+  const json = await res.json();
+  if (!json.success) throw new Error(json.error || 'Falha ao consultar salas');
+  return json.data || [];
+}
+
+async function fetchAmenities() {
+  const res = await fetch(`${API_BASE}/apiget.php?table=amenities`, { credentials: 'include' });
+  const json = await res.json();
+  if (!json.success) return {};
+  const map = {};
+  (json.data || []).forEach(item => {
+    map[item.id] = item.name;
+  });
+  return map;
+}
+
+function renderRooms(filter) {
+  roomsContainer.innerHTML = '';
+  let filtered = [...roomsData];
+  switch (filter) {
+    case 'up-to-10':
+      filtered = filtered.filter(r => Number(r.capacity) <= 10);
+      break;
+    case '11-20':
+      filtered = filtered.filter(r => Number(r.capacity) >= 11 && Number(r.capacity) <= 20);
+      break;
+    case 'over-20':
+      filtered = filtered.filter(r => Number(r.capacity) > 20);
+      break;
+  }
+
+  if (!filtered.length) {
+    roomsContainer.innerHTML = '<p>Nenhuma sala encontrada para esse filtro.</p>';
+    return;
+  }
+
+  filtered.forEach(room => roomsContainer.appendChild(createRoomCard(room)));
+}
+
+function createRoomCard(room) {
+  const card = document.createElement('article');
+  card.className = 'card room-card';
+  const photos = getPhotos(room.photo_path);
+  const status = (room.status || '').toLowerCase();
+  const statusLabel = status === 'manutencao'
+    ? 'Em manutenção'
+    : status === 'desativada'
+    ? 'Desativada'
+    : status === 'inativo'
+    ? 'Indisponível'
+    : 'Disponível';
+  const statusClass = status === 'manutencao'
+    ? 'status-pendente'
+    : status === 'desativada' || status === 'inativo'
+    ? 'status-cancelada'
+    : 'status-ativo';
+
+  const disabled = ['manutencao', 'desativada', 'inativo'].includes(status);
+
+  const photoWrapper = document.createElement('div');
+  photoWrapper.className = 'photo';
+  if (photos.length && window.createImageCarousel) {
+    const carousel = window.createImageCarousel({
+      images: photos,
+      altPrefix: `Sala ${room.name || ''}`
+    });
+    photoWrapper.appendChild(carousel.element);
+  } else {
+    photoWrapper.classList.add('photo-empty');
+    photoWrapper.innerHTML = '<div class="room-photo-placeholder">Sem imagens cadastradas</div>';
+  }
+  card.appendChild(photoWrapper);
+
+  const title = document.createElement('h4');
+  title.textContent = room.name || '';
+  card.appendChild(title);
+
+  const capacity = document.createElement('p');
+  capacity.textContent = `Capacidade: ${room.capacity || '-'} pessoas`;
+  card.appendChild(capacity);
+
+  const badge = document.createElement('span');
+  badge.className = `status-badge ${statusClass}`;
+  badge.textContent = statusLabel;
+  card.appendChild(badge);
+
+  if (room.daily_rate) {
+    const price = document.createElement('p');
+    price.className = 'price';
+    price.textContent = `${formatCurrency(room.daily_rate)} por dia`;
+    card.appendChild(price);
+  }
+
+  const actions = document.createElement('div');
+  actions.className = 'room-actions';
+  actions.innerHTML = `
+      <button class="btn btn-secondary" type="button" data-room="${room.id}">Ver detalhes</button>
+      <a href="pre-reserva.html?room=${encodeURIComponent(room.id)}" class="btn btn-primary${disabled ? ' disabled' : ''}" ${disabled ? 'tabindex="-1" aria-disabled="true"' : ''}>Reservar diária</a>
+  `;
+  card.appendChild(actions);
+
+  card.querySelector('button[data-room]').addEventListener('click', () => openModal(room));
+  return card;
+}
+
+function openModal(room) {
+  modalTitle.textContent = room.name || '';
+  modalDescription.textContent = room.description || 'Sem descrição cadastrada.';
+  modalCapacity.textContent = `${room.capacity || '-'} pessoas`;
+  modalStatus.textContent = statusLabel(room.status);
+  modalLocation.textContent = room.location || 'Não informado';
+  modalRate.textContent = formatCurrency(room.daily_rate) || '--';
+  modalReserve.href = `pre-reserva.html?room=${encodeURIComponent(room.id)}`;
+  modalReserve.classList.toggle('disabled', ['manutencao', 'desativada', 'inativo'].includes((room.status || '').toLowerCase()));
+  if (modalReserve.classList.contains('disabled')) {
+    modalReserve.setAttribute('aria-disabled', 'true');
+  } else {
+    modalReserve.removeAttribute('aria-disabled');
+  }
+
+  renderGallery(room.photo_path);
+  renderAmenities(room.amenities);
+
+  modalOverlay.classList.add('show');
+  modalOverlay.setAttribute('aria-hidden', 'false');
+}
+
+function closeModal() {
+  modalOverlay.classList.remove('show');
+  modalOverlay.setAttribute('aria-hidden', 'true');
+}
+
+function renderGallery(photoPath) {
+  modalGallery.innerHTML = '';
+  const photos = getPhotos(photoPath);
+
+  if (!photos.length) {
+    modalGallery.innerHTML = '<div class="rooms-message">Nenhuma foto cadastrada.</div>';
+    return;
+  }
+
+  if (window.createImageCarousel) {
+    const carousel = window.createImageCarousel({
+      images: photos,
+      altPrefix: modalTitle.textContent || 'Sala',
+      showThumbnails: true,
+      allowLightbox: true
+    });
+    modalGallery.appendChild(carousel.element);
+  } else {
+    photos.forEach(src => {
+      const img = document.createElement('img');
+      img.src = src;
+      img.alt = modalTitle.textContent || 'Sala';
+      modalGallery.appendChild(img);
+    });
+  }
+}
+
+function renderAmenities(amenities) {
+  modalAmenities.innerHTML = '';
+  const items = Array.isArray(amenities) ? amenities : (amenities ? String(amenities).split(',') : []);
+  const names = items
+    .map(id => amenitiesMap[id] || amenitiesMap[String(id)] || null)
+    .filter(Boolean);
+
+  if (!names.length) {
+    modalAmenities.innerHTML = '<span>Nenhuma comodidade cadastrada.</span>';
+    return;
+  }
+
+  names.forEach(name => {
+    const chip = document.createElement('span');
+    chip.textContent = name;
+    modalAmenities.appendChild(chip);
+  });
+}
+
+function statusLabel(status) {
+  const map = {
+    ativo: 'Disponível',
+    manutencao: 'Em manutenção',
+    desativada: 'Desativada',
+    inativo: 'Indisponível'
+  };
+  return map[(status || '').toLowerCase()] || status || '--';
+}
+
+function getPhotos(path) {
+  if (!path) return [];
+  return path
+    .split(',')
+    .map(p => p.trim())
+    .filter(Boolean)
+    .map(p => (p.startsWith('http') ? p : `/${p}`));
+}
+
+function formatCurrency(value) {
+  const number = Number(value);
+  if (!number) return '';
+  return number.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+}
+
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}

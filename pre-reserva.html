@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Ze.EFE - Fazer Pré-Reserva</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<header class="header">
+  <h1 class="logo">Ze.EFE</h1>
+  <nav>
+    <a href="index.html">Início</a>
+    <a href="salas.html">Salas</a>
+    <a href="pre-reserva.html" aria-current="page">Pré-Reserva</a>
+    <a href="clientes.html">Área do Cliente</a>
+  </nav>
+</header>
+
+<main class="pre-reserva-page">
+  <h1>Faça sua Pré-Reserva</h1>
+  <p>Selecione a data desejada, escolha a sala disponível e finalize informando seus dados de acesso.</p>
+
+  <div class="wizard">
+    <section class="step-card" id="stepDate">
+      <h2>1. Escolha a data</h2>
+      <div class="calendar-header">
+        <button type="button" id="prevMonth" aria-label="Mês anterior">&#10094;</button>
+        <div>
+          <strong id="calendarLabel"></strong>
+        </div>
+        <button type="button" id="nextMonth" aria-label="Próximo mês">&#10095;</button>
+      </div>
+      <div class="calendar-grid" id="calendarGrid" role="grid" aria-labelledby="calendarLabel"></div>
+      <div class="calendar-legend">
+        <span><span class="calendar-dot" style="background: rgba(47, 111, 85, 0.3);"></span> Disponível</span>
+        <span><span class="calendar-dot" style="background: rgba(217, 122, 28, 0.4);"></span> Parcial</span>
+        <span><span class="calendar-dot" style="background: rgba(181, 74, 58, 0.5);"></span> Indisponível</span>
+      </div>
+    </section>
+
+    <section class="step-card" id="stepRooms" hidden>
+      <h2>2. Escolha a sala</h2>
+      <p id="selectedDateLabel" class="section-subtitle"></p>
+      <div id="roomCards" class="rooms-grid small" aria-live="polite"></div>
+      <div id="roomsFeedback" class="rooms-message"></div>
+    </section>
+
+    <section class="step-card" id="stepAuth" hidden>
+      <h2>3. Identifique-se</h2>
+      <p class="section-subtitle">Entre com sua conta ou crie um acesso para concluir a solicitação.</p>
+      <div class="auth-tabs" role="tablist">
+        <button type="button" data-tab="login" class="active" role="tab">Entrar</button>
+        <button type="button" data-tab="register" role="tab">Criar conta</button>
+        <button type="button" data-tab="recovery" role="tab">Esqueci minha senha</button>
+      </div>
+
+      <div id="authForms">
+        <form id="formLogin" class="auth-form" autocomplete="on">
+          <div class="form-field">
+            <label for="loginEmail">Login ou e-mail</label>
+            <input type="text" id="loginEmail" required autocomplete="username" />
+          </div>
+          <div class="form-field">
+            <label for="loginPassword">Senha</label>
+            <input type="password" id="loginPassword" required autocomplete="current-password" />
+          </div>
+          <div class="form-field">
+            <button type="submit" class="btn btn-primary">Entrar</button>
+          </div>
+        </form>
+
+        <form id="formRegister" class="auth-form" hidden autocomplete="on">
+          <div class="form-field">
+            <label for="registerName">Nome completo</label>
+            <input type="text" id="registerName" required />
+          </div>
+          <div class="form-field">
+            <label for="registerEmail">E-mail</label>
+            <input type="email" id="registerEmail" required autocomplete="email" />
+          </div>
+          <div class="form-field">
+            <label for="registerLogin">Login</label>
+            <input type="text" id="registerLogin" required />
+          </div>
+          <div class="form-field">
+            <label for="registerCpf">CPF</label>
+            <input type="text" id="registerCpf" maxlength="14" />
+          </div>
+          <div class="form-field">
+            <label for="registerPhone">Telefone / WhatsApp</label>
+            <input type="text" id="registerPhone" maxlength="15" />
+          </div>
+          <div class="form-field">
+            <label for="registerPassword">Senha</label>
+            <input type="password" id="registerPassword" required autocomplete="new-password" />
+          </div>
+          <div class="form-field">
+            <label for="registerPasswordConfirm">Confirmar senha</label>
+            <input type="password" id="registerPasswordConfirm" required autocomplete="new-password" />
+          </div>
+          <div class="form-field">
+            <button type="submit" class="btn btn-primary">Criar conta</button>
+          </div>
+        </form>
+
+        <form id="formRecovery" class="auth-form" hidden>
+          <div class="form-field">
+            <label for="recoveryLogin">Login ou e-mail</label>
+            <input type="text" id="recoveryLogin" required />
+          </div>
+          <div class="form-field">
+            <button type="submit" class="btn btn-primary">Enviar instruções</button>
+          </div>
+        </form>
+      </div>
+
+      <div id="authMessage" class="rooms-message"></div>
+
+      <div id="resumoReserva" class="summary-card" hidden>
+        <h3>Resumo</h3>
+        <p><strong>Cliente:</strong> <span id="resumoCliente"></span></p>
+        <p><strong>Data:</strong> <span id="resumoData"></span></p>
+        <p><strong>Sala:</strong> <span id="resumoSala"></span></p>
+      </div>
+
+      <button id="confirmarReserva" class="btn btn-primary" type="button" hidden>Confirmar pré-reserva</button>
+    </section>
+  </div>
+</main>
+
+<footer>
+  <p>Contato: contato@zeefe.com | (11) 1234-5678</p>
+  <p>Endereço: Moema, São Paulo - SP</p>
+  <p><a href="#">Instagram</a> | <a href="#">LinkedIn</a></p>
+  <p>© 2025 Ze.EFE - Todos os direitos reservados</p>
+</footer>
+
+<script src="scripts/pre-reserva.js" defer></script>
+</body>
+</html>

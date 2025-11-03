@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Ze.EFE - Redefinindo o conceito de sala de reunião</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="header">
+    <h1 class="logo">Ze.EFE</h1>
+    <nav>
+      <a href="index.html" aria-current="page">Início</a>
+      <a href="salas.html">Salas</a>
+      <a href="pre-reserva.html">Pré-Reserva</a>
+      <a href="clientes.html">Área do Cliente</a>
+    </nav>
+  </header>
+  
+  <main>
+    <section class="landing-hero">
+      <div class="landing-hero-content">
+        <h2>Salas prontas para encontros inesquecíveis</h2>
+        <p>Ambientes boutique, tecnologia intuitiva e operação cuidada pela equipe Ze.EFE.</p>
+        <div class="landing-actions">
+          <a href="salas.html" class="btn btn-primary">Ver salas disponíveis</a>
+          <a href="clientes.html" class="btn btn-secondary">Acessar o portal</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="reservation-steps" id="como-reservar">
+      <h3>Como funciona reservar na Ze.EFE</h3>
+      <p class="section-subtitle">Cinco etapas simples para garantir o melhor espaço para o seu encontro.</p>
+      <div class="steps-grid">
+        <article class="step-card">
+          <span class="step-number">1</span>
+          <h4>Solicite a sala</h4>
+          <p>Escolha o espaço e informe data e horário desejados pelo portal ou pré-reserva.</p>
+        </article>
+        <article class="step-card">
+          <span class="step-number">2</span>
+          <h4>Confirmação da agenda</h4>
+          <p>Nosso time valida disponibilidade e encaminha a confirmação com instruções.</p>
+        </article>
+        <article class="step-card">
+          <span class="step-number">3</span>
+          <h4>Pagamento seguro</h4>
+          <p>Realize o pagamento via PIX, cartão ou faturamento conforme sua necessidade.</p>
+        </article>
+        <article class="step-card">
+          <span class="step-number">4</span>
+          <h4>Confirmação final</h4>
+          <p>Receba o e-mail de confirmação com todos os detalhes de acesso e suporte.</p>
+        </article>
+        <article class="step-card">
+          <span class="step-number">5</span>
+          <h4>Convide os participantes</h4>
+          <p>Cadastre visitantes no portal para agilizar a liberação da portaria no dia do evento.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="rooms-showcase landing-section">
+      <div class="section-heading">
+        <h3>Salas disponíveis</h3>
+        <p>Atualização em tempo real considerando manutenções e bloqueios programados.</p>
+      </div>
+      <div id="rooms-message" class="rooms-message"></div>
+      <div id="rooms-grid" class="rooms-grid" aria-live="polite"></div>
+    </section>
+
+    <section class="landing-benefits landing-section">
+      <div class="section-heading">
+        <h3>Por que escolher a Ze.EFE</h3>
+      </div>
+      <div class="cards" id="benefits-cards"></div>
+    </section>
+
+    <section class="landing-portal landing-section">
+      <div class="portal-text">
+        <h3>Portal do Cliente</h3>
+        <p>Controle reservas, convide visitantes e acompanhe a operação em tempo real.</p>
+        <a href="clientes.html" class="btn btn-primary">Entrar no portal</a>
+      </div>
+      <div class="portal-highlights">
+        <div class="portal-card">
+          <strong>Gestão em um clique</strong>
+          <p>Visão completa das reservas, status e histórico.</p>
+        </div>
+        <div class="portal-card">
+          <strong>Visitantes organizados</strong>
+          <p>Envie convites personalizados e mantenha a portaria informada.</p>
+        </div>
+        <div class="portal-card">
+          <strong>Atendimento dedicado</strong>
+          <p>Equipe Ze.EFE pronta para apoiar antes, durante e depois do evento.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="landing-cta">
+      <p>Vamos planejar a sua próxima reunião com a experiência Ze.EFE?</p>
+      <div class="landing-actions">
+        <a href="pre-reserva.html" class="btn btn-primary">Solicitar reserva</a>
+        <a href="clientes.html" class="btn btn-secondary">Acompanhar minhas reservas</a>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>Contato: contato@zeefe.com | (11) 1234-5678</p>
+    <p>Endereço: Moema, São Paulo - SP</p>
+    <p><a href="#">Instagram</a> | <a href="#">LinkedIn</a></p>
+    <p>© 2025 Ze.EFE - Todos os direitos reservados</p>
+  </footer>
+
+  <script src="scripts/components/carousel.js" defer></script>
+  <script src="scripts/index.js" defer></script>
+</body>
+</html>
