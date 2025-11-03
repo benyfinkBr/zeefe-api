@@ -11,6 +11,7 @@ let bookingVisitorIds = [];
 let allReservationsCache = [];
 let bookingStepIndex = 0;
 let bookingCurrentMonth = new Date();
+const bookingToday = new Date();
 
 const bodyEl = document.body;
 const prefersReducedMotionQuery = window.matchMedia
@@ -423,9 +424,12 @@ function renderRoomOptions(date) {
     const capacityText = room.capacity !== null && room.capacity !== undefined && room.capacity !== ''
       ? escapeHtml(room.capacity)
       : '--';
+    const cityText = room.city ? escapeHtml(room.city) : '--';
+    const stateText = room.state || room.uf ? escapeHtml((room.state || room.uf).toUpperCase()) : '--';
     button.innerHTML = `
       <strong>${escapeHtml(room.name || `Sala #${room.id}`)}</strong>
       <span>Capacidade: ${capacityText} pessoas</span>
+      <span>Local: ${cityText} - ${stateText}</span>
     `;
     if (selectedId && selectedId === String(room.id)) {
       button.classList.add('selected');
