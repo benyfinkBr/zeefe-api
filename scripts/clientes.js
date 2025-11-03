@@ -8,6 +8,8 @@ let currentReservations = [];
 let currentVisitors = [];
 let activeClient = null;
 let bookingVisitorIds = [];
+let allReservationsCache = [];
+let bookingStepIndex = 0;
 
 const bodyEl = document.body;
 const prefersReducedMotionQuery = window.matchMedia
@@ -41,10 +43,19 @@ const bookingForm = document.getElementById('reservationBookForm');
 const bookingFormTitle = document.getElementById('bookingFormTitle');
 const bookingMessage = document.getElementById('bookingMessage');
 const reservationIdInput = bookingForm?.querySelector('input[name="id"]');
+const bookingDateInput = document.getElementById('bookingDateInput');
+const bookingRoomHiddenInput = document.getElementById('bookingRoomId');
 const bookingVisitorSelector = document.getElementById('bookingVisitorSelector');
 const cancelReservationEditBtn = document.getElementById('cancelReservationEdit');
 const newReservationBtn = document.getElementById('newReservationBtn');
 const openVisitorsPanelBtn = document.getElementById('openVisitorsPanel');
+const bookingRoomOptions = document.getElementById('bookingRoomOptions');
+const bookingRoomFeedback = document.getElementById('bookingRoomFeedback');
+const bookingStepperItems = Array.from(document.querySelectorAll('.booking-stepper-item'));
+const bookingStepSections = Array.from(document.querySelectorAll('.booking-step'));
+const bookingPrevBtn = document.getElementById('bookingPrevBtn');
+const bookingNextBtn = document.getElementById('bookingNextBtn');
+const bookingSubmitBtn = document.getElementById('bookingSubmitBtn');
 
 const reservationsContainer = document.getElementById('reservationsContainer');
 
@@ -83,6 +94,7 @@ initialize();
 async function initialize() {
   try {
     await Promise.all([carregarSalas(), carregarEmpresas()]);
+    await carregarReservasGlobais();
   } catch (err) {
     console.error('Falha ao carregar dados iniciais:', err);
   }
@@ -106,12 +118,18 @@ async function initialize() {
     const endInput = bookingForm.querySelector('input[name="time_end"]');
     [startInput, endInput].forEach(input => {
       if (!input) return;
-      input.readOnly = true;
-      input.classList.add('input-readonly');
+      input.value = input.name === 'time_start' ? DEFAULT_START_TIME : DEFAULT_END_TIME;
     });
-    if (startInput && !startInput.value) startInput.value = DEFAULT_START_TIME;
-    if (endInput && !endInput.value) endInput.value = DEFAULT_END_TIME;
   }
+  bookingDateInput?.addEventListener('change', onBookingDateChange);
+  bookingDateInput?.addEventListener('input', onBookingDateChange);
+  bookingPrevBtn?.addEventListener('click', () => changeBookingStep(-1));
+  bookingNextBtn?.addEventListener('click', () => {
+    if (validateBookingStep(bookingStepIndex)) {
+      changeBookingStep(1);
+    }
+  });
+
   cancelReservationEditBtn?.addEventListener('click', () => resetBookingForm());
   newReservationBtn?.addEventListener('click', () => {
     resetBookingForm();
@@ -152,6 +170,8 @@ async function initialize() {
   });
 
   renderVisitorChecklist();
+  setBookingStep(0);
+  renderRoomOptions(bookingDateInput?.value || '');
   setBodyAuthState(false);
   showAuthOverlay();
   setActivePanel('book');
@@ -235,6 +255,12 @@ function setActivePanel(panelName = 'book') {
   });
   if (target === 'book') {
     renderVisitorChecklist();
+    renderRoomOptions(bookingDateInput?.value || '');
+    setBookingStep(bookingStepIndex);
+  } else if (target === 'reservations' && activeClient) {
+    carregarReservasGlobais().finally(() => carregarReservas(activeClient.id));
+  } else if (target === 'visitors' && activeClient) {
+    carregarVisitantes(activeClient.id);
   } else if (target === 'profile') {
     renderProfile();
   }
@@ -276,13 +302,174 @@ async function carregarSalas() {
 }
 
 function preencherSalasSelect() {
-  const select = bookingForm?.querySelector('select[name="room_id"]');
-  if (!select) return;
-  select.innerHTML = '<option value=\"\">-- Selecione --</option>' +
-    roomsCache
-      .filter(room => ['ativo', 'manutencao'].includes((room.status || '').toLowerCase()))
-      .map(room => `<option value=\"${room.id}\">${escapeHtml(room.name || `Sala #${room.id}`)}</option>`)
-      .join('');
+  renderRoomOptions(bookingDateInput?.value || '');
+}
+
+function onBookingDateChange() {
+  if (!bookingDateInput) return;
+  if (bookingRoomHiddenInput) bookingRoomHiddenInput.value = '';
+  renderRoomOptions(bookingDateInput.value);
+  if (bookingStepIndex > 1) {
+    setBookingStep(1);
+  }
+}
+
+function changeBookingStep(delta) {
+  setBookingStep(bookingStepIndex + delta);
+}
+
+function setBookingStep(index) {
+  if (!bookingStepSections.length) return;
+  const maxIndex = bookingStepSections.length - 1;
+  if (index < 0) index = 0;
+  if (index > maxIndex) index = maxIndex;
+  bookingStepIndex = index;
+  bookingStepSections.forEach((section, idx) => {
+    if (!section) return;
+    section.hidden = idx !== index;
+  });
+  bookingStepperItems.forEach((item, idx) => {
+    if (!item) return;
+    item.classList.toggle('active', idx <= index);
+  });
+  updateBookingNavigation();
+  if (bookingStepIndex === 1) {
+    renderRoomOptions(bookingDateInput?.value || '');
+  }
+}
+
+function updateBookingNavigation() {
+  if (bookingPrevBtn) bookingPrevBtn.hidden = bookingStepIndex === 0;
+  if (bookingNextBtn) bookingNextBtn.hidden = bookingStepIndex >= bookingStepSections.length - 1;
+  if (bookingSubmitBtn) bookingSubmitBtn.hidden = bookingStepIndex !== bookingStepSections.length - 1;
+}
+
+function validateBookingStep(step) {
+  if (!bookingMessage) return true;
+  bookingMessage.textContent = '';
+  if (step === 0) {
+    if (!bookingDateInput || !bookingDateInput.value) {
+      bookingMessage.textContent = 'Selecione a data da reserva antes de avançar.';
+      return false;
+    }
+  } else if (step === 1) {
+    if (!bookingRoomHiddenInput || !bookingRoomHiddenInput.value) {
+      bookingMessage.textContent = 'Escolha uma sala disponível para continuar.';
+      return false;
+    }
+  } else if (step === 2) {
+    const titleInput = bookingForm?.querySelector('input[name="title"]');
+    if (!titleInput || !titleInput.value.trim()) {
+      bookingMessage.textContent = 'Informe um título para a reserva.';
+      return false;
+    }
+  }
+  return true;
+}
+
+function renderRoomOptions(date) {
+  if (!bookingRoomOptions) return;
+  bookingRoomOptions.innerHTML = '';
+  if (bookingRoomFeedback) bookingRoomFeedback.textContent = '';
+  if (!date) {
+    if (bookingRoomFeedback) bookingRoomFeedback.textContent = 'Selecione a data para visualizar as salas disponíveis.';
+    return;
+  }
+  if (!roomsCache.length) {
+    if (bookingRoomFeedback) bookingRoomFeedback.textContent = 'Carregando salas disponíveis...';
+    return;
+  }
+  const availableRooms = getAvailableRoomsForDate(date, reservationIdInput?.value).sort((a, b) => {
+    const nameA = (a.name || `Sala #${a.id}`).toString().toLowerCase();
+    const nameB = (b.name || `Sala #${b.id}`).toString().toLowerCase();
+    return nameA.localeCompare(nameB, 'pt-BR');
+  });
+  if (!availableRooms.length) {
+    if (bookingRoomFeedback) bookingRoomFeedback.textContent = 'Nenhuma sala disponível para a data escolhida.';
+    return;
+  }
+  const selectedId = bookingRoomHiddenInput?.value ? String(bookingRoomHiddenInput.value) : '';
+  let hasSelected = false;
+  availableRooms.forEach(room => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'room-option';
+    button.dataset.roomId = String(room.id);
+    const capacityText = room.capacity !== null && room.capacity !== undefined && room.capacity !== ''
+      ? escapeHtml(room.capacity)
+      : '--';
+    button.innerHTML = `
+      <strong>${escapeHtml(room.name || `Sala #${room.id}`)}</strong>
+      <span>Capacidade: ${capacityText} pessoas</span>
+    `;
+    if (selectedId && selectedId === String(room.id)) {
+      button.classList.add('selected');
+      hasSelected = true;
+    }
+    button.addEventListener('click', () => selectRoomOption(room.id));
+    bookingRoomOptions.appendChild(button);
+  });
+  if (bookingRoomHiddenInput && selectedId && !hasSelected) {
+    bookingRoomHiddenInput.value = '';
+  }
+}
+
+function selectRoomOption(roomId) {
+  if (!bookingRoomHiddenInput) return;
+  bookingRoomHiddenInput.value = roomId;
+  if (bookingRoomOptions) {
+    Array.from(bookingRoomOptions.querySelectorAll('.room-option')).forEach(option => {
+      option.classList.toggle('selected', option.dataset.roomId === String(roomId));
+    });
+  }
+  if (bookingMessage) bookingMessage.textContent = '';
+}
+
+function getAvailableRoomsForDate(date, reservationId) {
+  if (!date) return [];
+  return roomsCache.filter(room => isRoomSelectable(room, date) && isRoomAvailableOnDate(room, date, reservationId));
+}
+
+function isRoomSelectable(room, date) {
+  if (!room) return false;
+  const status = (room.status || '').toLowerCase();
+  if (status === 'inativo') return false;
+  if (status === 'desativada') {
+    if (!room.deactivated_from) return false;
+    return date < room.deactivated_from;
+  }
+  if (status === 'manutencao') {
+    if (room.maintenance_start && room.maintenance_start <= date) {
+      if (!room.maintenance_end || room.maintenance_end >= date) {
+        return false;
+      }
+    }
+  }
+  return ['ativo', 'manutencao', ''].includes(status) || !status;
+}
+
+function isRoomAvailableOnDate(room, date, reservationId) {
+  const roomId = String(room.id);
+  return !allReservationsCache.some(res => {
+    if (String(res.room_id) !== roomId) return false;
+    if (reservationId && String(res.id) === String(reservationId)) return false;
+    const status = (res.status || '').toLowerCase();
+    if (['cancelada', 'cancelado', 'negada'].includes(status)) return false;
+    return res.date === date;
+  });
+}
+
+async function carregarReservasGlobais() {
+  try {
+    const res = await fetch(`${API_BASE}/apiget.php?table=reservations`, { credentials: 'include' });
+    const json = await res.json();
+    if (!json.success) throw new Error(json.error || 'Erro ao carregar reservas.');
+    allReservationsCache = json.data || [];
+  } catch (err) {
+    console.error(err);
+    allReservationsCache = [];
+  }
+  renderRoomOptions(bookingDateInput?.value || '');
 }
 
 async function onPortalLoginSubmit(event) {
@@ -442,10 +629,13 @@ function aplicarLoginMemorizado() {
   }
 }
 
-function atualizarPainel() {
+async function atualizarPainel() {
   if (!activeClient) return;
-  carregarReservas(activeClient.id);
-  carregarVisitantes(activeClient.id);
+  await carregarReservasGlobais();
+  await Promise.all([
+    carregarReservas(activeClient.id),
+    carregarVisitantes(activeClient.id)
+  ]);
 }
 
 async function carregarReservas(clientId) {
@@ -461,6 +651,7 @@ async function carregarReservas(clientId) {
       visitor_names: Array.isArray(item.visitor_names) ? item.visitor_names : []
     }));
     renderReservas(currentReservations);
+    renderRoomOptions(bookingDateInput?.value || '');
   } catch (err) {
     console.error(err);
     reservationsContainer.innerHTML = '<div class=\"rooms-message\">Não foi possível carregar as reservas.</div>';
@@ -593,17 +784,22 @@ function preencherFormReserva(reserva) {
   if (!bookingForm) return;
   setActivePanel('book');
   bookingFormTitle.textContent = 'Editar reserva';
-  reservationIdInput.value = reserva.id || '';
-  bookingForm.room_id.value = reserva.room_id || '';
-  bookingForm.date.value = reserva.date || '';
-  const startInput = bookingForm.querySelector('input[name=\"time_start\"]');
-  const endInput = bookingForm.querySelector('input[name=\"time_end\"]');
+  if (reservationIdInput) reservationIdInput.value = reserva.id || '';
+  if (bookingRoomHiddenInput) bookingRoomHiddenInput.value = reserva.room_id || '';
+  if (bookingDateInput) bookingDateInput.value = reserva.date || '';
+  const startInput = bookingForm.querySelector('input[name="time_start"]');
+  const endInput = bookingForm.querySelector('input[name="time_end"]');
   if (startInput) startInput.value = reserva.time_start || DEFAULT_START_TIME;
   if (endInput) endInput.value = reserva.time_end || DEFAULT_END_TIME;
-  bookingForm.title.value = reserva.title || '';
-  bookingForm.description.value = reserva.description || '';
+  const titleInput = bookingForm.querySelector('input[name="title"]');
+  if (titleInput) titleInput.value = reserva.title || '';
+  const descriptionInput = bookingForm.querySelector('textarea[name="description"]');
+  if (descriptionInput) descriptionInput.value = reserva.description || '';
   bookingVisitorIds = (reserva.visitors || []).map(String);
   renderVisitorChecklist();
+  renderRoomOptions(bookingDateInput?.value || '');
+  bookingStepIndex = 3;
+  setBookingStep(bookingStepIndex);
   cancelReservationEditBtn.hidden = false;
   bookingForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
   if (bookingMessage) bookingMessage.textContent = '';
@@ -669,8 +865,13 @@ function resetBookingForm(preserveMessage = false) {
   const endInput = bookingForm?.querySelector('input[name=\"time_end\"]');
   if (startInput) startInput.value = DEFAULT_START_TIME;
   if (endInput) endInput.value = DEFAULT_END_TIME;
+  if (bookingDateInput) bookingDateInput.value = '';
+  if (bookingRoomHiddenInput) bookingRoomHiddenInput.value = '';
+  bookingStepIndex = 0;
+  setBookingStep(bookingStepIndex);
   bookingVisitorIds = [];
   renderVisitorChecklist();
+  renderRoomOptions('');
   if (bookingMessage && !preserveMessage) bookingMessage.textContent = '';
 }
 

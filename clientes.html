@@ -138,46 +138,73 @@
               <h3 id="bookingFormTitle">Reservar uma sala</h3>
               <form id="reservationBookForm">
                 <input type="hidden" name="id" />
-                <div class="form-grid-mini">
-                  <div>
-                    <label>Sala</label>
-                    <select name="room_id" required></select>
+                <input type="hidden" name="room_id" id="bookingRoomId" />
+                <input type="hidden" name="time_start" value="08:00" />
+                <input type="hidden" name="time_end" value="20:00" />
+
+                <div class="booking-stepper">
+                  <div class="booking-stepper-item active" data-step-index="0">
+                    <span>1</span>
+                    <strong>Data</strong>
                   </div>
-                  <div>
-                    <label>Data</label>
-                    <input type="date" name="date" required />
+                  <div class="booking-stepper-item" data-step-index="1">
+                    <span>2</span>
+                    <strong>Salas</strong>
                   </div>
-                  <div>
-                    <label>Hora início</label>
-                    <input type="time" name="time_start" value="08:00" readonly />
+                  <div class="booking-stepper-item" data-step-index="2">
+                    <span>3</span>
+                    <strong>Detalhes</strong>
                   </div>
-                  <div>
-                    <label>Hora fim</label>
-                    <input type="time" name="time_end" value="20:00" readonly />
+                  <div class="booking-stepper-item" data-step-index="3">
+                    <span>4</span>
+                    <strong>Visitantes</strong>
                   </div>
                 </div>
-                <p class="form-help fixed-schedule-note">Reservas são diárias entre 08:00 e 20:00.</p>
-                <div class="form-row">
-                  <label>Título</label>
-                  <input type="text" name="title" maxlength="120" required />
-                </div>
-                <div class="form-row">
-                  <label>Descrição / Observações</label>
-                  <textarea name="description" rows="3"></textarea>
-                </div>
-                <div class="form-row">
-                  <label class="form-label">Visitantes</label>
-                  <div class="visitor-multiselect" id="bookingVisitorSelector"></div>
-                </div>
-                <div class="form-row visitor-actions">
-                  <label>
-                    <input type="checkbox" name="send_invites" checked>
-                    Enviar convite por e-mail aos visitantes selecionados
-                  </label>
-                  <button type="button" class="btn btn-secondary btn-sm" id="openVisitorsPanel">Gerenciar visitantes</button>
-                </div>
-                <div class="form-row">
-                  <button class="btn btn-primary" type="submit">Salvar reserva</button>
+
+                <section class="booking-step" data-step-index="0">
+                  <div class="form-row">
+                    <label for="bookingDateInput">Escolha a data</label>
+                    <input type="date" id="bookingDateInput" name="date" required />
+                  </div>
+                  <p class="form-help fixed-schedule-note">Reservas são diárias entre 08:00 e 20:00.</p>
+                </section>
+
+                <section class="booking-step" data-step-index="1" hidden>
+                  <h4>Salas disponíveis</h4>
+                  <p class="form-help">Selecione uma sala disponível para a data escolhida.</p>
+                  <div id="bookingRoomOptions" class="booking-room-options"></div>
+                  <div id="bookingRoomFeedback" class="rooms-message"></div>
+                </section>
+
+                <section class="booking-step" data-step-index="2" hidden>
+                  <div class="form-row">
+                    <label for="bookingTitleInput">Título</label>
+                    <input type="text" id="bookingTitleInput" name="title" maxlength="120" required />
+                  </div>
+                  <div class="form-row">
+                    <label for="bookingDescriptionInput">Descrição / Observações</label>
+                    <textarea id="bookingDescriptionInput" name="description" rows="3"></textarea>
+                  </div>
+                </section>
+
+                <section class="booking-step" data-step-index="3" hidden>
+                  <div class="form-row">
+                    <label class="form-label">Visitantes</label>
+                    <div class="visitor-multiselect" id="bookingVisitorSelector"></div>
+                  </div>
+                  <div class="form-row visitor-actions">
+                    <label>
+                      <input type="checkbox" name="send_invites" checked>
+                      Enviar convite por e-mail aos visitantes selecionados
+                    </label>
+                    <button type="button" class="btn btn-secondary btn-sm" id="openVisitorsPanel">Gerenciar visitantes</button>
+                  </div>
+                </section>
+
+                <div class="booking-navigation">
+                  <button type="button" class="btn btn-secondary" id="bookingPrevBtn" hidden>Voltar</button>
+                  <button type="button" class="btn btn-primary" id="bookingNextBtn">Avançar</button>
+                  <button class="btn btn-primary" type="submit" id="bookingSubmitBtn" hidden>Salvar reserva</button>
                   <button class="btn btn-secondary" type="button" id="cancelReservationEdit" hidden>Cancelar edição</button>
                 </div>
                 <div class="form-row">
