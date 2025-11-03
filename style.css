@@ -850,33 +850,55 @@ textarea {
     padding: 40px 32px;
   }
 
-  .client-summary {
+  .portal-shell {
+    grid-template-columns: 1fr;
     gap: 24px;
-    padding: 0 8px;
   }
 
-  .client-summary-card {
+  .portal-nav {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    min-height: auto;
     padding: 24px;
+    gap: 16px;
   }
 
-  .client-summary-header {
-    flex-direction: column;
-    align-items: stretch;
+  .portal-nav-brand {
+    flex-direction: row;
+    align-items: center;
     gap: 12px;
   }
 
-  .summary-actions {
+  .portal-nav-brand img {
+    width: 72px;
+  }
+
+  .portal-nav-links {
+    flex-direction: row;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .portal-nav-links button {
+    flex: 1 1 140px;
+    text-align: center;
+  }
+
+  .nav-logout {
+    margin-top: 0;
+  }
+
+  .portal-header {
     flex-direction: column;
-    gap: 10px;
+    align-items: stretch;
+    gap: 16px;
   }
 
-  .summary-actions .btn {
-    width: 100%;
-  }
-
-  .client-summary-grid {
-    grid-template-columns: 1fr;
-    gap: 20px;
+  .portal-actions {
+    justify-content: flex-end;
   }
 
   .landing-hero {
@@ -1139,6 +1161,204 @@ body.client-portal-page .client-portal .client-summary {
   max-width: 1160px;
 }
 
+.portal-shell {
+  width: 100%;
+  max-width: 1160px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 32px;
+}
+
+.portal-nav {
+  background: linear-gradient(180deg, #1D413A 0%, #16332E 100%);
+  color: var(--brand-cream);
+  border-radius: 22px;
+  padding: 32px 26px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  box-shadow: var(--shadow-soft);
+  min-height: 520px;
+}
+
+.portal-nav-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  text-align: center;
+}
+
+.portal-nav-brand img {
+  width: 120px;
+  border-radius: 18px;
+}
+
+.portal-nav-brand h2 {
+  font-size: 1.05rem;
+  margin: 0;
+  font-weight: 600;
+}
+
+.portal-nav-links {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.portal-nav-links button {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: var(--brand-cream);
+  padding: 12px 16px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 0.96rem;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.2s ease, border 0.2s ease;
+  text-align: left;
+}
+
+.portal-nav-links button:hover,
+.portal-nav-links button:focus-visible {
+  background: rgba(255, 255, 255, 0.18);
+  transform: translateX(2px);
+}
+
+.portal-nav-links button.active {
+  background: #fff;
+  color: var(--brand-green);
+  transform: translateX(4px);
+  border-color: #fff;
+}
+
+.nav-logout {
+  margin-top: auto;
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--brand-cream);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+  padding: 12px 16px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.nav-logout:hover,
+.nav-logout:focus-visible {
+  background: rgba(255, 255, 255, 0.22);
+  transform: translateX(2px);
+}
+
+.portal-main {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.portal-header {
+  background: #fff;
+  border-radius: 22px;
+  padding: 24px 32px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 18px;
+  box-shadow: var(--shadow-soft);
+  border: 1px solid rgba(29, 65, 58, 0.08);
+}
+
+.portal-subtitle {
+  color: var(--brand-muted);
+}
+
+.portal-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.portal-content {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.booking-card {
+  max-width: 780px;
+}
+
+.visitor-multiselect {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
+
+.visitor-multiselect-header {
+  font-weight: 600;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.visitor-multiselect-header span {
+  color: var(--brand-muted);
+  font-weight: 500;
+  font-size: 0.85rem;
+}
+
+.visitor-multiselect-help {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--brand-muted);
+}
+
+.visitor-multiselect-list {
+  display: grid;
+  gap: 8px;
+  max-height: 220px;
+  overflow-y: auto;
+  padding-right: 6px;
+}
+
+.visitor-multiselect-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 8px 12px;
+  border: 1px solid rgba(29, 65, 58, 0.12);
+  border-radius: 12px;
+  background: rgba(29, 65, 58, 0.05);
+}
+
+.visitor-multiselect-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.9rem;
+}
+
+.visitor-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.visitor-actions label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.94rem;
+}
+
+.portal-section[hidden] {
+  display: none;
+}
 .client-summary {
   width: 100%;
   max-width: 1160px;

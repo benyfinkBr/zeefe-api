@@ -2,12 +2,18 @@ const API_BASE = 'api';
 const DEFAULT_START_TIME = '08:00';
 const DEFAULT_END_TIME = '20:00';
 
-let companiesCache = [];
 let roomsCache = [];
-let reservationsCache = [];
+let companiesCache = [];
+let currentReservations = [];
+let currentVisitors = [];
 let activeClient = null;
+let bookingVisitorIds = [];
 
 const bodyEl = document.body;
+const prefersReducedMotionQuery = window.matchMedia
+  ? window.matchMedia('(prefers-reduced-motion: reduce)')
+  : null;
+
 const authSection = document.getElementById('authContainer');
 const authActions = document.getElementById('authActions');
 const authScreens = {
@@ -30,7 +36,24 @@ const clientNameEl = document.getElementById('clientName');
 const clientCompanyEl = document.getElementById('clientCompany');
 const logoutBtn = document.getElementById('logoutBtn');
 const refreshBtn = document.getElementById('refreshBtn');
+
+const bookingForm = document.getElementById('reservationBookForm');
+const bookingFormTitle = document.getElementById('bookingFormTitle');
+const bookingMessage = document.getElementById('bookingMessage');
+const reservationIdInput = bookingForm?.querySelector('input[name="id"]');
+const bookingVisitorSelector = document.getElementById('bookingVisitorSelector');
+const cancelReservationEditBtn = document.getElementById('cancelReservationEdit');
+const newReservationBtn = document.getElementById('newReservationBtn');
+const openVisitorsPanelBtn = document.getElementById('openVisitorsPanel');
+
 const reservationsContainer = document.getElementById('reservationsContainer');
+
+const visitorForm = document.getElementById('visitorForm');
+const visitorFormTitle = document.getElementById('visitorFormTitle');
+const visitorIdInput = visitorForm?.querySelector('input[name="id"]');
+const cancelVisitorEditBtn = document.getElementById('cancelVisitorEdit');
+const newVisitorBtn = document.getElementById('newVisitorBtn');
+const visitorsContainer = document.getElementById('visitorsContainer');
 
 const profileForm = document.getElementById('profileForm');
 const profileMessageEl = document.getElementById('profileMessage');
@@ -47,35 +70,66 @@ const profileInputs = {
   company: document.getElementById('profileCompanyInput')
 };
 
-const prefersReducedMotionQuery = window.matchMedia
-  ? window.matchMedia('(prefers-reduced-motion: reduce)')
-  : null;
+const portalNavButtons = Array.from(document.querySelectorAll('.portal-nav [data-panel]'));
+const portalSections = {
+  book: document.getElementById('panel-book'),
+  reservations: document.getElementById('panel-reservations'),
+  visitors: document.getElementById('panel-visitors'),
+  profile: document.getElementById('panel-profile')
+};
 
 initialize();
 
 async function initialize() {
   try {
-    await Promise.all([carregarEmpresas(), carregarSalas()]);
+    await Promise.all([carregarSalas(), carregarEmpresas()]);
   } catch (err) {
     console.error('Falha ao carregar dados iniciais:', err);
   }
 
-  authViewButtons.forEach(btn => {
-    btn.addEventListener('click', () => setAuthView(btn.dataset.view));
-  });
-
+  authViewButtons.forEach(btn => btn.addEventListener('click', () => setAuthView(btn.dataset.view)));
   setAuthView('login');
-  aplicarLoginMemorizado();
 
+  aplicarLoginMemorizado();
   portalLoginForm?.addEventListener('submit', onPortalLoginSubmit);
   portalRegisterForm?.addEventListener('submit', onPortalRegisterSubmit);
   portalRecoveryForm?.addEventListener('submit', onPortalRecoverySubmit);
+
   logoutBtn?.addEventListener('click', fazerLogout);
   refreshBtn?.addEventListener('click', () => {
-    if (activeClient) {
-      carregarReservas(activeClient.id);
-    }
+    if (activeClient) atualizarPainel();
   });
+
+  if (bookingForm) {
+    bookingForm.addEventListener('submit', onBookingSubmit);
+    const startInput = bookingForm.querySelector('input[name="time_start"]');
+    const endInput = bookingForm.querySelector('input[name="time_end"]');
+    [startInput, endInput].forEach(input => {
+      if (!input) return;
+      input.readOnly = true;
+      input.classList.add('input-readonly');
+    });
+    if (startInput && !startInput.value) startInput.value = DEFAULT_START_TIME;
+    if (endInput && !endInput.value) endInput.value = DEFAULT_END_TIME;
+  }
+  cancelReservationEditBtn?.addEventListener('click', () => resetBookingForm());
+  newReservationBtn?.addEventListener('click', () => {
+    resetBookingForm();
+    setActivePanel('book');
+    bookingForm?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+  openVisitorsPanelBtn?.addEventListener('click', () => {
+    setActivePanel('visitors');
+    visitorForm?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+
+  visitorForm?.addEventListener('submit', onVisitorSubmit);
+  cancelVisitorEditBtn?.addEventListener('click', resetVisitorForm);
+  newVisitorBtn?.addEventListener('click', () => {
+    resetVisitorForm();
+    visitorForm?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  });
+
   profileForm?.addEventListener('submit', onProfileSubmit);
   editProfileBtn?.addEventListener('click', () => setProfileEditing(true));
   cancelProfileEditBtn?.addEventListener('click', () => {
@@ -83,8 +137,24 @@ async function initialize() {
     setProfileEditing(false);
   });
 
+  portalNavButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      setActivePanel(btn.dataset.panel);
+      if (!activeClient) return;
+      if (btn.dataset.panel === 'reservations') {
+        carregarReservas(activeClient.id);
+      } else if (btn.dataset.panel === 'visitors') {
+        carregarVisitantes(activeClient.id);
+      } else if (btn.dataset.panel === 'profile') {
+        renderProfile();
+      }
+    });
+  });
+
+  renderVisitorChecklist();
   setBodyAuthState(false);
   showAuthOverlay();
+  setActivePanel('book');
 }
 
 function isReducedMotionPreferred() {
@@ -138,16 +208,13 @@ function setAuthView(viewName) {
     if (screen) screen.hidden = key !== viewName;
   });
   authViewButtons.forEach(btn => {
-    const target = btn.dataset.view;
-    btn.classList.toggle('active', target === viewName);
+    btn.classList.toggle('active', btn.dataset.view === viewName);
   });
   if (authActions) authActions.hidden = viewName !== 'login';
   if (authMessage) authMessage.textContent = '';
   if (portalRegisterForm && viewName !== 'register') portalRegisterForm.reset();
   if (portalRecoveryForm && viewName !== 'recovery') portalRecoveryForm.reset();
-  if (viewName !== 'login') {
-    portalLoginForm?.reset();
-  }
+  if (viewName !== 'login') portalLoginForm?.reset();
   if (viewName === 'login') {
     aplicarLoginMemorizado();
     if (loginPasswordInput) loginPasswordInput.value = '';
@@ -155,6 +222,67 @@ function setAuthView(viewName) {
       loginIdentifierInput.focus();
     }
   }
+}
+
+function setActivePanel(panelName = 'book') {
+  const target = portalSections[panelName] ? panelName : 'book';
+  portalNavButtons.forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.panel === target);
+  });
+  Object.entries(portalSections).forEach(([key, section]) => {
+    if (!section) return;
+    section.hidden = key !== target;
+  });
+  if (target === 'book') {
+    renderVisitorChecklist();
+  } else if (target === 'profile') {
+    renderProfile();
+  }
+}
+
+async function carregarEmpresas() {
+  try {
+    const res = await fetch(`${API_BASE}/apiget.php?table=companies`, { credentials: 'include' });
+    const json = await res.json();
+    if (!json.success) throw new Error(json.error || 'Erro ao carregar empresas');
+    companiesCache = json.data || [];
+  } catch (err) {
+    console.error(err);
+    companiesCache = [];
+  }
+  preencherEmpresasSelect();
+}
+
+function preencherEmpresasSelect() {
+  if (!registerCompanySelect) return;
+  registerCompanySelect.innerHTML = '<option value=\"\">-- Sem vínculo --</option>' +
+    companiesCache.map(company => {
+      const label = company.nome_fantasia || company.razao_social || `Empresa #${company.id}`;
+      return `<option value=\"${company.id}\">${escapeHtml(label)}</option>`;
+    }).join('');
+}
+
+async function carregarSalas() {
+  try {
+    const res = await fetch(`${API_BASE}/apiget.php?table=rooms`, { credentials: 'include' });
+    const json = await res.json();
+    if (!json.success) throw new Error(json.error || 'Erro ao carregar salas');
+    roomsCache = json.data || [];
+    preencherSalasSelect();
+  } catch (err) {
+    console.error(err);
+    roomsCache = [];
+  }
+}
+
+function preencherSalasSelect() {
+  const select = bookingForm?.querySelector('select[name="room_id"]');
+  if (!select) return;
+  select.innerHTML = '<option value=\"\">-- Selecione --</option>' +
+    roomsCache
+      .filter(room => ['ativo', 'manutencao'].includes((room.status || '').toLowerCase()))
+      .map(room => `<option value=\"${room.id}\">${escapeHtml(room.name || `Sala #${room.id}`)}</option>`)
+      .join('');
 }
 
 async function onPortalLoginSubmit(event) {
@@ -261,27 +389,28 @@ function aplicarClienteAtivo(cliente) {
     clientCompanyEl.textContent = obterNomeEmpresa(activeClient.company_id) || (activeClient.company_id ? 'Empresa não localizada' : 'Cliente pessoa física');
   }
   renderProfile();
-  carregarReservas(activeClient.id);
+  resetBookingForm();
+  setActivePanel('book');
+  atualizarPainel();
   if (authMessage) authMessage.textContent = '';
 }
 
 function fazerLogout() {
   activeClient = null;
-  reservationsCache = [];
+  currentReservations = [];
+  currentVisitors = [];
+  bookingVisitorIds = [];
   if (clientPanels) {
     clientPanels.hidden = true;
   }
-  if (reservationsContainer) {
-    reservationsContainer.innerHTML = '';
-  }
-  setAuthView('login');
   setBodyAuthState(false);
+  setAuthView('login');
   showAuthOverlay();
-  portalLoginForm?.reset();
-  portalRegisterForm?.reset();
-  portalRecoveryForm?.reset();
-  if (authMessage) authMessage.textContent = '';
-  aplicarLoginMemorizado();
+  reservationsContainer.innerHTML = '';
+  visitorsContainer.innerHTML = '';
+  bookingForm?.reset();
+  visitorForm?.reset();
+  setActivePanel('book');
   renderProfile();
 }
 
@@ -300,9 +429,9 @@ function registrarPreferenciaLogin(lembrar, login) {
 function aplicarLoginMemorizado() {
   if (!loginIdentifierInput || !rememberMeCheckbox) return;
   try {
-    const storedLogin = localStorage.getItem('portalRememberLogin');
-    if (storedLogin) {
-      loginIdentifierInput.value = storedLogin;
+    const stored = localStorage.getItem('portalRememberLogin');
+    if (stored) {
+      loginIdentifierInput.value = stored;
       rememberMeCheckbox.checked = true;
     } else {
       loginIdentifierInput.value = '';
@@ -313,40 +442,10 @@ function aplicarLoginMemorizado() {
   }
 }
 
-async function carregarEmpresas() {
-  try {
-    const res = await fetch(`${API_BASE}/apiget.php?table=companies`, { credentials: 'include' });
-    const json = await res.json();
-    if (!json.success) throw new Error(json.error || 'Erro ao carregar empresas');
-    companiesCache = json.data || [];
-  } catch (err) {
-    console.error(err);
-    companiesCache = [];
-  }
-  preencherEmpresasSelect();
-}
-
-function preencherEmpresasSelect() {
-  if (!registerCompanySelect) return;
-  registerCompanySelect.innerHTML = '<option value=\"\">-- Sem vínculo --</option>' +
-    companiesCache
-      .map(company => {
-        const label = company.nome_fantasia || company.razao_social || `Empresa #${company.id}`;
-        return `<option value=\"${company.id}\">${escapeHtml(label)}</option>`;
-      })
-      .join('');
-}
-
-async function carregarSalas() {
-  try {
-    const res = await fetch(`${API_BASE}/apiget.php?table=rooms`, { credentials: 'include' });
-    const json = await res.json();
-    if (!json.success) throw new Error(json.error || 'Erro ao carregar salas');
-    roomsCache = json.data || [];
-  } catch (err) {
-    console.error(err);
-    roomsCache = [];
-  }
+function atualizarPainel() {
+  if (!activeClient) return;
+  carregarReservas(activeClient.id);
+  carregarVisitantes(activeClient.id);
 }
 
 async function carregarReservas(clientId) {
@@ -356,25 +455,24 @@ async function carregarReservas(clientId) {
     const res = await fetch(`${API_BASE}/apiget.php?table=reservations&client_id=${clientId}`, { credentials: 'include' });
     const json = await res.json();
     if (!json.success) throw new Error(json.error || 'Erro ao carregar reservas');
-    reservationsCache = (json.data || []).map(item => ({
+    currentReservations = (json.data || []).map(item => ({
       ...item,
       visitors: Array.isArray(item.visitors) ? item.visitors.map(v => String(v)) : [],
       visitor_names: Array.isArray(item.visitor_names) ? item.visitor_names : []
     }));
-    renderReservas(reservationsCache);
+    renderReservas(currentReservations);
   } catch (err) {
     console.error(err);
-    reservationsContainer.innerHTML = '<div class=\"rooms-message\">Não foi possível carregar as reservas no momento.</div>';
+    reservationsContainer.innerHTML = '<div class=\"rooms-message\">Não foi possível carregar as reservas.</div>';
   }
 }
 
 function renderReservas(reservas) {
   if (!reservationsContainer) return;
   if (!reservas.length) {
-    reservationsContainer.innerHTML = '<div class=\"rooms-message\">Nenhuma reserva cadastrada. As confirmações e ajustes são realizados pela equipe ZeefeAdmin.</div>';
+    reservationsContainer.innerHTML = '<div class=\"rooms-message\">Nenhuma reserva cadastrada.</div>';
     return;
   }
-
   const rows = reservas.map(reserva => {
     const statusNormalized = (reserva.status || '').toLowerCase();
     const room = buscarSala(reserva.room_id);
@@ -383,9 +481,11 @@ function renderReservas(reservas) {
       ? reserva.visitor_names.map(name => `<span class=\"table-chip\">${escapeHtml(name)}</span>`).join(' ')
       : '<span class=\"table-chip muted\">Sem visitantes</span>';
     const timeRange = formatTimeRange(reserva.time_start, reserva.time_end);
-
+    const showCancel = ['pendente', 'confirmada'].includes(statusNormalized) && podeCancelar(reserva);
+    const showInvite = Array.isArray(reserva.visitors) && reserva.visitors.length;
+    const showPayment = ['pendente', 'confirmada'].includes(statusNormalized);
     return `
-      <tr>
+      <tr data-id=\"${reserva.id}\">
         <td>${formatDate(reserva.date)}</td>
         <td>${escapeHtml(roomName)}</td>
         <td>
@@ -395,6 +495,15 @@ function renderReservas(reservas) {
         <td>${escapeHtml(timeRange)}</td>
         <td>${visitorNames}</td>
         <td>${escapeHtml(reserva.title || '--')}</td>
+        <td>
+          <div class=\"table-actions\">
+            ${showCancel ? `<button type=\"button\" data-action=\"cancel\" data-id=\"${reserva.id}\">Cancelar</button>` : ''}
+            ${showPayment ? `<button type=\"button\" data-action=\"payment\" data-id=\"${reserva.id}\">Pagamento</button>` : ''}
+            ${showInvite ? `<button type=\"button\" data-action=\"invite\" data-id=\"${reserva.id}\">Enviar convites</button>` : ''}
+            <button type=\"button\" data-action=\"edit\" data-id=\"${reserva.id}\">Editar</button>
+            <button type=\"button\" data-action=\"delete\" data-id=\"${reserva.id}\">Excluir</button>
+          </div>
+        </td>
       </tr>
     `;
   }).join('');
@@ -409,11 +518,357 @@ function renderReservas(reservas) {
           <th>Horário</th>
           <th>Visitantes</th>
           <th>Título</th>
+          <th>Ações</th>
         </tr>
       </thead>
       <tbody>${rows}</tbody>
     </table>
   `;
+
+  reservationsContainer.querySelectorAll('button[data-action]').forEach(btn => {
+    btn.addEventListener('click', () => tratarAcaoReserva(btn.dataset.id, btn.dataset.action));
+  });
+}
+
+async function tratarAcaoReserva(id, action) {
+  if (!id) return;
+  const reserva = currentReservations.find(r => String(r.id) === String(id));
+  if (action === 'edit') {
+    if (reserva) preencherFormReserva(reserva);
+    return;
+  }
+  if (action === 'delete') {
+    if (!confirm('Deseja excluir esta reserva?')) return;
+    await excluirRegistro('reservations', id);
+    atualizarPainel();
+    return;
+  }
+  if (action === 'invite') {
+    if (!reserva || !(reserva.visitors || []).length) {
+      alert('Nenhum visitante vinculado a esta reserva.');
+      return;
+    }
+    try {
+      await enviarConvites(Number(id), reserva.visitors);
+      alert('Convites enviados.');
+    } catch (err) {
+      alert('Não foi possível enviar os convites.');
+    }
+    return;
+  }
+  if (action === 'payment') {
+    try {
+      await enviarLinkPagamento(id);
+      alert('Link de pagamento enviado por e-mail.');
+    } catch (err) {
+      alert(err.message || 'Não foi possível enviar o link de pagamento.');
+    }
+    return;
+  }
+  if (action === 'cancel') {
+    if (!reserva) return;
+    if (!podeCancelar(reserva)) {
+      alert('Cancelamento permitido apenas com 24 horas de antecedência.');
+      return;
+    }
+    if (!confirm('Deseja cancelar esta reserva?')) return;
+  }
+  try {
+    const res = await fetch(`${API_BASE}/update_reservation_status.php`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ id, action })
+    });
+    const json = await res.json();
+    if (!json.success) throw new Error(json.error || 'Erro ao atualizar status.');
+    atualizarPainel();
+  } catch (err) {
+    console.error(err);
+    alert(err.message || 'Não foi possível atualizar o status.');
+  }
+}
+
+function preencherFormReserva(reserva) {
+  if (!bookingForm) return;
+  setActivePanel('book');
+  bookingFormTitle.textContent = 'Editar reserva';
+  reservationIdInput.value = reserva.id || '';
+  bookingForm.room_id.value = reserva.room_id || '';
+  bookingForm.date.value = reserva.date || '';
+  const startInput = bookingForm.querySelector('input[name=\"time_start\"]');
+  const endInput = bookingForm.querySelector('input[name=\"time_end\"]');
+  if (startInput) startInput.value = reserva.time_start || DEFAULT_START_TIME;
+  if (endInput) endInput.value = reserva.time_end || DEFAULT_END_TIME;
+  bookingForm.title.value = reserva.title || '';
+  bookingForm.description.value = reserva.description || '';
+  bookingVisitorIds = (reserva.visitors || []).map(String);
+  renderVisitorChecklist();
+  cancelReservationEditBtn.hidden = false;
+  bookingForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  if (bookingMessage) bookingMessage.textContent = '';
+}
+
+async function onBookingSubmit(event) {
+  event.preventDefault();
+  if (!activeClient || !bookingForm) return;
+  bookingMessage.textContent = '';
+
+  const formData = new FormData(bookingForm);
+  const record = Object.fromEntries(formData.entries());
+  record.client_id = activeClient.id;
+  if (!record.id) delete record.id;
+  if (!record.date) {
+    bookingMessage.textContent = 'Informe a data da reserva.';
+    return;
+  }
+  if (!record.room_id) {
+    bookingMessage.textContent = 'Selecione a sala.';
+    return;
+  }
+  record.time_start = record.time_start || DEFAULT_START_TIME;
+  record.time_end = record.time_end || DEFAULT_END_TIME;
+  record.visitor_ids = bookingVisitorIds;
+
+  try {
+    const res = await fetch(`${API_BASE}/apisave.php`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ table: 'reservations', record })
+    });
+    const json = await res.json();
+    if (!json.success) throw new Error(json.error || 'Erro ao salvar reserva.');
+
+    const reservationId = record.id || json.insertId;
+    let inviteWarn = false;
+    if (formData.get('send_invites') && reservationId && bookingVisitorIds.length) {
+      try {
+        await enviarConvites(reservationId, bookingVisitorIds);
+      } catch (err) {
+        inviteWarn = true;
+        console.warn('Falha ao enviar convites:', err);
+      }
+    }
+    const baseMessage = record.id ? 'Reserva atualizada com sucesso.' : 'Reserva criada com sucesso.';
+    resetBookingForm(true);
+    bookingMessage.textContent = inviteWarn ? `${baseMessage} Porém, não foi possível enviar todos os convites.` : baseMessage;
+    atualizarPainel();
+  } catch (err) {
+    console.error(err);
+    bookingMessage.textContent = err.message || 'Não foi possível salvar a reserva.';
+  }
+}
+
+function resetBookingForm(preserveMessage = false) {
+  bookingForm?.reset();
+  if (reservationIdInput) reservationIdInput.value = '';
+  bookingFormTitle.textContent = 'Reservar uma sala';
+  cancelReservationEditBtn.hidden = true;
+  const startInput = bookingForm?.querySelector('input[name=\"time_start\"]');
+  const endInput = bookingForm?.querySelector('input[name=\"time_end\"]');
+  if (startInput) startInput.value = DEFAULT_START_TIME;
+  if (endInput) endInput.value = DEFAULT_END_TIME;
+  bookingVisitorIds = [];
+  renderVisitorChecklist();
+  if (bookingMessage && !preserveMessage) bookingMessage.textContent = '';
+}
+
+async function carregarVisitantes(clientId) {
+  if (!visitorsContainer) return;
+  try {
+    visitorsContainer.innerHTML = '<div class=\"rooms-message\">Carregando visitantes...</div>';
+    const res = await fetch(`${API_BASE}/apiget.php?table=visitors`, { credentials: 'include' });
+    const json = await res.json();
+    if (!json.success) throw new Error(json.error || 'Erro ao carregar visitantes');
+    currentVisitors = (json.data || []).filter(v => String(v.client_id) === String(clientId));
+    renderVisitantes(currentVisitors);
+    renderVisitorChecklist();
+  } catch (err) {
+    console.error(err);
+    visitorsContainer.innerHTML = '<div class=\"rooms-message\">Não foi possível carregar os visitantes.</div>';
+  }
+}
+
+function renderVisitantes(visitantes) {
+  if (!visitorsContainer) return;
+  if (!visitantes.length) {
+    visitorsContainer.innerHTML = '<div class=\"rooms-message\">Nenhum visitante cadastrado.</div>';
+    return;
+  }
+  const rows = visitantes.map(v => `
+    <tr data-id=\"${v.id}\">
+      <td>${escapeHtml(v.name || '--')}</td>
+      <td>${escapeHtml(formatCPF(v.cpf) || '--')}</td>
+      <td>${escapeHtml(v.email || '--')}</td>
+      <td>${escapeHtml(formatPhone(v.phone) || '--')}</td>
+      <td>${escapeHtml(formatPhone(v.whatsapp) || '--')}</td>
+      <td><span class=\"status-badge ${statusClass(v.status)}\">${statusLabel(v.status)}</span></td>
+      <td>
+        <div class=\"table-actions\">
+          <button type=\"button\" data-action=\"edit\" data-id=\"${v.id}\">Editar</button>
+          ${v.email ? `<button type=\"button\" data-action=\"invite\" data-id=\"${v.id}\">Enviar convite</button>` : ''}
+          <button type=\"button\" data-action=\"delete\" data-id=\"${v.id}\">Excluir</button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+
+  visitorsContainer.innerHTML = `
+    <table>
+      <thead>
+        <tr>
+          <th>Nome</th>
+          <th>CPF</th>
+          <th>E-mail</th>
+          <th>Telefone</th>
+          <th>WhatsApp</th>
+          <th>Status</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>
+  `;
+
+  visitorsContainer.querySelectorAll('button[data-action]').forEach(btn => {
+    btn.addEventListener('click', () => tratarAcaoVisitante(btn.dataset.id, btn.dataset.action));
+  });
+}
+
+function renderVisitorChecklist(selectedIds = bookingVisitorIds) {
+  if (!bookingVisitorSelector) return;
+  const selectedSet = new Set((selectedIds || []).map(String));
+  const available = new Set(currentVisitors.map(v => String(v.id)));
+  Array.from(selectedSet).forEach(id => {
+    if (!available.has(id)) selectedSet.delete(id);
+  });
+  bookingVisitorIds = Array.from(selectedSet);
+
+  bookingVisitorSelector.innerHTML = '';
+  const title = document.createElement('div');
+  title.className = 'visitor-multiselect-header';
+  title.innerHTML = `Selecione os visitantes <span>${selectedSet.size} selecionado(s)</span>`;
+  bookingVisitorSelector.appendChild(title);
+
+  if (currentVisitors.length) {
+    const help = document.createElement('p');
+    help.className = 'visitor-multiselect-help';
+    help.textContent = 'Marque os visitantes que participarão desta reserva.';
+    bookingVisitorSelector.appendChild(help);
+  }
+
+  const list = document.createElement('div');
+  list.className = 'visitor-multiselect-list';
+
+  if (!currentVisitors.length) {
+    list.innerHTML = '<div class=\"rooms-message\">Nenhum visitante cadastrado. Cadastre visitantes na aba Visitantes.</div>';
+  } else {
+    currentVisitors.forEach(visitor => {
+      const id = String(visitor.id);
+      const label = document.createElement('label');
+      label.className = 'visitor-multiselect-item';
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.value = id;
+      checkbox.checked = selectedSet.has(id);
+      checkbox.addEventListener('change', () => {
+        if (checkbox.checked) selectedSet.add(id);
+        else selectedSet.delete(id);
+        bookingVisitorIds = Array.from(selectedSet);
+        title.innerHTML = `Selecione os visitantes <span>${selectedSet.size} selecionado(s)</span>`;
+      });
+      const info = document.createElement('div');
+      info.className = 'visitor-multiselect-info';
+      info.innerHTML = `<strong>${escapeHtml(visitor.name || '--')}</strong>${visitor.email ? `<span>${escapeHtml(visitor.email)}</span>` : ''}`;
+      label.append(checkbox, info);
+      list.appendChild(label);
+    });
+  }
+
+  bookingVisitorSelector.appendChild(list);
+}
+
+function tratarAcaoVisitante(id, action) {
+  if (!id) return;
+  if (action === 'edit') {
+    const visitante = currentVisitors.find(v => String(v.id) === String(id));
+    if (visitante) preencherFormVisitante(visitante);
+    return;
+  }
+  if (action === 'invite') {
+    enviarConvites(0, [id]).then(() => alert('Convite enviado.')).catch(() => alert('Falha ao enviar convite.'));
+    return;
+  }
+  if (action === 'delete') {
+    if (!confirm('Deseja excluir este visitante?')) return;
+    excluirRegistro('visitors', id).then(() => atualizarPainel());
+  }
+}
+
+function preencherFormVisitante(visitante) {
+  visitorIdInput.value = visitante.id || '';
+  visitorFormTitle.textContent = 'Editar Visitante';
+  visitorForm.name.value = visitante.name || '';
+  visitorForm.cpf.value = formatCPF(visitante.cpf) || '';
+  visitorForm.rg.value = visitante.rg || '';
+  visitorForm.email.value = visitante.email || '';
+  visitorForm.phone.value = formatPhone(visitante.phone) || '';
+  visitorForm.whatsapp.value = formatPhone(visitante.whatsapp) || '';
+  visitorForm.status.value = visitante.status || 'ativo';
+  cancelVisitorEditBtn.hidden = false;
+  visitorForm.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+async function onVisitorSubmit(event) {
+  event.preventDefault();
+  if (!activeClient) return;
+  const formData = new FormData(visitorForm);
+  const record = Object.fromEntries(formData.entries());
+  record.client_id = activeClient.id;
+  if (activeClient.company_id) record.company_id = activeClient.company_id;
+  record.cpf = somenteDigitos(record.cpf);
+  record.phone = somenteDigitos(record.phone);
+  record.whatsapp = somenteDigitos(record.whatsapp);
+  if (!record.id) delete record.id;
+  try {
+    const res = await fetch(`${API_BASE}/apisave.php`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ table: 'visitors', record })
+    });
+    const json = await res.json();
+    if (!json.success) throw new Error(json.error || 'Erro ao salvar visitante.');
+    resetVisitorForm();
+    atualizarPainel();
+  } catch (err) {
+    console.error(err);
+    alert(err.message || 'Não foi possível salvar o visitante.');
+  }
+}
+
+function resetVisitorForm() {
+  visitorForm?.reset();
+  if (visitorIdInput) visitorIdInput.value = '';
+  visitorFormTitle.textContent = 'Novo Visitante';
+  cancelVisitorEditBtn.hidden = true;
+}
+
+async function excluirRegistro(table, id) {
+  try {
+    const res = await fetch(`${API_BASE}/apidelete.php`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ table, id })
+    });
+    const json = await res.json();
+    if (!json.success) throw new Error(json.error || 'Erro ao excluir registro');
+  } catch (err) {
+    console.error(err);
+    alert('Não foi possível concluir a operação.');
+  }
 }
 
 function renderProfile() {
@@ -433,42 +888,20 @@ function renderProfile() {
   profileInputs.phone.value = formatPhone(activeClient.phone) || '';
   profileInputs.whatsapp.value = formatPhone(activeClient.whatsapp) || '';
   profileInputs.company.value = obterNomeEmpresa(activeClient.company_id) || (activeClient.company_id ? 'Empresa não localizada' : 'Cliente pessoa física');
-  if (profileMessageEl) profileMessageEl.textContent = '';
   setProfileEditing(false);
-}
-
-function setProfileEditing(isEditing) {
-  if (!profileForm) return;
-  profileForm.classList.toggle('editing', Boolean(isEditing));
-  Object.entries(profileInputs).forEach(([, input]) => {
-    if (!input) return;
-    const immutable = input.dataset.immutable === 'true';
-    const readOnly = immutable || !isEditing;
-    input.readOnly = readOnly;
-    input.classList.toggle('input-readonly', readOnly);
-  });
-  if (editProfileBtn) editProfileBtn.hidden = Boolean(isEditing);
-  if (saveProfileBtn) saveProfileBtn.hidden = !isEditing;
-  if (cancelProfileEditBtn) cancelProfileEditBtn.hidden = !isEditing;
-  if (isEditing && profileInputs.name) {
-    profileInputs.name.focus();
-  }
 }
 
 async function onProfileSubmit(event) {
   event.preventDefault();
-  if (!activeClient || !profileInputs.name || !profileInputs.login) return;
-
-  const name = profileInputs.name.value.trim();
-  const login = profileInputs.login.value.trim();
+  if (!activeClient) return;
+  const name = profileInputs.name?.value.trim();
+  const login = profileInputs.login?.value.trim();
   const phone = somenteDigitos(profileInputs.phone?.value);
   const whatsapp = somenteDigitos(profileInputs.whatsapp?.value);
-
   if (!name || !login) {
     if (profileMessageEl) profileMessageEl.textContent = 'Preencha nome e login.';
     return;
   }
-
   try {
     const res = await fetch(`${API_BASE}/client_update_profile.php`, {
       method: 'POST',
@@ -484,12 +917,8 @@ async function onProfileSubmit(event) {
     const json = await res.json();
     if (!json.success) throw new Error(json.error || 'Erro ao atualizar cadastro.');
     activeClient = { ...activeClient, ...json.client };
-    if (clientNameEl) {
-      clientNameEl.textContent = activeClient.name || activeClient.login || 'Cliente';
-    }
-    if (clientCompanyEl) {
-      clientCompanyEl.textContent = obterNomeEmpresa(activeClient.company_id) || (activeClient.company_id ? 'Empresa não localizada' : 'Cliente pessoa física');
-    }
+    if (clientNameEl) clientNameEl.textContent = activeClient.name || activeClient.login || 'Cliente';
+    if (clientCompanyEl) clientCompanyEl.textContent = obterNomeEmpresa(activeClient.company_id) || (activeClient.company_id ? 'Empresa não localizada' : 'Cliente pessoa física');
     renderProfile();
     if (profileMessageEl) profileMessageEl.textContent = json.message || 'Dados atualizados.';
   } catch (err) {
@@ -498,8 +927,32 @@ async function onProfileSubmit(event) {
   }
 }
 
+function setProfileEditing(isEditing) {
+  if (!profileForm) return;
+  profileForm.classList.toggle('editing', Boolean(isEditing));
+  Object.entries(profileInputs).forEach(([, input]) => {
+    if (!input) return;
+    const immutable = input.dataset.immutable === 'true';
+    const readOnly = immutable || !isEditing;
+    input.readOnly = readOnly;
+    input.classList.toggle('input-readonly', readOnly);
+  });
+  if (editProfileBtn) editProfileBtn.hidden = Boolean(isEditing);
+  if (saveProfileBtn) saveProfileBtn.hidden = !isEditing;
+  if (cancelProfileEditBtn) cancelProfileEditBtn.hidden = !isEditing;
+  if (isEditing) profileInputs.name?.focus();
+}
+
 function buscarSala(id) {
   return roomsCache.find(room => String(room.id) === String(id));
+}
+
+function podeCancelar(reserva) {
+  if (!reserva || !reserva.date) return false;
+  const hoje = new Date();
+  hoje.setHours(0, 0, 0, 0);
+  const dataReserva = new Date(reserva.date);
+  return dataReserva.getTime() - hoje.getTime() >= 24 * 60 * 60 * 1000;
 }
 
 function obterNomeEmpresa(companyId) {
@@ -593,11 +1046,8 @@ function formatTimeRange(start, end) {
 
 function formatTime(value) {
   if (!value) return '';
-  const parts = value.split(':');
-  if (!parts.length) return value;
-  const hour = parts[0]?.padStart(2, '0') ?? '';
-  const minute = parts[1]?.padStart(2, '0') ?? '00';
-  return `${hour}:${minute}`;
+  const [h = '00', m = '00'] = value.split(':');
+  return `${h.padStart(2, '0')}:${m.padStart(2, '0')}`;
 }
 
 function somenteDigitos(value) {
@@ -628,4 +1078,40 @@ function escapeHtml(value) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
+}
+
+async function enviarConvites(reservationId, visitorIds) {
+  const payload = visitorIds
+    .map(id => Number(id))
+    .filter(id => !Number.isNaN(id) && id > 0);
+  if (!payload.length) return;
+  try {
+    await Promise.all(payload.map(visitorId =>
+      fetch(`${API_BASE}/send_visitor_invite.php`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ reservation_id: reservationId, visitor_id: visitorId })
+      }).then(res => res.json()).then(json => {
+        if (!json.success) throw new Error(json.error || 'Falha ao enviar convite');
+        return json;
+      })
+    ));
+  } catch (err) {
+    console.warn('Convite para visitantes falhou:', err.message || err);
+    throw err;
+  }
+}
+
+async function enviarLinkPagamento(reservationId) {
+  if (!reservationId) throw new Error('Reserva inválida.');
+  const res = await fetch(`${API_BASE}/send_payment_link.php`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ reservation_id: reservationId })
+  });
+  const json = await res.json();
+  if (!json.success) throw new Error(json.error || 'Falha ao enviar link de pagamento.');
+  return json;
 }

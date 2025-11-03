@@ -105,81 +105,211 @@
       <div id="authMessage" class="rooms-message auth-message"></div>
     </section>
 
-    <section id="clientPanels" class="client-summary" hidden>
-      <div class="client-summary-card">
-        <div class="client-summary-header">
+    <section id="clientPanels" class="portal-shell" hidden>
+      <aside class="portal-nav">
+        <div class="portal-nav-brand">
+          <img src="img/logo.jpg" alt="Ze.EFE" />
+          <h2>Gestão do Cliente</h2>
+        </div>
+        <nav class="portal-nav-links">
+          <button type="button" data-panel="book" class="active">Reservar</button>
+          <button type="button" data-panel="reservations">Minhas Reservas</button>
+          <button type="button" data-panel="visitors">Visitantes</button>
+          <button type="button" data-panel="profile">Meu Perfil</button>
+        </nav>
+        <button type="button" id="logoutBtn" class="nav-logout">Sair</button>
+      </aside>
+
+      <div class="portal-main">
+        <header class="portal-header">
           <div>
             <h2>Olá, <span id="clientName"></span></h2>
-            <p id="clientCompany" class="portal-subtitle"></p>
+            <div id="clientCompany" class="portal-subtitle"></div>
           </div>
-          <button type="button" id="logoutBtn" class="btn btn-secondary">Sair</button>
-        </div>
-        <p class="summary-message">
-          As reservas, visitantes e demais cadastros são administrados pelo painel ZeefeAdmin. Utilize os atalhos abaixo para solicitar uma nova pré-reserva ou abrir o painel administrativo.
-        </p>
-        <div class="summary-actions">
-          <a class="btn btn-primary" href="pre-reserva.html">Solicitar pré-reserva</a>
-          <a class="btn btn-secondary" href="zeefeadmin.html">Abrir ZeefeAdmin</a>
-        </div>
-      </div>
-
-      <div class="client-summary-grid">
-        <article class="form-card profile-card">
-          <h3>Dados do Cliente</h3>
-          <form id="profileForm" class="profile-form">
-            <div class="form-grid-mini">
-              <div>
-                <label for="profileNameInput">Nome completo</label>
-                <input type="text" id="profileNameInput" name="name" required readonly />
-              </div>
-              <div>
-                <label for="profileLoginInput">Login</label>
-                <input type="text" id="profileLoginInput" name="login" required readonly />
-              </div>
-            </div>
-            <div class="form-grid-mini">
-              <div>
-                <label for="profileEmailInput">E-mail</label>
-                <input type="email" id="profileEmailInput" name="email" readonly data-immutable="true" />
-              </div>
-              <div>
-                <label for="profileCpfInput">CPF</label>
-                <input type="text" id="profileCpfInput" name="cpf" readonly data-immutable="true" />
-              </div>
-            </div>
-            <div class="form-grid-mini">
-              <div>
-                <label for="profilePhoneInput">Telefone</label>
-                <input type="text" id="profilePhoneInput" name="phone" maxlength="15" readonly />
-              </div>
-              <div>
-                <label for="profileWhatsappInput">WhatsApp</label>
-                <input type="text" id="profileWhatsappInput" name="whatsapp" maxlength="15" readonly />
-              </div>
-            </div>
-            <div class="form-row">
-              <label for="profileCompanyInput">Empresa</label>
-              <input type="text" id="profileCompanyInput" class="input-readonly" readonly data-immutable="true" />
-            </div>
-            <p class="form-help">E-mail e CPF são definidos no cadastro inicial e não podem ser alterados pelo portal.</p>
-            <div class="form-row profile-actions">
-              <button type="button" class="btn btn-secondary" id="editProfileBtn">Editar dados</button>
-              <button type="submit" class="btn btn-primary" id="saveProfileBtn" hidden>Salvar alterações</button>
-              <button type="button" class="btn btn-secondary" id="cancelProfileEditBtn" hidden>Cancelar</button>
-            </div>
-            <div class="form-row">
-              <div id="profileMessage" class="rooms-message"></div>
-            </div>
-          </form>
-        </article>
-
-        <article class="form-card reservations-card">
-          <div class="list-header">
-            <h3>Minhas reservas</h3>
+          <div class="portal-actions">
+            <a class="btn btn-secondary" href="pre-reserva.html">Pré-reserva</a>
             <button class="btn btn-secondary" type="button" id="refreshBtn">Atualizar</button>
           </div>
-          <div id="reservationsContainer" class="responsive-table"></div>
-        </article>
+        </header>
+
+        <div class="portal-content">
+          <div id="panel-book" class="portal-section">
+            <article class="form-card booking-card">
+              <h3 id="bookingFormTitle">Reservar uma sala</h3>
+              <form id="reservationBookForm">
+                <input type="hidden" name="id" />
+                <div class="form-grid-mini">
+                  <div>
+                    <label>Sala</label>
+                    <select name="room_id" required></select>
+                  </div>
+                  <div>
+                    <label>Data</label>
+                    <input type="date" name="date" required />
+                  </div>
+                  <div>
+                    <label>Hora início</label>
+                    <input type="time" name="time_start" value="08:00" readonly />
+                  </div>
+                  <div>
+                    <label>Hora fim</label>
+                    <input type="time" name="time_end" value="20:00" readonly />
+                  </div>
+                </div>
+                <p class="form-help fixed-schedule-note">Reservas são diárias entre 08:00 e 20:00.</p>
+                <div class="form-row">
+                  <label>Título</label>
+                  <input type="text" name="title" maxlength="120" required />
+                </div>
+                <div class="form-row">
+                  <label>Descrição / Observações</label>
+                  <textarea name="description" rows="3"></textarea>
+                </div>
+                <div class="form-row">
+                  <label class="form-label">Visitantes</label>
+                  <div class="visitor-multiselect" id="bookingVisitorSelector"></div>
+                </div>
+                <div class="form-row visitor-actions">
+                  <label>
+                    <input type="checkbox" name="send_invites" checked>
+                    Enviar convite por e-mail aos visitantes selecionados
+                  </label>
+                  <button type="button" class="btn btn-secondary btn-sm" id="openVisitorsPanel">Gerenciar visitantes</button>
+                </div>
+                <div class="form-row">
+                  <button class="btn btn-primary" type="submit">Salvar reserva</button>
+                  <button class="btn btn-secondary" type="button" id="cancelReservationEdit" hidden>Cancelar edição</button>
+                </div>
+                <div class="form-row">
+                  <div id="bookingMessage" class="rooms-message"></div>
+                </div>
+              </form>
+            </article>
+          </div>
+
+          <div id="panel-reservations" class="portal-section" hidden>
+            <section class="client-lists">
+              <article>
+                <div class="list-header">
+                  <h3>Minhas Reservas</h3>
+                  <button class="btn btn-secondary" type="button" id="newReservationBtn">Nova reserva</button>
+                </div>
+                <div id="reservationsContainer" class="responsive-table"></div>
+              </article>
+            </section>
+          </div>
+
+          <div id="panel-visitors" class="portal-section" hidden>
+            <div class="client-actions">
+              <article class="form-card">
+                <h3 id="visitorFormTitle">Novo Visitante</h3>
+                <form id="visitorForm">
+                  <input type="hidden" name="id" />
+                  <div class="form-row">
+                    <label>Nome completo</label>
+                    <input type="text" name="name" required />
+                  </div>
+                  <div class="form-grid-mini">
+                    <div>
+                      <label>CPF</label>
+                      <input type="text" name="cpf" maxlength="14" />
+                    </div>
+                    <div>
+                      <label>RG</label>
+                      <input type="text" name="rg" />
+                    </div>
+                  </div>
+                  <div class="form-grid-mini">
+                    <div>
+                      <label>E-mail</label>
+                      <input type="email" name="email" />
+                    </div>
+                    <div>
+                      <label>Telefone</label>
+                      <input type="text" name="phone" maxlength="15" />
+                    </div>
+                    <div>
+                      <label>WhatsApp</label>
+                      <input type="text" name="whatsapp" maxlength="15" />
+                    </div>
+                  </div>
+                  <div class="form-row">
+                    <label>Status</label>
+                    <select name="status">
+                      <option value="ativo">Ativo</option>
+                      <option value="inativo">Inativo</option>
+                    </select>
+                  </div>
+                  <div class="form-row">
+                    <button class="btn btn-primary" type="submit">Salvar</button>
+                    <button class="btn btn-secondary" type="button" id="cancelVisitorEdit" hidden>Cancelar edição</button>
+                  </div>
+                </form>
+              </article>
+            </div>
+
+            <section class="client-lists">
+              <article>
+                <div class="list-header">
+                  <h3>Visitantes</h3>
+                  <button class="btn btn-secondary" type="button" id="newVisitorBtn">Novo</button>
+                </div>
+                <div id="visitorsContainer" class="responsive-table"></div>
+              </article>
+            </section>
+          </div>
+
+          <div id="panel-profile" class="portal-section" hidden>
+            <article class="form-card profile-card">
+              <h3>Dados do Cliente</h3>
+              <form id="profileForm" class="profile-form">
+                <div class="form-grid-mini">
+                  <div>
+                    <label for="profileNameInput">Nome completo</label>
+                    <input type="text" id="profileNameInput" name="name" required readonly />
+                  </div>
+                  <div>
+                    <label for="profileLoginInput">Login</label>
+                    <input type="text" id="profileLoginInput" name="login" required readonly />
+                  </div>
+                </div>
+                <div class="form-grid-mini">
+                  <div>
+                    <label for="profileEmailInput">E-mail</label>
+                    <input type="email" id="profileEmailInput" name="email" readonly data-immutable="true" />
+                  </div>
+                  <div>
+                    <label for="profileCpfInput">CPF</label>
+                    <input type="text" id="profileCpfInput" name="cpf" readonly data-immutable="true" />
+                  </div>
+                </div>
+                <div class="form-grid-mini">
+                  <div>
+                    <label for="profilePhoneInput">Telefone</label>
+                    <input type="text" id="profilePhoneInput" name="phone" maxlength="15" readonly />
+                  </div>
+                  <div>
+                    <label for="profileWhatsappInput">WhatsApp</label>
+                    <input type="text" id="profileWhatsappInput" name="whatsapp" maxlength="15" readonly />
+                  </div>
+                </div>
+                <div class="form-row">
+                  <label for="profileCompanyInput">Empresa</label>
+                  <input type="text" id="profileCompanyInput" class="input-readonly" readonly data-immutable="true" />
+                </div>
+                <p class="form-help">E-mail e CPF são definidos no cadastro inicial e não podem ser alterados pelo portal.</p>
+                <div class="form-row profile-actions">
+                  <button type="button" class="btn btn-secondary" id="editProfileBtn">Editar dados</button>
+                  <button type="submit" class="btn btn-primary" id="saveProfileBtn" hidden>Salvar alterações</button>
+                  <button type="button" class="btn btn-secondary" id="cancelProfileEditBtn" hidden>Cancelar</button>
+                </div>
+                <div class="form-row">
+                  <div id="profileMessage" class="rooms-message"></div>
+                </div>
+              </form>
+            </article>
+          </div>
+        </div>
       </div>
     </section>
   </main>
