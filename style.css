@@ -1164,6 +1164,10 @@ body.client-portal-page .client-portal .client-summary {
   max-width: 1160px;
 }
 
+body.client-portal-page.client-logged-out .portal-shell {
+  display: none !important;
+}
+
 .portal-shell {
   width: 100%;
   max-width: 1160px;
@@ -1676,6 +1680,7 @@ body.client-portal-page.client-logged-out .auth-container {
   justify-content: center;
   padding: 40px 16px;
   z-index: 1200;
+  min-height: 100vh;
 }
 
 .auth-container {
