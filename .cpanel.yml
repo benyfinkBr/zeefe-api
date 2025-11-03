@@ -1,7 +1,5 @@
+---
 deployment:
   tasks:
-    - export DEPLOYPATH=/home1/benyfi15/public_html
-    - echo "🚀 Starting auto-deploy..." >> /home1/benyfi15/deploy.log
-    - /bin/rsync -av --delete --exclude '.git' ./ $DEPLOYPATH >> /home1/benyfi15/deploy.log 2>&1
-    - /usr/local/cpanel/bin/cache_clean >> /home1/benyfi15/deploy.log 2>&1
-    - echo "✅ Deploy completed at $(date)" >> /home1/benyfi15/deploy.log
+    - export DEPLOYPATH=/home/example/public_html/
+    - /bin/cp -R images $DEPLOYPATH
