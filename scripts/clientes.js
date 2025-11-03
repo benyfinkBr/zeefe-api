@@ -10,6 +10,7 @@ let activeClient = null;
 let bookingVisitorIds = [];
 let allReservationsCache = [];
 let bookingStepIndex = 0;
+let bookingCurrentMonth = new Date();
 
 const bodyEl = document.body;
 const prefersReducedMotionQuery = window.matchMedia
@@ -56,6 +57,13 @@ const bookingStepSections = Array.from(document.querySelectorAll('.booking-step'
 const bookingPrevBtn = document.getElementById('bookingPrevBtn');
 const bookingNextBtn = document.getElementById('bookingNextBtn');
 const bookingSubmitBtn = document.getElementById('bookingSubmitBtn');
+const bookingCalendarGrid = document.getElementById('bookingCalendarGrid');
+const bookingCalendarLabel = document.getElementById('bookingCalendarLabel');
+const bookingPrevMonthBtn = document.getElementById('bookingPrevMonth');
+const bookingNextMonthBtn = document.getElementById('bookingNextMonth');
+const bookingRoomSearchInput = document.getElementById('bookingRoomSearch');
+const bookingCityFilterInput = document.getElementById('bookingCityFilter');
+const bookingStateFilterInput = document.getElementById('bookingStateFilter');
 
 const reservationsContainer = document.getElementById('reservationsContainer');
 
@@ -129,6 +137,11 @@ async function initialize() {
       changeBookingStep(1);
     }
   });
+  bookingPrevMonthBtn?.addEventListener('click', () => changeCalendarMonth(-1));
+  bookingNextMonthBtn?.addEventListener('click', () => changeCalendarMonth(1));
+  bookingRoomSearchInput?.addEventListener('input', () => renderRoomOptions(bookingDateInput?.value || ''));
+  bookingCityFilterInput?.addEventListener('input', () => renderRoomOptions(bookingDateInput?.value || ''));
+  bookingStateFilterInput?.addEventListener('input', () => renderRoomOptions(bookingDateInput?.value || ''));
 
   cancelReservationEditBtn?.addEventListener('click', () => resetBookingForm());
   newReservationBtn?.addEventListener('click', () => {
@@ -379,13 +392,25 @@ function renderRoomOptions(date) {
     if (bookingRoomFeedback) bookingRoomFeedback.textContent = 'Carregando salas disponíveis...';
     return;
   }
-  const availableRooms = getAvailableRoomsForDate(date, reservationIdInput?.value).sort((a, b) => {
+  const searchTerm = (bookingRoomSearchInput?.value || '').trim().toLowerCase();
+  const cityFilter = (bookingCityFilterInput?.value || '').trim().toLowerCase();
+  const stateFilter = (bookingStateFilterInput?.value || '').trim().toLowerCase();
+
+  const availableRooms = getAvailableRoomsForDate(date, reservationIdInput?.value).filter(room => {
+    const name = (room.name || `Sala #${room.id}`).toString().toLowerCase();
+    const city = (room.city || '').toString().toLowerCase();
+    const state = (room.state || room.uf || '').toString().toLowerCase();
+    if (searchTerm && !name.includes(searchTerm)) return false;
+    if (cityFilter && !city.includes(cityFilter)) return false;
+    if (stateFilter && state !== stateFilter) return false;
+    return true;
+  }).sort((a, b) => {
     const nameA = (a.name || `Sala #${a.id}`).toString().toLowerCase();
     const nameB = (b.name || `Sala #${b.id}`).toString().toLowerCase();
     return nameA.localeCompare(nameB, 'pt-BR');
   });
   if (!availableRooms.length) {
-    if (bookingRoomFeedback) bookingRoomFeedback.textContent = 'Nenhuma sala disponível para a data escolhida.';
+    if (bookingRoomFeedback) bookingRoomFeedback.textContent = 'Nenhuma sala encontrada com os filtros atuais.';
     return;
   }
   const selectedId = bookingRoomHiddenInput?.value ? String(bookingRoomHiddenInput.value) : '';
@@ -873,6 +898,8 @@ function resetBookingForm(preserveMessage = false) {
   renderVisitorChecklist();
   renderRoomOptions('');
   if (bookingMessage && !preserveMessage) bookingMessage.textContent = '';
+  bookingCurrentMonth = new Date();
+  if (bookingCalendarGrid) renderBookingCalendar(bookingCurrentMonth);
 }
 
 async function carregarVisitantes(clientId) {

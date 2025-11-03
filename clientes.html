@@ -162,15 +162,36 @@
                 </div>
 
                 <section class="booking-step" data-step-index="0">
-                  <div class="form-row">
-                    <label for="bookingDateInput">Escolha a data</label>
-                    <input type="date" id="bookingDateInput" name="date" required />
+                  <div class="booking-calendar">
+                    <header class="calendar-header">
+                      <button type="button" id="bookingPrevMonth" aria-label="Mês anterior">&#10094;</button>
+                      <div id="bookingCalendarLabel"></div>
+                      <button type="button" id="bookingNextMonth" aria-label="Próximo mês">&#10095;</button>
+                    </header>
+                    <div class="calendar-grid" id="bookingCalendarGrid" role="grid" aria-labelledby="bookingCalendarLabel"></div>
+                    <input type="hidden" id="bookingDateInput" name="date" required />
                   </div>
-                  <p class="form-help fixed-schedule-note">Reservas são diárias entre 08:00 e 20:00.</p>
+                  <p class="form-help fixed-schedule-note">Selecione um dia disponível. Reservas são diárias entre 08:00 e 20:00.</p>
                 </section>
 
                 <section class="booking-step" data-step-index="1" hidden>
                   <h4>Salas disponíveis</h4>
+                  <div class="room-filters">
+                    <div class="form-grid-mini">
+                      <div>
+                        <label for="bookingRoomSearch">Filtrar por nome</label>
+                        <input type="text" id="bookingRoomSearch" placeholder="Digite parte do nome da sala" />
+                      </div>
+                      <div>
+                        <label for="bookingCityFilter">Cidade</label>
+                        <input type="text" id="bookingCityFilter" placeholder="Cidade" />
+                      </div>
+                      <div>
+                        <label for="bookingStateFilter">Estado</label>
+                        <input type="text" id="bookingStateFilter" placeholder="Estado" maxlength="2" />
+                      </div>
+                    </div>
+                  </div>
                   <p class="form-help">Selecione uma sala disponível para a data escolhida.</p>
                   <div id="bookingRoomOptions" class="booking-room-options"></div>
                   <div id="bookingRoomFeedback" class="rooms-message"></div>

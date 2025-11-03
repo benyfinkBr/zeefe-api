@@ -1370,10 +1370,105 @@ body.client-portal-page.client-logged-out .portal-shell {
   gap: 16px;
 }
 
+.booking-step[hidden] {
+  display: none !important;
+}
+
 .booking-room-options {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 16px;
+}
+
+.booking-calendar {
+  background: #fff;
+  border-radius: 18px;
+  border: 1px solid rgba(29, 65, 58, 0.12);
+  box-shadow: var(--shadow-soft);
+  padding: 24px;
+}
+
+.calendar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  font-weight: 600;
+  color: var(--brand-green);
+}
+
+.calendar-header button {
+  background: none;
+  border: none;
+  font-size: 1.4rem;
+  color: var(--brand-green);
+  cursor: pointer;
+  padding: 4px 8px;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.calendar-day {
+  height: 48px;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  color: var(--brand-green);
+  background: rgba(29, 65, 58, 0.06);
+  cursor: pointer;
+  transition: background 0.2s ease, border 0.2s ease, transform 0.2s ease;
+}
+
+.calendar-day.disabled {
+  background: transparent;
+  color: rgba(29, 65, 58, 0.35);
+  cursor: not-allowed;
+}
+
+.calendar-day.available:hover,
+.calendar-day.partial:hover,
+.calendar-day.available:focus-visible,
+.calendar-day.partial:focus-visible {
+  background: rgba(29, 65, 58, 0.14);
+  transform: translateY(-2px);
+}
+
+.calendar-day.selected {
+  background: var(--brand-green);
+  color: var(--brand-cream);
+  border-color: var(--brand-green);
+  box-shadow: 0 12px 20px rgba(29, 65, 58, 0.18);
+}
+
+.calendar-day.partial {
+  background: rgba(217, 122, 28, 0.18);
+  color: #d97a1c;
+}
+
+.calendar-day.full {
+  background: rgba(181, 74, 58, 0.16);
+  color: #b54a3a;
+  cursor: not-allowed;
+}
+
+.calendar-day.disabled,
+.calendar-day.full {
+  border-color: transparent;
+}
+
+.room-filters {
+  background: #f8f3eb;
+  border-radius: 18px;
+  border: 1px solid rgba(29, 65, 58, 0.08);
+  padding: 16px 20px;
+  margin-bottom: 12px;
 }
 
 .room-option {
