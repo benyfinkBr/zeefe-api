@@ -1155,7 +1155,10 @@ body.client-portal-page .client-portal > * {
   grid-column: 1;
 }
 
-body.client-portal-page .client-portal .auth-container,
+body.client-portal-page .client-portal .auth-container {
+  width: 100%;
+}
+
 body.client-portal-page .client-portal .client-summary {
   width: 100%;
   max-width: 1160px;
