@@ -11,7 +11,7 @@ if ($login === '' || $password === '') {
 }
 
 try {
-  $stmt = $pdo->prepare('SELECT id, name, email, login, cpf, password, password_hash, company_id, status FROM clients WHERE login = :login OR email = :login OR cpf = :cpf LIMIT 1');
+  $stmt = $pdo->prepare('SELECT id, name, email, login, cpf, password, password_hash, company_id, status, phone, whatsapp FROM clients WHERE login = :login OR email = :login OR cpf = :cpf LIMIT 1');
   $stmt->execute([':login' => $login, ':cpf' => preg_replace('/\D/', '', $login)]);
   $client = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -51,7 +51,9 @@ try {
       'email' => $client['email'],
       'login' => $client['login'],
       'cpf' => $client['cpf'],
-      'company_id' => $client['company_id']
+      'company_id' => $client['company_id'],
+      'phone' => $client['phone'] ?? null,
+      'whatsapp' => $client['whatsapp'] ?? null
     ]
   ]);
 } catch (Throwable $e) {

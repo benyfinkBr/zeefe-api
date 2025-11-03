@@ -16,7 +16,7 @@ if ($reservationId <= 0 || $action === '') {
 $actions = [
   'confirm' => ['from' => ['pendente'], 'to' => 'confirmada', 'message' => 'Reserva confirmada.'],
   'deny'    => ['from' => ['pendente'], 'to' => 'cancelada',  'message' => 'Reserva negada.'],
-  'cancel'  => ['from' => ['confirmada'], 'to' => 'cancelada', 'message' => 'Reserva cancelada.']
+  'cancel'  => ['from' => ['pendente', 'confirmada'], 'to' => 'cancelada', 'message' => 'Reserva cancelada.']
 ];
 
 if (!isset($actions[$action])) {

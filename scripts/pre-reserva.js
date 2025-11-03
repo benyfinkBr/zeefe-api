@@ -1,5 +1,7 @@
 const API_BASE = 'api';
 
+const DEFAULT_START_TIME = '08:00';
+const DEFAULT_END_TIME = '20:00';
 const calendarGrid = document.getElementById('calendarGrid');
 const calendarLabel = document.getElementById('calendarLabel');
 const prevMonthBtn = document.getElementById('prevMonth');
@@ -14,6 +16,7 @@ const formLogin = document.getElementById('formLogin');
 const formRegister = document.getElementById('formRegister');
 const formRecovery = document.getElementById('formRecovery');
 const authForms = document.getElementById('authForms');
+const authPrompt = document.getElementById('authPrompt');
 const authMessage = document.getElementById('authMessage');
 const resumoReserva = document.getElementById('resumoReserva');
 const resumoCliente = document.getElementById('resumoCliente');
@@ -60,6 +63,8 @@ async function init() {
   formRegister.addEventListener('submit', onRegisterSubmit);
   formRecovery.addEventListener('submit', onRecoverySubmit);
   confirmarReservaBtn.addEventListener('click', confirmarReserva);
+
+  prepareAuthStep();
 }
 
 function renderCalendar(referenceDate) {
@@ -122,16 +127,31 @@ function changeMonth(delta) {
 function selectDate(dateStr, cell) {
   selectedDate = dateStr;
   selectedRoomId = null;
-  authenticatedClient = null;
-  resumoReserva.hidden = true;
-  confirmarReservaBtn.hidden = true;
-  authMessage.textContent = '';
+  prepareAuthStep();
   document.querySelectorAll('.calendar-day.selected').forEach(el => el.classList.remove('selected'));
   cell.classList.add('selected');
   selectedDateLabel.textContent = `Data selecionada: ${formatDisplayDate(selectedDate)}`;
   stepRooms.hidden = false;
   stepAuth.hidden = true;
   renderRoomsForDate(dateStr);
+}
+
+function prepareAuthStep(resetForms = true) {
+  authenticatedClient = null;
+  if (resetForms) {
+    if (formLogin) formLogin.reset();
+    if (formRegister) formRegister.reset();
+    if (formRecovery) formRecovery.reset();
+  }
+  authTabs.forEach(btn => btn.classList.remove('active'));
+  if (formLogin) formLogin.hidden = true;
+  if (formRegister) formRegister.hidden = true;
+  if (formRecovery) formRecovery.hidden = true;
+  if (authForms) authForms.dataset.state = 'waiting';
+  if (authPrompt) authPrompt.hidden = false;
+  authMessage.textContent = '';
+  resumoReserva.hidden = true;
+  confirmarReservaBtn.hidden = true;
 }
 
 function renderRoomsForDate(dateStr) {
@@ -171,6 +191,7 @@ function renderRoomsForDate(dateStr) {
       document.querySelectorAll('#roomCards .room-card').forEach(c => c.classList.remove('selected'));
       card.classList.add('selected');
       selectedRoomId = room.id;
+      prepareAuthStep();
       stepAuth.hidden = false;
       resumoReserva.hidden = true;
       confirmarReservaBtn.hidden = true;
@@ -183,10 +204,16 @@ function renderRoomsForDate(dateStr) {
 }
 
 function switchAuthTab(tabName) {
+  if (!tabName) {
+    prepareAuthStep(false);
+    return;
+  }
   authTabs.forEach(btn => btn.classList.toggle('active', btn.dataset.tab === tabName));
   formLogin.hidden = tabName !== 'login';
   formRegister.hidden = tabName !== 'register';
   formRecovery.hidden = tabName !== 'recovery';
+  if (authForms) authForms.dataset.state = 'active';
+  if (authPrompt) authPrompt.hidden = true;
   authMessage.textContent = '';
 }
 
@@ -302,6 +329,8 @@ async function confirmarReserva() {
       client_id: authenticatedClient.id,
       room_id: room.id,
       date: selectedDate,
+      time_start: DEFAULT_START_TIME,
+      time_end: DEFAULT_END_TIME,
       status: 'pendente',
       title: `Reserva diária ${room.name}`
     };

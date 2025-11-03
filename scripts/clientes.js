@@ -55,11 +55,20 @@ const portalSections = {
   visitors: document.getElementById('panel-visitors'),
   profile: document.getElementById('panel-profile')
 };
-const profileNameEl = document.getElementById('profileName');
-const profileEmailEl = document.getElementById('profileEmail');
-const profileLoginEl = document.getElementById('profileLogin');
-const profileCpfEl = document.getElementById('profileCpf');
-const profileCompanyEl = document.getElementById('profileCompany');
+const profileForm = document.getElementById('profileForm');
+const editProfileBtn = document.getElementById('editProfileBtn');
+const saveProfileBtn = document.getElementById('saveProfileBtn');
+const cancelProfileEditBtn = document.getElementById('cancelProfileEditBtn');
+const profileMessageEl = document.getElementById('profileMessage');
+const profileInputs = {
+  name: document.getElementById('profileNameInput'),
+  login: document.getElementById('profileLoginInput'),
+  email: document.getElementById('profileEmailInput'),
+  cpf: document.getElementById('profileCpfInput'),
+  phone: document.getElementById('profilePhoneInput'),
+  whatsapp: document.getElementById('profileWhatsappInput'),
+  company: document.getElementById('profileCompanyInput')
+};
 
 function isReducedMotionPreferred() {
   return Boolean(prefersReducedMotionQuery && typeof prefersReducedMotionQuery.matches === 'boolean' && prefersReducedMotionQuery.matches);
@@ -183,6 +192,15 @@ async function initialize() {
         renderProfile();
       }
     });
+  });
+
+  if (profileForm) {
+    profileForm.addEventListener('submit', onProfileSubmit);
+  }
+  editProfileBtn?.addEventListener('click', () => setProfileEditing(true));
+  cancelProfileEditBtn?.addEventListener('click', () => {
+    renderProfile();
+    if (profileMessageEl) profileMessageEl.textContent = '';
   });
 
   setActivePanel('book');
@@ -402,22 +420,84 @@ function obterNomeEmpresa(companyId) {
   return empresa.nome_fantasia || empresa.razao_social || '';
 }
 
+function setProfileEditing(isEditing) {
+  if (!profileForm) return;
+  profileForm.classList.toggle('editing', isEditing);
+  if (isEditing && profileMessageEl) {
+    profileMessageEl.textContent = '';
+  }
+  Object.values(profileInputs).forEach(input => {
+    if (!input) return;
+    const immutable = input.dataset.immutable === 'true';
+    const readOnly = immutable || !isEditing;
+    input.readOnly = readOnly;
+    input.classList.toggle('input-readonly', readOnly);
+  });
+  if (editProfileBtn) editProfileBtn.hidden = isEditing;
+  if (saveProfileBtn) saveProfileBtn.hidden = !isEditing;
+  if (cancelProfileEditBtn) cancelProfileEditBtn.hidden = !isEditing;
+  if (isEditing) {
+    profileInputs.name?.focus();
+  }
+}
+
 function renderProfile() {
-  if (!profileNameEl) return;
+  if (!profileInputs.name) return;
   if (!activeClient) {
-    profileNameEl.textContent = '--';
-    if (profileEmailEl) profileEmailEl.textContent = '--';
-    if (profileLoginEl) profileLoginEl.textContent = '--';
-    if (profileCpfEl) profileCpfEl.textContent = '--';
-    if (profileCompanyEl) profileCompanyEl.textContent = '--';
+    Object.values(profileInputs).forEach(input => {
+      if (input) input.value = '';
+    });
+    setProfileEditing(false);
+    if (profileMessageEl) profileMessageEl.textContent = '';
     return;
   }
-  profileNameEl.textContent = activeClient.name || '--';
-  if (profileEmailEl) profileEmailEl.textContent = activeClient.email || '--';
-  if (profileLoginEl) profileLoginEl.textContent = activeClient.login || '--';
-  if (profileCpfEl) profileCpfEl.textContent = formatCPF(activeClient.cpf) || '--';
-  if (profileCompanyEl) {
-    profileCompanyEl.textContent = obterNomeEmpresa(activeClient.company_id) || (activeClient.company_id ? 'Empresa não localizada' : 'Cliente pessoa física');
+  profileInputs.name.value = activeClient.name || '';
+  profileInputs.login.value = activeClient.login || '';
+  profileInputs.email.value = activeClient.email || '';
+  profileInputs.cpf.value = formatCPF(activeClient.cpf) || '';
+  profileInputs.phone.value = formatPhone(activeClient.phone) || '';
+  profileInputs.whatsapp.value = formatPhone(activeClient.whatsapp) || '';
+  profileInputs.company.value = obterNomeEmpresa(activeClient.company_id) || (activeClient.company_id ? 'Empresa não localizada' : 'Cliente pessoa física');
+  setProfileEditing(false);
+}
+
+async function onProfileSubmit(event) {
+  event.preventDefault();
+  if (!activeClient) return;
+  const name = profileInputs.name?.value.trim();
+  const login = profileInputs.login?.value.trim();
+  const phone = somenteDigitos(profileInputs.phone?.value);
+  const whatsapp = somenteDigitos(profileInputs.whatsapp?.value);
+
+  if (!name || !login) {
+    if (profileMessageEl) profileMessageEl.textContent = 'Preencha nome e login.';
+    return;
+  }
+
+  const payload = {
+    id: activeClient.id,
+    name,
+    login,
+    phone,
+    whatsapp
+  };
+
+  try {
+    const res = await fetch(`${API_BASE}/client_update_profile.php`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const json = await res.json();
+    if (!json.success) throw new Error(json.error || 'Erro ao atualizar cadastro.');
+    activeClient = { ...activeClient, ...json.client };
+    if (clientNameEl) {
+      clientNameEl.textContent = activeClient.name || activeClient.login || 'Cliente';
+    }
+    renderProfile();
+    if (profileMessageEl) profileMessageEl.textContent = json.message || 'Dados atualizados com sucesso.';
+  } catch (err) {
+    if (profileMessageEl) profileMessageEl.textContent = err.message || 'Não foi possível salvar.';
   }
 }
 
@@ -955,6 +1035,8 @@ function statusClass(status) {
     cancelada: 'status-cancelada',
     concluida: 'status-concluida',
     manutencao: 'status-manutencao',
+    pagamento_pendente: 'status-pendente',
+    pagamento_confirmado: 'status-confirmada',
     inativo: 'status-cancelada',
     desativada: 'status-cancelada'
   };
@@ -969,6 +1051,8 @@ function statusLabel(status) {
     cancelada: 'Cancelada',
     concluida: 'Concluída',
     manutencao: 'Manutenção',
+    pagamento_pendente: 'Pagamento pendente',
+    pagamento_confirmado: 'Pagamento confirmado',
     inativo: 'Inativo',
     desativada: 'Desativada'
   };

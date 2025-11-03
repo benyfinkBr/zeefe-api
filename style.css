@@ -950,11 +950,22 @@ textarea {
   margin-bottom: 16px;
 }
 
+.form-help {
+  font-size: 0.86rem;
+  color: var(--brand-muted);
+}
+
 .form-grid-mini {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
   gap: 12px 16px;
   margin-bottom: 16px;
+}
+
+.fixed-schedule-note {
+  margin: -8px 0 16px;
+  font-size: 0.86rem;
+  color: var(--brand-muted);
 }
 
 .client-lists {
@@ -1537,30 +1548,39 @@ body.client-portal-page .client-portal .portal-shell {
 }
 
 .profile-card {
-  max-width: 520px;
+  max-width: 620px;
 }
 
-.profile-list {
-  display: grid;
+.profile-form {
+  display: flex;
+  flex-direction: column;
   gap: 12px;
-  margin: 0;
 }
 
-.profile-list div {
-  display: grid;
-  gap: 4px;
-}
-
-.profile-list dt {
-  font-weight: 600;
+.profile-form input[readonly] {
+  background: #f5f2ed;
   color: var(--brand-muted);
-  font-size: 0.88rem;
+  border-color: rgba(29, 65, 58, 0.12);
 }
 
-.profile-list dd {
-  margin: 0;
-  font-size: 1rem;
+.profile-form.editing input:not([readonly]) {
+  background: #fff;
   color: var(--brand-green);
+  border-color: rgba(29, 65, 58, 0.35);
+}
+
+.profile-form .profile-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.profile-form .profile-actions .btn {
+  min-width: 160px;
+}
+
+.profile-form .rooms-message {
+  margin-top: 8px;
 }
 
 .fade-in {
@@ -1636,6 +1656,13 @@ body.client-portal-page.client-authenticated .auth-container {
 
 .auth-message:empty {
   display: none;
+}
+
+.auth-prompt {
+  text-align: center;
+  margin: 16px auto 12px;
+  max-width: 420px;
+  color: var(--brand-muted);
 }
 
 .login-card {

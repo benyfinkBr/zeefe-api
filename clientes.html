@@ -148,13 +148,14 @@
                   </div>
                   <div>
                     <label>Hora início</label>
-                    <input type="time" name="time_start" />
+                    <input type="time" name="time_start" value="08:00" readonly />
                   </div>
                   <div>
                     <label>Hora fim</label>
-                    <input type="time" name="time_end" />
+                    <input type="time" name="time_end" value="20:00" readonly />
                   </div>
                 </div>
+                <p class="form-help fixed-schedule-note">Horário fixo para reservas: 08:00 às 20:00.</p>
                 <div class="form-row">
                   <label>Título</label>
                   <input type="text" name="title" maxlength="120" required />
@@ -260,28 +261,51 @@
           <div id="panel-profile" class="portal-section" hidden>
             <article class="form-card profile-card">
               <h3>Dados do Cliente</h3>
-              <dl class="profile-list">
-                <div>
-                  <dt>Nome</dt>
-                  <dd id="profileName">--</dd>
+              <form id="profileForm" class="profile-form">
+                <div class="form-grid-mini">
+                  <div>
+                    <label for="profileNameInput">Nome completo</label>
+                    <input type="text" id="profileNameInput" name="name" required readonly />
+                  </div>
+                  <div>
+                    <label for="profileLoginInput">Login</label>
+                    <input type="text" id="profileLoginInput" name="login" required readonly />
+                  </div>
                 </div>
-                <div>
-                  <dt>E-mail</dt>
-                  <dd id="profileEmail">--</dd>
+                <div class="form-grid-mini">
+                  <div>
+                    <label for="profileEmailInput">E-mail</label>
+                    <input type="email" id="profileEmailInput" name="email" readonly data-immutable="true" />
+                  </div>
+                  <div>
+                    <label for="profileCpfInput">CPF</label>
+                    <input type="text" id="profileCpfInput" name="cpf" readonly data-immutable="true" />
+                  </div>
                 </div>
-                <div>
-                  <dt>Login</dt>
-                  <dd id="profileLogin">--</dd>
+                <div class="form-grid-mini">
+                  <div>
+                    <label for="profilePhoneInput">Telefone</label>
+                    <input type="text" id="profilePhoneInput" name="phone" maxlength="15" readonly />
+                  </div>
+                  <div>
+                    <label for="profileWhatsappInput">WhatsApp</label>
+                    <input type="text" id="profileWhatsappInput" name="whatsapp" maxlength="15" readonly />
+                  </div>
                 </div>
-                <div>
-                  <dt>CPF</dt>
-                  <dd id="profileCpf">--</dd>
+                <div class="form-row">
+                  <label for="profileCompanyInput">Empresa</label>
+                  <input type="text" id="profileCompanyInput" class="input-readonly" readonly data-immutable="true" />
                 </div>
-                <div>
-                  <dt>Empresa</dt>
-                  <dd id="profileCompany">--</dd>
+                <p class="form-help">E-mail e CPF são definidos no cadastro inicial e não podem ser alterados pelo portal.</p>
+                <div class="form-row profile-actions">
+                  <button type="button" class="btn btn-secondary" id="editProfileBtn">Editar dados</button>
+                  <button type="submit" class="btn btn-primary" id="saveProfileBtn" hidden>Salvar alterações</button>
+                  <button type="button" class="btn btn-secondary" id="cancelProfileEditBtn" hidden>Cancelar</button>
                 </div>
-              </dl>
+                <div class="form-row">
+                  <div id="profileMessage" class="rooms-message"></div>
+                </div>
+              </form>
             </article>
           </div>
         </div>

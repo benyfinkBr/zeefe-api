@@ -50,13 +50,15 @@
       <h2>3. Identifique-se</h2>
       <p class="section-subtitle">Entre com sua conta ou crie um acesso para concluir a solicitação.</p>
       <div class="auth-tabs" role="tablist">
-        <button type="button" data-tab="login" class="active" role="tab">Entrar</button>
+        <button type="button" data-tab="login" role="tab">Entrar</button>
         <button type="button" data-tab="register" role="tab">Criar conta</button>
         <button type="button" data-tab="recovery" role="tab">Esqueci minha senha</button>
       </div>
 
+      <p id="authPrompt" class="rooms-message auth-prompt" hidden>Selecione uma das opções acima para continuar.</p>
+
       <div id="authForms">
-        <form id="formLogin" class="auth-form" autocomplete="on">
+        <form id="formLogin" class="auth-form" autocomplete="on" hidden>
           <div class="form-field">
             <label for="loginEmail">Login ou e-mail</label>
             <input type="text" id="loginEmail" required autocomplete="username" />

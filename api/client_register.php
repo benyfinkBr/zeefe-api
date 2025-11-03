@@ -52,7 +52,9 @@ try {
       'email' => $email,
       'login' => $login,
       'cpf' => $cpf,
-      'company_id' => $companyId
+      'company_id' => $companyId,
+      'phone' => $phone ?: null,
+      'whatsapp' => $phone ?: null
     ]
   ];
 
