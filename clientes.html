@@ -253,8 +253,16 @@
           </div>
 
           <div id="panel-visitors" class="portal-section" hidden>
-            <div class="client-actions">
-              <article class="form-card">
+            <section class="client-lists visitors-layout">
+              <article class="visitor-list-card">
+                <div class="list-header">
+                  <h3>Visitantes</h3>
+                  <button class="btn btn-secondary" type="button" id="newVisitorBtn">Novo</button>
+                </div>
+                <div id="visitorsContainer" class="responsive-table"></div>
+              </article>
+
+              <article class="form-card visitor-form-card is-collapsed" id="visitorFormWrapper" hidden>
                 <h3 id="visitorFormTitle">Novo Visitante</h3>
                 <form id="visitorForm">
                   <input type="hidden" name="id" />
@@ -295,19 +303,9 @@
                   </div>
                   <div class="form-row">
                     <button class="btn btn-primary" type="submit">Salvar</button>
-                    <button class="btn btn-secondary" type="button" id="cancelVisitorEdit" hidden>Cancelar edição</button>
+                    <button class="btn btn-secondary" type="button" id="cancelVisitorEdit" hidden>Cancelar</button>
                   </div>
                 </form>
-              </article>
-            </div>
-
-            <section class="client-lists">
-              <article>
-                <div class="list-header">
-                  <h3>Visitantes</h3>
-                  <button class="btn btn-secondary" type="button" id="newVisitorBtn">Novo</button>
-                </div>
-                <div id="visitorsContainer" class="responsive-table"></div>
               </article>
             </section>
           </div>

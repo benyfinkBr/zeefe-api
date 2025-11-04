@@ -1252,9 +1252,13 @@ textarea {
 
 .client-lists {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
   gap: 24px;
-  margin-top: 32px;
+  margin-top: 20px;
+}
+
+.visitors-layout {
+  grid-template-columns: minmax(0, 1fr) !important;
 }
 
 .list-header {
@@ -2388,6 +2392,24 @@ body.client-portal-page.client-authenticated .auth-container {
 
 .input-hint.state-ok {
   color: #1D413A;
+}
+
+.profile-form .form-grid-mini,
+.visitor-form-card .form-grid-mini {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.visitor-form-card {
+  transition: transform 0.25s ease, opacity 0.2s ease;
+}
+
+.visitor-form-card.is-collapsed {
+  transform: translateY(-12px);
+  opacity: 0;
+}
+
+.visitor-form-card[hidden] {
+  display: none !important;
 }
 
 .login-card form.auth-form-grid input {

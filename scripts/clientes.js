@@ -86,6 +86,7 @@ const visitorIdInput = visitorForm?.querySelector('input[name="id"]');
 const cancelVisitorEditBtn = document.getElementById('cancelVisitorEdit');
 const newVisitorBtn = document.getElementById('newVisitorBtn');
 const visitorsContainer = document.getElementById('visitorsContainer');
+const visitorFormWrapper = document.getElementById('visitorFormWrapper');
 
 const profileForm = document.getElementById('profileForm');
 const profileMessageEl = document.getElementById('profileMessage');
@@ -202,14 +203,14 @@ async function initialize() {
   });
   openVisitorsPanelBtn?.addEventListener('click', () => {
     setActivePanel('visitors');
-    visitorForm?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    visitorsContainer?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   });
 
   visitorForm?.addEventListener('submit', onVisitorSubmit);
   cancelVisitorEditBtn?.addEventListener('click', resetVisitorForm);
   newVisitorBtn?.addEventListener('click', () => {
     resetVisitorForm();
-    visitorForm?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    openVisitorForm();
   });
 
   profileForm?.addEventListener('submit', onProfileSubmit);
@@ -1241,6 +1242,7 @@ function tratarAcaoVisitante(id, action) {
 }
 
 function preencherFormVisitante(visitante) {
+  openVisitorForm();
   visitorIdInput.value = visitante.id || '';
   visitorFormTitle.textContent = 'Editar Visitante';
   visitorForm.name.value = visitante.name || '';
@@ -1251,7 +1253,6 @@ function preencherFormVisitante(visitante) {
   visitorForm.whatsapp.value = formatPhone(visitante.whatsapp) || '';
   visitorForm.status.value = visitante.status || 'ativo';
   cancelVisitorEditBtn.hidden = false;
-  visitorForm.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
 async function onVisitorSubmit(event) {
@@ -1282,11 +1283,24 @@ async function onVisitorSubmit(event) {
   }
 }
 
+function openVisitorForm() {
+  if (!visitorFormWrapper) return;
+  visitorFormWrapper.hidden = false;
+  visitorFormWrapper.classList.remove('is-collapsed');
+  const firstInput = visitorForm?.querySelector('input[name="name"]');
+  firstInput?.focus();
+  visitorFormWrapper.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
 function resetVisitorForm() {
   visitorForm?.reset();
   if (visitorIdInput) visitorIdInput.value = '';
   visitorFormTitle.textContent = 'Novo Visitante';
   cancelVisitorEditBtn.hidden = true;
+  if (visitorFormWrapper) {
+    visitorFormWrapper.classList.add('is-collapsed');
+    visitorFormWrapper.hidden = true;
+  }
 }
 
 async function excluirRegistro(table, id) {
