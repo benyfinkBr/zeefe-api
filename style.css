@@ -1351,7 +1351,8 @@ body.client-portal-page {
 }
 
 body.client-portal-page.client-logged-out {
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 body.client-portal-page.client-logged-out header.header,
@@ -2112,6 +2113,8 @@ body.client-portal-page.client-logged-out .auth-container {
   padding: 40px 16px;
   z-index: 1200;
   min-height: 100vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .auth-container {
