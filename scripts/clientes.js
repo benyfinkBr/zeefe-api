@@ -366,12 +366,16 @@ function updateBookingNavigation() {
   if (bookingNextBtn) {
     const isLast = bookingStepIndex >= lastIndex;
     bookingNextBtn.hidden = isLast;
-    bookingNextBtn.disabled = isLast ? false : !isStepComplete(bookingStepIndex);
+    bookingNextBtn.disabled = isLast ? true : !isStepComplete(bookingStepIndex);
   }
   if (bookingSubmitBtn) {
     const isSubmitVisible = bookingStepIndex === lastIndex;
     bookingSubmitBtn.hidden = !isSubmitVisible;
-    bookingSubmitBtn.disabled = isSubmitVisible ? !isStepComplete(lastIndex) : false;
+    bookingSubmitBtn.disabled = isSubmitVisible ? !isStepComplete(lastIndex) : true;
+  }
+  if (cancelReservationEditBtn) {
+    const showCancel = bookingStepIndex === lastIndex || Boolean(reservationIdInput?.value);
+    cancelReservationEditBtn.hidden = !showCancel;
   }
 }
 
