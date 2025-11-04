@@ -1,7 +1,9 @@
 document.addEventListener('DOMContentLoaded', () => {
   const benefitsContainer = document.getElementById('benefits-cards');
-  const roomsGrid = document.getElementById('rooms-grid');
+  const roomsStrip = document.getElementById('rooms-strip');
   const roomsMessage = document.getElementById('rooms-message');
+  const navPrev = document.querySelector('.rooms-nav-prev');
+  const navNext = document.querySelector('.rooms-nav-next');
   let amenitiesMap = {};
 
   const benefits = [
@@ -27,8 +29,8 @@ document.addEventListener('DOMContentLoaded', () => {
   carregarSalas();
 
   async function carregarSalas() {
-    if (!roomsGrid) return;
-    roomsGrid.innerHTML = '';
+    if (!roomsStrip) return;
+    roomsStrip.innerHTML = '';
     roomsMessage.textContent = 'Carregando salas...';
     try {
       const roomsResponse = await fetch('api/apiget.php?table=rooms', { credentials: 'include' });
@@ -62,7 +64,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const statusMeta = getStatusMeta(room, available);
         const amenities = getAmenityNames(room.amenities).slice(0, 4);
         const card = document.createElement('article');
-        card.className = `room-card${available ? '' : ' unavailable'}`;
+        card.className = `room-card carousel-room-card${available ? '' : ' unavailable'}`;
 
         const media = document.createElement('div');
         media.className = 'room-card-media';
@@ -92,8 +94,14 @@ document.addEventListener('DOMContentLoaded', () => {
         availabilityNote.className = `room-availability-note ${available ? 'available' : 'blocked'}`;
         availabilityNote.textContent = getAvailabilityNote(room, available);
 
+        const favoriteButton = document.createElement('button');
+        favoriteButton.type = 'button';
+        favoriteButton.className = 'room-favorite';
+        favoriteButton.setAttribute('aria-label', 'Adicionar aos favoritos');
+
         media.appendChild(carouselContainer);
         media.appendChild(statusPill);
+        media.appendChild(favoriteButton);
         media.appendChild(availabilityNote);
         card.appendChild(media);
 
@@ -114,43 +122,22 @@ document.addEventListener('DOMContentLoaded', () => {
           info.appendChild(description);
         }
 
-        const metaGridItems = [];
-        if (room.location) {
-          metaGridItems.push(`
-            <div>
-              <dt>Local</dt>
-              <dd>${escapeHtml(room.location)}</dd>
-            </div>
-          `);
-        }
-        metaGridItems.push(`
-          <div>
-            <dt>Capacidade</dt>
-            <dd>${room.capacity || 0} pessoas</dd>
-          </div>
-        `);
-        if (room.daily_rate) {
-          metaGridItems.push(`
-            <div>
-              <dt>Diária</dt>
-              <dd>${formatCurrency(room.daily_rate)}</dd>
-            </div>
-          `);
-        }
-        if (room.area) {
-          metaGridItems.push(`
-            <div>
-              <dt>Área</dt>
-              <dd>${escapeHtml(room.area)} m²</dd>
-            </div>
-          `);
-        }
+        const meta = document.createElement('div');
+        meta.className = 'room-meta';
+        meta.innerHTML = `
+          <span class="room-location">${room.location ? escapeHtml(room.location) : 'Localização não informada'}</span>
+          <span class="room-capacity">${room.capacity || 0} pessoas</span>
+        `;
+        info.appendChild(meta);
 
-        if (metaGridItems.length) {
-          const metaGrid = document.createElement('dl');
-          metaGrid.className = 'room-meta-grid';
-          metaGrid.innerHTML = metaGridItems.join('');
-          info.appendChild(metaGrid);
+        if (room.daily_rate) {
+          const price = document.createElement('div');
+          price.className = 'room-price';
+          price.innerHTML = `
+            <strong>${formatCurrency(room.daily_rate)}</strong>
+            <span>/ diária</span>
+          `;
+          info.appendChild(price);
         }
 
         if (amenities.length) {
@@ -172,8 +159,9 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
         info.appendChild(actions);
         card.appendChild(info);
-        roomsGrid.appendChild(card);
+        roomsStrip.appendChild(card);
       });
+      requestAnimationFrame(() => updateCarouselNavState());
     } catch (err) {
       console.error(err);
       roomsMessage.textContent = 'Erro ao carregar salas. Tente novamente mais tarde.';
@@ -225,7 +213,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function getAvailabilityNote(room, available) {
     const status = (room.status || '').toLowerCase();
     if (available) {
-      return 'Liberada para novas reservas.';
+      return 'Pronta para reservar.';
     }
     if (status === 'manutencao') {
       if (room.maintenance_end) {
@@ -297,5 +285,30 @@ document.addEventListener('DOMContentLoaded', () => {
     const parsed = new Date(dateString);
     if (Number.isNaN(parsed.getTime())) return dateString;
     return parsed.toLocaleDateString('pt-BR', { timeZone: 'UTC' });
+  }
+
+  function updateCarouselNavState() {
+    if (!roomsStrip) return;
+    const { scrollLeft, scrollWidth, clientWidth } = roomsStrip;
+    const atStart = scrollLeft <= 0;
+    const atEnd = scrollLeft + clientWidth >= scrollWidth - 1;
+    if (navPrev) {
+      navPrev.disabled = atStart;
+      navPrev.classList.toggle('disabled', atStart);
+    }
+    if (navNext) {
+      navNext.disabled = atEnd;
+      navNext.classList.toggle('disabled', atEnd);
+    }
+  }
+
+  if (roomsStrip) {
+    roomsStrip.addEventListener('scroll', updateCarouselNavState, { passive: true });
+  }
+  if (navPrev && roomsStrip) {
+    navPrev.addEventListener('click', () => roomsStrip.scrollBy({ left: -roomsStrip.clientWidth, behavior: 'smooth' }));
+  }
+  if (navNext && roomsStrip) {
+    navNext.addEventListener('click', () => roomsStrip.scrollBy({ left: roomsStrip.clientWidth, behavior: 'smooth' }));
   }
 });
