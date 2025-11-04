@@ -2307,12 +2307,31 @@ body.client-portal-page.client-authenticated .auth-container {
   grid-column: 1 / -1;
 }
 
+.login-card form.auth-form-grid .form-field-duo {
+  display: flex;
+  flex-direction: column;
+}
+
+.login-card form.auth-form-grid .form-field-duo label {
+  margin-bottom: 6px;
+}
+
 .login-card form.auth-form-grid input {
   margin: 0;
 }
 
 .login-card form.auth-form-grid .btn {
   width: 100%;
+}
+
+.password-hint {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--brand-muted);
+}
+
+.password-hint.invalid {
+  color: #B54A3A;
 }
 
 .login-card form.auth-form-grid input {

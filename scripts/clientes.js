@@ -31,6 +31,7 @@ const portalLoginForm = document.getElementById('portalLoginForm');
 const portalRegisterForm = document.getElementById('portalRegisterForm');
 const portalRecoveryForm = document.getElementById('portalRecoveryForm');
 const authMessage = document.getElementById('authMessage');
+const passwordHint = document.getElementById('passwordHint');
 const loginIdentifierInput = document.getElementById('portalLoginIdentifier');
 const loginPasswordInput = document.getElementById('portalLoginPassword');
 const rememberMeCheckbox = document.getElementById('portalRememberMe');
@@ -117,6 +118,10 @@ async function initialize() {
   portalLoginForm?.addEventListener('submit', onPortalLoginSubmit);
   portalRegisterForm?.addEventListener('submit', onPortalRegisterSubmit);
   portalRecoveryForm?.addEventListener('submit', onPortalRecoverySubmit);
+  const passwordInput = document.getElementById('registerPassword');
+  const confirmPasswordInput = document.getElementById('registerPasswordConfirm');
+  passwordInput?.addEventListener('input', () => avaliarForcaSenha(passwordInput.value, confirmPasswordInput?.value || ''));
+  confirmPasswordInput?.addEventListener('input', () => avaliarForcaSenha(passwordInput?.value || '', confirmPasswordInput.value));
 
   logoutBtn?.addEventListener('click', fazerLogout);
   refreshBtn?.addEventListener('click', () => {
@@ -657,18 +662,24 @@ async function onPortalRegisterSubmit(event) {
   authMessage.textContent = '';
   const cpfInput = document.getElementById('registerCpf');
   const phoneInput = document.getElementById('registerPhone');
+  const passwordInput = document.getElementById('registerPassword');
+  const confirmPasswordInput = document.getElementById('registerPasswordConfirm');
   const cpfDigits = somenteDigitos(cpfInput?.value);
   const phoneDigits = somenteDigitos(phoneInput?.value);
   if (cpfInput) cpfInput.value = formatCPF(cpfDigits);
   if (phoneInput) phoneInput.value = formatPhone(phoneDigits);
+  const passwordValue = passwordInput?.value || '';
+  const passwordConfirmValue = confirmPasswordInput?.value || '';
+  const senhaForte = validarSenhaForte(passwordValue);
+  avaliarForcaSenha(passwordValue, passwordConfirmValue);
   const payload = {
     name: document.getElementById('registerName')?.value.trim(),
     email: document.getElementById('registerEmail')?.value.trim(),
     login: document.getElementById('registerLogin')?.value.trim(),
     cpf: cpfDigits,
     phone: phoneDigits,
-    password: document.getElementById('registerPassword')?.value || '',
-    password_confirm: document.getElementById('registerPasswordConfirm')?.value || ''
+    password: passwordValue,
+    password_confirm: passwordConfirmValue
   };
 
   if (!payload.name || !payload.email || !payload.login || !payload.password || !payload.cpf) {
@@ -677,6 +688,10 @@ async function onPortalRegisterSubmit(event) {
   }
   if (payload.cpf.length !== 11) {
     authMessage.textContent = 'Informe um CPF válido.';
+    return;
+  }
+  if (!senhaForte) {
+    authMessage.textContent = 'A senha precisa ter ao menos 8 caracteres, com letras, números e símbolos.';
     return;
   }
   if (payload.password !== payload.password_confirm) {
@@ -1451,6 +1466,21 @@ function escapeHtml(value) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
+}
+
+function validarSenhaForte(senha = '') {
+  if (typeof senha !== 'string' || senha.length < 8) return false;
+  const hasLetter = /[A-Za-z]/.test(senha);
+  const hasNumber = /\d/.test(senha);
+  const hasSpecial = /[^A-Za-z0-9]/.test(senha);
+  return hasLetter && hasNumber && hasSpecial;
+}
+
+function avaliarForcaSenha(senha = '', confirmacao = '') {
+  if (!passwordHint) return;
+  const forte = validarSenhaForte(senha);
+  const confere = !confirmacao || senha === confirmacao;
+  passwordHint.classList.toggle('invalid', !forte || !confere);
 }
 
 async function enviarConvites(reservationId, visitorIds) {

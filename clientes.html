@@ -68,13 +68,18 @@
               <label for="registerPhone">Telefone (opcional)</label>
               <input type="text" id="registerPhone" name="phone" maxlength="15" autocomplete="tel" />
             </div>
-            <div class="form-field">
+            <div class="form-field form-field-duo">
               <label for="registerPassword">Senha</label>
               <input type="password" id="registerPassword" name="password" required autocomplete="new-password" />
             </div>
-            <div class="form-field">
+            <div class="form-field form-field-duo">
               <label for="registerPasswordConfirm">Confirmar senha</label>
               <input type="password" id="registerPasswordConfirm" name="password_confirm" required autocomplete="new-password" />
+            </div>
+            <div class="form-field form-field-full">
+              <p class="password-hint" id="passwordHint">
+                A senha deve conter no mínimo 8 caracteres, incluindo letras, números e símbolos.
+              </p>
             </div>
             <div class="form-field form-field-full">
               <button class="btn btn-primary" type="submit">Concluir cadastro</button>
