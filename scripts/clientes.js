@@ -137,18 +137,19 @@ async function initialize() {
     registerPhoneInput.value = formatPhone(digits);
   });
 
-  loginIdentifierInput?.addEventListener('focus', () => {
-    if (rememberMeCheckbox?.checked && loginIdentifierInput.dataset.manuallyEdited !== 'true') {
-      rememberMeCheckbox.dataset.explicit = 'true';
-    }
+  rememberMeCheckbox?.addEventListener('change', () => {
+    const value = loginIdentifierInput?.value.trim() || '';
+    registrarPreferenciaLogin(rememberMeCheckbox.checked, value);
   });
 
   loginIdentifierInput?.addEventListener('input', () => {
-    if (!rememberMeCheckbox) return;
-    loginIdentifierInput.dataset.manuallyEdited = 'true';
-    if (rememberMeCheckbox.checked && !rememberMeCheckbox.dataset.explicit) {
+    if (!rememberMeCheckbox?.checked) return;
+    const value = loginIdentifierInput.value.trim();
+    if (!value) {
       rememberMeCheckbox.checked = false;
-      localStorage.removeItem('portalRememberLogin');
+      registrarPreferenciaLogin(false, '');
+    } else {
+      registrarPreferenciaLogin(true, value);
     }
   });
 
@@ -823,7 +824,7 @@ function registrarPreferenciaLogin(lembrar, login) {
   try {
     if (lembrar && login) {
       localStorage.setItem('portalRememberLogin', login);
-    } else {
+    } else if (!lembrar) {
       localStorage.removeItem('portalRememberLogin');
     }
   } catch (_) {
