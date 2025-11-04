@@ -2142,12 +2142,15 @@ body.client-portal-page.client-logged-out .portal-shell {
 
 body.client-portal-page.client-logged-out .auth-container {
   position: fixed;
-  inset: 0;
+  top: 96px;
+  left: 0;
+  right: 0;
+  bottom: 0;
   background: linear-gradient(180deg, #f5f0e9 0%, #ede7df 100%);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 40px 16px;
+  padding: 40px 16px 48px;
   z-index: 1200;
   min-height: 100vh;
   overflow-y: auto;
