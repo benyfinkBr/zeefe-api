@@ -352,9 +352,32 @@ function setBookingStep(index) {
 }
 
 function updateBookingNavigation() {
+  const lastIndex = bookingStepSections.length - 1;
   if (bookingPrevBtn) bookingPrevBtn.hidden = bookingStepIndex === 0;
-  if (bookingNextBtn) bookingNextBtn.hidden = bookingStepIndex >= bookingStepSections.length - 1;
-  if (bookingSubmitBtn) bookingSubmitBtn.hidden = bookingStepIndex !== bookingStepSections.length - 1;
+  if (bookingNextBtn) {
+    const isLast = bookingStepIndex >= lastIndex;
+    bookingNextBtn.hidden = isLast;
+    bookingNextBtn.disabled = isLast ? false : !isStepComplete(bookingStepIndex);
+  }
+  if (bookingSubmitBtn) {
+    const isSubmitVisible = bookingStepIndex === lastIndex;
+    bookingSubmitBtn.hidden = !isSubmitVisible;
+    bookingSubmitBtn.disabled = isSubmitVisible ? !isStepComplete(lastIndex) : false;
+  }
+}
+
+function isStepComplete(step) {
+  switch (step) {
+    case 0:
+      return Boolean(bookingDateInput?.value);
+    case 1:
+      return Boolean(bookingRoomHiddenInput?.value);
+    case 2:
+      return Boolean(bookingTitleInput && bookingTitleInput.value.trim());
+    case 3:
+    default:
+      return true;
+  }
 }
 
 function validateBookingStep(step) {
