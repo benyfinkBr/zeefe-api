@@ -2412,6 +2412,26 @@ body.client-portal-page.client-authenticated .auth-container {
   display: none !important;
 }
 
+.payments-card {
+  max-width: 520px;
+  margin: 0 auto;
+  text-align: center;
+  display: grid;
+  gap: 18px;
+  justify-items: center;
+  padding: 48px 40px;
+}
+
+.payments-card .icon-placeholder {
+  font-size: 3rem;
+  line-height: 1;
+}
+
+.payments-card .rooms-message {
+  max-width: 440px;
+  text-align: center;
+}
+
 .login-card form.auth-form-grid input {
   margin: 0;
 }
