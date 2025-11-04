@@ -137,6 +137,21 @@ async function initialize() {
     registerPhoneInput.value = formatPhone(digits);
   });
 
+  loginIdentifierInput?.addEventListener('focus', () => {
+    if (rememberMeCheckbox?.checked && loginIdentifierInput.dataset.manuallyEdited !== 'true') {
+      rememberMeCheckbox.dataset.explicit = 'true';
+    }
+  });
+
+  loginIdentifierInput?.addEventListener('input', () => {
+    if (!rememberMeCheckbox) return;
+    loginIdentifierInput.dataset.manuallyEdited = 'true';
+    if (rememberMeCheckbox.checked && !rememberMeCheckbox.dataset.explicit) {
+      rememberMeCheckbox.checked = false;
+      localStorage.removeItem('portalRememberLogin');
+    }
+  });
+
   if (passwordIndicators) {
     avaliarForcaSenha('', '');
   }
