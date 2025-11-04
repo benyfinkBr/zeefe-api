@@ -394,8 +394,7 @@ function validateBookingStep(step) {
       return false;
     }
   } else if (step === 2) {
-    const titleInput = bookingForm?.querySelector('input[name="title"]');
-    if (!titleInput || !titleInput.value.trim()) {
+    if (!bookingTitleInput || !bookingTitleInput.value.trim()) {
       bookingMessage.textContent = 'Informe um título para a reserva.';
       return false;
     }
