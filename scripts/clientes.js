@@ -371,11 +371,21 @@ function updateBookingNavigation() {
   if (bookingSubmitBtn) {
     const isSubmitVisible = bookingStepIndex === lastIndex;
     bookingSubmitBtn.hidden = !isSubmitVisible;
+    bookingSubmitBtn.textContent = isSubmitVisible ? 'Solicitar reserva' : 'Salvar reserva';
     bookingSubmitBtn.disabled = isSubmitVisible ? !isStepComplete(lastIndex) : true;
   }
   if (cancelReservationEditBtn) {
-    const showCancel = bookingStepIndex === lastIndex || Boolean(reservationIdInput?.value);
-    cancelReservationEditBtn.hidden = !showCancel;
+    const isLast = bookingStepIndex === lastIndex;
+    const isEditing = Boolean(reservationIdInput?.value);
+    if (isLast) {
+      cancelReservationEditBtn.hidden = false;
+      cancelReservationEditBtn.textContent = 'Cancelar';
+    } else if (isEditing) {
+      cancelReservationEditBtn.hidden = false;
+      cancelReservationEditBtn.textContent = 'Cancelar edição';
+    } else {
+      cancelReservationEditBtn.hidden = true;
+    }
   }
 }
 
