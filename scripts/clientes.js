@@ -110,7 +110,11 @@ const portalSections = {
   profile: document.getElementById('panel-profile')
 };
 
-initialize();
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initialize, { once: true });
+} else {
+  initialize();
+}
 
 async function initialize() {
   try {
