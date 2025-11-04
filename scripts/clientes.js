@@ -824,8 +824,10 @@ function registrarPreferenciaLogin(lembrar, login) {
   try {
     if (lembrar && login) {
       localStorage.setItem('portalRememberLogin', login);
+      setCookie('portalRememberLogin', login, 60);
     } else if (!lembrar) {
       localStorage.removeItem('portalRememberLogin');
+      deleteCookie('portalRememberLogin');
     }
   } catch (_) {
     /* ignore storage errors */
@@ -835,7 +837,10 @@ function registrarPreferenciaLogin(lembrar, login) {
 function aplicarLoginMemorizado() {
   if (!loginIdentifierInput || !rememberMeCheckbox) return;
   try {
-    const stored = localStorage.getItem('portalRememberLogin');
+    let stored = localStorage.getItem('portalRememberLogin');
+    if (!stored) {
+      stored = getCookie('portalRememberLogin');
+    }
     if (stored) {
       loginIdentifierInput.value = stored;
       rememberMeCheckbox.checked = true;
@@ -1512,6 +1517,33 @@ function escapeHtml(value) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
+}
+
+function setCookie(name, value, days = 30) {
+  try {
+    const expires = new Date(Date.now() + days * 24 * 60 * 60 * 1000).toUTCString();
+    document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires}; path=/`;
+  } catch (_) {
+    /* ignore cookie errors */
+  }
+}
+
+function getCookie(name) {
+  try {
+    const entry = document.cookie.split('; ').find(row => row.startsWith(`${name}=`));
+    if (!entry) return '';
+    return decodeURIComponent(entry.split('=')[1]);
+  } catch (_) {
+    return '';
+  }
+}
+
+function deleteCookie(name) {
+  try {
+    document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`;
+  } catch (_) {
+    /* ignore cookie errors */
+  }
 }
 
 function cpfValido(cpf) {
