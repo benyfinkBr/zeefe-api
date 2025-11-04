@@ -1142,7 +1142,6 @@ function renderVisitantes(visitantes) {
       <td>
         <div class=\"table-actions\">
           <button type=\"button\" data-action=\"edit\" data-id=\"${v.id}\">Editar</button>
-          ${v.email ? `<button type=\"button\" data-action=\"invite\" data-id=\"${v.id}\">Enviar convite</button>` : ''}
           <button type=\"button\" data-action=\"delete\" data-id=\"${v.id}\">Excluir</button>
         </div>
       </td>
@@ -1229,10 +1228,6 @@ function tratarAcaoVisitante(id, action) {
   if (action === 'edit') {
     const visitante = currentVisitors.find(v => String(v.id) === String(id));
     if (visitante) preencherFormVisitante(visitante);
-    return;
-  }
-  if (action === 'invite') {
-    enviarConvites(0, [id]).then(() => alert('Convite enviado.')).catch(() => alert('Falha ao enviar convite.'));
     return;
   }
   if (action === 'delete') {
