@@ -32,6 +32,15 @@ const portalRegisterForm = document.getElementById('portalRegisterForm');
 const portalRecoveryForm = document.getElementById('portalRecoveryForm');
 const authMessage = document.getElementById('authMessage');
 const passwordHint = document.getElementById('passwordHint');
+const registerPasswordInput = document.getElementById('registerPassword');
+const registerPasswordConfirmInput = document.getElementById('registerPasswordConfirm');
+const registerEmailInput = document.getElementById('registerEmail');
+const registerCpfInput = document.getElementById('registerCpf');
+const registerPhoneInput = document.getElementById('registerPhone');
+const passwordIndicators = document.getElementById('passwordIndicators');
+const passwordStrengthIndicator = document.querySelector('[data-password-strength]');
+const passwordMatchIndicator = document.querySelector('[data-password-match]');
+const cpfHintEl = document.getElementById('cpfHint');
 const loginIdentifierInput = document.getElementById('portalLoginIdentifier');
 const loginPasswordInput = document.getElementById('portalLoginPassword');
 const rememberMeCheckbox = document.getElementById('portalRememberMe');
@@ -118,10 +127,22 @@ async function initialize() {
   portalLoginForm?.addEventListener('submit', onPortalLoginSubmit);
   portalRegisterForm?.addEventListener('submit', onPortalRegisterSubmit);
   portalRecoveryForm?.addEventListener('submit', onPortalRecoverySubmit);
-  const passwordInput = document.getElementById('registerPassword');
-  const confirmPasswordInput = document.getElementById('registerPasswordConfirm');
-  passwordInput?.addEventListener('input', () => avaliarForcaSenha(passwordInput.value, confirmPasswordInput?.value || ''));
-  confirmPasswordInput?.addEventListener('input', () => avaliarForcaSenha(passwordInput?.value || '', confirmPasswordInput.value));
+
+  registerPasswordInput?.addEventListener('input', () => avaliarForcaSenha(registerPasswordInput.value, registerPasswordConfirmInput?.value || ''));
+  registerPasswordConfirmInput?.addEventListener('input', () => avaliarForcaSenha(registerPasswordInput?.value || '', registerPasswordConfirmInput.value));
+  registerCpfInput?.addEventListener('input', onCpfInputChange);
+  registerCpfInput?.addEventListener('blur', () => atualizarFeedbackCPF(somenteDigitos(registerCpfInput?.value)));
+  registerPhoneInput?.addEventListener('input', () => {
+    const digits = somenteDigitos(registerPhoneInput.value).slice(0, 11);
+    registerPhoneInput.value = formatPhone(digits);
+  });
+
+  if (passwordIndicators) {
+    avaliarForcaSenha('', '');
+  }
+  if (registerCpfInput) {
+    atualizarFeedbackCPF(somenteDigitos(registerCpfInput.value));
+  }
 
   logoutBtn?.addEventListener('click', fazerLogout);
   refreshBtn?.addEventListener('click', () => {
@@ -660,22 +681,21 @@ async function onPortalRegisterSubmit(event) {
   event.preventDefault();
   if (!authMessage) return;
   authMessage.textContent = '';
-  const cpfInput = document.getElementById('registerCpf');
-  const phoneInput = document.getElementById('registerPhone');
-  const passwordInput = document.getElementById('registerPassword');
-  const confirmPasswordInput = document.getElementById('registerPasswordConfirm');
-  const cpfDigits = somenteDigitos(cpfInput?.value);
-  const phoneDigits = somenteDigitos(phoneInput?.value);
-  if (cpfInput) cpfInput.value = formatCPF(cpfDigits);
-  if (phoneInput) phoneInput.value = formatPhone(phoneDigits);
-  const passwordValue = passwordInput?.value || '';
-  const passwordConfirmValue = confirmPasswordInput?.value || '';
+  const cpfDigits = somenteDigitos(registerCpfInput?.value);
+  const phoneDigits = somenteDigitos(registerPhoneInput?.value);
+  if (registerCpfInput) registerCpfInput.value = formatCPF(cpfDigits);
+  if (registerPhoneInput) registerPhoneInput.value = formatPhone(phoneDigits);
+  const passwordValue = registerPasswordInput?.value || '';
+  const passwordConfirmValue = registerPasswordConfirmInput?.value || '';
   const senhaForte = validarSenhaForte(passwordValue);
   avaliarForcaSenha(passwordValue, passwordConfirmValue);
+  const nameValue = document.getElementById('registerName')?.value.trim();
+  const emailValue = registerEmailInput?.value.trim() || '';
+  const loginValue = emailValue || cpfDigits;
   const payload = {
-    name: document.getElementById('registerName')?.value.trim(),
-    email: document.getElementById('registerEmail')?.value.trim(),
-    login: document.getElementById('registerLogin')?.value.trim(),
+    name: nameValue,
+    email: emailValue,
+    login: loginValue,
     cpf: cpfDigits,
     phone: phoneDigits,
     password: passwordValue,
@@ -688,6 +708,12 @@ async function onPortalRegisterSubmit(event) {
   }
   if (payload.cpf.length !== 11) {
     authMessage.textContent = 'Informe um CPF válido.';
+    atualizarFeedbackCPF(payload.cpf);
+    return;
+  }
+  if (!cpfValido(payload.cpf)) {
+    authMessage.textContent = 'CPF inválido. Verifique os números digitados.';
+    atualizarFeedbackCPF(payload.cpf, true);
     return;
   }
   if (!senhaForte) {
@@ -1435,9 +1461,13 @@ function somenteDigitos(value) {
 }
 
 function formatCPF(value) {
-  const digits = somenteDigitos(value);
-  if (digits.length !== 11) return value || '';
-  return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}`;
+  const digits = somenteDigitos(value).slice(0, 11);
+  if (!digits) return '';
+  let formatted = digits;
+  formatted = formatted.replace(/^(\d{3})(\d)/, '$1.$2');
+  formatted = formatted.replace(/^(\d{3}\.\d{3})(\d)/, '$1.$2');
+  formatted = formatted.replace(/^(\d{3}\.\d{3}\.\d{3})(\d{1,2})$/, '$1-$2');
+  return formatted;
 }
 
 function formatPhone(value) {
@@ -1468,6 +1498,62 @@ function escapeHtml(value) {
     .replace(/'/g, '&#039;');
 }
 
+function cpfValido(cpf) {
+  const digits = somenteDigitos(cpf);
+  if (digits.length !== 11) return false;
+  if (/^(\d)\1{10}$/.test(digits)) return false;
+
+  let sum = 0;
+  for (let i = 0; i < 9; i += 1) {
+    sum += Number(digits[i]) * (10 - i);
+  }
+  let check = (sum * 10) % 11;
+  if (check === 10) check = 0;
+  if (check !== Number(digits[9])) return false;
+
+  sum = 0;
+  for (let i = 0; i < 10; i += 1) {
+    sum += Number(digits[i]) * (11 - i);
+  }
+  check = (sum * 10) % 11;
+  if (check === 10) check = 0;
+  return check === Number(digits[10]);
+}
+
+function onCpfInputChange(event) {
+  const digits = somenteDigitos(event.target.value).slice(0, 11);
+  event.target.value = formatCPF(digits);
+  atualizarFeedbackCPF(digits);
+}
+
+function atualizarFeedbackCPF(cpfDigits, forceInvalid = false) {
+  if (!cpfHintEl) return;
+  const digits = typeof cpfDigits === 'string' ? somenteDigitos(cpfDigits) : '';
+  const remaining = 11 - digits.length;
+  if (!digits) {
+    setHintState(cpfHintEl, 'neutral', 'Informe os 11 dígitos do CPF.');
+    return;
+  }
+  if (digits.length < 11) {
+    setHintState(cpfHintEl, 'warning', `Faltam ${remaining} dígito${remaining === 1 ? '' : 's'}.`);
+    return;
+  }
+  if (!cpfValido(digits) || forceInvalid) {
+    setHintState(cpfHintEl, 'error', 'CPF inválido. Verifique os números.');
+    return;
+  }
+  setHintState(cpfHintEl, 'ok', 'CPF válido.');
+}
+
+function setHintState(element, state, text) {
+  if (!element) return;
+  element.textContent = text;
+  element.classList.remove('state-ok', 'state-warning', 'state-error');
+  if (state && state !== 'neutral') {
+    element.classList.add(`state-${state}`);
+  }
+}
+
 function validarSenhaForte(senha = '') {
   if (typeof senha !== 'string' || senha.length < 8) return false;
   const hasLetter = /[A-Za-z]/.test(senha);
@@ -1476,11 +1562,46 @@ function validarSenhaForte(senha = '') {
   return hasLetter && hasNumber && hasSpecial;
 }
 
+function calcularNivelSenha(senha = '') {
+  if (!senha) return { state: 'neutral', label: 'aguardando' };
+  const length = senha.length;
+  const hasLetter = /[A-Za-z]/.test(senha);
+  const hasNumber = /\d/.test(senha);
+  const hasSpecial = /[^A-Za-z0-9]/.test(senha);
+
+  if (length >= 8 && hasLetter && hasNumber && hasSpecial) {
+    return { state: 'ok', label: 'forte' };
+  }
+  if (length >= 6 && hasLetter && (hasNumber || hasSpecial)) {
+    return { state: 'warning', label: 'média' };
+  }
+  return { state: 'error', label: 'fraca' };
+}
+
+function setIndicatorState(element, state, text) {
+  if (!element) return;
+  element.textContent = text;
+  element.classList.remove('state-ok', 'state-warning', 'state-error', 'state-neutral');
+  element.classList.add(`state-${state}`);
+}
+
 function avaliarForcaSenha(senha = '', confirmacao = '') {
-  if (!passwordHint) return;
-  const forte = validarSenhaForte(senha);
-  const confere = !confirmacao || senha === confirmacao;
-  passwordHint.classList.toggle('invalid', !forte || !confere);
+  const level = calcularNivelSenha(senha);
+  const matchState = (() => {
+    if (!senha && !confirmacao) return { state: 'neutral', label: 'Confirmação: aguardando' };
+    if (senha && !confirmacao) return { state: 'warning', label: 'Confirmação: pendente' };
+    if (confirmacao && senha === confirmacao) return { state: 'ok', label: 'Confirmação: senhas combinam' };
+    if (confirmacao) return { state: 'error', label: 'Confirmação: senhas diferentes' };
+    return { state: 'neutral', label: 'Confirmação: aguardando' };
+  })();
+
+  setIndicatorState(passwordStrengthIndicator, level.state, `Força da senha: ${level.label}`);
+  setIndicatorState(passwordMatchIndicator, matchState.state, matchState.label);
+
+  if (passwordHint) {
+    const invalid = (senha && level.state !== 'ok') || (confirmacao && senha !== confirmacao);
+    passwordHint.classList.toggle('invalid', invalid);
+  }
 }
 
 async function enviarConvites(reservationId, visitorIds) {
