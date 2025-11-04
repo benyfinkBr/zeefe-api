@@ -12,7 +12,7 @@ let allReservationsCache = [];
 let bookingStepIndex = 0;
 let bookingCurrentMonth = new Date();
 const bookingToday = new Date();
-const bookingTodayISO = toISODate(bookingToday);
+let bookingCalendarInitiated = false;
 
 const bodyEl = document.body;
 const prefersReducedMotionQuery = window.matchMedia
@@ -147,12 +147,6 @@ async function initialize() {
   bookingCityFilterInput?.addEventListener('input', () => renderRoomOptions(bookingDateInput?.value || ''));
   bookingStateFilterInput?.addEventListener('input', () => renderRoomOptions(bookingDateInput?.value || ''));
 
-  bookingTitleInput?.addEventListener('input', onBookingDetailsChange);
-  bookingDescriptionInput?.addEventListener('input', onBookingDetailsChange);
-
-  bookingCurrentMonth = new Date(bookingToday.getFullYear(), bookingToday.getMonth(), 1);
-  renderBookingCalendar(bookingCurrentMonth);
-
   cancelReservationEditBtn?.addEventListener('click', () => resetBookingForm());
   newReservationBtn?.addEventListener('click', () => {
     resetBookingForm();
@@ -195,7 +189,6 @@ async function initialize() {
   renderVisitorChecklist();
   setBookingStep(0);
   renderRoomOptions(bookingDateInput?.value || '');
-  renderBookingCalendar(bookingCurrentMonth);
   setBodyAuthState(false);
   showAuthOverlay();
   setActivePanel('book');
@@ -281,7 +274,6 @@ function setActivePanel(panelName = 'book') {
     renderVisitorChecklist();
     renderRoomOptions(bookingDateInput?.value || '');
     setBookingStep(bookingStepIndex);
-    renderBookingCalendar(bookingCurrentMonth);
   } else if (target === 'reservations' && activeClient) {
     carregarReservasGlobais().finally(() => carregarReservas(activeClient.id));
   } else if (target === 'visitors' && activeClient) {
@@ -328,7 +320,6 @@ async function carregarSalas() {
 
 function preencherSalasSelect() {
   renderRoomOptions(bookingDateInput?.value || '');
-  renderBookingCalendar(bookingCurrentMonth);
 }
 
 function onBookingDateChange() {
@@ -338,14 +329,6 @@ function onBookingDateChange() {
   if (bookingStepIndex > 1) {
     setBookingStep(1);
   }
-  if (bookingDateInput.value) {
-    const typedDate = new Date(bookingDateInput.value);
-    if (!Number.isNaN(typedDate.getTime())) {
-      bookingCurrentMonth = new Date(typedDate.getFullYear(), typedDate.getMonth(), 1);
-    }
-  }
-  renderBookingCalendar(bookingCurrentMonth);
-  updateBookingNavigation();
 }
 
 function changeBookingStep(delta) {
@@ -373,32 +356,9 @@ function setBookingStep(index) {
 }
 
 function updateBookingNavigation() {
-  const lastIndex = bookingStepSections.length - 1;
   if (bookingPrevBtn) bookingPrevBtn.hidden = bookingStepIndex === 0;
-  if (bookingNextBtn) {
-    const isLast = bookingStepIndex >= lastIndex;
-    bookingNextBtn.hidden = isLast;
-    bookingNextBtn.disabled = isLast ? false : !isStepComplete(bookingStepIndex);
-  }
-  if (bookingSubmitBtn) {
-    const isSubmitVisible = bookingStepIndex === lastIndex;
-    bookingSubmitBtn.hidden = !isSubmitVisible;
-    bookingSubmitBtn.disabled = isSubmitVisible ? !isStepComplete(lastIndex) : false;
-  }
-}
-
-function isStepComplete(step) {
-  switch (step) {
-    case 0:
-      return Boolean(bookingDateInput?.value);
-    case 1:
-      return Boolean(bookingRoomHiddenInput?.value);
-    case 2:
-      return Boolean(bookingTitleInput && bookingTitleInput.value.trim());
-    case 3:
-    default:
-      return true;
-  }
+  if (bookingNextBtn) bookingNextBtn.hidden = bookingStepIndex >= bookingStepSections.length - 1;
+  if (bookingSubmitBtn) bookingSubmitBtn.hidden = bookingStepIndex !== bookingStepSections.length - 1;
 }
 
 function validateBookingStep(step) {
@@ -415,7 +375,8 @@ function validateBookingStep(step) {
       return false;
     }
   } else if (step === 2) {
-    if (!bookingTitleInput || !bookingTitleInput.value.trim()) {
+    const titleInput = bookingForm?.querySelector('input[name="title"]');
+    if (!titleInput || !titleInput.value.trim()) {
       bookingMessage.textContent = 'Informe um título para a reserva.';
       return false;
     }
@@ -439,30 +400,25 @@ function renderRoomOptions(date) {
   const cityFilter = (bookingCityFilterInput?.value || '').trim().toLowerCase();
   const stateFilter = (bookingStateFilterInput?.value || '').trim().toLowerCase();
 
-  const availableRooms = getAvailableRoomsForDate(date, reservationIdInput?.value)
-    .filter(room => {
-      const name = (room.name || `Sala #${room.id}`).toString().toLowerCase();
-      const city = (room.city || '').toString().toLowerCase();
-      const state = (room.state || room.uf || '').toString().toLowerCase();
-      if (searchTerm && !name.includes(searchTerm)) return false;
-      if (cityFilter && !city.includes(cityFilter)) return false;
-      if (stateFilter && state !== stateFilter) return false;
-      return true;
-    })
-    .sort((a, b) => {
-      const nameA = (a.name || `Sala #${a.id}`).toString().toLowerCase();
-      const nameB = (b.name || `Sala #${b.id}`).toString().toLowerCase();
-      return nameA.localeCompare(nameB, 'pt-BR');
-    });
-
+  const availableRooms = getAvailableRoomsForDate(date, reservationIdInput?.value).filter(room => {
+    const name = (room.name || `Sala #${room.id}`).toString().toLowerCase();
+    const city = (room.city || '').toString().toLowerCase();
+    const state = (room.state || room.uf || '').toString().toLowerCase();
+    if (searchTerm && !name.includes(searchTerm)) return false;
+    if (cityFilter && !city.includes(cityFilter)) return false;
+    if (stateFilter && state !== stateFilter) return false;
+    return true;
+  }).sort((a, b) => {
+    const nameA = (a.name || `Sala #${a.id}`).toString().toLowerCase();
+    const nameB = (b.name || `Sala #${b.id}`).toString().toLowerCase();
+    return nameA.localeCompare(nameB, 'pt-BR');
+  });
   if (!availableRooms.length) {
     if (bookingRoomFeedback) bookingRoomFeedback.textContent = 'Nenhuma sala encontrada com os filtros atuais.';
     return;
   }
-
   const selectedId = bookingRoomHiddenInput?.value ? String(bookingRoomHiddenInput.value) : '';
   let hasSelected = false;
-
   availableRooms.forEach(room => {
     const button = document.createElement('button');
     button.type = 'button';
@@ -485,96 +441,9 @@ function renderRoomOptions(date) {
     button.addEventListener('click', () => selectRoomOption(room.id));
     bookingRoomOptions.appendChild(button);
   });
-
   if (bookingRoomHiddenInput && selectedId && !hasSelected) {
     bookingRoomHiddenInput.value = '';
   }
-
-  updateBookingNavigation();
-}
-
-function changeCalendarMonth(delta) {
-  const minMonth = new Date(bookingToday.getFullYear(), bookingToday.getMonth(), 1);
-  const candidate = new Date(bookingCurrentMonth.getFullYear(), bookingCurrentMonth.getMonth() + delta, 1);
-  bookingCurrentMonth = candidate < minMonth ? minMonth : candidate;
-  renderBookingCalendar(bookingCurrentMonth);
-}
-
-function renderBookingCalendar(referenceDate) {
-  if (!bookingCalendarGrid || !bookingCalendarLabel) return;
-  const monthRef = new Date(referenceDate.getFullYear(), referenceDate.getMonth(), 1);
-  bookingCurrentMonth = monthRef;
-  bookingCalendarGrid.innerHTML = '';
-  bookingCalendarLabel.textContent = monthRef.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
-
-  const weekdays = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
-  weekdays.forEach(dayName => {
-    const headerCell = document.createElement('div');
-    headerCell.className = 'calendar-day disabled';
-    headerCell.textContent = dayName;
-    bookingCalendarGrid.appendChild(headerCell);
-  });
-
-  const startWeekday = monthRef.getDay();
-  for (let i = 0; i < startWeekday; i++) {
-    const filler = document.createElement('div');
-    filler.className = 'calendar-day disabled';
-    filler.tabIndex = -1;
-    bookingCalendarGrid.appendChild(filler);
-  }
-
-  const monthEnd = new Date(monthRef.getFullYear(), monthRef.getMonth() + 1, 0);
-  const selectedISO = bookingDateInput?.value;
-
-  for (let day = 1; day <= monthEnd.getDate(); day++) {
-    const currentDate = new Date(monthRef.getFullYear(), monthRef.getMonth(), day);
-    const iso = toISODate(currentDate);
-    const totalSelectable = roomsCache.filter(room => isRoomSelectable(room, iso)).length;
-    const availableRooms = totalSelectable ? getAvailableRoomsForDate(iso, reservationIdInput?.value) : [];
-
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.textContent = String(day);
-    button.dataset.iso = iso;
-    button.className = 'calendar-day';
-
-    let statusClass = 'available';
-    let clickable = true;
-
-    if (iso < bookingTodayISO) {
-      statusClass = 'disabled';
-      clickable = false;
-    } else if (!totalSelectable) {
-      statusClass = 'full';
-      clickable = false;
-    } else if (!availableRooms.length) {
-      statusClass = 'full';
-      clickable = false;
-    } else if (availableRooms.length < totalSelectable) {
-      statusClass = 'partial';
-    }
-
-    button.classList.add(statusClass);
-    if (!clickable) {
-      button.disabled = true;
-    } else {
-      button.addEventListener('click', () => {
-        if (bookingDateInput) {
-          bookingDateInput.value = iso;
-          renderBookingCalendar(bookingCurrentMonth);
-          bookingDateInput.dispatchEvent(new Event('change', { bubbles: true }));
-        }
-      });
-    }
-
-    if (selectedISO && iso === selectedISO) {
-      button.classList.add('selected');
-    }
-
-    bookingCalendarGrid.appendChild(button);
-  }
-
-  updateBookingNavigation();
 }
 
 function selectRoomOption(roomId) {
@@ -586,13 +455,6 @@ function selectRoomOption(roomId) {
     });
   }
   if (bookingMessage) bookingMessage.textContent = '';
-  updateBookingNavigation();
-}
-
-function onBookingDetailsChange() {
-  if (bookingStepIndex === 2) {
-    updateBookingNavigation();
-  }
 }
 
 function getAvailableRoomsForDate(date, reservationId) {
@@ -632,17 +494,6 @@ function isRoomAvailableOnDate(room, date, reservationId) {
 async function carregarReservasGlobais() {
   try {
     const res = await fetch(`${API_BASE}/apiget.php?table=reservations`, { credentials: 'include' });
-    const json = await res.json();
-    if (!json.success) throw new Error(json.error || 'Erro ao carregar reservas.');
-    allReservationsCache = json.data || [];
-  } catch (err) {
-    console.error(err);
-    allReservationsCache = [];
-  }
-  renderRoomOptions(bookingDateInput?.value || '');
-  renderBookingCalendar(bookingCurrentMonth);
-}
-/apiget.php?table=reservations`, { credentials: 'include' });
     const json = await res.json();
     if (!json.success) throw new Error(json.error || 'Erro ao carregar reservas.');
     allReservationsCache = json.data || [];
@@ -967,12 +818,7 @@ function preencherFormReserva(reserva) {
   bookingFormTitle.textContent = 'Editar reserva';
   if (reservationIdInput) reservationIdInput.value = reserva.id || '';
   if (bookingRoomHiddenInput) bookingRoomHiddenInput.value = reserva.room_id || '';
-  if (bookingDateInput) {
-    bookingDateInput.value = reserva.date || '';
-    bookingCurrentMonth = reserva.date ? new Date(reserva.date) : bookingCurrentMonth;
-    bookingCurrentMonth = new Date(bookingCurrentMonth.getFullYear(), bookingCurrentMonth.getMonth(), 1);
-    renderBookingCalendar(bookingCurrentMonth);
-  }
+  if (bookingDateInput) bookingDateInput.value = reserva.date || '';
   const startInput = bookingForm.querySelector('input[name="time_start"]');
   const endInput = bookingForm.querySelector('input[name="time_end"]');
   if (startInput) startInput.value = reserva.time_start || DEFAULT_START_TIME;
@@ -1059,9 +905,9 @@ function resetBookingForm(preserveMessage = false) {
   renderVisitorChecklist();
   renderRoomOptions('');
   if (bookingMessage && !preserveMessage) bookingMessage.textContent = '';
-  bookingCurrentMonth = new Date(bookingToday.getFullYear(), bookingToday.getMonth(), 1);
+  bookingCurrentMonth = new Date();
   if (bookingCalendarGrid) renderBookingCalendar(bookingCurrentMonth);
-  updateBookingNavigation();
+  bookingCalendarInitiated = true;
 }
 
 async function carregarVisitantes(clientId) {
@@ -1459,14 +1305,6 @@ function formatPhone(value) {
   const mid = isMobile ? digits.slice(2, 7) : digits.slice(2, 6);
   const end = isMobile ? digits.slice(7) : digits.slice(6);
   return `(${ddd}) ${mid}${end ? '-' + end : ''}`;
-}
-
-function toISODate(value) {
-  if (!value) return '';
-  const date = value instanceof Date ? new Date(value.getTime()) : new Date(value);
-  if (Number.isNaN(date.getTime())) return '';
-  date.setHours(0, 0, 0, 0);
-  return date.toISOString().split('T')[0];
 }
 
 function escapeHtml(value) {
