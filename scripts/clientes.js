@@ -13,7 +13,6 @@ let bookingStepIndex = 0;
 let bookingCurrentMonth = new Date();
 const bookingToday = new Date();
 const bookingTodayISO = toISODate(bookingToday);
-let bookingCalendarInitiated = false;
 
 const bodyEl = document.body;
 const prefersReducedMotionQuery = window.matchMedia
@@ -196,6 +195,7 @@ async function initialize() {
   renderVisitorChecklist();
   setBookingStep(0);
   renderRoomOptions(bookingDateInput?.value || '');
+  renderBookingCalendar(bookingCurrentMonth);
   setBodyAuthState(false);
   showAuthOverlay();
   setActivePanel('book');
@@ -281,6 +281,7 @@ function setActivePanel(panelName = 'book') {
     renderVisitorChecklist();
     renderRoomOptions(bookingDateInput?.value || '');
     setBookingStep(bookingStepIndex);
+    renderBookingCalendar(bookingCurrentMonth);
   } else if (target === 'reservations' && activeClient) {
     carregarReservasGlobais().finally(() => carregarReservas(activeClient.id));
   } else if (target === 'visitors' && activeClient) {
@@ -327,6 +328,7 @@ async function carregarSalas() {
 
 function preencherSalasSelect() {
   renderRoomOptions(bookingDateInput?.value || '');
+  renderBookingCalendar(bookingCurrentMonth);
 }
 
 function onBookingDateChange() {
@@ -336,6 +338,13 @@ function onBookingDateChange() {
   if (bookingStepIndex > 1) {
     setBookingStep(1);
   }
+  if (bookingDateInput.value) {
+    const typedDate = new Date(bookingDateInput.value);
+    if (!Number.isNaN(typedDate.getTime())) {
+      bookingCurrentMonth = new Date(typedDate.getFullYear(), typedDate.getMonth(), 1);
+    }
+  }
+  renderBookingCalendar(bookingCurrentMonth);
   updateBookingNavigation();
 }
 
@@ -369,13 +378,12 @@ function updateBookingNavigation() {
   if (bookingNextBtn) {
     const isLast = bookingStepIndex >= lastIndex;
     bookingNextBtn.hidden = isLast;
-    if (!isLast) {
-      bookingNextBtn.disabled = !isStepComplete(bookingStepIndex);
-    }
+    bookingNextBtn.disabled = isLast ? false : !isStepComplete(bookingStepIndex);
   }
   if (bookingSubmitBtn) {
-    bookingSubmitBtn.hidden = bookingStepIndex !== lastIndex;
-    bookingSubmitBtn.disabled = !isStepComplete(lastIndex);
+    const isSubmitVisible = bookingStepIndex === lastIndex;
+    bookingSubmitBtn.hidden = !isSubmitVisible;
+    bookingSubmitBtn.disabled = isSubmitVisible ? !isStepComplete(lastIndex) : false;
   }
 }
 
@@ -407,8 +415,7 @@ function validateBookingStep(step) {
       return false;
     }
   } else if (step === 2) {
-    const titleInput = bookingForm?.querySelector('input[name="title"]');
-    if (!titleInput || !titleInput.value.trim()) {
+    if (!bookingTitleInput || !bookingTitleInput.value.trim()) {
       bookingMessage.textContent = 'Informe um título para a reserva.';
       return false;
     }
@@ -625,6 +632,17 @@ function isRoomAvailableOnDate(room, date, reservationId) {
 async function carregarReservasGlobais() {
   try {
     const res = await fetch(`${API_BASE}/apiget.php?table=reservations`, { credentials: 'include' });
+    const json = await res.json();
+    if (!json.success) throw new Error(json.error || 'Erro ao carregar reservas.');
+    allReservationsCache = json.data || [];
+  } catch (err) {
+    console.error(err);
+    allReservationsCache = [];
+  }
+  renderRoomOptions(bookingDateInput?.value || '');
+  renderBookingCalendar(bookingCurrentMonth);
+}
+/apiget.php?table=reservations`, { credentials: 'include' });
     const json = await res.json();
     if (!json.success) throw new Error(json.error || 'Erro ao carregar reservas.');
     allReservationsCache = json.data || [];
@@ -949,7 +967,12 @@ function preencherFormReserva(reserva) {
   bookingFormTitle.textContent = 'Editar reserva';
   if (reservationIdInput) reservationIdInput.value = reserva.id || '';
   if (bookingRoomHiddenInput) bookingRoomHiddenInput.value = reserva.room_id || '';
-  if (bookingDateInput) bookingDateInput.value = reserva.date || '';
+  if (bookingDateInput) {
+    bookingDateInput.value = reserva.date || '';
+    bookingCurrentMonth = reserva.date ? new Date(reserva.date) : bookingCurrentMonth;
+    bookingCurrentMonth = new Date(bookingCurrentMonth.getFullYear(), bookingCurrentMonth.getMonth(), 1);
+    renderBookingCalendar(bookingCurrentMonth);
+  }
   const startInput = bookingForm.querySelector('input[name="time_start"]');
   const endInput = bookingForm.querySelector('input[name="time_end"]');
   if (startInput) startInput.value = reserva.time_start || DEFAULT_START_TIME;
@@ -1036,9 +1059,9 @@ function resetBookingForm(preserveMessage = false) {
   renderVisitorChecklist();
   renderRoomOptions('');
   if (bookingMessage && !preserveMessage) bookingMessage.textContent = '';
-  bookingCurrentMonth = new Date();
+  bookingCurrentMonth = new Date(bookingToday.getFullYear(), bookingToday.getMonth(), 1);
   if (bookingCalendarGrid) renderBookingCalendar(bookingCurrentMonth);
-  bookingCalendarInitiated = true;
+  updateBookingNavigation();
 }
 
 async function carregarVisitantes(clientId) {
