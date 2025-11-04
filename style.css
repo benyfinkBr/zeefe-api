@@ -1397,11 +1397,6 @@ body.client-portal-page.client-logged-out {
   overflow-y: auto;
 }
 
-body.client-portal-page.client-logged-out header.header,
-body.client-portal-page.client-logged-out footer {
-  display: none;
-}
-
 body.client-portal-page .client-portal {
   display: grid;
   place-items: center;
