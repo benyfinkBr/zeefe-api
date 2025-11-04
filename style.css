@@ -1130,6 +1130,10 @@ textarea {
   .login-card form.auth-form-grid {
     column-gap: 18px;
   }
+
+  .register-card .register-hero {
+    gap: 20px;
+  }
 }
 
 @media (max-width: 720px) {
@@ -1144,6 +1148,20 @@ textarea {
 
   .login-card form.auth-form-grid {
     row-gap: 14px;
+  }
+
+  .register-card .register-hero {
+    flex-direction: column;
+    text-align: center;
+    gap: 16px;
+  }
+
+  .login-card.register-card h2 {
+    text-align: center;
+  }
+
+  .login-card.register-card img {
+    width: 100px;
   }
 }
 
@@ -2260,9 +2278,22 @@ body.client-portal-page.client-authenticated .auth-container {
   text-align: left;
 }
 
+.register-card .register-hero {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 28px;
+  margin-bottom: 36px;
+}
+
+.login-card.register-card img {
+  width: 120px;
+  margin: 0;
+}
+
 .login-card.register-card h2 {
-  text-align: center;
-  margin-bottom: 32px;
+  margin: 0;
+  text-align: left;
 }
 
 .login-card form.auth-form-grid {
@@ -2274,6 +2305,14 @@ body.client-portal-page.client-authenticated .auth-container {
 
 .login-card form.auth-form-grid .form-field-full {
   grid-column: 1 / -1;
+}
+
+.login-card form.auth-form-grid input {
+  margin: 0;
+}
+
+.login-card form.auth-form-grid .btn {
+  width: 100%;
 }
 
 .login-card form.auth-form-grid input {
