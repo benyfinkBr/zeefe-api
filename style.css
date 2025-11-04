@@ -1123,6 +1123,12 @@ textarea {
   }
 }
 
+@media (max-width: 720px) {
+  .auth-form-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 560px) {
   .booking-stepper {
     grid-template-columns: 1fr;
@@ -2542,6 +2548,15 @@ body.client-portal-page.client-authenticated .auth-container {
   gap: 14px;
   margin-top: 12px;
   margin-bottom: 24px;
+}
+
+.auth-form-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 18px;
+}
+
+.auth-form-grid .form-field-full {
+  grid-column: 1 / -1;
 }
 
 .auth-form .form-field {

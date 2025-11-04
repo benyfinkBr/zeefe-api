@@ -31,7 +31,6 @@ const portalLoginForm = document.getElementById('portalLoginForm');
 const portalRegisterForm = document.getElementById('portalRegisterForm');
 const portalRecoveryForm = document.getElementById('portalRecoveryForm');
 const authMessage = document.getElementById('authMessage');
-const registerCompanySelect = document.getElementById('registerCompany');
 const loginIdentifierInput = document.getElementById('portalLoginIdentifier');
 const loginPasswordInput = document.getElementById('portalLoginPassword');
 const rememberMeCheckbox = document.getElementById('portalRememberMe');
@@ -289,16 +288,6 @@ async function carregarEmpresas() {
     console.error(err);
     companiesCache = [];
   }
-  preencherEmpresasSelect();
-}
-
-function preencherEmpresasSelect() {
-  if (!registerCompanySelect) return;
-  registerCompanySelect.innerHTML = '<option value=\"\">-- Sem vínculo --</option>' +
-    companiesCache.map(company => {
-      const label = company.nome_fantasia || company.razao_social || `Empresa #${company.id}`;
-      return `<option value=\"${company.id}\">${escapeHtml(label)}</option>`;
-    }).join('');
 }
 
 async function carregarSalas() {
@@ -666,19 +655,28 @@ async function onPortalRegisterSubmit(event) {
   event.preventDefault();
   if (!authMessage) return;
   authMessage.textContent = '';
+  const cpfInput = document.getElementById('registerCpf');
+  const phoneInput = document.getElementById('registerPhone');
+  const cpfDigits = somenteDigitos(cpfInput?.value);
+  const phoneDigits = somenteDigitos(phoneInput?.value);
+  if (cpfInput) cpfInput.value = formatCPF(cpfDigits);
+  if (phoneInput) phoneInput.value = formatPhone(phoneDigits);
   const payload = {
     name: document.getElementById('registerName')?.value.trim(),
     email: document.getElementById('registerEmail')?.value.trim(),
     login: document.getElementById('registerLogin')?.value.trim(),
-    cpf: document.getElementById('registerCpf')?.value.trim(),
-    phone: document.getElementById('registerPhone')?.value.trim(),
+    cpf: cpfDigits,
+    phone: phoneDigits,
     password: document.getElementById('registerPassword')?.value || '',
-    password_confirm: document.getElementById('registerPasswordConfirm')?.value || '',
-    company_id: registerCompanySelect?.value || ''
+    password_confirm: document.getElementById('registerPasswordConfirm')?.value || ''
   };
 
-  if (!payload.name || !payload.email || !payload.login || !payload.password) {
+  if (!payload.name || !payload.email || !payload.login || !payload.password || !payload.cpf) {
     authMessage.textContent = 'Preencha todos os campos obrigatórios.';
+    return;
+  }
+  if (payload.cpf.length !== 11) {
+    authMessage.textContent = 'Informe um CPF válido.';
     return;
   }
   if (payload.password !== payload.password_confirm) {

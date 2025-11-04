@@ -45,7 +45,7 @@
         <div class="login-card">
           <img src="img/logo.jpg" alt="Ze.EFE">
           <h2>Criar acesso<br><span>Portal do Cliente</span></h2>
-          <form id="portalRegisterForm" class="auth-form" autocomplete="on">
+          <form id="portalRegisterForm" class="auth-form auth-form-grid" autocomplete="on">
             <div class="form-field">
               <label for="registerName">Nome completo</label>
               <input type="text" id="registerName" name="name" required />
@@ -59,18 +59,12 @@
               <input type="text" id="registerLogin" name="login" required autocomplete="username" />
             </div>
             <div class="form-field">
-              <label for="registerCpf">CPF (opcional)</label>
-              <input type="text" id="registerCpf" name="cpf" maxlength="14" autocomplete="off" />
+              <label for="registerCpf">CPF</label>
+              <input type="text" id="registerCpf" name="cpf" maxlength="14" required autocomplete="off" />
             </div>
             <div class="form-field">
               <label for="registerPhone">Telefone (opcional)</label>
               <input type="text" id="registerPhone" name="phone" maxlength="15" autocomplete="tel" />
-            </div>
-            <div class="form-field">
-              <label for="registerCompany">Empresa (opcional)</label>
-              <select id="registerCompany" name="company_id">
-                <option value="">-- Sem vínculo --</option>
-              </select>
             </div>
             <div class="form-field">
               <label for="registerPassword">Senha</label>
@@ -80,7 +74,9 @@
               <label for="registerPasswordConfirm">Confirmar senha</label>
               <input type="password" id="registerPasswordConfirm" name="password_confirm" required autocomplete="new-password" />
             </div>
-            <button class="btn btn-primary" type="submit">Concluir cadastro</button>
+            <div class="form-field form-field-full">
+              <button class="btn btn-primary" type="submit">Concluir cadastro</button>
+            </div>
           </form>
           <button type="button" class="ghost-btn" data-view="login">Voltar ao login</button>
         </div>
