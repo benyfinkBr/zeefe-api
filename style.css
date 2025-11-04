@@ -1239,7 +1239,7 @@ textarea {
 
 .form-grid-mini {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 12px 16px;
   margin-bottom: 16px;
 }
@@ -2392,11 +2392,6 @@ body.client-portal-page.client-authenticated .auth-container {
 
 .input-hint.state-ok {
   color: #1D413A;
-}
-
-.profile-form .form-grid-mini,
-.visitor-form-card .form-grid-mini {
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
 }
 
 .visitor-form-card {
