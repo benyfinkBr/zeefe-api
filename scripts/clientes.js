@@ -683,16 +683,19 @@ async function onPortalLoginSubmit(event) {
   }
   const lembrar = rememberMeCheckbox?.checked;
   try {
+    console.debug('[Portal] Enviando login', { identifier, lembrar });
     const res = await fetch(`${API_BASE}/client_portal_login.php`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ login: identifier, password })
     });
     const json = await res.json();
+    console.debug('[Portal] Resposta login', json);
     if (!json.success) throw new Error(json.error || 'Não foi possível autenticar.');
     registrarPreferenciaLogin(lembrar, identifier);
     aplicarClienteAtivo(json.client);
   } catch (err) {
+    console.error('[Portal] Falha no login', err);
     authMessage.textContent = err.message || 'Erro ao autenticar.';
   }
 }
