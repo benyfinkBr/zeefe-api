@@ -1239,7 +1239,7 @@ textarea {
 
 .form-grid-mini {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 12px 16px;
   margin-bottom: 16px;
 }
@@ -2081,9 +2081,7 @@ body.client-portal-page.client-logged-out .portal-shell {
 
 
 
-.profile-card {
-  max-width: 620px;
-}
+
 
 .profile-form {
   display: flex;
@@ -2091,11 +2089,7 @@ body.client-portal-page.client-logged-out .portal-shell {
   gap: 12px;
 }
 
-.profile-form input[readonly] {
-  background: #f5f2ed;
-  color: var(--brand-muted);
-  border-color: rgba(29, 65, 58, 0.12);
-}
+
 
 .profile-form.editing input:not([readonly]) {
   background: #fff;
