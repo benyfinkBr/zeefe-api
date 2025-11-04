@@ -55,14 +55,12 @@
             <div class="form-field">
               <label for="registerEmail">E-mail</label>
               <input type="email" id="registerEmail" name="email" required autocomplete="email" />
-            </div>
-            <div class="form-field">
-              <label for="registerLogin">Login</label>
-              <input type="text" id="registerLogin" name="login" required autocomplete="username" />
+              <small class="input-hint">Use este e-mail ou CPF para acessar o portal.</small>
             </div>
             <div class="form-field">
               <label for="registerCpf">CPF</label>
               <input type="text" id="registerCpf" name="cpf" maxlength="14" required autocomplete="off" />
+              <small class="input-hint" id="cpfHint">Informe os 11 dígitos do CPF.</small>
             </div>
             <div class="form-field">
               <label for="registerPhone">Telefone (opcional)</label>
@@ -75,6 +73,10 @@
             <div class="form-field form-field-duo">
               <label for="registerPasswordConfirm">Confirmar senha</label>
               <input type="password" id="registerPasswordConfirm" name="password_confirm" required autocomplete="new-password" />
+            </div>
+            <div class="form-field form-field-full password-indicators" id="passwordIndicators">
+              <span class="password-indicator state-neutral" data-password-strength>Força da senha: aguardando</span>
+              <span class="password-indicator state-neutral" data-password-match>Confirmação: aguardando</span>
             </div>
             <div class="form-field form-field-full">
               <p class="password-hint" id="passwordHint">

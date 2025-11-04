@@ -2334,6 +2334,64 @@ body.client-portal-page.client-authenticated .auth-container {
   color: #B54A3A;
 }
 
+.password-indicators {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.password-indicator {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  background: rgba(29, 65, 58, 0.08);
+  color: var(--brand-dark);
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.password-indicator.state-neutral {
+  background: rgba(29, 65, 58, 0.08);
+  color: var(--brand-muted);
+}
+
+.password-indicator.state-warning {
+  background: #FFE3B0;
+  color: #7A4F00;
+}
+
+.password-indicator.state-error {
+  background: #F8D7DA;
+  color: #7A1C21;
+}
+
+.password-indicator.state-ok {
+  background: #DCEEE0;
+  color: #1D413A;
+}
+
+.input-hint {
+  display: block;
+  margin-top: 6px;
+  font-size: 0.78rem;
+  color: var(--brand-muted);
+}
+
+.input-hint.state-warning {
+  color: #D97A1C;
+}
+
+.input-hint.state-error {
+  color: #B54A3A;
+}
+
+.input-hint.state-ok {
+  color: #1D413A;
+}
+
 .login-card form.auth-form-grid input {
   margin: 0;
 }
