@@ -146,6 +146,8 @@ async function initialize() {
   bookingRoomSearchInput?.addEventListener('input', () => renderRoomOptions(bookingDateInput?.value || ''));
   bookingCityFilterInput?.addEventListener('input', () => renderRoomOptions(bookingDateInput?.value || ''));
   bookingStateFilterInput?.addEventListener('input', () => renderRoomOptions(bookingDateInput?.value || ''));
+  bookingTitleInput?.addEventListener('input', onBookingDetailsChange);
+  bookingDescriptionInput?.addEventListener('input', onBookingDetailsChange);
 
   cancelReservationEditBtn?.addEventListener('click', () => resetBookingForm());
   newReservationBtn?.addEventListener('click', () => {
@@ -173,22 +175,15 @@ async function initialize() {
   });
 
   portalNavButtons.forEach(btn => {
-    btn.addEventListener('click', () => {
-      setActivePanel(btn.dataset.panel);
-      if (!activeClient) return;
-      if (btn.dataset.panel === 'reservations') {
-        carregarReservas(activeClient.id);
-      } else if (btn.dataset.panel === 'visitors') {
-        carregarVisitantes(activeClient.id);
-      } else if (btn.dataset.panel === 'profile') {
-        renderProfile();
-      }
-    });
+    btn.addEventListener('click', () => setActivePanel(btn.dataset.panel));
   });
 
+  bookingCurrentMonth = new Date(bookingToday.getFullYear(), bookingToday.getMonth(), 1);
+  renderBookingCalendar(bookingCurrentMonth);
   renderVisitorChecklist();
   setBookingStep(0);
   renderRoomOptions(bookingDateInput?.value || '');
+  updateBookingNavigation();
   setBodyAuthState(false);
   showAuthOverlay();
   setActivePanel('book');
@@ -274,6 +269,7 @@ function setActivePanel(panelName = 'book') {
     renderVisitorChecklist();
     renderRoomOptions(bookingDateInput?.value || '');
     setBookingStep(bookingStepIndex);
+    renderBookingCalendar(bookingCurrentMonth);
   } else if (target === 'reservations' && activeClient) {
     carregarReservasGlobais().finally(() => carregarReservas(activeClient.id));
   } else if (target === 'visitors' && activeClient) {
@@ -1305,6 +1301,14 @@ function formatPhone(value) {
   const mid = isMobile ? digits.slice(2, 7) : digits.slice(2, 6);
   const end = isMobile ? digits.slice(7) : digits.slice(6);
   return `(${ddd}) ${mid}${end ? '-' + end : ''}`;
+}
+
+function toISODate(value) {
+  if (!value) return '';
+  const date = value instanceof Date ? new Date(value.getTime()) : new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  date.setHours(0, 0, 0, 0);
+  return date.toISOString().split('T')[0];
 }
 
 function escapeHtml(value) {
