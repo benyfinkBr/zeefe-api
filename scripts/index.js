@@ -2,6 +2,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const benefitsContainer = document.getElementById('benefits-cards');
   const roomsGrid = document.getElementById('rooms-grid');
   const roomsMessage = document.getElementById('rooms-message');
+  let amenitiesMap = {};
 
   const benefits = [
     { icon: '☕', title: 'Café, água e internet', description: 'Café premium, água e Wi-Fi ultra rápida inclusos' },
@@ -30,10 +31,25 @@ document.addEventListener('DOMContentLoaded', () => {
     roomsGrid.innerHTML = '';
     roomsMessage.textContent = 'Carregando salas...';
     try {
-      const res = await fetch('api/apiget.php?table=rooms', { credentials: 'include' });
-      const json = await res.json();
-      if (!json.success) throw new Error(json.error || 'Falha ao consultar API');
-      const rooms = json.data || [];
+      const roomsResponse = await fetch('api/apiget.php?table=rooms', { credentials: 'include' });
+      const roomsJson = await roomsResponse.json();
+      if (!roomsJson.success) throw new Error(roomsJson.error || 'Falha ao consultar API');
+      const rooms = roomsJson.data || [];
+
+      try {
+        const amenitiesResponse = await fetch('api/apiget.php?table=amenities', { credentials: 'include' });
+        const amenitiesJson = await amenitiesResponse.json();
+        if (amenitiesJson.success) {
+          amenitiesMap = (amenitiesJson.data || []).reduce((acc, item) => {
+            acc[item.id] = item.name;
+            return acc;
+          }, {});
+        }
+      } catch (amenitiesError) {
+        console.warn('Falha ao carregar comodidades', amenitiesError);
+        amenitiesMap = {};
+      }
+
       if (!rooms.length) {
         roomsMessage.textContent = 'Nenhuma sala cadastrada no momento.';
         return;
@@ -43,11 +59,16 @@ document.addEventListener('DOMContentLoaded', () => {
       rooms.forEach(room => {
         const available = isRoomAvailable(room, today);
         const photos = getRoomPhotos(room.photo_path);
+        const statusMeta = getStatusMeta(room, available);
+        const amenities = getAmenityNames(room.amenities).slice(0, 4);
         const card = document.createElement('article');
         card.className = `room-card${available ? '' : ' unavailable'}`;
 
+        const media = document.createElement('div');
+        media.className = 'room-card-media';
+
         const carouselContainer = document.createElement('div');
-        carouselContainer.className = 'room-photo';
+        carouselContainer.className = `room-photo${photos.length ? '' : ' room-photo-empty'}`;
         if (photos.length && window.createImageCarousel) {
           const carousel = window.createImageCarousel({
             images: photos,
@@ -59,26 +80,97 @@ document.addEventListener('DOMContentLoaded', () => {
           img.src = photos[0];
           img.alt = `Sala ${room.name || ''}`;
           carouselContainer.appendChild(img);
+        } else {
+          carouselContainer.innerHTML = '<span class="room-photo-placeholder">Sem imagens cadastradas</span>';
         }
 
-        card.innerHTML = '';
-        card.appendChild(carouselContainer);
+        const statusPill = document.createElement('span');
+        statusPill.className = `room-status-pill ${statusMeta.className}`;
+        statusPill.textContent = statusMeta.label;
+
+        const availabilityNote = document.createElement('span');
+        availabilityNote.className = `room-availability-note ${available ? 'available' : 'blocked'}`;
+        availabilityNote.textContent = getAvailabilityNote(room, available);
+
+        media.appendChild(carouselContainer);
+        media.appendChild(statusPill);
+        media.appendChild(availabilityNote);
+        card.appendChild(media);
 
         const info = document.createElement('div');
         info.className = 'room-info';
-        info.innerHTML = `
-            <h4>${escapeHtml(room.name)}</h4>
-            <div class="room-meta">
-              ${room.location ? `<span>📍 ${escapeHtml(room.location)}</span>` : ''}
-              <span>👥 ${room.capacity || 0} pessoas</span>
-              <span>${statusBadge(room, available)}</span>
-            </div>
-            ${room.description ? `<p>${escapeHtml(room.description)}</p>` : ''}
-            <div class="room-actions">
-              <a class="btn" ${available ? '' : 'aria-disabled="true" tabindex="-1"'} href="${available ? `pre-reserva.html?room=${room.id}` : '#'}">${available ? 'Reservar diária' : 'Indisponível'}</a>
-              <a class="btn btn-secondary" href="salas.html#sala-${room.id}">Detalhes</a>
-            </div>
+        const header = document.createElement('div');
+        header.className = 'room-header';
+        header.innerHTML = `
+          <h4>${escapeHtml(room.name)}</h4>
+          ${statusBadge(room, available)}
         `;
+        info.appendChild(header);
+
+        if (room.description) {
+          const description = document.createElement('p');
+          description.className = 'room-description';
+          description.textContent = truncateText(room.description, 180);
+          info.appendChild(description);
+        }
+
+        const metaGridItems = [];
+        if (room.location) {
+          metaGridItems.push(`
+            <div>
+              <dt>Local</dt>
+              <dd>${escapeHtml(room.location)}</dd>
+            </div>
+          `);
+        }
+        metaGridItems.push(`
+          <div>
+            <dt>Capacidade</dt>
+            <dd>${room.capacity || 0} pessoas</dd>
+          </div>
+        `);
+        if (room.daily_rate) {
+          metaGridItems.push(`
+            <div>
+              <dt>Diária</dt>
+              <dd>${formatCurrency(room.daily_rate)}</dd>
+            </div>
+          `);
+        }
+        if (room.area) {
+          metaGridItems.push(`
+            <div>
+              <dt>Área</dt>
+              <dd>${escapeHtml(room.area)} m²</dd>
+            </div>
+          `);
+        }
+
+        if (metaGridItems.length) {
+          const metaGrid = document.createElement('dl');
+          metaGrid.className = 'room-meta-grid';
+          metaGrid.innerHTML = metaGridItems.join('');
+          info.appendChild(metaGrid);
+        }
+
+        if (amenities.length) {
+          const amenityWrapper = document.createElement('div');
+          amenityWrapper.className = 'room-amenities';
+          amenities.forEach(name => {
+            const chip = document.createElement('span');
+            chip.textContent = name;
+            amenityWrapper.appendChild(chip);
+          });
+          info.appendChild(amenityWrapper);
+        }
+
+        const actions = document.createElement('div');
+        actions.className = 'room-actions';
+        actions.innerHTML = `
+          <a class="btn btn-primary${available ? '' : ' disabled'}" ${available ? '' : 'aria-disabled="true" tabindex="-1"'} href="${available ? `pre-reserva.html?room=${room.id}` : '#'}">${available ? 'Solicitar reserva' : 'Indisponível'}</a>
+          <a class="btn btn-secondary" href="salas.html#sala-${room.id}">Ver detalhes</a>
+        `;
+        info.appendChild(actions);
         card.appendChild(info);
         roomsGrid.appendChild(card);
       });
@@ -106,24 +198,51 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function statusBadge(room, available) {
+    const meta = getStatusMeta(room, available);
+    return `<span class="status-badge ${meta.className}">${meta.label}</span>`;
+  }
+
+  function getStatusMeta(room, available) {
     const status = (room.status || '').toLowerCase();
-    let label = 'Disponível';
-    let cls = 'status-ativo';
     if (!available) {
-      cls = 'status-cancelada';
       if (status === 'manutencao') {
-        cls = 'status-manutencao';
-        label = 'Em manutenção';
-      } else if (status === 'desativada') {
-        label = 'Desativada';
-      } else if (status === 'inativo') {
-        label = 'Indisponível';
+        return { label: 'Em manutenção', className: 'status-manutencao' };
       }
-    } else if (status === 'manutencao') {
-      cls = 'status-pendente';
-      label = 'Disponível em breve';
+      if (status === 'desativada') {
+        return { label: 'Desativada', className: 'status-cancelada' };
+      }
+      if (status === 'inativo') {
+        return { label: 'Indisponível', className: 'status-cancelada' };
+      }
+      return { label: 'Indisponível', className: 'status-cancelada' };
     }
-    return `<span class="status-badge ${cls}">${label}</span>`;
+    if (status === 'manutencao') {
+      return { label: 'Disponível em breve', className: 'status-pendente' };
+    }
+    return { label: 'Disponível', className: 'status-ativo' };
+  }
+
+  function getAvailabilityNote(room, available) {
+    const status = (room.status || '').toLowerCase();
+    if (available) {
+      return 'Liberada para novas reservas.';
+    }
+    if (status === 'manutencao') {
+      if (room.maintenance_end) {
+        return `Em manutenção até ${formatDateDisplay(room.maintenance_end)}.`;
+      }
+      return 'Em manutenção temporária.';
+    }
+    if (status === 'desativada') {
+      if (room.deactivated_from) {
+        return `Desativada a partir de ${formatDateDisplay(room.deactivated_from)}.`;
+      }
+      return 'Desativada temporariamente.';
+    }
+    if (status === 'inativo') {
+      return 'Sala indisponível para reservas.';
+    }
+    return 'Indisponível para a data atual.';
   }
 
   function formatDateISO(date) {
@@ -146,5 +265,37 @@ document.addEventListener('DOMContentLoaded', () => {
       .map(item => item.trim())
       .filter(Boolean)
       .map(src => (src.startsWith('http') ? src : `/${src}`));
+  }
+
+  function getAmenityNames(amenities) {
+    if (!amenitiesMap || !Array.isArray(amenities)) return [];
+    const seen = new Set();
+    return amenities
+      .map(id => amenitiesMap[id])
+      .filter(Boolean)
+      .filter(name => {
+        if (seen.has(name)) return false;
+        seen.add(name);
+        return true;
+      });
+  }
+
+  function truncateText(text, limit) {
+    const value = String(text || '').trim();
+    if (value.length <= limit) return value;
+    return `${value.slice(0, limit - 1).trim()}…`;
+  }
+
+  function formatCurrency(value) {
+    const number = Number(value);
+    if (!number || Number.isNaN(number)) return '';
+    return number.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  }
+
+  function formatDateDisplay(dateString) {
+    if (!dateString) return '';
+    const parsed = new Date(dateString);
+    if (Number.isNaN(parsed.getTime())) return dateString;
+    return parsed.toLocaleDateString('pt-BR', { timeZone: 'UTC' });
   }
 });
