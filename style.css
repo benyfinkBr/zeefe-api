@@ -100,7 +100,7 @@ main {
 
 .landing-hero-content h2 {
   margin: 0;
-  font-size: 2.6rem;
+  font-size: 2.4rem;
   line-height: 1.2;
 }
 
@@ -190,10 +190,36 @@ main {
   color: var(--brand-muted);
 }
 
-.landing-benefits .cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 18px;
+/* Linha de passos compacta */
+.steps-inline {
+  margin: 24px 0 12px;
+}
+.steps-inline-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  justify-content: center;
+}
+.steps-inline .step-pill {
+  background: #fff;
+  border: 1px solid rgba(29,65,58,.12);
+  border-radius: 999px;
+  padding: 10px 14px;
+  font-weight: 600;
+  color: var(--brand-green);
+}
+.steps-inline .step-pill span {
+  display: inline-flex;
+  width: 22px; height: 22px;
+  align-items: center; justify-content: center;
+  border-radius: 50%;
+  background: var(--brand-green);
+  color: var(--brand-cream);
+  font-size: 12px; margin-right: 8px;
+}
+.steps-inline .step-sep {
+  color: var(--brand-muted);
 }
 
 .landing-portal {
