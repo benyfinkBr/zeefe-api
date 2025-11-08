@@ -82,7 +82,11 @@ function enviarEmailStatusReserva(PDO $pdo, int $reservationId, string $action, 
 
   switch ($action) {
     case 'confirm':
-      $link = 'https://zeefe.com.br/pagamento?reserva=' . (int)$reservationId;
+      // Link fictício que marca a reserva como paga (mock)
+      $scheme = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') ? 'https://' : 'http://';
+      $host = $_SERVER['HTTP_HOST'] ?? 'zeefe.com.br';
+      $base = rtrim(dirname($_SERVER['SCRIPT_NAME']), '/');
+      $link = $scheme . $host . $base . '/mock_payment_confirm.php?reservation=' . (int)$reservationId;
       $btn = '<div style="text-align:center;margin:18px 0 26px;"><a href="' . htmlspecialchars($link) . '" style="background:#1D413A;color:#fff;text-decoration:none;padding:12px 18px;border-radius:10px;font-weight:600;display:inline-block">Pagar agora</a></div>';
       $detalhes['bloco_informacoes'] = '<p style="margin:0 0 10px;font-size:15px;line-height:1.6;">Sua reserva foi confirmada. Efetue o pagamento em até 24h para garantir o espaço.</p>' . $btn . '<p style="margin:0 0 20px;font-size:14px;color:#8A7766;">Após a confirmação do pagamento, você receberá os detalhes e poderá convidar os visitantes.</p>';
       $html = mailer_render('reservation_confirmed.php', $detalhes);
