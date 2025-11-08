@@ -51,6 +51,18 @@ header.header {
   letter-spacing: 0.08em;
 }
 
+.prelaunch-badge {
+  display: inline-block;
+  margin-left: 10px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 999px;
+  color: var(--brand-green);
+  background: var(--brand-sand);
+  vertical-align: middle;
+}
+
 nav a {
   margin-left: 24px;
   font-weight: 500;
@@ -173,6 +185,14 @@ main {
 .landing-section {
   margin-bottom: 56px;
 }
+
+/* Chips de destaque no estilo "pills" */
+.cards-grid.pills .card {
+  background: var(--brand-sand);
+  border-color: rgba(29,65,58,.08);
+}
+.cards-grid.pills .card h4 { margin-bottom: 6px; }
+.cards-grid.pills .card p { color: var(--brand-green); opacity: .9; }
 
 .section-heading {
   display: flex;
@@ -303,6 +323,39 @@ main {
   font-weight: 600;
 }
 
+/* Seção Ambiente Premium */
+.premium-grid {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 18px;
+}
+.premium-copy h3 { margin-top: 0; }
+.premium-copy .checklist {
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+  columns: 2;
+  column-gap: 24px;
+}
+.premium-copy .checklist li {
+  position: relative;
+  padding-left: 22px;
+  margin: 6px 0;
+}
+.premium-copy .checklist li::before {
+  content: '✓';
+  position: absolute;
+  left: 0; top: 0; color: var(--brand-green);
+}
+.premium-media img {
+  width: 100%; height: 100%; object-fit: cover; border-radius: 12px;
+}
+
+@media (max-width: 900px) {
+  .premium-grid { grid-template-columns: 1fr; }
+  .premium-copy .checklist { columns: 1; }
+}
+
 .hero {
   background: linear-gradient(135deg, rgba(29, 65, 58, 0.9), rgba(22, 51, 46, 0.9));
   color: #fff;
@@ -390,6 +443,16 @@ button:disabled {
   padding: 8px 14px;
   font-size: 0.85rem;
 }
+
+/* Cookie banner */
+#cookieBanner.cookie-banner {
+  position: fixed; left: 16px; right: 16px; bottom: 16px;
+  background: #fff; border: 1px solid rgba(29,65,58,.12);
+  border-radius: 14px; box-shadow: var(--shadow-soft);
+}
+.cookie-inner { display: flex; gap: 12px; align-items: center; justify-content: space-between; padding: 14px 16px; }
+.cookie-inner p { margin: 0; color: var(--brand-green); }
+.cookie-actions { display: inline-flex; gap: 8px; }
 
 section {
   margin-bottom: 56px;
