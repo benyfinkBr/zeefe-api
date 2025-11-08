@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Ze.EFE - Divulgue sua sala</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="header">
+    <h1 class="logo">Ze.EFE</h1>
+    <nav>
+      <a href="index.html">Início</a>
+      <a href="salas.html">Salas</a>
+      <a href="pre-reserva.html">Pré-Reserva</a>
+      <a href="clientes.html">Área do Cliente</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero" style="text-align:center;">
+      <h2>Divulgue sua sala na Ze.EFE</h2>
+      <p>Estamos criando uma rede de espaços excepcionais. Envie seus dados e entraremos em contato.</p>
+    </section>
+
+    <section class="form-card" style="max-width:720px;margin:0 auto;">
+      <form id="divulgueForm">
+        <div class="form-row">
+          <label>Nome completo</label>
+          <input type="text" name="name" required />
+        </div>
+        <div class="form-grid-mini">
+          <div>
+            <label>E-mail</label>
+            <input type="email" name="email" required />
+          </div>
+          <div>
+            <label>Telefone</label>
+            <input type="tel" name="phone" />
+          </div>
+        </div>
+        <div class="form-row">
+          <label>Localização (cidade/UF)</label>
+          <input type="text" name="location" />
+        </div>
+        <div class="form-row">
+          <label>Descrição da sala</label>
+          <textarea name="description" rows="4"></textarea>
+        </div>
+        <div class="form-row">
+          <button class="btn btn-primary" type="submit">Enviar</button>
+          <a class="btn btn-secondary" href="mailto:contato@zeefe.com.br">Falar por e-mail</a>
+        </div>
+        <div class="rooms-message" id="divulgueMsg"></div>
+      </form>
+    </section>
+  </main>
+
+  <footer>
+    <p>Contato: contato@zeefe.com | (11) 1234-5678</p>
+    <p>Endereço: Moema, São Paulo - SP</p>
+    <p><a href="#">Instagram</a> | <a href="#">LinkedIn</a></p>
+    <p>© 2025 Ze.EFE - Todos os direitos reservados</p>
+  </footer>
+
+  <script>
+    const f = document.getElementById('divulgueForm');
+    const m = document.getElementById('divulgueMsg');
+    f?.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const data = new FormData(f);
+      const subject = encodeURIComponent('Divulgue minha sala - Ze.EFE');
+      const body = encodeURIComponent(
+        `Nome: ${data.get('name')}\nE-mail: ${data.get('email')}\nTelefone: ${data.get('phone')||''}\nLocalização: ${data.get('location')||''}\n\nDescrição:\n${data.get('description')||''}`
+      );
+      window.location.href = `mailto:contato@zeefe.com.br?subject=${subject}&body=${body}`;
+      m.textContent = 'Abrimos seu cliente de e-mail com as informações preenchidas. Obrigado!';
+      f.reset();
+    });
+  </script>
+</body>
+</html>
+
