@@ -11,7 +11,7 @@ if ($login === '' || $password === '') {
 }
 
 try {
-  $stmt = $pdo->prepare('SELECT id, name, email, login, cpf, password, password_hash, company_id, status, phone, whatsapp FROM clients WHERE login = :login OR email = :login OR cpf = :cpf LIMIT 1');
+  $stmt = $pdo->prepare('SELECT id, name, email, email_verified_at, login, cpf, password_hash, company_id, status, phone, whatsapp FROM clients WHERE login = :login OR email = :login OR cpf = :cpf LIMIT 1');
   $stmt->execute([':login' => $login, ':cpf' => preg_replace('/\D/', '', $login)]);
   $client = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -32,10 +32,6 @@ try {
     if (($info['algo'] ?? 0) !== 0) {
       $validated = password_verify($password, $hash);
     }
-  }
-
-  if (!$validated && !empty($client['password'])) {
-    $validated = hash_equals((string) $client['password'], $password);
   }
 
   if (!$validated) {

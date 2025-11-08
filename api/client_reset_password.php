@@ -23,8 +23,8 @@ try {
   $newPassword = gerarSenhaTemporaria();
   $hash = password_hash($newPassword, PASSWORD_DEFAULT);
 
-  $update = $pdo->prepare('UPDATE clients SET password = :password, password_hash = :hash, updated_at = NOW() WHERE id = :id');
-  $update->execute([':password' => $newPassword, ':hash' => $hash, ':id' => $client['id']]);
+  $update = $pdo->prepare('UPDATE clients SET password = NULL, password_hash = :hash, updated_at = NOW() WHERE id = :id');
+  $update->execute([':hash' => $hash, ':id' => $client['id']]);
 
   // Tentativa de envio de e-mail (ignorar erros silenciosamente)
   if (!empty($client['email'])) {

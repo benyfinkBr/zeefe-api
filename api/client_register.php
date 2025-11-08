@@ -30,14 +30,13 @@ $hash = password_hash($password, PASSWORD_DEFAULT);
   $verificationToken = bin2hex(random_bytes(32));
   $verificationExpires = (new DateTimeImmutable('+48 hours'))->format('Y-m-d H:i:s');
 
-  $stmt = $pdo->prepare('INSERT INTO clients (name, email, email_verified_at, verification_token, verification_token_expires, login, password, password_hash, cpf, phone, whatsapp, type, company_id, status, created_at, updated_at) VALUES (:name,:email,NULL,:vtoken,:vexpires,:login,:password,:hash,:cpf,:phone,:whatsapp,:type,:company_id,:status,NOW(),NOW())');
+  $stmt = $pdo->prepare('INSERT INTO clients (name, email, email_verified_at, verification_token, verification_token_expires, login, password_hash, cpf, phone, whatsapp, type, company_id, status, created_at, updated_at) VALUES (:name,:email,NULL,:vtoken,:vexpires,:login,:hash,:cpf,:phone,:whatsapp,:type,:company_id,:status,NOW(),NOW())');
   $stmt->execute([
     ':name' => $name,
     ':email' => $email,
     ':vtoken' => $verificationToken,
     ':vexpires' => $verificationExpires,
     ':login' => $login,
-    ':password' => $password,
     ':hash' => $hash,
     ':cpf' => $cpf ?: null,
     ':phone' => $phone ?: null,
