@@ -142,20 +142,35 @@ async function initialize() {
     registerPhoneInput.value = formatPhone(digits);
   });
 
+  // Debounce helper para evitar gravações frequentes
+  function debounce(fn, delay = 600) {
+    let t;
+    return (...args) => {
+      clearTimeout(t);
+      t = setTimeout(() => fn(...args), delay);
+    };
+  }
+
+  // Grava cookie apenas quando o usuário marca/desmarca a opção
   rememberMeCheckbox?.addEventListener('change', () => {
     const value = loginIdentifierInput?.value.trim() || '';
-    registrarPreferenciaLogin(rememberMeCheckbox.checked, value);
+    if (rememberMeCheckbox.checked && value) {
+      registrarPreferenciaLogin(true, value);
+    } else {
+      registrarPreferenciaLogin(false, '');
+    }
   });
 
+  // No input, apenas persiste em localStorage com debounce (sem tocar em cookie)
+  const saveLoginDebounced = debounce((val) => {
+    try {
+      if (val) localStorage.setItem('portalRememberLogin', val);
+    } catch (_) {}
+  }, 600);
+
   loginIdentifierInput?.addEventListener('input', () => {
-    if (!rememberMeCheckbox?.checked) return;
-    const value = loginIdentifierInput.value.trim();
-    if (!value) {
-      rememberMeCheckbox.checked = false;
-      registrarPreferenciaLogin(false, '');
-    } else {
-      registrarPreferenciaLogin(true, value);
-    }
+    const val = loginIdentifierInput.value.trim();
+    if (val) saveLoginDebounced(val);
   });
 
   if (passwordIndicators) {
@@ -684,14 +699,14 @@ async function onPortalLoginSubmit(event) {
   }
   const lembrar = rememberMeCheckbox?.checked;
   try {
-    console.debug('[Portal] Enviando login', { identifier, lembrar });
+    if (window.DEBUG) console.debug('[Portal] Enviando login', { identifier, lembrar });
     const res = await fetch(`${API_BASE}/client_portal_login.php`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ login: identifier, password })
     });
     const json = await res.json();
-    console.debug('[Portal] Resposta login', json);
+    if (window.DEBUG) console.debug('[Portal] Resposta login', json);
     if (!json.success) throw new Error(json.error || 'Não foi possível autenticar.');
     registrarPreferenciaLogin(lembrar, identifier);
     aplicarClienteAtivo(json.client);
