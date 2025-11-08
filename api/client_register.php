@@ -25,12 +25,17 @@ try {
     exit;
   }
 
-  $hash = password_hash($password, PASSWORD_DEFAULT);
+$hash = password_hash($password, PASSWORD_DEFAULT);
+  // Gera token de verificação de e-mail (válido por 48h)
+  $verificationToken = bin2hex(random_bytes(32));
+  $verificationExpires = (new DateTimeImmutable('+48 hours'))->format('Y-m-d H:i:s');
 
-  $stmt = $pdo->prepare('INSERT INTO clients (name, email, login, password, password_hash, cpf, phone, whatsapp, type, company_id, status, created_at, updated_at) VALUES (:name,:email,:login,:password,:hash,:cpf,:phone,:whatsapp,:type,:company_id,:status,NOW(),NOW())');
+  $stmt = $pdo->prepare('INSERT INTO clients (name, email, email_verified_at, verification_token, verification_token_expires, login, password, password_hash, cpf, phone, whatsapp, type, company_id, status, created_at, updated_at) VALUES (:name,:email,NULL,:vtoken,:vexpires,:login,:password,:hash,:cpf,:phone,:whatsapp,:type,:company_id,:status,NOW(),NOW())');
   $stmt->execute([
     ':name' => $name,
     ':email' => $email,
+    ':vtoken' => $verificationToken,
+    ':vexpires' => $verificationExpires,
     ':login' => $login,
     ':password' => $password,
     ':hash' => $hash,
@@ -59,12 +64,15 @@ try {
   ];
 
   try {
-    $html = mailer_render('account_welcome.php', [
+    $verifyLink = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https://' : 'http://')
+      . ($_SERVER['HTTP_HOST'] ?? 'zeefe.com.br')
+      . dirname($_SERVER['SCRIPT_NAME'])
+      . '/client_verify_email.php?token=' . urlencode($verificationToken);
+    $html = mailer_render('account_verify.php', [
       'cliente_nome' => $name,
-      'login' => $login,
-      'email' => $email
+      'verify_link' => $verifyLink
     ]);
-    mailer_send($email, 'Bem-vindo ao Portal Ze.EFE', $html);
+    mailer_send($email, 'Ze.EFE - Confirme seu e-mail', $html);
   } catch (Throwable $mailError) {
     error_log('Falha ao enviar e-mail de boas-vindas: ' . $mailError->getMessage());
   }

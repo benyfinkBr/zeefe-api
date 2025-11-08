@@ -697,8 +697,41 @@ async function onPortalLoginSubmit(event) {
     aplicarClienteAtivo(json.client);
   } catch (err) {
     console.error('[Portal] Falha no login', err);
-    authMessage.textContent = err.message || 'Erro ao autenticar.';
+    const msg = err.message || 'Erro ao autenticar.';
+    authMessage.textContent = msg;
+    if (/confirme seu e-mail/i.test(msg) && loginIdentifierInput?.value) {
+      renderResendVerification(loginIdentifierInput.value.trim());
+    }
   }
+}
+
+function renderResendVerification(identifier) {
+  let btn = document.getElementById('resendVerificationBtn');
+  if (!btn) {
+    btn = document.createElement('button');
+    btn.id = 'resendVerificationBtn';
+    btn.className = 'btn btn-secondary btn-sm';
+    btn.style.marginTop = '8px';
+    btn.textContent = 'Reenviar link de verificação';
+    authMessage?.appendChild(document.createElement('br'));
+    authMessage?.appendChild(btn);
+  }
+  btn.onclick = async () => {
+    btn.disabled = true;
+    try {
+      const res = await fetch(`${API_BASE}/client_resend_verification.php`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ login: identifier })
+      });
+      const json = await res.json();
+      authMessage.textContent = json.message || (json.success ? 'Link reenviado.' : (json.error || 'Falha ao reenviar.'));
+    } catch (e) {
+      authMessage.textContent = 'Falha ao reenviar link.';
+    } finally {
+      btn.disabled = false;
+    }
+  };
 }
 
 async function onPortalRegisterSubmit(event) {

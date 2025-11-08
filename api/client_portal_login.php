@@ -43,6 +43,12 @@ try {
     exit;
   }
 
+  // Bloquear login se e-mail não verificado
+  if (empty($client['email_verified_at'])) {
+    echo json_encode(['success' => false, 'error' => 'Confirme seu e-mail para acessar o portal.']);
+    exit;
+  }
+
   echo json_encode([
     'success' => true,
     'client' => [
