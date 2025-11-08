@@ -44,7 +44,10 @@ try {
   $timeStart = $reservation['time_start'] ?: '08:00';
   $timeEnd = $reservation['time_end'] ?: '20:00';
 
-  $paymentLink = sprintf('https://zeefe.com.br/pagamento?reserva=%d', (int) $reservation['id']);
+  $scheme = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') ? 'https://' : 'http://';
+  $host = $_SERVER['HTTP_HOST'] ?? 'zeefe.com.br';
+  $base = rtrim(dirname($_SERVER['SCRIPT_NAME']), '/');
+  $paymentLink = $scheme . $host . $base . '/mock_payment_confirm.php?reservation=' . (int)$reservation['id'];
 
   $html = mailer_render('payment_link.php', [
     'cliente_nome' => $reservation['client_name'] ?: 'Cliente Ze.EFE',
