@@ -1231,8 +1231,10 @@ function tratarAcaoVisitante(id, action) {
     return;
   }
   if (action === 'delete') {
-    if (!confirm('Deseja excluir este visitante?')) return;
-    excluirRegistro('visitors', id).then(() => atualizarPainel());
+    // Soft delete: marcar como INATIVO em vez de remover o registro
+    const confirmar = confirm('Deseja inativar este visitante? (o registro não será apagado)');
+    if (!confirmar) return;
+    setVisitorStatus(id, 'inativo').then(() => atualizarPainel());
   }
 }
 
@@ -1275,6 +1277,22 @@ async function onVisitorSubmit(event) {
   } catch (err) {
     console.error(err);
     alert(err.message || 'Não foi possível salvar o visitante.');
+  }
+}
+
+async function setVisitorStatus(id, status) {
+  try {
+    const res = await fetch(`${API_BASE}/apiupdate.php`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ table: 'visitors', data: { id: Number(id), status } })
+    });
+    const json = await res.json();
+    if (!json.success) throw new Error(json.error || 'Falha ao atualizar status.');
+  } catch (err) {
+    console.error(err);
+    alert('Não foi possível atualizar o status do visitante.');
   }
 }
 
