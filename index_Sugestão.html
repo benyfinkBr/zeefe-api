@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ZEEFE — Em breve redefiniremos o conceito de Sala de Reuniões</title>
+  <meta name="description" content="Salas de reunião premium em Moema — estética escandinava atemporal, tecnologia discreta e conforto all-inclusive.">
+  <link rel="icon" type="image/png" href="assets/images/favicon-32.png" sizes="32x32">
+  <link rel="apple-touch-icon" href="assets/images/logo.png">
+  <link rel="stylesheet" href="assets/css/style.css?v=4">
+  <link rel="stylesheet" href="assets/css/leads.css?v=4">
+
+  <!-- Ajustes finais de layout/conversão -->
+  <style>
+    /* Paleta extra para destaque do CTA (não mexe no resto do site) */
+    :root{
+      --accent:#C18A47;         /* botão de destaque */
+      --accent-ink:#ffffff;
+      --accent-hover:#B07C40;
+    }
+
+    /* Header: CTA sempre à direita, sem sobreposição */
+    .site-header{position:sticky;top:0;z-index:50;}
+    .site-header .header-wrap{
+      display:flex!important;align-items:center!important;justify-content:space-between!important;
+      gap:16px;flex-wrap:nowrap;
+    }
+    .site-header .brand{display:flex;align-items:center;gap:14px;min-width:0;flex:1 1 auto;}
+    .site-header .logo{height:72px;max-width:220px;width:auto;object-fit:contain;display:block;}
+    .site-header .nav{order:2;margin-left:auto;flex:0 0 auto;position:static!important;}
+    .notify-btn--header{padding:10px 16px;border-radius:14px;white-space:nowrap;}
+    @media (max-width:640px){.notify-btn--header{padding:8px 12px;font-size:.9rem;}}
+
+    /* CTA do herói em cor de destaque para aumentar conversão */
+    .cell-a .notify-btn{
+      background:var(--accent)!important;color:var(--accent-ink)!important;
+      border-color:rgba(0,0,0,.08)!important;box-shadow:0 4px 12px rgba(193,138,71,.25);
+    }
+    .cell-a .notify-btn:hover{background:var(--accent-hover)!important;filter:none!important;}
+
+    /* Subgrid (lado direito) centralizado na célula */
+    .cell-b{
+      display:flex;align-items:center;justify-content:center;padding:24px;
+    }
+    .subgrid-3x2{
+      width:100%;max-width:980px;margin:0 auto;
+      justify-items:stretch;align-items:center;place-content:center;
+    }
+
+    /* Remove possíveis ícones/emoji remanescentes (se houver) */
+    .features .icon{display:none!important;}
+  </style>
+</head>
+<body>
+  <!-- Header com CTA -->
+  <header class="site-header">
+    <div class="container header-wrap">
+      <div class="brand">
+        <img src="assets/images/logo.png" alt="ZEEFE" class="logo">
+        <span class="badge">Pré-lançamento</span>
+      </div>
+      <nav class="nav">
+        <button class="notify-btn notify-btn--header">Quero ser avisado</button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Main -->
+  <main class="site-main">
+    <div class="container">
+      <section class="grid-2x2">
+        <!-- A: Hero -->
+        <div class="cell cell-a">
+          <h1>Em breve <span class="muted">redefiniremos</span> o seu conceito de locação<span class="break"> diária  de sala de reunião</span></h1>
+          <p class="lead">Espaço sob medida com estética moderna e envolvente, tecnologia discreta e conforto premium — tudo pronto para o seu próximo encontro importante.</p>
+          <div class="cta">
+            <button class="notify-btn">Avise-me do lançamento</button>
+            <span class="place">Moema · São Paulo</span>
+          </div>
+          <small class="cta-note">Sem spam: avisaremos apenas sobre o lançamento.</small>
+        </div>
+
+        <!-- B: Subgrid 3x2 (sem emojis) -->
+        <div class="cell cell-b">
+          <div class="subgrid-3x2 features" role="list">
+            <article class="feature-card" role="listitem">
+              <h3>All Inclusive</h3>
+              <p>Café, água, internet rápida, impressora e multimídia inclusos.</p>
+            </article>
+            <article class="feature-card" role="listitem">
+              <h3>Tecnologia de Ponta</h3>
+              <p>Projetor, Apple TV, Wi-Fi rápido, equipamentos modernos.</p>
+            </article>
+            <article class="feature-card" role="listitem">
+              <h3>Flexibilidade Total</h3>
+              <p>Horários flexíveis e diversos formatos de pagamento.</p>
+            </article>
+            <article class="feature-card" role="listitem">
+              <h3>Localização Premium</h3>
+              <p>Moema, próximo a polos empresariais e aeroportos.</p>
+            </article>
+            <article class="feature-card" role="listitem">
+              <h3>Atendimento Personalizado</h3>
+              <p>Suporte completo e programa de fidelidade.</p>
+            </article>
+            <article class="feature-card" role="listitem">
+              <h3>Pagamento Facilitado</h3>
+              <p>PIX, cartão, boleto e faturado para empresas.</p>
+            </article>
+          </div>
+        </div>
+
+        <!-- C: Conteúdo destaque -->
+        <div class="cell cell-c">
+          <div class="card card-intro">
+            <h2>Ambiente Premium Pronto para Usar</h2>
+            <p class="intro">
+              No Ze.EFE, você encontra salas de reunião completamente equipadas com tudo que precisa
+              para suas reuniões e apresentações. Nossa proposta all inclusive significa que você paga
+              um valor fixo e tem acesso a todos os equipamentos e serviços, sem surpresas na conta.
+            </p>
+            <ul class="benefits">
+              <li>Ar condicionado LG</li>
+              <li>Impressora Canon G3110</li>
+              <li>Cafeteira Nespresso Mini</li>
+              <li>Frigobar Brastemp Retro</li>
+              <li>Apple TV</li>
+              <li>Projetor Epson EpiqVision</li>
+              <li>Webcam Logitech Brio</li>
+              <li>Soundbar LG</li>
+              <li>Filtro de água Electrolux</li>
+              <li>Microondas Electrolux</li>
+              <li>Smart Lock com abertura remota</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- D: Carrossel (6 imagens + legenda) -->
+        <div class="cell cell-d">
+          <div class="carousel" data-auto="6000" aria-roledescription="carrossel">
+            <button class="nav prev" type="button" aria-label="Anterior">‹</button>
+            <button class="nav next" type="button" aria-label="Próximo">›</button>
+            <div class="track">
+              <figure class="slide active">
+                <img src="assets/images/slide1.jpg" alt="Sala de reunião — visão 1">
+                <figcaption>Visão geral da sala</figcaption>
+              </figure>
+              <figure class="slide">
+                <img src="assets/images/slide2.jpg" alt="Sala de reunião — visão 2">
+                <figcaption>Arquibancada para dinâmicas</figcaption>
+              </figure>
+              <figure class="slide">
+                <img src="assets/images/slide3.jpg" alt="Sala de reunião — visão 3">
+                <figcaption>Cápsula acústica para foco</figcaption>
+              </figure>
+              <figure class="slide">
+                <img src="assets/images/slide4.jpg" alt="Sala de reunião — visão 4">
+                <figcaption>Estações abertas</figcaption>
+              </figure>
+              <figure class="slide">
+                <img src="assets/images/slide5.jpg" alt="Sala de reunião — visão 5">
+                <figcaption>Copa completa</figcaption>
+              </figure>
+              <figure class="slide">
+                <img src="assets/images/slide6.jpg" alt="Sala de reunião — visão 6">
+                <figcaption>Apresentações e treinamentos</figcaption>
+              </figure>
+            </div>
+            <div class="dots" role="tablist" aria-label="Slides"></div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <!-- Footer (sem emojis) -->
+  <footer class="site-footer">
+    <div class="container footer-bar">
+      <div class="footer-left">
+        <span class="foot-brand">Ze.EFE – Av. Rouxinol, 84 cj 78 – Inter Offices Moema</span>
+        <a class="foot-item" href="tel:+55 (11)9.999-99999" aria-label="Telefone">+55 11 99999-9999</a>
+        <a class="foot-item" href="mailto:contato@zeefe.com.br" aria-label="E-mail">contato@zeefe.com.br</a>
+      </div>
+      <div class="footer-right">
+        <a class="foot-item" href="http://www.instagram.com/zeefe_moema" target="_blank" rel="noopener">Instagram</a>
+        <a class="foot-item" href="https://www.linkedin.com/company/zeefe" target="_blank" rel="noopener">LinkedIn</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Barra fixa (mobile/scroll) -->
+  <div class="sticky-cta" aria-hidden="true">
+    <span>Garanta seu aviso do lançamento</span>
+    <button class="notify-btn notify-btn--sticky">Avise-me</button>
+  </div>
+
+  <!-- Modal "Avise-me do lançamento" -->
+  <div id="notify-overlay" aria-hidden="true" role="dialog" aria-modal="true">
+    <div class="notify-dialog">
+      <div class="notify-head">
+        <h3 class="notify-title">Avise-me do lançamento</h3>
+        <button type="button" class="notify-close" aria-label="Fechar">✕</button>
+      </div>
+      <form class="notify-body" id="notify-form" autocomplete="on">
+        <div class="notify-grid">
+          <div class="notify-field">
+            <label for="nome">Nome</label>
+            <input id="nome" name="nome" type="text" placeholder="Seu nome" required>
+          </div>
+          <div class="notify-field">
+            <label for="telefone">Telefone</label>
+            <input id="telefone" name="telefone" type="tel" placeholder="(11) 90000-0000" required>
+          </div>
+          <div class="notify-field">
+            <label for="email">E-mail</label>
+            <input id="email" name="email" type="email" placeholder="voce@exemplo.com" required>
+          </div>
+          <!-- honeypot -->
+          <input type="text" name="website" style="display:none" tabindex="-1" autocomplete="off">
+
+          <div class="notify-actions">
+            <button class="notify-submit" type="submit">Cadastrar interesse</button>
+            <button class="notify-cancel" type="button">Cancelar</button>
+            <span class="notify-hint">Avisaremos por e-mail quando abrirmos as reservas.</span>
+          </div>
+
+          <div class="notify-success" id="notify-success">Pronto! Recebemos seu interesse. Obrigado 🙌</div>
+          <div class="notify-error" id="notify-error"></div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Fallback: abre/fecha modal mesmo se o leads.js não carregar -->
+  <script>
+    window.addEventListener('DOMContentLoaded', function(){
+      var overlay = document.getElementById('notify-overlay');
+      if(!overlay) return;
+      document.querySelectorAll('.notify-btn').forEach(function(b){
+        b.addEventListener('click', function(e){ e.preventDefault(); overlay.setAttribute('aria-hidden','false'); });
+      });
+      document.querySelectorAll('.notify-close, .notify-cancel').forEach(function(b){
+        b.addEventListener('click', function(){ overlay.setAttribute('aria-hidden','true'); });
+      });
+      overlay.addEventListener('click', function(e){ if(e.target===overlay) overlay.setAttribute('aria-hidden','true'); });
+    });
+  </script>
+
+  <!-- Scripts principais -->
+  <script src="assets/js/script.js?v=4"></script>
+  <script src="assets/js/leads.js?v=4"></script>
+</body>
+</html>
