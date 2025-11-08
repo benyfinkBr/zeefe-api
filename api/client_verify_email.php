@@ -68,6 +68,8 @@ try {
 }
 
 function render_html(string $message, bool $ok, bool $autoRedirect) {
+  // Força content-type HTML para exibir a página corretamente
+  header('Content-Type: text/html; charset=UTF-8');
   $portal = dirname($_SERVER['SCRIPT_NAME']) . '/../clientes.html';
   $redirectMeta = $ok && $autoRedirect ? '<meta http-equiv="refresh" content="3;url=' . htmlspecialchars($portal) . '">' : '';
   echo '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8">'

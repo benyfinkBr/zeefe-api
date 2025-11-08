@@ -790,8 +790,11 @@ async function onPortalRegisterSubmit(event) {
     });
     const json = await res.json();
     if (!json.success) throw new Error(json.error || 'Não foi possível criar a conta.');
-    aplicarClienteAtivo(json.client);
-    authMessage.textContent = 'Conta criada com sucesso! Você já está logado.';
+    // Não fazer login automático. Orientar verificação de e-mail e redirecionar para o index.
+    authMessage.textContent = 'Cadastro realizado! Enviamos um e-mail para confirmação. Você será redirecionado ao início.';
+    setTimeout(() => {
+      window.location.href = 'index.html';
+    }, 2500);
   } catch (err) {
     authMessage.textContent = err.message || 'Erro ao criar conta.';
   }
