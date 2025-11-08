@@ -1114,7 +1114,7 @@ async function onBookingSubmit(event) {
         console.warn('Falha ao enviar convites:', err);
       }
     }
-    const baseMessage = record.id ? 'Reserva atualizada com sucesso.' : 'Reserva criada com sucesso.';
+    const baseMessage = record.id ? 'Reserva atualizada com sucesso.' : 'Sua solicitação de reserva foi enviada. Você receberá a confirmação e o link de pagamento por e‑mail.';
     resetBookingForm(true);
     bookingMessage.textContent = inviteWarn ? `${baseMessage} Porém, não foi possível enviar todos os convites.` : baseMessage;
     atualizarPainel();

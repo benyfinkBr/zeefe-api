@@ -43,8 +43,14 @@ try {
   }
 
   $newStatus = $actions[$action]['to'];
-  $stmtUpd = $pdo->prepare('UPDATE reservations SET status = ?, updated_at = NOW() WHERE id = ?');
-  $stmtUpd->execute([$newStatus, $reservationId]);
+  if ($action === 'confirm') {
+    // Ao confirmar: inicia janela de pagamento de 24h (fictício por enquanto)
+    $stmtUpd = $pdo->prepare('UPDATE reservations SET status = ?, payment_status = "pendente", hold_expires_at = DATE_ADD(NOW(), INTERVAL 24 HOUR), updated_at = NOW() WHERE id = ?');
+    $stmtUpd->execute([$newStatus, $reservationId]);
+  } else {
+    $stmtUpd = $pdo->prepare('UPDATE reservations SET status = ?, updated_at = NOW() WHERE id = ?');
+    $stmtUpd->execute([$newStatus, $reservationId]);
+  }
 
   try {
     enviarEmailStatusReserva($pdo, $reservationId, $action, $newStatus);
@@ -76,7 +82,9 @@ function enviarEmailStatusReserva(PDO $pdo, int $reservationId, string $action, 
 
   switch ($action) {
     case 'confirm':
-      $detalhes['bloco_informacoes'] = '<p style="margin:0 0 20px;font-size:15px;line-height:1.6;">Sua reserva foi confirmada. Efetue o pagamento em até 24h para garantir o espaço. Você pode acessar o portal para emitir o comprovante e convidar visitantes.</p>';
+      $link = 'https://zeefe.com.br/pagamento?reserva=' . (int)$reservationId;
+      $btn = '<div style="text-align:center;margin:18px 0 26px;"><a href="' . htmlspecialchars($link) . '" style="background:#1D413A;color:#fff;text-decoration:none;padding:12px 18px;border-radius:10px;font-weight:600;display:inline-block">Pagar agora</a></div>';
+      $detalhes['bloco_informacoes'] = '<p style="margin:0 0 10px;font-size:15px;line-height:1.6;">Sua reserva foi confirmada. Efetue o pagamento em até 24h para garantir o espaço.</p>' . $btn . '<p style="margin:0 0 20px;font-size:14px;color:#8A7766;">Após a confirmação do pagamento, você receberá os detalhes e poderá convidar os visitantes.</p>';
       $html = mailer_render('reservation_confirmed.php', $detalhes);
       mailer_send($dados['client_email'], 'Ze.EFE - Sua reserva foi confirmada', $html);
       break;
