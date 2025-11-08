@@ -18,6 +18,7 @@
   </header>
   
   <main>
+    <!-- Hero simplificado -->
     <section class="landing-hero">
       <div class="landing-hero-content">
         <h2>Salas Ze.EFE para o seu próximo encontro</h2>
@@ -39,6 +40,22 @@
       </div>
     </section>
 
+    <!-- Filtro rápido -->
+    <section class="rooms-filters" aria-label="Filtros de salas">
+      <div class="filters-wrap">
+        <input id="filterQuery" type="text" placeholder="Buscar por nome ou local" aria-label="Buscar por nome ou local" />
+        <select id="filterCapacity" aria-label="Capacidade">
+          <option value="">Capacidade (todas)</option>
+          <option value="10">Até 10</option>
+          <option value="20">Até 20</option>
+          <option value="50">Até 50</option>
+          <option value="51">Mais de 50</option>
+        </select>
+        <button id="clearFilters" class="btn btn-secondary btn-sm" type="button">Limpar filtros</button>
+      </div>
+    </section>
+
+    <!-- Vitrine de salas -->
     <section class="rooms-showcase landing-section">
       <div class="section-heading">
         <h3>Salas disponíveis</h3>

@@ -222,6 +222,26 @@ main {
   color: var(--brand-muted);
 }
 
+/* Filtros de salas na home */
+.rooms-filters {
+  background: #fff;
+  border: 1px solid rgba(29,65,58,.08);
+  border-radius: 16px;
+  padding: 16px 18px;
+  margin: 12px 0 6px;
+  box-shadow: var(--shadow-soft);
+}
+.rooms-filters .filters-wrap {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.rooms-filters input[type="text"],
+.rooms-filters select {
+  flex: 1 1 220px;
+}
+
 .landing-portal {
   display: grid;
   grid-template-columns: minmax(240px, 1fr) 1.2fr;

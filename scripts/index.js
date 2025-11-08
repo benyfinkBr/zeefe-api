@@ -5,6 +5,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const navPrev = document.querySelector('.rooms-nav-prev');
   const navNext = document.querySelector('.rooms-nav-next');
   let amenitiesMap = {};
+  let allRooms = [];
+  const filterQuery = document.getElementById('filterQuery');
+  const filterCapacity = document.getElementById('filterCapacity');
+  const clearFiltersBtn = document.getElementById('clearFilters');
 
   const benefits = [
     { icon: '☕', title: 'Café, água e internet', description: 'Café premium, água e Wi-Fi ultra rápida inclusos' },
@@ -36,7 +40,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const roomsResponse = await fetch('api/apiget.php?table=rooms', { credentials: 'include' });
       const roomsJson = await roomsResponse.json();
       if (!roomsJson.success) throw new Error(roomsJson.error || 'Falha ao consultar API');
-      const rooms = roomsJson.data || [];
+      allRooms = roomsJson.data || [];
 
       try {
         const amenitiesResponse = await fetch('api/apiget.php?table=amenities', { credentials: 'include' });
@@ -52,14 +56,39 @@ document.addEventListener('DOMContentLoaded', () => {
         amenitiesMap = {};
       }
 
-      if (!rooms.length) {
+      if (!allRooms.length) {
         roomsMessage.textContent = 'Nenhuma sala cadastrada no momento.';
         return;
       }
       roomsMessage.textContent = '';
-      const today = formatDateISO(new Date());
-      rooms.forEach(room => {
-        const available = isRoomAvailable(room, today);
+      renderRooms();
+      requestAnimationFrame(() => updateCarouselNavState());
+    } catch (err) {
+      console.error(err);
+      roomsMessage.textContent = 'Erro ao carregar salas. Tente novamente mais tarde.';
+    }
+  }
+
+  function renderRooms() {
+    if (!roomsStrip) return;
+    roomsStrip.innerHTML = '';
+    const today = formatDateISO(new Date());
+    const query = (filterQuery?.value || '').toLowerCase().trim();
+    const cap = Number(filterCapacity?.value || 0);
+    const filtered = (allRooms || []).filter(room => {
+      const okQuery = !query ||
+        String(room.name || '').toLowerCase().includes(query) ||
+        String(room.location || '').toLowerCase().includes(query);
+      const okCap = !cap || (cap === 51 ? Number(room.capacity || 0) > 50 : Number(room.capacity || 0) <= cap);
+      return okQuery && okCap;
+    });
+    if (!filtered.length) {
+      roomsMessage.textContent = 'Nenhuma sala encontrada com os filtros atuais.';
+      return;
+    }
+    roomsMessage.textContent = '';
+    filtered.forEach(room => {
+      const available = isRoomAvailable(room, today);
         const photos = getRoomPhotos(room.photo_path);
         const statusMeta = getStatusMeta(room, available);
         const amenities = getAmenityNames(room.amenities).slice(0, 4);
@@ -160,12 +189,8 @@ document.addEventListener('DOMContentLoaded', () => {
         info.appendChild(actions);
         card.appendChild(info);
         roomsStrip.appendChild(card);
-      });
-      requestAnimationFrame(() => updateCarouselNavState());
-    } catch (err) {
-      console.error(err);
-      roomsMessage.textContent = 'Erro ao carregar salas. Tente novamente mais tarde.';
-    }
+    });
+    requestAnimationFrame(() => updateCarouselNavState());
   }
 
   function isRoomAvailable(room, today) {
@@ -311,4 +336,13 @@ document.addEventListener('DOMContentLoaded', () => {
   if (navNext && roomsStrip) {
     navNext.addEventListener('click', () => roomsStrip.scrollBy({ left: roomsStrip.clientWidth, behavior: 'smooth' }));
   }
+
+  // Filtros
+  filterQuery?.addEventListener('input', () => renderRooms());
+  filterCapacity?.addEventListener('change', () => renderRooms());
+  clearFiltersBtn?.addEventListener('click', () => {
+    if (filterQuery) filterQuery.value = '';
+    if (filterCapacity) filterCapacity.value = '';
+    renderRooms();
+  });
 });
