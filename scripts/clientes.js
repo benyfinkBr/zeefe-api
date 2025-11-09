@@ -382,6 +382,17 @@ async function carregarSalas() {
   }
 }
 
+async function ensureRoomsLoaded() {
+  if (Array.isArray(roomsCache) && roomsCache.length) return true;
+  try {
+    if (bookingRoomFeedback) bookingRoomFeedback.textContent = 'Carregando salas disponíveis...';
+    await carregarSalas();
+    return Array.isArray(roomsCache) && roomsCache.length > 0;
+  } catch (_) {
+    return false;
+  }
+}
+
 function preencherSalasSelect() {
   renderRoomOptions(bookingDateInput?.value || '');
 }
@@ -540,7 +551,13 @@ function renderRoomOptions(date) {
     return;
   }
   if (!roomsCache.length) {
-    if (bookingRoomFeedback) bookingRoomFeedback.textContent = 'Carregando salas disponíveis...';
+    ensureRoomsLoaded().then(ok => {
+      if (!ok) {
+        if (bookingRoomFeedback) bookingRoomFeedback.textContent = 'Nenhuma sala cadastrada no momento.';
+      } else {
+        renderRoomOptions(date);
+      }
+    });
     return;
   }
   const normalize = (v) => (v || '').toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
