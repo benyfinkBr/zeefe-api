@@ -76,6 +76,7 @@ const bookingRoomSearchInput = document.getElementById('bookingRoomSearch');
 const bookingCityFilterInput = document.getElementById('bookingCityFilter');
 const bookingStateFilterInput = document.getElementById('bookingStateFilter');
 const bookingAmenityFilters = document.getElementById('bookingAmenityFilters');
+const bookingClearFiltersBtn = document.getElementById('bookingClearFilters');
 let bookingSelectedAmenities = new Set();
 const bookingTitleInput = bookingForm?.querySelector('input[name="title"]');
 const bookingDescriptionInput = bookingForm?.querySelector('textarea[name="description"]');
@@ -213,6 +214,15 @@ async function initialize() {
   });
   bookingCityFilterInput?.addEventListener('change', () => renderRoomOptions(bookingDateInput?.value || ''));
   // Amenidades: serão ligadas na renderização dos filtros
+  bookingClearFiltersBtn?.addEventListener('click', () => {
+    if (bookingRoomSearchInput) bookingRoomSearchInput.value = '';
+    if (bookingStateFilterInput) bookingStateFilterInput.value = '';
+    hydrateCitiesForUfBooking('');
+    if (bookingCityFilterInput) bookingCityFilterInput.value = '';
+    bookingSelectedAmenities.clear();
+    bookingAmenityFilters?.querySelectorAll('input[type="checkbox"]').forEach(i => (i.checked = false));
+    renderRoomOptions(bookingDateInput?.value || '');
+  });
   bookingTitleInput?.addEventListener('input', onBookingDetailsChange);
   bookingDescriptionInput?.addEventListener('input', onBookingDetailsChange);
 
@@ -491,11 +501,18 @@ function renderRoomOptions(date) {
     if (bookingRoomFeedback) bookingRoomFeedback.textContent = 'Carregando salas disponíveis...';
     return;
   }
-  const normalize = (v) => (v || '').toString().toLowerCase().normalize('NFD').replace(/\p{Diacritic}+/gu, '');
+  const normalize = (v) => (v || '').toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
   const searchTerm = normalize(bookingRoomSearchInput?.value || '');
   const cityFilter = normalize(bookingCityFilterInput?.value || '');
   const stateFilter = normalize(bookingStateFilterInput?.value || '');
   const amenityIds = Array.from(bookingSelectedAmenities);
+
+  // Se nenhum filtro foi aplicado, não listar para evitar pré-filtrar por engano
+  const noFilters = !searchTerm && !cityFilter && !stateFilter && amenityIds.length === 0;
+  if (noFilters) {
+    if (bookingRoomFeedback) bookingRoomFeedback.textContent = 'Use os filtros acima para visualizar as salas disponíveis.';
+    return;
+  }
 
   const availableRooms = getAvailableRoomsForDate(date, reservationIdInput?.value).filter(room => {
     const name = normalize(room.name || `Sala #${room.id}`);
