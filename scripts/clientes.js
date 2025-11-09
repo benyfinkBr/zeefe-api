@@ -1161,7 +1161,7 @@ function renderReservas(reservas) {
     { i:1, label:'Reserva' },
     { i:2, label:'Pagamento' },
     { i:3, label:'Realizado' }
-  ].map(x => `<span class=\"legend-item inactive\"><span class=\"legend-icon\">${getStageIconSVG(x.i,'inactive')}</span>${x.label}</span>`).join('');
+    ].map(x => `<span class=\"legend-item inactive\"><span class=\"legend-icon\">${getStageIconSVG(x.i,'inactive',20)}</span>${x.label}</span>`).join('');
   return `<div class=\"legend-inline\">${items}</div>`;
 })();
 
@@ -1203,13 +1203,13 @@ function renderStageIcons(res) {
     if (idx === -1) state = 'cancelled';
     else if (i < idx) state = 'done';
     else if (i === idx) state = 'active';
-    return `<span class=\"stage-icon\" title=\"${label}\">${getStageIconSVG(i, state)}</span>`;
+    return `<span class=\"stage-icon\" title=\"${label}\">${getStageIconSVG(i, state, 20)}</span>`;
   }).join('');
   return `<span class=\"stage-track\">${items}</span>`;
 }
 
 // Retorna SVG inline para cada etapa (0:pré,1:reserva,2:pagamento,3:realizado)
-function getStageIconSVG(step, state='inactive') {
+function getStageIconSVG(step, state='inactive', size=20) {
   // cores
   const on = { active: '#2F6F55', done: '#4A8070', cancelled: '#B54A3A' };
   const stroke = state === 'inactive' ? 'rgba(29,65,58,.35)' : (on[state] || on.active);
@@ -1219,7 +1219,7 @@ function getStageIconSVG(step, state='inactive') {
   const sw = 2;
   const common = `stroke=\"${stroke}\" fill=\"${fill}\" stroke-width=\"${sw}\"`;
   // desenha ícone menor centralizado
-  const wrap = (inner) => `<svg viewBox='0 0 24 24' width='16' height='16'>${bg}<g transform='translate(0,0)'>${inner}</g></svg>`;
+  const wrap = (inner) => `<svg viewBox='0 0 24 24' width='${size}' height='${size}'>${bg}<g transform='translate(0,0)'>${inner}</g></svg>`;
   switch (step) {
     case 0: // clock
       return wrap(`<circle cx='12' cy='12' r='7' ${common}/><path d='M12 9v4l3 2' ${common}/>`);
