@@ -169,25 +169,44 @@ function createRoomCard(room) {
     photoWrapper.classList.add('photo-empty');
     photoWrapper.innerHTML = '<div class="room-photo-placeholder">Sem imagens cadastradas</div>';
   }
-  card.appendChild(photoWrapper);
+  // Wrap photo to allow overlay pills like no index
+  const media = document.createElement('div');
+  media.className = 'room-card-media';
+  media.appendChild(photoWrapper);
+
+  // Overlay: status pill e nota de disponibilidade
+  const availableToday = isRoomAvailableOnDay(room, new Date().toISOString().split('T')[0]);
+  const meta = getStatusMeta(room, availableToday);
+  const statusPill = document.createElement('span');
+  statusPill.className = `room-status-pill ${meta.className}`;
+  statusPill.textContent = meta.label;
+  media.appendChild(statusPill);
+
+  const availabilityNote = document.createElement('span');
+  availabilityNote.className = `room-availability-note ${availableToday ? 'available' : 'blocked'}`;
+  availabilityNote.textContent = getAvailabilityNote(room, availableToday);
+  media.appendChild(availabilityNote);
+
+  card.appendChild(media);
 
   const title = document.createElement('h4');
   title.textContent = room.name || '';
   card.appendChild(title);
 
-  const capacity = document.createElement('p');
-  capacity.textContent = `Capacidade: ${room.capacity || '-'} pessoas`;
-  card.appendChild(capacity);
+  // Meta (local e capacidade)
+  const metaRow = document.createElement('div');
+  metaRow.className = 'room-meta';
+  metaRow.innerHTML = `
+    <span class="room-location">${room.city ? escapeHtml(room.city) : 'Local não informado'}${room.state ? ' - ' + escapeHtml(String(room.state).toUpperCase()) : ''}</span>
+    <span class="room-capacity">${room.capacity || 0} pessoas</span>
+  `;
+  card.appendChild(metaRow);
 
-  const badge = document.createElement('span');
-  badge.className = `status-badge ${statusClass}`;
-  badge.textContent = statusLabel;
-  card.appendChild(badge);
-
+  // Preço no mesmo estilo do index
   if (room.daily_rate) {
-    const price = document.createElement('p');
-    price.className = 'price';
-    price.textContent = `${formatCurrency(room.daily_rate)} por dia`;
+    const price = document.createElement('div');
+    price.className = 'room-price';
+    price.innerHTML = `<strong>${formatCurrency(room.daily_rate)}</strong><span>/ diária</span>`;
     card.appendChild(price);
   }
 
@@ -265,6 +284,52 @@ function renderAmenityFilters() {
     fragment.appendChild(label);
   });
   amenityFilters.appendChild(fragment);
+}
+
+// Helpers para disponibilidade/labels iguais ao index
+function isRoomAvailableOnDay(room, dateISO) {
+  const status = (room.status || '').toLowerCase();
+  if (status === 'inativo') return false;
+  if (status === 'desativada') {
+    if (!room.deactivated_from) return false;
+    return room.deactivated_from > dateISO;
+  }
+  if (status === 'manutencao') {
+    const start = room.maintenance_start || null;
+    const end = room.maintenance_end || null;
+    const started = !start || start <= dateISO;
+    const notFinished = !end || end >= dateISO;
+    if (started && notFinished) return false;
+  }
+  return status === 'ativo' || status === 'manutencao' || !status;
+}
+
+function getStatusMeta(room, available) {
+  const status = (room.status || '').toLowerCase();
+  if (!available) {
+    if (status === 'manutencao') return { label: 'Em manutenção', className: 'status-manutencao' };
+    if (status === 'desativada') return { label: 'Desativada', className: 'status-cancelada' };
+    if (status === 'inativo') return { label: 'Indisponível', className: 'status-cancelada' };
+    return { label: 'Indisponível', className: 'status-cancelada' };
+  }
+  if (status === 'manutencao') return { label: 'Disponível em breve', className: 'status-pendente' };
+  return { label: 'Disponível', className: 'status-ativo' };
+}
+
+function getAvailabilityNote(room, available) {
+  const status = (room.status || '').toLowerCase();
+  if (available) return 'Pronta para reservar.';
+  if (status === 'manutencao') return room.maintenance_end ? `Em manutenção até ${formatDateDisplay(room.maintenance_end)}.` : 'Em manutenção temporária.';
+  if (status === 'desativada') return room.deactivated_from ? `Desativada a partir de ${formatDateDisplay(room.deactivated_from)}.` : 'Desativada temporariamente.';
+  if (status === 'inativo') return 'Sala indisponível para reservas.';
+  return 'Indisponível para a data atual.';
+}
+
+function formatDateDisplay(dateString) {
+  if (!dateString) return '';
+  const parsed = new Date(dateString);
+  if (Number.isNaN(parsed.getTime())) return dateString;
+  return parsed.toLocaleDateString('pt-BR', { timeZone: 'UTC' });
 }
 
 // Navegação do carrossel (igual ao index)
