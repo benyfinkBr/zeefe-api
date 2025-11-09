@@ -545,29 +545,18 @@ function renderRoomOptions(date) {
     return nameA.localeCompare(nameB, 'pt-BR');
   });
   if (!availableRooms.length) {
-    // Mostrar sugestão das salas que combinam com os filtros, porém indisponíveis na data
-    const allMatching = roomsCache.filter(room => {
-      const name = normalize(room.name || `Sala #${room.id}`);
-      const city = normalize(room.city || '');
-      const state = normalize(room.state || room.uf || '');
-      if (searchTerm && !name.includes(searchTerm)) return false;
-      if (cityFilter && !city.includes(cityFilter)) return false;
-      if (stateFilter && state !== stateFilter) return false;
-      if (amenityIds.length && !amenityIds.every(id => (room.amenities || []).includes(Number(id)) || (room.amenities || []).includes(String(id)))) return false;
-      return true;
-    }).sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'pt-BR'));
-
-    if (!allMatching.length) {
-      if (bookingRoomFeedback) bookingRoomFeedback.textContent = 'Nenhuma sala encontrada com os filtros atuais.';
-      return;
-    }
-    if (bookingRoomFeedback) bookingRoomFeedback.textContent = 'Todas as salas que combinam com os filtros estão indisponíveis para esta data:';
-    allMatching.forEach(room => {
+    // Segurança máxima: se não detectou disponibilidade, ainda assim mostro TODAS as salas cadastradas
+    // para permitir solicitar a reserva e o admin confirmar. Isso evita a sensação de vazio.
+    if (bookingRoomFeedback) bookingRoomFeedback.textContent = 'Nenhuma disponibilidade detectada nesta data. Você ainda pode selecionar uma sala e enviar a solicitação.';
+    const fallbackRooms = roomsCache.slice().sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'pt-BR'));
+    const selectedId = bookingRoomHiddenInput?.value ? String(bookingRoomHiddenInput.value) : '';
+    let hasSelected = false;
+    fallbackRooms.forEach(room => {
       const button = document.createElement('button');
       button.type = 'button';
-      button.className = 'room-option disabled-room';
-      button.disabled = true;
-      const capacityText = room.capacity !== null && room.capacity !== undefined && room.capacity !== '' ? escapeHtml(room.capacity) : '--';
+      button.className = 'room-option';
+      button.dataset.roomId = String(room.id);
+      const capacityText = room.capacity != null && room.capacity !== '' ? escapeHtml(room.capacity) : '--';
       const cityText = room.city ? escapeHtml(room.city) : '--';
       const stateText = room.state || room.uf ? escapeHtml((room.state || room.uf).toUpperCase()) : '--';
       const priceHtml = room.daily_rate ? `<span class=\"price\"><strong>${formatCurrency(room.daily_rate)}</strong> / diária</span>` : '';
@@ -576,8 +565,16 @@ function renderRoomOptions(date) {
         <span class=\"meta\">${cityText} - ${stateText} · ${capacityText} pessoas</span>
         ${priceHtml}
       `;
+      if (selectedId && selectedId === String(room.id)) {
+        button.classList.add('selected');
+        hasSelected = true;
+      }
+      button.addEventListener('click', () => selectRoomOption(room.id));
       bookingRoomOptions.appendChild(button);
     });
+    if (bookingRoomHiddenInput && selectedId && !hasSelected) {
+      bookingRoomHiddenInput.value = '';
+    }
     return;
   }
   const selectedId = bookingRoomHiddenInput?.value ? String(bookingRoomHiddenInput.value) : '';
