@@ -1187,7 +1187,6 @@ function renderReservas(reservas) {
 
 function renderStageIcons(res) {
   const stages = ['Pré‑reserva', 'Reserva', 'Pagamento', 'Realizado'];
-  // Determina estágio ativo a partir de status e payment_status
   const status = (res.status || '').toLowerCase();
   const pay = (res.payment_status || '').toLowerCase();
   let idx = 0;
@@ -1198,13 +1197,38 @@ function renderStageIcons(res) {
   else idx = 0;
 
   const items = stages.map((label, i) => {
-    let cls = 'stage-icon';
-    if (idx === -1) cls += ' cancelled';
-    else if (i < idx) cls += ' done';
-    else if (i === idx) cls += ' active';
-    return `<span class=\"${cls}\" title=\"${label}\"></span>`;
+    let state = 'inactive';
+    if (idx === -1) state = 'cancelled';
+    else if (i < idx) state = 'done';
+    else if (i === idx) state = 'active';
+    return `<span class=\"stage-icon\" title=\"${label}\">${getStageIconSVG(i, state)}</span>`;
   }).join('');
   return `<span class=\"stage-track\">${items}</span>`;
+}
+
+// Retorna SVG inline para cada etapa (0:pré,1:reserva,2:pagamento,3:realizado)
+function getStageIconSVG(step, state='inactive') {
+  const colors = {
+    active: '#2F6F55',
+    done: '#4A8070',
+    cancelled: '#B54A3A',
+    inactive: 'rgba(29,65,58,.35)'
+  };
+  const fill = colors[state] || colors.inactive;
+  const stroke = state === 'inactive' ? 'rgba(29,65,58,.35)' : fill;
+  const common = `stroke=\"${stroke}\" fill=\"${state==='inactive'?'none':fill}\" stroke-width=\"2\"`;
+  switch(step){
+    case 0: // clock (pré)
+      return `<svg viewBox='0 0 24 24' width='14' height='14'><circle cx='12' cy='12' r='9' ${common}/><path d='M12 7v5l3 2' ${common}/></svg>`;
+    case 1: // clipboard (reserva)
+      return `<svg viewBox='0 0 24 24' width='14' height='14'><rect x='6' y='5' width='12' height='14' rx='2' ${common}/><path d='M9 5h6v3H9z' ${common}/></svg>`;
+    case 2: // credit card (pagamento)
+      return `<svg viewBox='0 0 24 24' width='14' height='14'><rect x='3' y='6' width='18' height='12' rx='2' ${common}/><path d='M3 10h18' ${common}/></svg>`;
+    case 3: // check circle (realizado)
+      return `<svg viewBox='0 0 24 24' width='14' height='14'><circle cx='12' cy='12' r='9' ${common}/><path d='M8 12l3 3 5-6' ${common}/></svg>`;
+    default:
+      return `<svg viewBox='0 0 24 24' width='14' height='14'><circle cx='12' cy='12' r='9' ${common}/></svg>`;
+  }
 }
 
 function openReservationActions(id) {
@@ -1223,7 +1247,7 @@ function openReservationActions(id) {
 
   const mkCard = (label, onclick, extraClass='') => {
     const d = document.createElement('div'); d.className = `action-card ${extraClass}`.trim();
-    d.innerHTML = `<span class=\"icon\">⬤</span><span class=\"label\">${label}</span>`;
+    d.innerHTML = `<span class=\"icon\">${getActionIconSVG(label)}</span><span class=\"label\">${label}</span>`;
     d.addEventListener('click', () => { onclick(); });
     return d;
   };
@@ -1233,7 +1257,7 @@ function openReservationActions(id) {
 
   if (showPayment) reservationActionsButtons.appendChild(mkCard('Pagamento', ()=> { tratarAcaoReserva(reserva.id,'payment'); closeReservationActions(); }));
   // Baixar convite (ICS)
-  const ics = document.createElement('a'); ics.href=`api/reservation_ics.php?reservation=${encodeURIComponent(reserva.id)}`; ics.className='action-card'; ics.innerHTML='<span class="icon">⬇</span><span class="label">Baixar convite</span>'; ics.setAttribute('download',''); reservationActionsButtons.appendChild(ics);
+  const ics = document.createElement('a'); ics.href=`api/reservation_ics.php?reservation=${encodeURIComponent(reserva.id)}`; ics.className='action-card'; ics.innerHTML=`<span class=\"icon\">${getActionIconSVG('Baixar convite')}</span><span class=\"label\">Baixar convite</span>`; ics.setAttribute('download',''); reservationActionsButtons.appendChild(ics);
   // Enviar convite (e‑mail com ICS)
   reservationActionsButtons.appendChild(mkCard('Enviar convite', ()=> { tratarAcaoReserva(reserva.id,'sendCalendar'); closeReservationActions(); }));
 
@@ -1250,6 +1274,19 @@ function openReservationActions(id) {
 function closeReservationActions(){
   reservationActionsModal?.classList.remove('show');
   reservationActionsModal?.setAttribute('aria-hidden','true');
+}
+
+function getActionIconSVG(label){
+  const green = '#2F6F55';
+  const stroke = `stroke=\"${green}\" fill=\"none\" stroke-width=\"2\"`;
+  const map = {
+    'Pagamento': `<svg viewBox='0 0 24 24'><rect x='3' y='6' width='18' height='12' rx='2' ${stroke}/><path d='M3 10h18' ${stroke}/></svg>`,
+    'Baixar convite': `<svg viewBox='0 0 24 24'><path d='M12 3v12' ${stroke}/><path d='M7 10l5 5 5-5' ${stroke}/><path d='M5 19h14' ${stroke}/></svg>`,
+    'Enviar convite': `<svg viewBox='0 0 24 24'><path d='M22 2L11 13' ${stroke}/><path d='M22 2l-7 20-4-9-9-4 20-7z' ${stroke}/></svg>`,
+    'Cancelar': `<svg viewBox='0 0 24 24'><path d='M6 6l12 12M18 6L6 18' ${stroke}/></svg>`,
+    'Editar': `<svg viewBox='0 0 24 24'><path d='M3 21h6l12-12-6-6L3 15v6z' ${stroke}/></svg>`
+  };
+  return map[label] || `<svg viewBox='0 0 24 24'><circle cx='12' cy='12' r='9' ${stroke}/></svg>`;
 }
 
 async function tratarAcaoReserva(id, action) {
