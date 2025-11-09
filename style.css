@@ -2567,6 +2567,24 @@ body.client-portal-page.client-authenticated .auth-container {
 .status-dot.status-cancelada { background:#B54A3A; }
 .status-dot.status-confirmada { background:#2F6F55; }
 .status-dot.status-concluida { background:#4A8070; }
+
+/* Trilha de estágios (Pré, Reserva, Pagamento, Realizado) */
+.stage-track { display:inline-flex; gap:10px; align-items:center; }
+.stage-icon {
+  width:12px; height:12px; border-radius:50%;
+  background: rgba(29,65,58,.25);
+  opacity:.35;
+}
+.stage-icon.done { background:#4A8070; opacity:.9; }
+.stage-icon.active { background:#2F6F55; opacity:1; }
+.stage-icon.cancelled { background:#B54A3A; opacity:.75; }
+
+/* Modal actions como “cards” (estilo app) */
+#reservationActionsButtons.actions-grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap:12px; margin-top:12px; }
+.action-card { background:#fff; border:1px solid rgba(29,65,58,.18); border-radius:14px; padding:14px; text-align:center; box-shadow: var(--shadow-soft); cursor:pointer; transition:.18s; }
+.action-card:hover { transform: translateY(-2px); box-shadow: 0 18px 36px rgba(29,65,58,.16); }
+.action-card .icon { display:block; font-size:22px; margin-bottom:8px; }
+.action-card .label { font-weight:600; color: var(--brand-green); }
 .modal-overlay {
   position: fixed;
   inset: 0;

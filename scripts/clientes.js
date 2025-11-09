@@ -1137,12 +1137,12 @@ function renderReservas(reservas) {
       : '<span class=\"table-chip muted\">Sem visitantes</span>';
     const timeRange = formatTimeRange(reserva.time_start, reserva.time_end);
     const icsLink = `api/reservation_ics.php?reservation=${encodeURIComponent(reserva.id)}`;
-    const dot = `<span class=\"status-dot status-${statusClass(reserva.status)}\" title=\"${statusLabel(reserva.status)}\"></span>`;
+    const stage = renderStageIcons(reserva);
     return `
       <tr data-id=\"${reserva.id}\">
         <td>${formatDate(reserva.date)}</td>
         <td>${escapeHtml(roomName)}</td>
-        <td>${dot}</td>
+        <td>${stage}</td>
         <td>${escapeHtml(timeRange)}</td>
         <td>${visitorNames}</td>
         <td>${escapeHtml(reserva.title || '--')}</td>
@@ -1175,6 +1175,28 @@ function renderReservas(reservas) {
   reservationsContainer.querySelectorAll('button[data-action="openActions"]').forEach(btn => {
     btn.addEventListener('click', () => openReservationActions(btn.dataset.id));
   });
+}
+
+function renderStageIcons(res) {
+  const stages = ['Pré‑reserva', 'Reserva', 'Pagamento', 'Realizado'];
+  // Determina estágio ativo a partir de status e payment_status
+  const status = (res.status || '').toLowerCase();
+  const pay = (res.payment_status || '').toLowerCase();
+  let idx = 0;
+  if (status === 'pendente') idx = 0;
+  else if (status === 'confirmada') idx = pay === 'confirmado' ? 3 : 2;
+  else if (status === 'concluida') idx = 3;
+  else if (status === 'cancelada') idx = -1;
+  else idx = 0;
+
+  const items = stages.map((label, i) => {
+    let cls = 'stage-icon';
+    if (idx === -1) cls += ' cancelled';
+    else if (i < idx) cls += ' done';
+    else if (i === idx) cls += ' active';
+    return `<span class=\"${cls}\" title=\"${label}\"></span>`;
+  }).join('');
+  return `<span class=\"stage-track\">${items}</span>`;
 }
 
 function openReservationActions(id) {
