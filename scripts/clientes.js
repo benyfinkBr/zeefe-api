@@ -491,15 +491,16 @@ function renderRoomOptions(date) {
     if (bookingRoomFeedback) bookingRoomFeedback.textContent = 'Carregando salas disponíveis...';
     return;
   }
-  const searchTerm = (bookingRoomSearchInput?.value || '').trim().toLowerCase();
-  const cityFilter = (bookingCityFilterInput?.value || '').trim().toLowerCase();
-  const stateFilter = (bookingStateFilterInput?.value || '').trim().toLowerCase();
+  const normalize = (v) => (v || '').toString().toLowerCase().normalize('NFD').replace(/\p{Diacritic}+/gu, '');
+  const searchTerm = normalize(bookingRoomSearchInput?.value || '');
+  const cityFilter = normalize(bookingCityFilterInput?.value || '');
+  const stateFilter = normalize(bookingStateFilterInput?.value || '');
   const amenityIds = Array.from(bookingSelectedAmenities);
 
   const availableRooms = getAvailableRoomsForDate(date, reservationIdInput?.value).filter(room => {
-    const name = (room.name || `Sala #${room.id}`).toString().toLowerCase();
-    const city = (room.city || '').toString().toLowerCase();
-    const state = (room.state || room.uf || '').toString().toLowerCase();
+    const name = normalize(room.name || `Sala #${room.id}`);
+    const city = normalize(room.city || '');
+    const state = normalize(room.state || room.uf || '');
     if (searchTerm && !name.includes(searchTerm)) return false;
     if (cityFilter && !city.includes(cityFilter)) return false;
     if (stateFilter && state !== stateFilter) return false;
