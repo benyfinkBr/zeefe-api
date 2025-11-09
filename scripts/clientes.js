@@ -207,8 +207,11 @@ async function initialize() {
   bookingPrevMonthBtn?.addEventListener('click', () => changeCalendarMonth(-1));
   bookingNextMonthBtn?.addEventListener('click', () => changeCalendarMonth(1));
   bookingRoomSearchInput?.addEventListener('input', () => renderRoomOptions(bookingDateInput?.value || ''));
-  bookingCityFilterInput?.addEventListener('input', () => renderRoomOptions(bookingDateInput?.value || ''));
-  bookingStateFilterInput?.addEventListener('input', () => renderRoomOptions(bookingDateInput?.value || ''));
+  bookingStateFilterInput?.addEventListener('change', () => {
+    hydrateCitiesForUfBooking(bookingStateFilterInput.value);
+    renderRoomOptions(bookingDateInput?.value || '');
+  });
+  bookingCityFilterInput?.addEventListener('change', () => renderRoomOptions(bookingDateInput?.value || ''));
   // Amenidades: serão ligadas na renderização dos filtros
   bookingTitleInput?.addEventListener('input', onBookingDetailsChange);
   bookingDescriptionInput?.addEventListener('input', onBookingDetailsChange);
@@ -362,6 +365,7 @@ async function carregarSalas() {
     if (!json.success) throw new Error(json.error || 'Erro ao carregar salas');
     roomsCache = json.data || [];
     preencherSalasSelect();
+    hydrateUfAndCitiesBooking();
   } catch (err) {
     console.error(err);
     roomsCache = [];
@@ -522,10 +526,12 @@ function renderRoomOptions(date) {
       : '--';
     const cityText = room.city ? escapeHtml(room.city) : '--';
     const stateText = room.state || room.uf ? escapeHtml((room.state || room.uf).toUpperCase()) : '--';
+    const priceHtml = room.daily_rate ? `<span class=\"price\"><strong>${formatCurrency(room.daily_rate)}</strong> / diária</span>` : '';
+    const amenityNames = Array.isArray(room.amenities) ? room.amenities.slice(0,4).map(id => escapeHtml(String(id))).join(', ') : '';
     button.innerHTML = `
       <strong>${escapeHtml(room.name || `Sala #${room.id}`)}</strong>
-      <span>Capacidade: ${capacityText} pessoas</span>
-      <span>Local: ${cityText} - ${stateText}</span>
+      <span class=\"meta\">${cityText} - ${stateText} · ${capacityText} pessoas</span>
+      ${priceHtml}
     `;
     if (selectedId && selectedId === String(room.id)) {
       button.classList.add('selected');
@@ -690,6 +696,26 @@ async function carregarReservasGlobais() {
   }
   renderRoomOptions(bookingDateInput?.value || '');
   renderBookingCalendar(bookingCurrentMonth);
+}
+
+function hydrateUfAndCitiesBooking() {
+  if (!roomsCache || !roomsCache.length) return;
+  const ufs = Array.from(new Set(roomsCache.map(r => String(r.state || r.uf || '').toUpperCase()).filter(Boolean))).sort();
+  if (bookingStateFilterInput) {
+    bookingStateFilterInput.innerHTML = '<option value="">UF (todas)</option>' + ufs.map(uf => `<option value="${uf.toLowerCase()}">${uf}</option>`).join('');
+  }
+  hydrateCitiesForUfBooking(bookingStateFilterInput?.value || '');
+}
+
+function hydrateCitiesForUfBooking(ufValue) {
+  if (!bookingCityFilterInput) return;
+  const normalized = String(ufValue || '').toLowerCase();
+  let cities = roomsCache
+    .filter(r => !normalized || String(r.state || r.uf || '').toLowerCase() === normalized)
+    .map(r => String(r.city || '').trim())
+    .filter(Boolean);
+  cities = Array.from(new Set(cities)).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+  bookingCityFilterInput.innerHTML = '<option value="">Cidade (todas)</option>' + cities.map(c => `<option value="${c.toLowerCase()}">${c}</option>`).join('');
 }
 
 async function carregarComodidades() {
@@ -1008,6 +1034,7 @@ function renderReservas(reservas) {
     const showCancel = ['pendente', 'confirmada'].includes(statusNormalized) && podeCancelar(reserva);
     const showInvite = Array.isArray(reserva.visitors) && reserva.visitors.length;
     const showPayment = ['pendente', 'confirmada'].includes(statusNormalized);
+    const icsLink = `api/reservation_ics.php?reservation=${encodeURIComponent(reserva.id)}`;
     return `
       <tr data-id=\"${reserva.id}\">
         <td>${formatDate(reserva.date)}</td>
@@ -1024,6 +1051,8 @@ function renderReservas(reservas) {
             ${showCancel ? `<button type=\"button\" data-action=\"cancel\" data-id=\"${reserva.id}\">Cancelar</button>` : ''}
             ${showPayment ? `<button type=\"button\" data-action=\"payment\" data-id=\"${reserva.id}\">Pagamento</button>` : ''}
             ${showInvite ? `<button type=\"button\" data-action=\"invite\" data-id=\"${reserva.id}\">Enviar convites</button>` : ''}
+            <a href=\"${icsLink}\" download class=\"btn-ghost\">ICS</a>
+            <button type=\"button\" data-action=\"sendCalendar\" data-id=\"${reserva.id}\">Solicitar reunião</button>
             <button type=\"button\" data-action=\"edit\" data-id=\"${reserva.id}\">Editar</button>
             <button type=\"button\" data-action=\"delete\" data-id=\"${reserva.id}\">Excluir</button>
           </div>
@@ -1086,6 +1115,23 @@ async function tratarAcaoReserva(id, action) {
       alert('Link de pagamento enviado por e-mail.');
     } catch (err) {
       alert(err.message || 'Não foi possível enviar o link de pagamento.');
+    }
+    return;
+  }
+  if (action === 'sendCalendar') {
+    try {
+      const res = await fetch(`${API_BASE}/send_calendar_invite.php`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ reservation_id: id })
+      });
+      const json = await res.json();
+      if (!json.success) throw new Error(json.error || 'Falha ao enviar convite de calendário.');
+      alert('Convite de calendário enviado para você e seus visitantes.');
+    } catch (err) {
+      console.error(err);
+      alert(err.message || 'Não foi possível enviar o convite de calendário.');
     }
     return;
   }

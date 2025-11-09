@@ -37,7 +37,7 @@ function mailer_render(string $template, array $placeholders = []): string {
   return preg_replace('/\{\{[^}]+\}\}/', '', $html);
 }
 
-function mailer_send($recipients, string $subject, string $htmlBody, string $textBody = ''): bool {
+function mailer_send($recipients, string $subject, string $htmlBody, string $textBody = '', array $attachments = []): bool {
   $mail = new PHPMailer(true);
   try {
     $mail->isSMTP();
@@ -70,6 +70,18 @@ function mailer_send($recipients, string $subject, string $htmlBody, string $tex
     $mail->Subject = $subject;
     $mail->Body = $htmlBody;
     $mail->AltBody = $textBody ?: strip_tags($htmlBody);
+
+    // Optional attachments
+    if (!empty($attachments) && is_array($attachments)) {
+      foreach ($attachments as $att) {
+        $data = $att['data'] ?? '';
+        $name = $att['name'] ?? 'anexo.dat';
+        $type = $att['type'] ?? 'application/octet-stream';
+        if ($data !== '') {
+          $mail->addStringAttachment($data, $name, 'base64', $type);
+        }
+      }
+    }
 
     $mail->send();
     return true;
