@@ -774,7 +774,9 @@ function isRoomAvailableOnDate(room, date, reservationId) {
     if (String(res.room_id) !== roomId) return false;
     if (reservationId && String(res.id) === String(reservationId)) return false;
     const status = (res.status || '').toLowerCase();
-    if (['cancelada', 'cancelado', 'negada'].includes(status)) return false;
+    // Apenas reservas efetivamente confirmadas devem bloquear a data.
+    // Pendentes/negadas/canceladas não bloqueiam o calendário.
+    if (!['confirmada', 'concluida'].includes(status)) return false;
     return res.date === date;
   });
 }
