@@ -1155,13 +1155,15 @@ function renderReservas(reservas) {
     `;
   }).join('');
 
-  const legend = `
-    <div class=\"stage-legend\">
-      <span class=\"stage-legend-item\"><span class=\"stage-icon stage-icon-lg active\"></span>Pré‑reserva</span>
-      <span class=\"stage-legend-item\"><span class=\"stage-icon stage-icon-lg\"></span>Reserva</span>
-      <span class=\"stage-legend-item\"><span class=\"stage-icon stage-icon-lg\"></span>Pagamento</span>
-      <span class=\"stage-legend-item\"><span class=\"stage-icon stage-icon-lg\"></span>Realizado</span>
-    </div>`;
+  const legend = (() => {
+  const items = [
+    { i:0, label:'Pré‑reserva' },
+    { i:1, label:'Reserva' },
+    { i:2, label:'Pagamento' },
+    { i:3, label:'Realizado' }
+  ].map(x => `<span class=\"legend-item inactive\"><span class=\"legend-icon\">${getStageIconSVG(x.i,'inactive')}</span>${x.label}</span>`).join('');
+  return `<div class=\"legend-inline\">${items}</div>`;
+})();
 
   reservationsContainer.innerHTML = legend + `
     <table>
