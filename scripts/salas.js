@@ -2,7 +2,10 @@ const API_BASE = 'api';
 let roomsData = [];
 let amenitiesMap = {};
 
-const roomsContainer = document.getElementById('rooms-container');
+const roomsMessage = document.getElementById('rooms-message');
+const roomsStrip = document.getElementById('rooms-strip-salas');
+const navPrev = document.querySelector('.rooms-nav-prev');
+const navNext = document.querySelector('.rooms-nav-next');
 const filterButtons = document.querySelectorAll('.filter-btn');
 const modalOverlay = document.getElementById('roomModal');
 const modalCloseTop = document.getElementById('roomModalClose');
@@ -27,7 +30,7 @@ async function init() {
     renderRooms('all');
   } catch (err) {
     console.error(err);
-    roomsContainer.innerHTML = '<p>Erro ao carregar salas. Tente novamente mais tarde.</p>';
+    if (roomsMessage) roomsMessage.textContent = 'Erro ao carregar salas. Tente novamente mais tarde.';
   }
 
   filterButtons.forEach(button => {
@@ -68,7 +71,8 @@ async function fetchAmenities() {
 }
 
 function renderRooms(filter) {
-  roomsContainer.innerHTML = '';
+  if (!roomsStrip) return;
+  roomsStrip.innerHTML = '';
   let filtered = [...roomsData];
   switch (filter) {
     case 'up-to-10':
@@ -83,16 +87,17 @@ function renderRooms(filter) {
   }
 
   if (!filtered.length) {
-    roomsContainer.innerHTML = '<p>Nenhuma sala encontrada para esse filtro.</p>';
+    if (roomsMessage) roomsMessage.textContent = 'Nenhuma sala encontrada para esse filtro.';
     return;
   }
-
-  filtered.forEach(room => roomsContainer.appendChild(createRoomCard(room)));
+  if (roomsMessage) roomsMessage.textContent = '';
+  filtered.forEach(room => roomsStrip.appendChild(createRoomCard(room)));
+  requestAnimationFrame(updateCarouselNavState);
 }
 
 function createRoomCard(room) {
   const card = document.createElement('article');
-  card.className = 'card room-card';
+  card.className = 'room-card carousel-room-card';
   const photos = getPhotos(room.photo_path);
   const status = (room.status || '').toLowerCase();
   const statusLabel = status === 'manutencao'
@@ -182,6 +187,26 @@ function closeModal() {
   modalOverlay.classList.remove('show');
   modalOverlay.setAttribute('aria-hidden', 'true');
 }
+
+// Navegação do carrossel (igual ao index)
+function updateCarouselNavState() {
+  if (!roomsStrip) return;
+  const { scrollLeft, scrollWidth, clientWidth } = roomsStrip;
+  const atStart = scrollLeft <= 0;
+  const atEnd = scrollLeft + clientWidth >= scrollWidth - 1;
+  if (navPrev) {
+    navPrev.disabled = atStart;
+    navPrev.classList.toggle('disabled', atStart);
+  }
+  if (navNext) {
+    navNext.disabled = atEnd;
+    navNext.classList.toggle('disabled', atEnd);
+  }
+}
+
+roomsStrip?.addEventListener('scroll', updateCarouselNavState, { passive: true });
+navPrev?.addEventListener('click', () => roomsStrip?.scrollBy({ left: -(roomsStrip.clientWidth || 0), behavior: 'smooth' }));
+navNext?.addEventListener('click', () => roomsStrip?.scrollBy({ left: (roomsStrip.clientWidth || 0), behavior: 'smooth' }));
 
 function renderGallery(photoPath) {
   modalGallery.innerHTML = '';

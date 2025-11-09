@@ -34,8 +34,17 @@
     <button data-filter="over-20" class="filter-btn">Mais de 20</button>
   </section>
 
-  <section class="cards" id="rooms-container" aria-live="polite" aria-atomic="true">
-    <!-- Cards de salas serão inseridos aqui -->
+  <section class="rooms-showcase landing-section">
+    <div class="section-heading">
+      <h3>Salas disponíveis</h3>
+      <p class="rooms-subtitle">Visualização compacta, igual à página inicial.</p>
+    </div>
+    <div id="rooms-message" class="rooms-message"></div>
+    <div class="rooms-carousel">
+      <button class="rooms-nav rooms-nav-prev" type="button" aria-label="Ver salas anteriores"><span aria-hidden="true">&lsaquo;</span></button>
+      <div id="rooms-strip-salas" class="rooms-strip" aria-live="polite"></div>
+      <button class="rooms-nav rooms-nav-next" type="button" aria-label="Ver mais salas"><span aria-hidden="true">&rsaquo;</span></button>
+    </div>
   </section>
 </main>
 
