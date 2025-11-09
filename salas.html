@@ -34,6 +34,24 @@
     <button data-filter="over-20" class="filter-btn">Mais de 20</button>
   </section>
 
+  <!-- Filtros avançados (busca, localização, capacidade e comodidades) -->
+  <section class="rooms-filters" aria-label="Filtros de salas">
+    <div class="filters-wrap">
+      <input id="filterQuerySalas" type="text" placeholder="Buscar por nome ou local" aria-label="Buscar por nome ou local" />
+      <input id="filterCitySalas" type="text" placeholder="Cidade" aria-label="Cidade" />
+      <input id="filterStateSalas" type="text" placeholder="UF" maxlength="2" aria-label="Estado" />
+      <select id="filterCapacitySalas" aria-label="Capacidade">
+        <option value="">Capacidade (todas)</option>
+        <option value="10">Até 10</option>
+        <option value="20">Até 20</option>
+        <option value="50">Até 50</option>
+        <option value="51">Mais de 50</option>
+      </select>
+      <button id="clearFiltersSalas" class="btn btn-secondary btn-sm" type="button">Limpar filtros</button>
+    </div>
+    <div class="filters-wrap" id="amenityFilters" aria-label="Comodidades"></div>
+  </section>
+
   <section class="rooms-showcase landing-section">
     <div class="section-heading">
       <h3>Salas disponíveis</h3>

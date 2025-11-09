@@ -7,6 +7,13 @@ const roomsStrip = document.getElementById('rooms-strip-salas');
 const navPrev = document.querySelector('.rooms-nav-prev');
 const navNext = document.querySelector('.rooms-nav-next');
 const filterButtons = document.querySelectorAll('.filter-btn');
+const filterQuerySalas = document.getElementById('filterQuerySalas');
+const filterCapacitySalas = document.getElementById('filterCapacitySalas');
+const filterCitySalas = document.getElementById('filterCitySalas');
+const filterStateSalas = document.getElementById('filterStateSalas');
+const clearFiltersSalas = document.getElementById('clearFiltersSalas');
+const amenityFilters = document.getElementById('amenityFilters');
+let selectedAmenities = new Set();
 const modalOverlay = document.getElementById('roomModal');
 const modalCloseTop = document.getElementById('roomModalClose');
 const modalCloseFooter = document.getElementById('roomModalCloseFooter');
@@ -27,6 +34,7 @@ async function init() {
     const [rooms, amenities] = await Promise.all([fetchRooms(), fetchAmenities()]);
     roomsData = rooms;
     amenitiesMap = amenities;
+    renderAmenityFilters();
     renderRooms('all');
   } catch (err) {
     console.error(err);
@@ -49,6 +57,21 @@ async function init() {
     if (event.key === 'Escape' && modalOverlay.classList.contains('show')) {
       closeModal();
     }
+  });
+
+  // Filtros extras
+  filterQuerySalas?.addEventListener('input', () => renderRooms(getActiveFilter()));
+  filterCapacitySalas?.addEventListener('change', () => renderRooms(getActiveFilter()));
+  filterCitySalas?.addEventListener('input', () => renderRooms(getActiveFilter()));
+  filterStateSalas?.addEventListener('input', () => renderRooms(getActiveFilter()));
+  clearFiltersSalas?.addEventListener('click', () => {
+    if (filterQuerySalas) filterQuerySalas.value = '';
+    if (filterCapacitySalas) filterCapacitySalas.value = '';
+    if (filterCitySalas) filterCitySalas.value = '';
+    if (filterStateSalas) filterStateSalas.value = '';
+    selectedAmenities.clear();
+    amenityFilters?.querySelectorAll('input[type="checkbox"]').forEach(i => (i.checked = false));
+    renderRooms(getActiveFilter());
   });
 }
 
@@ -85,9 +108,28 @@ function renderRooms(filter) {
       filtered = filtered.filter(r => Number(r.capacity) > 20);
       break;
   }
+  // Aplicar filtros extras
+  const q = (filterQuerySalas?.value || '').toLowerCase().trim();
+  const cap = Number(filterCapacitySalas?.value || 0);
+  const city = (filterCitySalas?.value || '').toLowerCase().trim();
+  const uf = (filterStateSalas?.value || '').toLowerCase().trim();
+  const amenityIds = Array.from(selectedAmenities);
+
+  filtered = filtered.filter(room => {
+    const name = (room.name || '').toLowerCase();
+    const loc = (room.location || '').toLowerCase();
+    const cityRoom = (room.city || '').toLowerCase();
+    const stateRoom = (room.state || room.uf || '').toLowerCase();
+    const okQuery = !q || name.includes(q) || loc.includes(q) || cityRoom.includes(q);
+    const okCap = !cap || (cap === 51 ? Number(room.capacity || 0) > 50 : Number(room.capacity || 0) <= cap);
+    const okCity = !city || cityRoom.includes(city);
+    const okState = !uf || (stateRoom === uf);
+    const okAmenities = !amenityIds.length || amenityIds.every(id => (room.amenities || []).includes(Number(id)) || (room.amenities || []).includes(String(id)));
+    return okQuery && okCap && okCity && okState && okAmenities;
+  });
 
   if (!filtered.length) {
-    if (roomsMessage) roomsMessage.textContent = 'Nenhuma sala encontrada para esse filtro.';
+    if (roomsMessage) roomsMessage.textContent = 'Nenhuma sala encontrada com os filtros atuais.';
     return;
   }
   if (roomsMessage) roomsMessage.textContent = '';
@@ -186,6 +228,43 @@ function openModal(room) {
 function closeModal() {
   modalOverlay.classList.remove('show');
   modalOverlay.setAttribute('aria-hidden', 'true');
+}
+
+function getActiveFilter() {
+  const active = document.querySelector('.filter-btn.active');
+  return active ? active.dataset.filter : 'all';
+}
+
+function renderAmenityFilters() {
+  if (!amenityFilters || !amenitiesMap) return;
+  amenityFilters.innerHTML = '';
+  const fragment = document.createDocumentFragment();
+  const title = document.createElement('span');
+  title.textContent = 'Comodidades:';
+  title.style.fontWeight = '600';
+  fragment.appendChild(title);
+
+  Object.entries(amenitiesMap).forEach(([id, name]) => {
+    const label = document.createElement('label');
+    label.style.display = 'inline-flex';
+    label.style.alignItems = 'center';
+    label.style.gap = '6px';
+    label.style.marginRight = '12px';
+    const input = document.createElement('input');
+    input.type = 'checkbox';
+    input.value = String(id);
+    input.addEventListener('change', () => {
+      if (input.checked) selectedAmenities.add(input.value);
+      else selectedAmenities.delete(input.value);
+      renderRooms(getActiveFilter());
+    });
+    label.appendChild(input);
+    const span = document.createElement('span');
+    span.textContent = name;
+    label.appendChild(span);
+    fragment.appendChild(label);
+  });
+  amenityFilters.appendChild(fragment);
 }
 
 // Navegação do carrossel (igual ao index)

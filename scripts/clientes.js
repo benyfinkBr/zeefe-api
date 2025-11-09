@@ -75,6 +75,8 @@ const bookingNextMonthBtn = document.getElementById('bookingNextMonth');
 const bookingRoomSearchInput = document.getElementById('bookingRoomSearch');
 const bookingCityFilterInput = document.getElementById('bookingCityFilter');
 const bookingStateFilterInput = document.getElementById('bookingStateFilter');
+const bookingAmenityFilters = document.getElementById('bookingAmenityFilters');
+let bookingSelectedAmenities = new Set();
 const bookingTitleInput = bookingForm?.querySelector('input[name="title"]');
 const bookingDescriptionInput = bookingForm?.querySelector('textarea[name="description"]');
 
@@ -119,7 +121,7 @@ if (document.readyState === 'loading') {
 
 async function initialize() {
   try {
-    await Promise.all([carregarSalas(), carregarEmpresas()]);
+    await Promise.all([carregarSalas(), carregarEmpresas(), carregarComodidades()]);
     await carregarReservasGlobais();
   } catch (err) {
     console.error('Falha ao carregar dados iniciais:', err);
@@ -207,6 +209,7 @@ async function initialize() {
   bookingRoomSearchInput?.addEventListener('input', () => renderRoomOptions(bookingDateInput?.value || ''));
   bookingCityFilterInput?.addEventListener('input', () => renderRoomOptions(bookingDateInput?.value || ''));
   bookingStateFilterInput?.addEventListener('input', () => renderRoomOptions(bookingDateInput?.value || ''));
+  // Amenidades: serão ligadas na renderização dos filtros
   bookingTitleInput?.addEventListener('input', onBookingDetailsChange);
   bookingDescriptionInput?.addEventListener('input', onBookingDetailsChange);
 
@@ -487,6 +490,7 @@ function renderRoomOptions(date) {
   const searchTerm = (bookingRoomSearchInput?.value || '').trim().toLowerCase();
   const cityFilter = (bookingCityFilterInput?.value || '').trim().toLowerCase();
   const stateFilter = (bookingStateFilterInput?.value || '').trim().toLowerCase();
+  const amenityIds = Array.from(bookingSelectedAmenities);
 
   const availableRooms = getAvailableRoomsForDate(date, reservationIdInput?.value).filter(room => {
     const name = (room.name || `Sala #${room.id}`).toString().toLowerCase();
@@ -495,6 +499,7 @@ function renderRoomOptions(date) {
     if (searchTerm && !name.includes(searchTerm)) return false;
     if (cityFilter && !city.includes(cityFilter)) return false;
     if (stateFilter && state !== stateFilter) return false;
+    if (amenityIds.length && !amenityIds.every(id => (room.amenities || []).includes(Number(id)) || (room.amenities || []).includes(String(id)))) return false;
     return true;
   }).sort((a, b) => {
     const nameA = (a.name || `Sala #${a.id}`).toString().toLowerCase();
@@ -685,6 +690,51 @@ async function carregarReservasGlobais() {
   }
   renderRoomOptions(bookingDateInput?.value || '');
   renderBookingCalendar(bookingCurrentMonth);
+}
+
+async function carregarComodidades() {
+  try {
+    const res = await fetch(`${API_BASE}/apiget.php?table=amenities`, { credentials: 'include' });
+    const json = await res.json();
+    if (!json.success) throw new Error(json.error || 'Erro ao carregar comodidades');
+    const items = json.data || [];
+    renderAmenityFiltersBooking(items);
+  } catch (err) {
+    console.error('Falha ao carregar comodidades:', err);
+    renderAmenityFiltersBooking([]);
+  }
+}
+
+function renderAmenityFiltersBooking(items) {
+  if (!bookingAmenityFilters) return;
+  bookingAmenityFilters.innerHTML = '';
+  if (!items || !items.length) return;
+  const title = document.createElement('strong');
+  title.textContent = 'Comodidades:';
+  bookingAmenityFilters.appendChild(title);
+  const wrap = document.createElement('div');
+  wrap.className = 'amenities-checklist';
+  items.forEach((a) => {
+    const label = document.createElement('label');
+    label.style.display = 'inline-flex';
+    label.style.alignItems = 'center';
+    label.style.gap = '6px';
+    label.style.marginRight = '12px';
+    const input = document.createElement('input');
+    input.type = 'checkbox';
+    input.value = String(a.id);
+    input.addEventListener('change', () => {
+      if (input.checked) bookingSelectedAmenities.add(input.value);
+      else bookingSelectedAmenities.delete(input.value);
+      renderRoomOptions(bookingDateInput?.value || '');
+    });
+    label.appendChild(input);
+    const span = document.createElement('span');
+    span.textContent = a.name;
+    label.appendChild(span);
+    wrap.appendChild(label);
+  });
+  bookingAmenityFilters.appendChild(wrap);
 }
 
 async function onPortalLoginSubmit(event) {
