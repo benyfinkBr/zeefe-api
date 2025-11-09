@@ -678,8 +678,9 @@ function renderBookingCalendar(referenceDate) {
   for (let day = 1; day <= monthEnd.getDate(); day++) {
     const currentDate = new Date(monthRef.getFullYear(), monthRef.getMonth(), day);
     const iso = toISODate(currentDate);
-    const totalSelectable = roomsCache.filter(room => isRoomSelectable(room, iso)).length;
-    const availableRooms = totalSelectable ? getAvailableRoomsForDate(iso, reservationIdInput?.value) : [];
+    const hasRooms = Array.isArray(roomsCache) && roomsCache.length > 0;
+    const totalSelectable = hasRooms ? roomsCache.filter(room => isRoomSelectable(room, iso)).length : 1; // se não há dados de salas, não bloqueia
+    const availableRooms = hasRooms ? (totalSelectable ? getAvailableRoomsForDate(iso, reservationIdInput?.value) : []) : [{}];
 
     const button = document.createElement('button');
     button.type = 'button';
@@ -693,9 +694,14 @@ function renderBookingCalendar(referenceDate) {
     if (iso < bookingTodayISO) {
       statusClass = 'disabled';
       clickable = false;
+    } else if (!hasRooms) {
+      // Sem dados de salas, não bloqueia; permite seleção para não travar o fluxo
+      statusClass = 'available';
+      clickable = true;
     } else if (!totalSelectable) {
-      statusClass = 'full';
-      clickable = false;
+      // Nenhuma sala marcada como selecionável para a data => trata como parcial (ainda permite conferir no passo 2)
+      statusClass = 'partial';
+      clickable = true;
     } else if (!availableRooms.length) {
       statusClass = 'full';
       clickable = false;
