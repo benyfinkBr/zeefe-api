@@ -38,8 +38,12 @@
   <section class="rooms-filters" aria-label="Filtros de salas">
     <div class="filters-wrap">
       <input id="filterQuerySalas" type="text" placeholder="Buscar por nome ou local" aria-label="Buscar por nome ou local" />
-      <input id="filterCitySalas" type="text" placeholder="Cidade" aria-label="Cidade" />
-      <input id="filterStateSalas" type="text" placeholder="UF" maxlength="2" aria-label="Estado" />
+      <select id="filterStateSalas" aria-label="Estado (UF)">
+        <option value="">UF (todas)</option>
+      </select>
+      <select id="filterCitySalas" aria-label="Cidade">
+        <option value="">Cidade (todas)</option>
+      </select>
       <select id="filterCapacitySalas" aria-label="Capacidade">
         <option value="">Capacidade (todas)</option>
         <option value="10">Até 10</option>
