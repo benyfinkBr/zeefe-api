@@ -1795,6 +1795,13 @@ function escapeHtml(value) {
     .replace(/'/g, '&#039;');
 }
 
+function formatCurrency(value){
+  const n=Number(value);
+  if(!isFinite(n))return '';
+  try{return n.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});}catch(_){return 'R$ '+(Math.round(n*100)/100).toFixed(2).replace('.',',');}
+}
+
+
 function setCookie(name, value, days = 30) {
   try {
     const expires = new Date(Date.now() + days * 24 * 60 * 60 * 1000).toUTCString();
