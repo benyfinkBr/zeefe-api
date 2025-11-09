@@ -368,6 +368,20 @@
     <p>© 2025 Ze.EFE - Todos os direitos reservados</p>
   </footer>
 
+  <!-- Modal de ações da reserva -->
+  <div class="modal-overlay" id="reservationActionsModal" aria-hidden="true">
+    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="reservationActionsTitle">
+      <button class="modal-close" type="button" id="reservationActionsClose" aria-label="Fechar">&times;</button>
+      <div class="modal-body">
+        <div class="modal-info" style="padding:24px; width:100%">
+          <h2 id="reservationActionsTitle" style="margin-top:0">Ações da reserva</h2>
+          <p id="reservationActionsMeta" class="rooms-message"></p>
+          <div id="reservationActionsButtons" class="dashboard-actions"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script src="scripts/clientes.js" defer></script>
 </body>
 </html>

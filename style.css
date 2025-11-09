@@ -2560,6 +2560,13 @@ body.client-portal-page.client-authenticated .auth-container {
   gap: 12px;
   flex-wrap: wrap;
 }
+/* Ícones de status simplificados */
+.status-dot { display:inline-block; width:12px; height:12px; border-radius:50%; vertical-align:middle; }
+.status-dot.status-ativo { background:#2F6F55; }
+.status-dot.status-pendente { background:#D97A1C; }
+.status-dot.status-cancelada { background:#B54A3A; }
+.status-dot.status-confirmada { background:#2F6F55; }
+.status-dot.status-concluida { background:#4A8070; }
 .modal-overlay {
   position: fixed;
   inset: 0;

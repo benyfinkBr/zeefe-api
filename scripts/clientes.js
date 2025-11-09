@@ -83,6 +83,12 @@ const bookingTitleInput = bookingForm?.querySelector('input[name="title"]');
 const bookingDescriptionInput = bookingForm?.querySelector('textarea[name="description"]');
 
 const reservationsContainer = document.getElementById('reservationsContainer');
+// Modal de ações da reserva
+const reservationActionsModal = document.getElementById('reservationActionsModal');
+const reservationActionsClose = document.getElementById('reservationActionsClose');
+const reservationActionsTitle = document.getElementById('reservationActionsTitle');
+const reservationActionsMeta = document.getElementById('reservationActionsMeta');
+const reservationActionsButtons = document.getElementById('reservationActionsButtons');
 
 const visitorForm = document.getElementById('visitorForm');
 const visitorFormTitle = document.getElementById('visitorFormTitle');
@@ -223,6 +229,10 @@ async function initialize() {
     setActivePanel('visitors');
     visitorsContainer?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   });
+
+  // Modal actions listeners
+  reservationActionsClose?.addEventListener('click', closeReservationActions);
+  reservationActionsModal?.addEventListener('click', (e) => { if (e.target === reservationActionsModal) closeReservationActions(); });
 
   visitorForm?.addEventListener('submit', onVisitorSubmit);
   cancelVisitorEditBtn?.addEventListener('click', resetVisitorForm);
@@ -1126,30 +1136,19 @@ function renderReservas(reservas) {
       ? reserva.visitor_names.map(name => `<span class=\"table-chip\">${escapeHtml(name)}</span>`).join(' ')
       : '<span class=\"table-chip muted\">Sem visitantes</span>';
     const timeRange = formatTimeRange(reserva.time_start, reserva.time_end);
-    const showCancel = ['pendente', 'confirmada'].includes(statusNormalized) && podeCancelar(reserva);
-    const showInvite = Array.isArray(reserva.visitors) && reserva.visitors.length;
-    const showPayment = ['pendente', 'confirmada'].includes(statusNormalized);
     const icsLink = `api/reservation_ics.php?reservation=${encodeURIComponent(reserva.id)}`;
+    const dot = `<span class=\"status-dot status-${statusClass(reserva.status)}\" title=\"${statusLabel(reserva.status)}\"></span>`;
     return `
       <tr data-id=\"${reserva.id}\">
         <td>${formatDate(reserva.date)}</td>
         <td>${escapeHtml(roomName)}</td>
-        <td>
-          <span class=\"status-badge ${statusClass(reserva.status)}\">${statusLabel(reserva.status)}</span>
-          ${renderReservationFlow(statusNormalized)}
-        </td>
+        <td>${dot}</td>
         <td>${escapeHtml(timeRange)}</td>
         <td>${visitorNames}</td>
         <td>${escapeHtml(reserva.title || '--')}</td>
         <td>
           <div class=\"table-actions\">
-            ${showCancel ? `<button type=\"button\" data-action=\"cancel\" data-id=\"${reserva.id}\">Cancelar</button>` : ''}
-            ${showPayment ? `<button type=\"button\" data-action=\"payment\" data-id=\"${reserva.id}\">Pagamento</button>` : ''}
-            ${showInvite ? `<button type=\"button\" data-action=\"invite\" data-id=\"${reserva.id}\">Enviar convites</button>` : ''}
-            <a href=\"${icsLink}\" download class=\"btn-ghost\">ICS</a>
-            <button type=\"button\" data-action=\"sendCalendar\" data-id=\"${reserva.id}\">Solicitar reunião</button>
-            <button type=\"button\" data-action=\"edit\" data-id=\"${reserva.id}\">Editar</button>
-            <button type=\"button\" data-action=\"delete\" data-id=\"${reserva.id}\">Excluir</button>
+            <button type=\"button\" data-action=\"openActions\" data-id=\"${reserva.id}\" aria-label=\"Ações\">⋯</button>
           </div>
         </td>
       </tr>
@@ -1173,9 +1172,43 @@ function renderReservas(reservas) {
     </table>
   `;
 
-  reservationsContainer.querySelectorAll('button[data-action]').forEach(btn => {
-    btn.addEventListener('click', () => tratarAcaoReserva(btn.dataset.id, btn.dataset.action));
+  reservationsContainer.querySelectorAll('button[data-action="openActions"]').forEach(btn => {
+    btn.addEventListener('click', () => openReservationActions(btn.dataset.id));
   });
+}
+
+function openReservationActions(id) {
+  const reserva = currentReservations.find(r => String(r.id) === String(id));
+  if (!reserva || !reservationActionsModal) return;
+  const room = buscarSala(reserva.room_id);
+  const roomName = reserva.room_name || room?.name || `Sala #${reserva.room_id}`;
+  reservationActionsTitle.textContent = 'Ações da reserva';
+  reservationActionsMeta.textContent = `${formatDate(reserva.date)} · ${roomName} · ${formatTimeRange(reserva.time_start, reserva.time_end)}`;
+  reservationActionsButtons.innerHTML = '';
+
+  const statusNormalized = (reserva.status || '').toLowerCase();
+  const showCancel = ['pendente', 'confirmada'].includes(statusNormalized) && podeCancelar(reserva);
+  const showPayment = ['pendente', 'confirmada'].includes(statusNormalized);
+  const showInvite = Array.isArray(reserva.visitors) && reserva.visitors.length;
+
+  const addBtn = (label, action, css='btn btn-secondary') => {
+    const b = document.createElement('button'); b.type='button'; b.className=css; b.textContent=label; b.addEventListener('click', ()=> { tratarAcaoReserva(reserva.id, action); closeReservationActions(); }); reservationActionsButtons.appendChild(b);
+  };
+  if (showCancel) addBtn('Cancelar', 'cancel');
+  if (showPayment) addBtn('Pagamento', 'payment');
+  const ics = document.createElement('a'); ics.href=`api/reservation_ics.php?reservation=${encodeURIComponent(reserva.id)}`; ics.className='btn btn-secondary'; ics.textContent='ICS'; ics.setAttribute('download',''); reservationActionsButtons.appendChild(ics);
+  if (showInvite) addBtn('Enviar convites', 'invite');
+  addBtn('Solicitar reunião', 'sendCalendar');
+  addBtn('Editar', 'edit');
+  addBtn('Excluir', 'delete');
+
+  reservationActionsModal.classList.add('show');
+  reservationActionsModal.setAttribute('aria-hidden','false');
+}
+
+function closeReservationActions(){
+  reservationActionsModal?.classList.remove('show');
+  reservationActionsModal?.setAttribute('aria-hidden','true');
 }
 
 async function tratarAcaoReserva(id, action) {
