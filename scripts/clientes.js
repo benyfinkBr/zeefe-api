@@ -360,7 +360,33 @@ async function carregarSalas() {
     const res = await fetch(`${API_BASE}/apiget.php?table=rooms`, { credentials: 'include' });
     const json = await res.json();
     if (!json.success) throw new Error(json.error || 'Erro ao carregar salas');
-    roomsCache = json.data || [];
+    roomsCache = Array.isArray(json.data) ? json.data : [];
+    // Fallback: se vier vazio por algum motivo, tentar endpoint público
+    if (!roomsCache.length) {
+      try {
+        const alt = await fetch(`${API_BASE}/public_rooms.php`, { credentials: 'include' });
+        const altJson = await alt.json();
+        if (altJson.success && Array.isArray(altJson.data)) {
+          roomsCache = altJson.data.map(r => ({
+            id: r.id,
+            name: r.name,
+            city: r.city || '',
+            state: r.state || r.uf || '',
+            location: r.location || '',
+            capacity: r.capacity,
+            status: r.status || 'ativo',
+            maintenance_start: r.maintenance_start || null,
+            maintenance_end: r.maintenance_end || null,
+            deactivated_from: r.deactivated_from || null,
+            daily_rate: r.daily_rate,
+            photo_path: r.photo_path || '',
+            amenities: r.amenities || []
+          }));
+        }
+      } catch (_) {
+        // ignora fallback
+      }
+    }
     preencherSalasSelect();
     hydrateUfAndCitiesBooking();
   } catch (err) {
@@ -498,7 +524,7 @@ function renderRoomOptions(date) {
   if (!roomsCache.length) {
     ensureRoomsLoaded().then(ok => {
       if (!ok) {
-        if (bookingRoomFeedback) bookingRoomFeedback.textContent = 'Nenhuma sala cadastrada no momento.';
+        if (bookingRoomFeedback) bookingRoomFeedback.textContent = 'Não foi possível carregar as salas no momento.';
       } else {
         renderRoomOptions(date);
       }
