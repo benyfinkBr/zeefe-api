@@ -1155,7 +1155,15 @@ function renderReservas(reservas) {
     `;
   }).join('');
 
-  reservationsContainer.innerHTML = `
+  const legend = `
+    <div class=\"stage-legend\">
+      <span class=\"stage-legend-item\"><span class=\"stage-icon stage-icon-lg active\"></span>Pré‑reserva</span>
+      <span class=\"stage-legend-item\"><span class=\"stage-icon stage-icon-lg\"></span>Reserva</span>
+      <span class=\"stage-legend-item\"><span class=\"stage-icon stage-icon-lg\"></span>Pagamento</span>
+      <span class=\"stage-legend-item\"><span class=\"stage-icon stage-icon-lg\"></span>Realizado</span>
+    </div>`;
+
+  reservationsContainer.innerHTML = legend + `
     <table>
       <thead>
         <tr>
@@ -1213,16 +1221,27 @@ function openReservationActions(id) {
   const showPayment = ['pendente', 'confirmada'].includes(statusNormalized);
   const showInvite = Array.isArray(reserva.visitors) && reserva.visitors.length;
 
-  const addBtn = (label, action, css='btn btn-secondary') => {
-    const b = document.createElement('button'); b.type='button'; b.className=css; b.textContent=label; b.addEventListener('click', ()=> { tratarAcaoReserva(reserva.id, action); closeReservationActions(); }); reservationActionsButtons.appendChild(b);
+  const mkCard = (label, onclick, extraClass='') => {
+    const d = document.createElement('div'); d.className = `action-card ${extraClass}`.trim();
+    d.innerHTML = `<span class=\"icon\">⬤</span><span class=\"label\">${label}</span>`;
+    d.addEventListener('click', () => { onclick(); });
+    return d;
   };
-  if (showCancel) addBtn('Cancelar', 'cancel');
-  if (showPayment) addBtn('Pagamento', 'payment');
-  const ics = document.createElement('a'); ics.href=`api/reservation_ics.php?reservation=${encodeURIComponent(reserva.id)}`; ics.className='btn btn-secondary'; ics.textContent='ICS'; ics.setAttribute('download',''); reservationActionsButtons.appendChild(ics);
-  if (showInvite) addBtn('Enviar convites', 'invite');
-  addBtn('Solicitar reunião', 'sendCalendar');
-  addBtn('Editar', 'edit');
-  addBtn('Excluir', 'delete');
+
+  reservationActionsButtons.classList.add('actions-grid');
+  reservationActionsButtons.innerHTML = '';
+
+  if (showPayment) reservationActionsButtons.appendChild(mkCard('Pagamento', ()=> { tratarAcaoReserva(reserva.id,'payment'); closeReservationActions(); }));
+  // Baixar convite (ICS)
+  const ics = document.createElement('a'); ics.href=`api/reservation_ics.php?reservation=${encodeURIComponent(reserva.id)}`; ics.className='action-card'; ics.innerHTML='<span class="icon">⬇</span><span class="label">Baixar convite</span>'; ics.setAttribute('download',''); reservationActionsButtons.appendChild(ics);
+  // Enviar convite (e‑mail com ICS)
+  reservationActionsButtons.appendChild(mkCard('Enviar convite', ()=> { tratarAcaoReserva(reserva.id,'sendCalendar'); closeReservationActions(); }));
+
+  // Linha inferior: Cancelar (vermelho) e Editar
+  const bottom = document.createElement('div'); bottom.className='actions-bottom';
+  if (showCancel) bottom.appendChild(mkCard('Cancelar', ()=> { tratarAcaoReserva(reserva.id,'cancel'); closeReservationActions(); }, 'danger'));
+  bottom.appendChild(mkCard('Editar', ()=> { tratarAcaoReserva(reserva.id,'edit'); closeReservationActions(); }));
+  reservationActionsButtons.appendChild(bottom);
 
   reservationActionsModal.classList.add('show');
   reservationActionsModal.setAttribute('aria-hidden','false');
