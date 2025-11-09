@@ -518,9 +518,12 @@ function renderRoomOptions(date) {
     const name = normalize(room.name || `Sala #${room.id}`);
     const city = normalize(room.city || '');
     const state = normalize(room.state || room.uf || '');
-    if (searchTerm && !name.includes(searchTerm)) return false;
-    if (cityFilter && !city.includes(cityFilter)) return false;
-    if (stateFilter && state !== stateFilter) return false;
+    const loc = normalize(room.location || '');
+    if (searchTerm && !name.includes(searchTerm) && !loc.includes(searchTerm)) return false;
+    const okCity = !cityFilter || city.includes(cityFilter) || loc.includes(cityFilter);
+    if (!okCity) return false;
+    const okState = !stateFilter || state === stateFilter || (stateFilter.length === 2 && new RegExp(`\\b${stateFilter}\\b`).test(loc));
+    if (!okState) return false;
     if (amenityIds.length && !amenityIds.every(id => (room.amenities || []).includes(Number(id)) || (room.amenities || []).includes(String(id)))) return false;
     return true;
   }).sort((a, b) => {
