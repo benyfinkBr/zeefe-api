@@ -494,7 +494,49 @@ function renderRoomOptions(date) {
   bookingRoomOptions.innerHTML = '';
   if (bookingRoomFeedback) bookingRoomFeedback.textContent = '';
   if (!date) {
-    if (bookingRoomFeedback) bookingRoomFeedback.textContent = 'Selecione a data para visualizar as salas disponíveis.';
+    // Sem data: ainda mostra salas que combinam com os filtros (ignorando disponibilidade),
+    // para não dar a impressão de vazio. Mantém aviso sobre selecionar a data.
+    if (bookingRoomFeedback) bookingRoomFeedback.textContent = 'Selecione a data para verificar disponibilidade. Listando salas que combinam com os filtros:';
+    const normalize = (v) => (v || '').toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    const searchTerm = normalize(bookingRoomSearchInput?.value || '');
+    const cityFilter = normalize(bookingCityFilterInput?.value || '');
+    const stateFilter = normalize(bookingStateFilterInput?.value || '');
+    const amenityIds = Array.from(bookingSelectedAmenities);
+
+    const filteredRooms = roomsCache.filter(room => {
+      const name = normalize(room.name || `Sala #${room.id}`);
+      const city = normalize(room.city || '');
+      const state = normalize(room.state || room.uf || '');
+      const loc = normalize(room.location || '');
+      if (searchTerm && !name.includes(searchTerm) && !loc.includes(searchTerm)) return false;
+      if (cityFilter && !city.includes(cityFilter) && !loc.includes(cityFilter)) return false;
+      if (stateFilter && state !== stateFilter && !(stateFilter.length === 2 && new RegExp(`\\b${stateFilter}\\b`).test(loc))) return false;
+      if (amenityIds.length && !amenityIds.every(id => (room.amenities || []).includes(Number(id)) || (room.amenities || []).includes(String(id)))) return false;
+      return true;
+    }).sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'pt-BR'));
+
+    if (!filteredRooms.length) {
+      bookingRoomOptions.innerHTML = '';
+      return;
+    }
+    bookingRoomOptions.innerHTML = '';
+    filteredRooms.forEach(room => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'room-option';
+      button.dataset.roomId = String(room.id);
+      const capacityText = room.capacity != null && room.capacity !== '' ? escapeHtml(room.capacity) : '--';
+      const cityText = room.city ? escapeHtml(room.city) : '--';
+      const stateText = room.state || room.uf ? escapeHtml((room.state || room.uf).toUpperCase()) : '--';
+      const priceHtml = room.daily_rate ? `<span class=\"price\"><strong>${formatCurrency(room.daily_rate)}</strong> / diária</span>` : '';
+      button.innerHTML = `
+        <strong>${escapeHtml(room.name || `Sala #${room.id}`)}</strong>
+        <span class=\"meta\">${cityText} - ${stateText} · ${capacityText} pessoas</span>
+        ${priceHtml}
+      `;
+      button.addEventListener('click', () => selectRoomOption(room.id));
+      bookingRoomOptions.appendChild(button);
+    });
     return;
   }
   if (!roomsCache.length) {
