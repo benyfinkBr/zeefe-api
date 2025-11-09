@@ -1210,26 +1210,27 @@ function renderStageIcons(res) {
 
 // Retorna SVG inline para cada etapa (0:pré,1:reserva,2:pagamento,3:realizado)
 function getStageIconSVG(step, state='inactive') {
-  const colors = {
-    active: '#2F6F55',
-    done: '#4A8070',
-    cancelled: '#B54A3A',
-    inactive: 'rgba(29,65,58,.35)'
-  };
-  const fill = colors[state] || colors.inactive;
-  const stroke = state === 'inactive' ? 'rgba(29,65,58,.35)' : fill;
-  const common = `stroke=\"${stroke}\" fill=\"${state==='inactive'?'none':fill}\" stroke-width=\"2\"`;
-  switch(step){
-    case 0: // clock (pré)
-      return `<svg viewBox='0 0 24 24' width='14' height='14'><circle cx='12' cy='12' r='9' ${common}/><path d='M12 7v5l3 2' ${common}/></svg>`;
-    case 1: // clipboard (reserva)
-      return `<svg viewBox='0 0 24 24' width='14' height='14'><rect x='6' y='5' width='12' height='14' rx='2' ${common}/><path d='M9 5h6v3H9z' ${common}/></svg>`;
-    case 2: // credit card (pagamento)
-      return `<svg viewBox='0 0 24 24' width='14' height='14'><rect x='3' y='6' width='18' height='12' rx='2' ${common}/><path d='M3 10h18' ${common}/></svg>`;
-    case 3: // check circle (realizado)
-      return `<svg viewBox='0 0 24 24' width='14' height='14'><circle cx='12' cy='12' r='9' ${common}/><path d='M8 12l3 3 5-6' ${common}/></svg>`;
+  // cores
+  const on = { active: '#2F6F55', done: '#4A8070', cancelled: '#B54A3A' };
+  const stroke = state === 'inactive' ? 'rgba(29,65,58,.35)' : (on[state] || on.active);
+  const fill = state === 'inactive' ? 'none' : (on[state] || on.active);
+  // fundo clarinho (bolha) sempre visível
+  const bg = `<circle cx='12' cy='12' r='11' fill='rgba(29,65,58,.08)'/>`;
+  const sw = 2;
+  const common = `stroke=\"${stroke}\" fill=\"${fill}\" stroke-width=\"${sw}\"`;
+  // desenha ícone menor centralizado
+  const wrap = (inner) => `<svg viewBox='0 0 24 24' width='16' height='16'>${bg}<g transform='translate(0,0)'>${inner}</g></svg>`;
+  switch (step) {
+    case 0: // clock
+      return wrap(`<circle cx='12' cy='12' r='7' ${common}/><path d='M12 9v4l3 2' ${common}/>`);
+    case 1: // clipboard
+      return wrap(`<rect x='7' y='7' width='10' height='12' rx='2' ${common}/><path d='M9 7h6v3H9z' ${common}/>`);
+    case 2: // credit card
+      return wrap(`<rect x='5' y='8' width='14' height='10' rx='2' ${common}/><path d='M5 11h14' ${common}/>`);
+    case 3: // check
+      return wrap(`<circle cx='12' cy='12' r='7' ${common}/><path d='M9 12l2 2 4-5' ${common}/>`);
     default:
-      return `<svg viewBox='0 0 24 24' width='14' height='14'><circle cx='12' cy='12' r='9' ${common}/></svg>`;
+      return wrap(`<circle cx='12' cy='12' r='7' ${common}/>`);
   }
 }
 
