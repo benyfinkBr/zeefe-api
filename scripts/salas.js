@@ -35,6 +35,7 @@ async function init() {
     roomsData = rooms;
     amenitiesMap = amenities;
     renderAmenityFilters();
+    hydrateUfAndCities();
     renderRooms('all');
   } catch (err) {
     console.error(err);
@@ -62,13 +63,17 @@ async function init() {
   // Filtros extras
   filterQuerySalas?.addEventListener('input', () => renderRooms(getActiveFilter()));
   filterCapacitySalas?.addEventListener('change', () => renderRooms(getActiveFilter()));
-  filterCitySalas?.addEventListener('input', () => renderRooms(getActiveFilter()));
-  filterStateSalas?.addEventListener('input', () => renderRooms(getActiveFilter()));
+  filterStateSalas?.addEventListener('change', () => {
+    hydrateCitiesForUf(filterStateSalas.value);
+    renderRooms(getActiveFilter());
+  });
+  filterCitySalas?.addEventListener('change', () => renderRooms(getActiveFilter()));
   clearFiltersSalas?.addEventListener('click', () => {
     if (filterQuerySalas) filterQuerySalas.value = '';
     if (filterCapacitySalas) filterCapacitySalas.value = '';
-    if (filterCitySalas) filterCitySalas.value = '';
     if (filterStateSalas) filterStateSalas.value = '';
+    hydrateCitiesForUf('');
+    if (filterCitySalas) filterCitySalas.value = '';
     selectedAmenities.clear();
     amenityFilters?.querySelectorAll('input[type="checkbox"]').forEach(i => (i.checked = false));
     renderRooms(getActiveFilter());
@@ -137,6 +142,26 @@ function renderRooms(filter) {
   requestAnimationFrame(updateCarouselNavState);
 }
 
+function hydrateUfAndCities() {
+  if (!roomsData || !roomsData.length) return;
+  const ufs = Array.from(new Set(roomsData.map(r => String(r.state || r.uf || '').toUpperCase()).filter(Boolean))).sort();
+  if (filterStateSalas) {
+    filterStateSalas.innerHTML = '<option value="">UF (todas)</option>' + ufs.map(uf => `<option value="${uf.toLowerCase()}">${uf}</option>`).join('');
+  }
+  hydrateCitiesForUf(filterStateSalas?.value || '');
+}
+
+function hydrateCitiesForUf(ufValue) {
+  if (!filterCitySalas) return;
+  const normalized = String(ufValue || '').toLowerCase();
+  let cities = roomsData
+    .filter(r => !normalized || String(r.state || r.uf || '').toLowerCase() === normalized)
+    .map(r => String(r.city || '').trim())
+    .filter(Boolean);
+  cities = Array.from(new Set(cities)).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+  filterCitySalas.innerHTML = '<option value="">Cidade (todas)</option>' + cities.map(c => `<option value="${c.toLowerCase()}">${c}</option>`).join('');
+}
+
 function createRoomCard(room) {
   const card = document.createElement('article');
   card.className = 'room-card carousel-room-card';
@@ -189,34 +214,38 @@ function createRoomCard(room) {
 
   card.appendChild(media);
 
-  const title = document.createElement('h4');
-  title.textContent = room.name || '';
-  card.appendChild(title);
+  const info = document.createElement('div');
+  info.className = 'room-info';
 
-  // Meta (local e capacidade)
+  const header = document.createElement('div');
+  header.className = 'room-header';
+  header.innerHTML = `<h4>${escapeHtml(room.name || '')}</h4><span class="status-badge ${meta.className}">${meta.label}</span>`;
+  info.appendChild(header);
+
   const metaRow = document.createElement('div');
   metaRow.className = 'room-meta';
   metaRow.innerHTML = `
     <span class="room-location">${room.city ? escapeHtml(room.city) : 'Local não informado'}${room.state ? ' - ' + escapeHtml(String(room.state).toUpperCase()) : ''}</span>
     <span class="room-capacity">${room.capacity || 0} pessoas</span>
   `;
-  card.appendChild(metaRow);
+  info.appendChild(metaRow);
 
-  // Preço no mesmo estilo do index
   if (room.daily_rate) {
     const price = document.createElement('div');
     price.className = 'room-price';
     price.innerHTML = `<strong>${formatCurrency(room.daily_rate)}</strong><span>/ diária</span>`;
-    card.appendChild(price);
+    info.appendChild(price);
   }
 
   const actions = document.createElement('div');
   actions.className = 'room-actions';
+  const disabledCta = !availableToday;
   actions.innerHTML = `
-      <button class="btn btn-secondary" type="button" data-room="${room.id}">Ver detalhes</button>
-      <a href="pre-reserva.html?room=${encodeURIComponent(room.id)}" class="btn btn-primary${disabled ? ' disabled' : ''}" ${disabled ? 'tabindex="-1" aria-disabled="true"' : ''}>Reservar diária</a>
-  `;
-  card.appendChild(actions);
+    <button class="btn btn-secondary" type="button" data-room="${room.id}">Ver detalhes</button>
+    <a class="btn btn-primary${disabledCta ? ' disabled' : ''}" ${disabledCta ? 'aria-disabled=\"true\" tabindex=\"-1\"' : ''} href="${disabledCta ? '#' : `pre-reserva.html?room=${room.id}`}">${disabledCta ? 'Indisponível' : 'Reservar diária'}</a>`;
+  info.appendChild(actions);
+
+  card.appendChild(info);
 
   card.querySelector('button[data-room]').addEventListener('click', () => openModal(room));
   return card;
