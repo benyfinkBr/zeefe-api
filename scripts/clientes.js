@@ -566,12 +566,7 @@ function renderRoomOptions(date) {
   const stateFilter = normalize(bookingStateFilterInput?.value || '');
   const amenityIds = Array.from(bookingSelectedAmenities);
 
-  // Se nenhum filtro foi aplicado, não listar para evitar pré-filtrar por engano
-  const noFilters = !searchTerm && !cityFilter && !stateFilter && amenityIds.length === 0;
-  if (noFilters) {
-    if (bookingRoomFeedback) bookingRoomFeedback.textContent = 'Use os filtros acima para visualizar as salas disponíveis.';
-    return;
-  }
+  // Se nenhum filtro aplicado, listamos todas as salas disponíveis na data selecionada
 
   const availableRooms = getAvailableRoomsForDate(date, reservationIdInput?.value).filter(room => {
     const name = normalize(room.name || `Sala #${room.id}`);
