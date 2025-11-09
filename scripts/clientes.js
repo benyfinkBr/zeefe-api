@@ -72,11 +72,12 @@ const bookingCalendarGrid = document.getElementById('bookingCalendarGrid');
 const bookingCalendarLabel = document.getElementById('bookingCalendarLabel');
 const bookingPrevMonthBtn = document.getElementById('bookingPrevMonth');
 const bookingNextMonthBtn = document.getElementById('bookingNextMonth');
-const bookingRoomSearchInput = document.getElementById('bookingRoomSearch');
-const bookingCityFilterInput = document.getElementById('bookingCityFilter');
-const bookingStateFilterInput = document.getElementById('bookingStateFilter');
-const bookingAmenityFilters = document.getElementById('bookingAmenityFilters');
-const bookingClearFiltersBtn = document.getElementById('bookingClearFilters');
+// Filtros removidos do portal para simplificação
+const bookingRoomSearchInput = null;
+const bookingCityFilterInput = null;
+const bookingStateFilterInput = null;
+const bookingAmenityFilters = null;
+const bookingClearFiltersBtn = null;
 let bookingSelectedAmenities = new Set();
 const bookingTitleInput = bookingForm?.querySelector('input[name="title"]');
 const bookingDescriptionInput = bookingForm?.querySelector('textarea[name="description"]');
@@ -208,21 +209,7 @@ async function initialize() {
   bookingPrevMonthBtn?.addEventListener('click', () => changeCalendarMonth(-1));
   bookingNextMonthBtn?.addEventListener('click', () => changeCalendarMonth(1));
   bookingRoomSearchInput?.addEventListener('input', () => renderRoomOptions(bookingDateInput?.value || ''));
-  bookingStateFilterInput?.addEventListener('change', () => {
-    hydrateCitiesForUfBooking(bookingStateFilterInput.value);
-    renderRoomOptions(bookingDateInput?.value || '');
-  });
-  bookingCityFilterInput?.addEventListener('change', () => renderRoomOptions(bookingDateInput?.value || ''));
-  // Amenidades: serão ligadas na renderização dos filtros
-  bookingClearFiltersBtn?.addEventListener('click', () => {
-    if (bookingRoomSearchInput) bookingRoomSearchInput.value = '';
-    if (bookingStateFilterInput) bookingStateFilterInput.value = '';
-    hydrateCitiesForUfBooking('');
-    if (bookingCityFilterInput) bookingCityFilterInput.value = '';
-    bookingSelectedAmenities.clear();
-    bookingAmenityFilters?.querySelectorAll('input[type="checkbox"]').forEach(i => (i.checked = false));
-    renderRoomOptions(bookingDateInput?.value || '');
-  });
+  // Sem filtros no portal
   bookingTitleInput?.addEventListener('input', onBookingDetailsChange);
   bookingDescriptionInput?.addEventListener('input', onBookingDetailsChange);
 
@@ -505,49 +492,7 @@ function renderRoomOptions(date) {
   bookingRoomOptions.innerHTML = '';
   if (bookingRoomFeedback) bookingRoomFeedback.textContent = '';
   if (!date) {
-    // Sem data: ainda mostra salas que combinam com os filtros (ignorando disponibilidade),
-    // para não dar a impressão de vazio. Mantém aviso sobre selecionar a data.
-    if (bookingRoomFeedback) bookingRoomFeedback.textContent = 'Selecione a data para verificar disponibilidade. Listando salas que combinam com os filtros:';
-    const normalize = (v) => (v || '').toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-    const searchTerm = normalize(bookingRoomSearchInput?.value || '');
-    const cityFilter = normalize(bookingCityFilterInput?.value || '');
-    const stateFilter = normalize(bookingStateFilterInput?.value || '');
-    const amenityIds = Array.from(bookingSelectedAmenities);
-
-    const filteredRooms = roomsCache.filter(room => {
-      const name = normalize(room.name || `Sala #${room.id}`);
-      const city = normalize(room.city || '');
-      const state = normalize(room.state || room.uf || '');
-      const loc = normalize(room.location || '');
-      if (searchTerm && !name.includes(searchTerm) && !loc.includes(searchTerm)) return false;
-      if (cityFilter && !city.includes(cityFilter) && !loc.includes(cityFilter)) return false;
-      if (stateFilter && state !== stateFilter && !(stateFilter.length === 2 && new RegExp(`\\b${stateFilter}\\b`).test(loc))) return false;
-      if (amenityIds.length && !amenityIds.every(id => (room.amenities || []).includes(Number(id)) || (room.amenities || []).includes(String(id)))) return false;
-      return true;
-    }).sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'pt-BR'));
-
-    if (!filteredRooms.length) {
-      bookingRoomOptions.innerHTML = '';
-      return;
-    }
-    bookingRoomOptions.innerHTML = '';
-    filteredRooms.forEach(room => {
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.className = 'room-option';
-      button.dataset.roomId = String(room.id);
-      const capacityText = room.capacity != null && room.capacity !== '' ? escapeHtml(room.capacity) : '--';
-      const cityText = room.city ? escapeHtml(room.city) : '--';
-      const stateText = room.state || room.uf ? escapeHtml((room.state || room.uf).toUpperCase()) : '--';
-      const priceHtml = room.daily_rate ? `<span class=\"price\"><strong>${formatCurrency(room.daily_rate)}</strong> / diária</span>` : '';
-      button.innerHTML = `
-        <strong>${escapeHtml(room.name || `Sala #${room.id}`)}</strong>
-        <span class=\"meta\">${cityText} - ${stateText} · ${capacityText} pessoas</span>
-        ${priceHtml}
-      `;
-      button.addEventListener('click', () => selectRoomOption(room.id));
-      bookingRoomOptions.appendChild(button);
-    });
+    if (bookingRoomFeedback) bookingRoomFeedback.textContent = 'Selecione a data para visualizar as salas disponíveis.';
     return;
   }
   if (!roomsCache.length) {
@@ -566,21 +511,9 @@ function renderRoomOptions(date) {
   const stateFilter = normalize(bookingStateFilterInput?.value || '');
   const amenityIds = Array.from(bookingSelectedAmenities);
 
-  // Se nenhum filtro aplicado, listamos todas as salas disponíveis na data selecionada
+  // Listar todas as salas disponíveis na data selecionada (sem filtros)
 
-  const availableRooms = getAvailableRoomsForDate(date, reservationIdInput?.value).filter(room => {
-    const name = normalize(room.name || `Sala #${room.id}`);
-    const city = normalize(room.city || '');
-    const state = normalize(room.state || room.uf || '');
-    const loc = normalize(room.location || '');
-    if (searchTerm && !name.includes(searchTerm) && !loc.includes(searchTerm)) return false;
-    const okCity = !cityFilter || city.includes(cityFilter) || loc.includes(cityFilter);
-    if (!okCity) return false;
-    const okState = !stateFilter || state === stateFilter || (stateFilter.length === 2 && new RegExp(`\\b${stateFilter}\\b`).test(loc));
-    if (!okState) return false;
-    if (amenityIds.length && !amenityIds.every(id => (room.amenities || []).includes(Number(id)) || (room.amenities || []).includes(String(id)))) return false;
-    return true;
-  }).sort((a, b) => {
+  const availableRooms = getAvailableRoomsForDate(date, reservationIdInput?.value).sort((a, b) => {
     const nameA = (a.name || `Sala #${a.id}`).toString().toLowerCase();
     const nameB = (b.name || `Sala #${b.id}`).toString().toLowerCase();
     return nameA.localeCompare(nameB, 'pt-BR');
