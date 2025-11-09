@@ -518,7 +518,31 @@ function renderRoomOptions(date) {
   bookingRoomOptions.innerHTML = '';
   if (bookingRoomFeedback) bookingRoomFeedback.textContent = '';
   if (!date) {
-    if (bookingRoomFeedback) bookingRoomFeedback.textContent = 'Selecione a data para visualizar as salas disponíveis.';
+    if (!roomsCache.length) {
+      ensureRoomsLoaded().then(() => renderRoomOptions(''));
+      if (bookingRoomFeedback) bookingRoomFeedback.textContent = 'Carregando salas disponíveis...';
+      return;
+    }
+    // Sem data: lista todas as salas para não travar o fluxo
+    bookingRoomOptions.innerHTML = '';
+    if (bookingRoomFeedback) bookingRoomFeedback.textContent = 'Selecione uma sala; a disponibilidade será validada no envio.';
+    roomsCache.slice().sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'pt-BR')).forEach(room => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'room-option';
+      button.dataset.roomId = String(room.id);
+      const capacityText = room.capacity != null && room.capacity !== '' ? escapeHtml(room.capacity) : '--';
+      const cityText = room.city ? escapeHtml(room.city) : '--';
+      const stateText = room.state || room.uf ? escapeHtml((room.state || room.uf).toUpperCase()) : '--';
+      const priceHtml = room.daily_rate ? `<span class=\"price\"><strong>${formatCurrency(room.daily_rate)}</strong> / diária</span>` : '';
+      button.innerHTML = `
+        <strong>${escapeHtml(room.name || `Sala #${room.id}`)}</strong>
+        <span class=\"meta\">${cityText} ${stateText ? ' - ' + stateText : ''} · ${capacityText} pessoas</span>
+        ${priceHtml}
+      `;
+      button.addEventListener('click', () => selectRoomOption(room.id));
+      bookingRoomOptions.appendChild(button);
+    });
     return;
   }
   if (!roomsCache.length) {
