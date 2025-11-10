@@ -136,8 +136,10 @@ const portalSections = {
   book: document.getElementById('panel-book'),
   reservations: document.getElementById('panel-reservations'),
   visitors: document.getElementById('panel-visitors'),
-  profile: document.getElementById('panel-profile')
+  profile: document.getElementById('panel-profile'),
+  company: document.getElementById('panel-company')
 };
+const companyTabButton = document.getElementById('companyTab');
 
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', initialize, { once: true });
@@ -379,7 +381,24 @@ function setActivePanel(panelName = 'book') {
     carregarVisitantes(activeClient.id);
   } else if (target === 'profile') {
     renderProfile();
+  } else if (target === 'company' && activeClient) {
+    carregarEmpresaOverview();
   }
+}
+
+async function carregarEmpresaOverview() {
+  // Placeholder simples: computa métricas básicas das reservas do cliente.
+  try {
+    const ativas = (currentReservations || []).filter(r => ['confirmada','pagamento_pendente','pagamento_confirmado','em_andamento'].includes(String(r.status||'').toLowerCase())).length;
+    const proximos7 = (currentReservations || []).filter(r => {
+      if (!r.date) return false; const d = new Date(r.date); const now = new Date(); const diff = (d - now)/(1000*60*60*24); return diff >= 0 && diff <= 7;
+    }).length;
+    const pendPag = (currentReservations || []).filter(r => String(r.payment_status||'').toLowerCase() === 'pendente').length;
+    const set = (id, v) => { const n = document.getElementById(id); if (n) n.textContent = String(v); };
+    set('coActive', ativas);
+    set('coNext', proximos7);
+    set('coPay', pendPag);
+  } catch (_) {}
 }
 
 async function carregarEmpresas() {
@@ -1062,6 +1081,12 @@ function aplicarClienteAtivo(cliente) {
   }
   if (clientCompanyEl) {
     clientCompanyEl.textContent = obterNomeEmpresa(activeClient.company_id) || (activeClient.company_id ? 'Empresa não localizada' : 'Cliente pessoa física');
+  }
+  // Exibe a aba Empresa somente se houver company_id
+  if (companyTabButton) {
+    const showCompany = Boolean(activeClient.company_id);
+    companyTabButton.hidden = !showCompany;
+    if (!showCompany && portalSections.company) portalSections.company.hidden = true;
   }
   renderProfile();
   resetBookingForm();

@@ -123,6 +123,7 @@
           <button type="button" data-panel="book" class="active">Reservar</button>
           <button type="button" data-panel="reservations">Minhas Reservas</button>
           <button type="button" data-panel="visitors">Visitantes</button>
+          <button type="button" data-panel="company" id="companyTab" hidden>Empresa</button>
           <button type="button" data-panel="payments">Formas de Pagamento</button>
           <button type="button" data-panel="profile">Meu Perfil</button>
         </nav>
@@ -294,6 +295,45 @@
                     <button class="btn btn-secondary" type="button" id="cancelVisitorEdit" hidden>Cancelar</button>
                   </div>
                 </form>
+              </article>
+            </section>
+          </div>
+
+          <div id="panel-company" class="portal-section" hidden>
+            <section class="client-lists">
+              <article class="form-card">
+                <h3>Empresa — Visão Geral</h3>
+                <div class="grid-cards-3" id="companyOverview">
+                  <div class="stat-card"><strong>Reservas ativas</strong><span id="coActive">—</span></div>
+                  <div class="stat-card"><strong>Próximos 7 dias</strong><span id="coNext">—</span></div>
+                  <div class="stat-card"><strong>Pagamentos pendentes</strong><span id="coPay">—</span></div>
+                </div>
+              </article>
+
+              <article class="form-card">
+                <div class="list-header">
+                  <h3>Usuários da Empresa</h3>
+                  <div class="inline-actions">
+                    <button class="btn btn-secondary" type="button" id="inviteCompanyUserBtn">Convidar usuário</button>
+                  </div>
+                </div>
+                <div id="companyUsersContainer" class="responsive-table">
+                  <div class="rooms-message">Em construção. Em breve você poderá gerenciar os usuários da sua empresa aqui.</div>
+                </div>
+              </article>
+
+              <article class="form-card">
+                <div class="list-header">
+                  <h3>Reservas da Empresa</h3>
+                </div>
+                <div id="companyReservationsContainer" class="responsive-table">
+                  <div class="rooms-message">Em construção. As reservas da empresa aparecerão aqui.</div>
+                </div>
+              </article>
+
+              <article class="form-card">
+                <h3>Financeiro</h3>
+                <p class="rooms-message">Página em construção. Em breve será possível solicitar NF e acompanhar faturamento.</p>
               </article>
             </section>
           </div>
