@@ -26,6 +26,10 @@
         <div class="login-card">
           <img src="img/logo.jpg" alt="Ze.EFE">
           <h2>Portal do Cliente<br><span>Ze.EFE</span></h2>
+          <div class="scope-pill" style="display:flex; gap:8px; justify-content:center; margin:8px 0 12px;">
+            <button type="button" id="authScopePFBtn" class="btn btn-secondary btn-sm active" data-scope="pf">Pessoa Física</button>
+            <button type="button" id="authScopeCompanyBtn" class="btn btn-secondary btn-sm" data-scope="company">Empresa</button>
+          </div>
           <form id="portalLoginForm" autocomplete="on">
             <input type="text" id="portalLoginIdentifier" name="identifier" placeholder="Login, e-mail ou CPF" required autocomplete="username" />
             <input type="password" id="portalLoginPassword" name="password" placeholder="Senha" required autocomplete="current-password" />

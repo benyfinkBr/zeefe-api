@@ -44,6 +44,10 @@ const cpfHintEl = document.getElementById('cpfHint');
 const loginIdentifierInput = document.getElementById('portalLoginIdentifier');
 const loginPasswordInput = document.getElementById('portalLoginPassword');
 const rememberMeCheckbox = document.getElementById('portalRememberMe');
+// Auth scope toggle on login card
+const authScopePFBtn = document.getElementById('authScopePFBtn');
+const authScopeCompanyBtn = document.getElementById('authScopeCompanyBtn');
+let desiredScope = 'pf';
 
 const clientPanels = document.getElementById('clientPanels');
 const clientNameEl = document.getElementById('clientName');
@@ -175,6 +179,10 @@ async function initialize() {
     const digits = somenteDigitos(registerPhoneInput.value).slice(0, 11);
     registerPhoneInput.value = formatPhone(digits);
   });
+
+  // Auth scope buttons
+  authScopePFBtn?.addEventListener('click', () => setAuthScope('pf'));
+  authScopeCompanyBtn?.addEventListener('click', () => setAuthScope('company'));
 
   // Debounce helper para evitar gravações frequentes
   function debounce(fn, delay = 600) {
@@ -310,6 +318,12 @@ function setBodyAuthState(isAuthenticated) {
   if (!bodyEl) return;
   bodyEl.classList.toggle('client-authenticated', Boolean(isAuthenticated));
   bodyEl.classList.toggle('client-logged-out', !isAuthenticated);
+}
+
+function setAuthScope(scope) {
+  desiredScope = scope === 'company' ? 'company' : 'pf';
+  authScopePFBtn?.classList.toggle('active', desiredScope === 'pf');
+  authScopeCompanyBtn?.classList.toggle('active', desiredScope === 'company');
 }
 
 function hideAuthOverlay() {
@@ -1115,8 +1129,10 @@ function aplicarClienteAtivo(cliente) {
   }
   renderProfile();
   resetBookingForm();
-  setPortalScope('pf');
-  setActivePanel('book');
+  // Apply desired scope after login (fallback to PF if no company)
+  const scopeToApply = (desiredScope === 'company' && activeClient.company_id) ? 'company' : 'pf';
+  setPortalScope(scopeToApply);
+  if (scopeToApply === 'company') setActivePanel('company'); else setActivePanel('book');
   atualizarPainel();
   if (authMessage) authMessage.textContent = '';
 }

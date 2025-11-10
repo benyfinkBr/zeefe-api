@@ -309,6 +309,7 @@ input, select {
     const companyClientsModal = document.getElementById('companyClientsModal');
     const companyClientsTitle = document.getElementById('companyClientsTitle');
     const companyClientsList = document.getElementById('companyClientsList');
+    let companyClientsCompanyId = null;
 
     const statusLabels = {
       ativo: 'Ativo',
@@ -1618,6 +1619,7 @@ input, select {
     }
 
     async function listarClientesEmpresa(id, nome) {
+      companyClientsCompanyId = id;
       companyClientsTitle.textContent = `Clientes de ${nome}`;
       companyClientsList.innerHTML = '<div class="reservations-empty">Carregando...</div>';
       companyClientsModal.classList.add('show');
@@ -1645,17 +1647,38 @@ input, select {
             <td>${escapeHtml(client.email || '--')}</td>
             <td>${escapeHtml(client.login || '--')}</td>
             <td>${statusHtml}</td>
+            <td><button class=\"btn-micro confirm\" onclick=\"definirMasterEmpresa(${companyClientsCompanyId},${client.id})\">Definir master</button></td>
           </tr>
         `;
       }).join('');
       companyClientsList.innerHTML = `
         <table>
           <thead>
-            <tr><th>Nome</th><th>E-mail</th><th>Login</th><th>Status</th></tr>
+            <tr><th>Nome</th><th>E-mail</th><th>Login</th><th>Status</th><th>Ações</th></tr>
           </thead>
           <tbody>${rows}</tbody>
         </table>
       `;
+    }
+
+    async function definirMasterEmpresa(companyId, clientId) {
+      if (!companyId || !clientId) return;
+      if (!confirm('Definir este cliente como usuário master da empresa?')) return;
+      try {
+        const res = await fetch(`${API_BASE}/company_set_master.php`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ company_id: companyId, client_id: clientId })
+        });
+        const json = await res.json();
+        if (!json.success) throw new Error(json.error || 'Falha ao definir master');
+        alert(json.message || 'Usuário master definido.');
+        listarClientesEmpresa(companyId, companyClientsTitle.textContent.replace('Clientes de ', ''));
+      } catch (e) {
+        console.error(e);
+        alert(e.message || 'Erro ao definir master');
+      }
     }
 
     function fecharCompanyModal() {
