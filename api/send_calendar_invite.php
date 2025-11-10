@@ -30,11 +30,18 @@ $visitors = $visitorsStmt->fetchAll(PDO::FETCH_ASSOC);
 $date = $res['date'] ?? date('Y-m-d');
 $start = trim($res['time_start'] ?? '08:00');
 $end = trim($res['time_end'] ?? '20:00');
-$startTs = strtotime($date . ' ' . $start . ':00');
-$endTs = strtotime($date . ' ' . $end . ':00');
+$normalizeTime = static function(string $t): string {
+  $t = trim($t);
+  if (preg_match('/^\d{2}:\d{2}:\d{2}$/', $t)) return $t;
+  if (preg_match('/^\d{2}:\d{2}$/', $t)) return $t . ':00';
+  $dt = DateTime::createFromFormat('H:i:s', $t) ?: DateTime::createFromFormat('H:i', $t);
+  return $dt ? $dt->format('H:i:s') : '00:00:00';
+};
+$startTs = strtotime($date . ' ' . $normalizeTime($start));
+$endTs = strtotime($date . ' ' . $normalizeTime($end));
 
 $summary = 'Reserva Ze.EFE - ' . ($res['room_name'] ?: 'Sala');
-$desc = ($res['title'] ? ($res['title'] . "\n\n") : '') . ($res['description'] ?? '');
+$desc = ($res['title'] ? ($res['title'] . "\n\n") : '') . trim($res['description'] ?? '');
 $location = $res['room_location'] ?: trim(($res['city'] ?: '') . ' - ' . strtoupper($res['state'] ?: ''));
 
 $ics = ics_generate([
@@ -43,7 +50,8 @@ $ics = ics_generate([
   'location' => $location,
   'start' => $startTs,
   'end' => $endTs,
-  'uid' => 'zeefe-' . $id . '-' . md5($summary . $date)
+  'uid' => 'zeefe-' . $id . '-' . md5($summary . $date),
+  'tz' => 'America/Sao_Paulo'
 ]);
 
 $html = mailer_render('reservation_confirmed.php', [
@@ -73,4 +81,3 @@ if (!$ok) {
 }
 
 echo json_encode(['success' => true]);
-

@@ -15,8 +15,16 @@ function ics_generate(array $opts): string {
   $location = ics_escape($opts['location'] ?? 'Ze.EFE');
   $uid = $opts['uid'] ?? (uniqid('zeefe-', true));
 
-  $dtStart = ics_format_dt($opts['start'] ?? null);
-  $dtEnd = ics_format_dt($opts['end'] ?? null);
+  $tz = $opts['tz'] ?? null; // e.g., 'America/Sao_Paulo'
+  if ($tz && !@timezone_open($tz)) { $tz = null; }
+
+  if ($tz) {
+    $dtStart = ics_format_dt_local($opts['start'] ?? null, $tz);
+    $dtEnd = ics_format_dt_local($opts['end'] ?? null, $tz);
+  } else {
+    $dtStart = ics_format_dt($opts['start'] ?? null);
+    $dtEnd = ics_format_dt($opts['end'] ?? null);
+  }
   $dtStamp = gmdate('Ymd\THis\Z');
 
   $lines = [
@@ -25,11 +33,22 @@ function ics_generate(array $opts): string {
     'PRODID:-//Ze.EFE//Reservas//PT-BR',
     'CALSCALE:GREGORIAN',
     'METHOD:PUBLISH',
+    // Timezone block (simplificado, sem DST)
+    $tz ? 'BEGIN:VTIMEZONE' : null,
+    $tz ? 'TZID:' . $tz : null,
+    $tz ? 'X-LIC-LOCATION:' . $tz : null,
+    $tz ? 'BEGIN:STANDARD' : null,
+    $tz ? 'TZOFFSETFROM:-0300' : null,
+    $tz ? 'TZOFFSETTO:-0300' : null,
+    $tz ? 'TZNAME:BRT' : null,
+    $tz ? 'DTSTART:19700101T000000' : null,
+    $tz ? 'END:STANDARD' : null,
+    $tz ? 'END:VTIMEZONE' : null,
     'BEGIN:VEVENT',
     'UID:' . $uid,
     'DTSTAMP:' . $dtStamp,
-    $dtStart ? ('DTSTART:' . $dtStart) : null,
-    $dtEnd ? ('DTEND:' . $dtEnd) : null,
+    $dtStart ? ('DTSTART' . ($tz ? ';TZID=' . $tz : '') . ':' . $dtStart) : null,
+    $dtEnd ? ('DTEND' . ($tz ? ';TZID=' . $tz : '') . ':' . $dtEnd) : null,
     'SUMMARY:' . $summary,
     'DESCRIPTION:' . $description,
     'LOCATION:' . $location,
@@ -53,3 +72,21 @@ function ics_format_dt($value): ?string {
   return null;
 }
 
+function ics_format_dt_local($value, string $tz): ?string {
+  if (!$value) return null;
+  try {
+    $zone = new DateTimeZone($tz);
+    if (is_numeric($value)) {
+      $dt = new DateTime('@' . (int)$value); // epoch in UTC
+      $dt->setTimezone($zone);
+      return $dt->format('Ymd\THis');
+    }
+    if (is_string($value)) {
+      $dt = new DateTime($value, $zone);
+      return $dt->format('Ymd\THis');
+    }
+  } catch (Throwable $e) {
+    return null;
+  }
+  return null;
+}
