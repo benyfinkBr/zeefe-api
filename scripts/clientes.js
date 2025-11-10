@@ -404,6 +404,11 @@ function setActivePanel(panelName = 'book') {
   } else if (target === 'profile') {
     renderProfile();
   } else if (target === 'company' && activeClient) {
+    if (!activeClient.company_master) {
+      // fallback caso alguém force via hash/URL
+      setPortalScope('pf');
+      return;
+    }
     carregarEmpresaOverview();
   }
 }
@@ -1118,19 +1123,19 @@ function aplicarClienteAtivo(cliente) {
   }
   // Exibe a aba Empresa somente se houver company_id
   if (companyTabButton) {
-    const showCompany = Boolean(activeClient.company_id);
+    const showCompany = Boolean(activeClient.company_master);
     companyTabButton.hidden = !showCompany;
     if (!showCompany && portalSections.company) portalSections.company.hidden = true;
   }
   // Toggle scope switch buttons visibility
   if (scopeCompanyBtn) {
-    const showCompany = Boolean(activeClient.company_id);
+    const showCompany = Boolean(activeClient.company_master);
     scopeCompanyBtn.hidden = !showCompany;
   }
   renderProfile();
   resetBookingForm();
   // Apply desired scope after login (fallback to PF if no company)
-  const scopeToApply = (desiredScope === 'company' && activeClient.company_id) ? 'company' : 'pf';
+  const scopeToApply = (desiredScope === 'company' && activeClient.company_master) ? 'company' : 'pf';
   setPortalScope(scopeToApply);
   if (scopeToApply === 'company') setActivePanel('company'); else setActivePanel('book');
   atualizarPainel();

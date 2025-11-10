@@ -45,6 +45,26 @@ try {
     exit;
   }
 
+  // Enriquecer com informações de empresa e flag de master
+  $companyId = $client['company_id'] ?? null;
+  $companyName = null;
+  $isCompanyMaster = false;
+  if (!empty($companyId)) {
+    try {
+      // Tenta buscar master_client_id; se a coluna não existir, tratamos como não-master
+      $q = $pdo->prepare('SELECT id, nome_fantasia, master_client_id FROM companies WHERE id = :id LIMIT 1');
+      $q->execute([':id' => $companyId]);
+      if ($row = $q->fetch(PDO::FETCH_ASSOC)) {
+        $companyName = $row['nome_fantasia'] ?? null;
+        if (array_key_exists('master_client_id', $row)) {
+          $isCompanyMaster = (string)($row['master_client_id'] ?? '') === (string)$client['id'];
+        }
+      }
+    } catch (Throwable $e) {
+      // coluna ausente ou erro: mantém isCompanyMaster=false, sem quebrar o login
+    }
+  }
+
   echo json_encode([
     'success' => true,
     'client' => [
@@ -53,7 +73,9 @@ try {
       'email' => $client['email'],
       'login' => $client['login'],
       'cpf' => $client['cpf'],
-      'company_id' => $client['company_id'],
+      'company_id' => $companyId,
+      'company_name' => $companyName,
+      'company_master' => $isCompanyMaster,
       'phone' => $client['phone'] ?? null,
       'whatsapp' => $client['whatsapp'] ?? null
     ]
