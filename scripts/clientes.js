@@ -1244,8 +1244,10 @@ function openReservationActions(id) {
   reservationActionsButtons.innerHTML = '';
 
   const statusNormalized = (reserva.status || '').toLowerCase();
+  const payNormalized = (reserva.payment_status || '').toLowerCase();
+  const paid = payNormalized === 'confirmado';
   const showCancel = ['pendente', 'confirmada'].includes(statusNormalized) && podeCancelar(reserva);
-  const showPayment = ['pendente', 'confirmada'].includes(statusNormalized);
+  const showPayment = !paid && ['pendente', 'confirmada'].includes(statusNormalized);
   const showInvite = Array.isArray(reserva.visitors) && reserva.visitors.length;
 
   const mkCard = (label, onclick, extraClass='') => {
@@ -1258,11 +1260,25 @@ function openReservationActions(id) {
   reservationActionsButtons.classList.add('actions-grid');
   reservationActionsButtons.innerHTML = '';
 
-  if (showPayment) reservationActionsButtons.appendChild(mkCard('Pagamento', ()=> { tratarAcaoReserva(reserva.id,'payment'); closeReservationActions(); }));
+  if (showPayment) {
+    reservationActionsButtons.appendChild(mkCard('Pagamento', ()=> { tratarAcaoReserva(reserva.id,'payment'); closeReservationActions(); }));
+  }
+  // Se pagamento já foi confirmado, exibir informação logo abaixo do meta
+  if (paid) {
+    try {
+      const dt = (reserva.updated_at || reserva.payment_confirmed_at || '').slice(0,10).split('-').reverse().join('/');
+      reservationActionsMeta.innerHTML = `${reservationActionsMeta.textContent}<br><span style=\"color:#8A7766\">Pagamento – realizado em ${dt || 'data não disponível'}</span>`;
+    } catch (_) {}
+  }
   // Baixar convite (ICS)
   const ics = document.createElement('a'); ics.href=`api/reservation_ics.php?reservation=${encodeURIComponent(reserva.id)}`; ics.className='action-card'; ics.innerHTML=`<span class=\"icon\">${getActionIconSVG('Baixar convite')}</span><span class=\"label\">Baixar convite</span>`; ics.setAttribute('download',''); reservationActionsButtons.appendChild(ics);
   // Enviar convite (e‑mail com ICS)
   reservationActionsButtons.appendChild(mkCard('Enviar convite', ()=> { tratarAcaoReserva(reserva.id,'sendCalendar'); closeReservationActions(); }));
+
+  // Solicitar NF (apenas após pagamento)
+  if (paid) {
+    reservationActionsButtons.appendChild(mkCard('Solicitar NF', ()=> { alert('Solicitação de NF registrada. Em breve você receberá por e‑mail.'); closeReservationActions(); }));
+  }
 
   // Linha inferior: Cancelar (vermelho) e Editar
   const bottom = document.createElement('div'); bottom.className='actions-bottom';
@@ -1287,7 +1303,8 @@ function getActionIconSVG(label){
     'Baixar convite': `<svg viewBox='0 0 24 24'><path d='M12 3v12' ${stroke}/><path d='M7 10l5 5 5-5' ${stroke}/><path d='M5 19h14' ${stroke}/></svg>`,
     'Enviar convite': `<svg viewBox='0 0 24 24'><path d='M22 2L11 13' ${stroke}/><path d='M22 2l-7 20-4-9-9-4 20-7z' ${stroke}/></svg>`,
     'Cancelar': `<svg viewBox='0 0 24 24'><path d='M6 6l12 12M18 6L6 18' ${stroke}/></svg>`,
-    'Editar': `<svg viewBox='0 0 24 24'><path d='M3 21h6l12-12-6-6L3 15v6z' ${stroke}/></svg>`
+    'Editar': `<svg viewBox='0 0 24 24'><path d='M3 21h6l12-12-6-6L3 15v6z' ${stroke}/></svg>`,
+    'Solicitar NF': `<svg viewBox='0 0 24 24'><path d='M6 3h12v18H6z' ${stroke}/><path d='M9 7h6M9 11h6M9 15h6' ${stroke}/></svg>`
   };
   return map[label] || `<svg viewBox='0 0 24 24'><circle cx='12' cy='12' r='9' ${stroke}/></svg>`;
 }
