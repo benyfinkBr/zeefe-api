@@ -382,6 +382,81 @@
     </div>
   </div>
 
+  <!-- Modal de edição de perfil -->
+  <div class="modal-overlay" id="profileEditModal" aria-hidden="true">
+    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="profileEditTitle">
+      <button class="modal-close" type="button" id="profileEditClose" aria-label="Fechar">&times;</button>
+      <div class="modal-body">
+        <div class="modal-info" style="padding:24px; width:100%">
+          <h2 id="profileEditTitle" style="margin-top:0">Editar perfil</h2>
+          <form id="profileEditForm" class="profile-edit-form">
+            <div class="form-grid-mini">
+              <div>
+                <label for="editName">Nome completo</label>
+                <input type="text" id="editName" name="name" required />
+              </div>
+              <div>
+                <label for="editLogin">Login</label>
+                <input type="text" id="editLogin" name="login" required />
+              </div>
+            </div>
+            <div class="form-grid-mini">
+              <div>
+                <label for="editEmail">E-mail</label>
+                <input type="email" id="editEmail" name="email" readonly />
+              </div>
+              <div>
+                <label for="editCpf">CPF</label>
+                <input type="text" id="editCpf" name="cpf" readonly />
+              </div>
+            </div>
+            <div class="form-grid-mini">
+              <div>
+                <label for="editPhone">Telefone</label>
+                <input type="text" id="editPhone" name="phone" maxlength="15" />
+              </div>
+              <div>
+                <label for="editWhatsapp">WhatsApp</label>
+                <input type="text" id="editWhatsapp" name="whatsapp" maxlength="15" />
+              </div>
+            </div>
+
+            <fieldset class="password-change">
+              <legend>Alterar senha</legend>
+              <div class="form-grid-mini">
+                <div>
+                  <label for="currentPassword">Senha atual</label>
+                  <input type="password" id="currentPassword" autocomplete="current-password" />
+                </div>
+                <div>
+                  <label for="newPassword">Nova senha</label>
+                  <input type="password" id="newPassword" autocomplete="new-password" />
+                </div>
+              </div>
+              <div class="form-grid-mini">
+                <div>
+                  <label for="newPasswordConfirm">Confirmar nova senha</label>
+                  <input type="password" id="newPasswordConfirm" autocomplete="new-password" />
+                </div>
+                <div class="password-indicators inline">
+                  <span class="password-indicator state-neutral" id="pwdStrengthIndicator">Força da senha: aguardando</span>
+                  <span class="password-indicator state-neutral" id="pwdMatchIndicator">Confirmação: aguardando</span>
+                </div>
+              </div>
+              <p class="password-hint">A senha deve ter 8+ caracteres com letras, números e símbolos.</p>
+            </fieldset>
+
+            <div class="modal-actions" style="margin-top:12px; display:flex; gap:12px; justify-content:flex-end;">
+              <button type="button" class="btn btn-secondary" id="profileEditCancel">Cancelar</button>
+              <button type="submit" class="btn btn-primary">Salvar</button>
+            </div>
+            <div class="form-row"><div id="profileEditMessage" class="rooms-message"></div></div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script src="scripts/clientes.js" defer></script>
 </body>
 </html>

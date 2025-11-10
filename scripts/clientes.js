@@ -113,6 +113,24 @@ const profileInputs = {
   company: document.getElementById('profileCompanyInput')
 };
 
+// Modal de edição de perfil
+const profileEditModal = document.getElementById('profileEditModal');
+const profileEditClose = document.getElementById('profileEditClose');
+const profileEditCancel = document.getElementById('profileEditCancel');
+const profileEditForm = document.getElementById('profileEditForm');
+const profileEditMessage = document.getElementById('profileEditMessage');
+const editName = document.getElementById('editName');
+const editLogin = document.getElementById('editLogin');
+const editEmail = document.getElementById('editEmail');
+const editCpf = document.getElementById('editCpf');
+const editPhone = document.getElementById('editPhone');
+const editWhatsapp = document.getElementById('editWhatsapp');
+const currentPasswordInput = document.getElementById('currentPassword');
+const newPasswordInput = document.getElementById('newPassword');
+const newPasswordConfirmInput = document.getElementById('newPasswordConfirm');
+const pwdStrengthIndicator = document.getElementById('pwdStrengthIndicator');
+const pwdMatchIndicator = document.getElementById('pwdMatchIndicator');
+
 const portalNavButtons = Array.from(document.querySelectorAll('.portal-nav [data-panel]'));
 const portalSections = {
   book: document.getElementById('panel-book'),
@@ -242,11 +260,22 @@ async function initialize() {
   });
 
   profileForm?.addEventListener('submit', onProfileSubmit);
-  editProfileBtn?.addEventListener('click', () => setProfileEditing(true));
+  // Abre modal de edição ao invés de editar inline
+  editProfileBtn?.addEventListener('click', openProfileEditModal);
   cancelProfileEditBtn?.addEventListener('click', () => {
     renderProfile();
     setProfileEditing(false);
   });
+
+  // Modal profile edit events
+  profileEditClose?.addEventListener('click', closeProfileEditModal);
+  profileEditCancel?.addEventListener('click', closeProfileEditModal);
+  profileEditModal?.addEventListener('click', (e) => { if (e.target === profileEditModal) closeProfileEditModal(); });
+  profileEditForm?.addEventListener('submit', onProfileEditSubmit);
+  newPasswordInput?.addEventListener('input', updateModalPasswordIndicators);
+  newPasswordConfirmInput?.addEventListener('input', updateModalPasswordIndicators);
+  editPhone?.addEventListener('input', () => { const d = somenteDigitos(editPhone.value).slice(0,11); editPhone.value = formatPhone(d); });
+  editWhatsapp?.addEventListener('input', () => { const d = somenteDigitos(editWhatsapp.value).slice(0,11); editWhatsapp.value = formatPhone(d); });
 
   portalNavButtons.forEach(btn => {
     btn.addEventListener('click', () => setActivePanel(btn.dataset.panel));
@@ -1723,6 +1752,90 @@ function renderProfile() {
   profileInputs.whatsapp.value = formatPhone(activeClient.whatsapp) || '';
   profileInputs.company.value = obterNomeEmpresa(activeClient.company_id) || (activeClient.company_id ? 'Empresa não localizada' : 'Cliente pessoa física');
   setProfileEditing(false);
+}
+
+function openProfileEditModal() {
+  if (!activeClient || !profileEditModal) return;
+  // Preenche campos com dados atuais
+  if (editName) editName.value = activeClient.name || '';
+  if (editLogin) editLogin.value = activeClient.login || '';
+  if (editEmail) editEmail.value = activeClient.email || '';
+  if (editCpf) editCpf.value = formatCPF(activeClient.cpf) || '';
+  if (editPhone) editPhone.value = formatPhone(activeClient.phone) || '';
+  if (editWhatsapp) editWhatsapp.value = formatPhone(activeClient.whatsapp) || '';
+  if (currentPasswordInput) currentPasswordInput.value = '';
+  if (newPasswordInput) newPasswordInput.value = '';
+  if (newPasswordConfirmInput) newPasswordConfirmInput.value = '';
+  updateModalPasswordIndicators();
+  if (profileEditMessage) profileEditMessage.textContent = '';
+  profileEditModal.classList.add('show');
+  profileEditModal.setAttribute('aria-hidden','false');
+}
+
+function closeProfileEditModal(){
+  profileEditModal?.classList.remove('show');
+  profileEditModal?.setAttribute('aria-hidden','true');
+}
+
+function updateModalPasswordIndicators(){
+  const senha = newPasswordInput?.value || '';
+  const confirm = newPasswordConfirmInput?.value || '';
+  const level = calcularNivelSenha(senha);
+  setIndicatorState(pwdStrengthIndicator, level.state, `Força da senha: ${level.label}`);
+  let matchState = 'neutral';
+  let matchText = 'Confirmação: aguardando';
+  if (senha && !confirm) { matchState = 'warning'; matchText = 'Confirmação: pendente'; }
+  else if (confirm && senha === confirm) { matchState = 'ok'; matchText = 'Confirmação: senhas combinam'; }
+  else if (confirm) { matchState = 'error'; matchText = 'Confirmação: senhas diferentes'; }
+  setIndicatorState(pwdMatchIndicator, matchState, matchText);
+}
+
+async function onProfileEditSubmit(event){
+  event.preventDefault();
+  if (!activeClient) return;
+  if (profileEditMessage) profileEditMessage.textContent = '';
+  const payload = {
+    id: activeClient.id,
+    name: editName?.value.trim() || '',
+    login: editLogin?.value.trim() || '',
+    phone: somenteDigitos(editPhone?.value),
+    whatsapp: somenteDigitos(editWhatsapp?.value)
+  };
+  if (!payload.name || !payload.login) {
+    if (profileEditMessage) profileEditMessage.textContent = 'Preencha nome e login.';
+    return;
+  }
+  try {
+    // Atualiza dados básicos
+    const res = await fetch(`${API_BASE}/client_update_profile.php`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const json = await res.json();
+    if (!json.success) throw new Error(json.error || 'Erro ao atualizar cadastro.');
+    activeClient = { ...activeClient, ...json.client };
+    renderProfile();
+
+    // Se senha foi informada, valida e atualiza
+    const cur = currentPasswordInput?.value || '';
+    const np = newPasswordInput?.value || '';
+    const npc = newPasswordConfirmInput?.value || '';
+    if (cur || np || npc) {
+      if (!cur || !np || !npc) throw new Error('Para trocar a senha, preencha todos os campos de senha.');
+      if (np !== npc) throw new Error('As senhas novas não conferem.');
+      if (!validarSenhaForte(np)) throw new Error('A nova senha não atende os requisitos.');
+      const r2 = await fetch(`${API_BASE}/client_change_password.php`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: activeClient.id, current_password: cur, new_password: np })
+      });
+      const j2 = await r2.json();
+      if (!j2.success) throw new Error(j2.error || 'Não foi possível alterar a senha.');
+    }
+    if (profileEditMessage) profileEditMessage.textContent = 'Dados salvos com sucesso.';
+    closeProfileEditModal();
+  } catch (err) {
+    if (profileEditMessage) profileEditMessage.textContent = err.message || 'Falha ao salvar.';
+  }
 }
 
 async function onProfileSubmit(event) {
