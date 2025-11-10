@@ -1635,29 +1635,42 @@ input, select {
     }
 
     function renderCompanyClients(lista) {
-      if (!lista.length) {
-        companyClientsList.innerHTML = '<div class="reservations-empty">Nenhum cliente vinculado.</div>';
-        return;
-      }
-      const rows = lista.map(client => {
+      const rows = (lista || []).map(client => {
         const statusHtml = statusFormatter(client.status);
+        const role = client.company_role || '-';
         return `
           <tr>
             <td>${escapeHtml(client.name || '--')}</td>
             <td>${escapeHtml(client.email || '--')}</td>
             <td>${escapeHtml(client.login || '--')}</td>
+            <td>${escapeHtml(role)}</td>
             <td>${statusHtml}</td>
-            <td><button class=\"btn-micro confirm\" onclick=\"definirMasterEmpresa(${companyClientsCompanyId},${client.id})\">Definir master</button></td>
+            <td>
+              <button class=\"btn-micro confirm\" onclick=\"definirMasterEmpresa(${companyClientsCompanyId},${client.id})\">Master</button>
+              <button class=\"btn-micro cancel\" onclick=\"removerUsuarioEmpresa(${companyClientsCompanyId},${client.id})\">Remover</button>
+            </td>
           </tr>
         `;
       }).join('');
+
       companyClientsList.innerHTML = `
+        <div style=\"margin-bottom:12px;display:flex;gap:8px;align-items:center\">
+          <input id=\"cpfAddEmpresa\" type=\"text\" placeholder=\"CPF do cliente\" oninput=\"this.value=this.value.replace(/[^0-9.\-]/g,'')\" style=\"padding:8px 10px;border:1px solid #ccc;border-radius:6px\" />
+          <select id=\"roleAddEmpresa\" style=\"padding:8px 10px;border:1px solid #ccc;border-radius:6px\">
+            <option value=\"membro\">Membro</option>
+            <option value=\"gestor\">Gestor</option>
+            <option value=\"leitor\">Leitor</option>
+            <option value=\"admin\">Admin</option>
+          </select>
+          <button class=\"btn-ghost\" onclick=\"convidarUsuarioEmpresa()\">Convidar por CPF</button>
+        </div>
+        ${rows ? `
         <table>
           <thead>
-            <tr><th>Nome</th><th>E-mail</th><th>Login</th><th>Status</th><th>Ações</th></tr>
+            <tr><th>Nome</th><th>E-mail</th><th>Login</th><th>Papel</th><th>Status</th><th>Ações</th></tr>
           </thead>
           <tbody>${rows}</tbody>
-        </table>
+        </table>` : '<div class=\\"reservations-empty\\">Nenhum cliente vinculado.</div>'}
       `;
     }
 
@@ -1700,6 +1713,42 @@ input, select {
         fecharModal();
       }
     });
+
+    async function convidarUsuarioEmpresa(){
+      const cpfEl = document.getElementById('cpfAddEmpresa');
+      const roleEl = document.getElementById('roleAddEmpresa');
+      const cpf = (cpfEl?.value || '').replace(/\D/g,'');
+      const role = roleEl?.value || 'membro';
+      if (!companyClientsCompanyId) { alert('Empresa não definida.'); return; }
+      if (cpf.length !== 11) { alert('Informe um CPF válido.'); return; }
+      try {
+        const res = await fetch(`${API_BASE}/company_invite_user.php`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+          body: JSON.stringify({ company_id: companyClientsCompanyId, cpf, role })
+        });
+        const json = await res.json();
+        if (!json.success) throw new Error(json.error || 'Não foi possível enviar o convite.');
+        alert(json.message || 'Convite enviado.');
+      } catch (e) {
+        console.error(e); alert(e.message || 'Falha ao convidar.');
+      }
+    }
+
+    async function removerUsuarioEmpresa(companyId, clientId){
+      if (!confirm('Remover o vínculo deste usuário com a empresa?')) return;
+      try {
+        const res = await fetch(`${API_BASE}/company_remove_user.php`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+          body: JSON.stringify({ company_id: companyId, client_id: clientId })
+        });
+        const json = await res.json();
+        if (!json.success) throw new Error(json.error || 'Não foi possível remover.');
+        alert(json.message || 'Removido.');
+        listarClientesEmpresa(companyId, companyClientsTitle.textContent.replace('Clientes de ',''));
+      } catch (e) {
+        console.error(e); alert(e.message || 'Erro ao remover.');
+      }
+    }
 
   </script>
 </body>
