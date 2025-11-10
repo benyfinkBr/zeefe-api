@@ -140,6 +140,10 @@ const portalSections = {
   company: document.getElementById('panel-company')
 };
 const companyTabButton = document.getElementById('companyTab');
+// Scope switch (PF vs Empresa) at header
+let currentScope = 'pf';
+const scopePFBtn = document.getElementById('scopePFBtn');
+const scopeCompanyBtn = document.getElementById('scopeCompanyBtn');
 
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', initialize, { once: true });
@@ -279,6 +283,10 @@ async function initialize() {
   editPhone?.addEventListener('input', () => { const d = somenteDigitos(editPhone.value).slice(0,11); editPhone.value = formatPhone(d); });
   editWhatsapp?.addEventListener('input', () => { const d = somenteDigitos(editWhatsapp.value).slice(0,11); editWhatsapp.value = formatPhone(d); });
 
+  // Scope buttons
+  scopePFBtn?.addEventListener('click', () => setPortalScope('pf'));
+  scopeCompanyBtn?.addEventListener('click', () => setPortalScope('company'));
+
   portalNavButtons.forEach(btn => {
     btn.addEventListener('click', () => setActivePanel(btn.dataset.panel));
   });
@@ -383,6 +391,18 @@ function setActivePanel(panelName = 'book') {
     renderProfile();
   } else if (target === 'company' && activeClient) {
     carregarEmpresaOverview();
+  }
+}
+
+function setPortalScope(scope) {
+  currentScope = scope === 'company' ? 'company' : 'pf';
+  if (scopePFBtn) scopePFBtn.classList.toggle('active', currentScope === 'pf');
+  if (scopeCompanyBtn) scopeCompanyBtn.classList.toggle('active', currentScope === 'company');
+  if (currentScope === 'company') {
+    setActivePanel('company');
+  } else {
+    // return to the main PF flow (keep current selection if not company)
+    setActivePanel('book');
   }
 }
 
@@ -1088,8 +1108,14 @@ function aplicarClienteAtivo(cliente) {
     companyTabButton.hidden = !showCompany;
     if (!showCompany && portalSections.company) portalSections.company.hidden = true;
   }
+  // Toggle scope switch buttons visibility
+  if (scopeCompanyBtn) {
+    const showCompany = Boolean(activeClient.company_id);
+    scopeCompanyBtn.hidden = !showCompany;
+  }
   renderProfile();
   resetBookingForm();
+  setPortalScope('pf');
   setActivePanel('book');
   atualizarPainel();
   if (authMessage) authMessage.textContent = '';
