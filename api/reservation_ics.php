@@ -9,7 +9,7 @@ if ($id <= 0) {
   exit;
 }
 
-$stmt = $pdo->prepare('SELECT r.*, rooms.name AS room_name, rooms.location AS room_location, rooms.city, rooms.state FROM reservations r LEFT JOIN rooms ON rooms.id = r.room_id WHERE r.id = ? LIMIT 1');
+$stmt = $pdo->prepare('SELECT r.*, rooms.name AS room_name, rooms.location AS room_location, rooms.city, rooms.state, rooms.street, rooms.complement, rooms.cep FROM reservations r LEFT JOIN rooms ON rooms.id = r.room_id WHERE r.id = ? LIMIT 1');
 $stmt->execute([$id]);
 $res = $stmt->fetch(PDO::FETCH_ASSOC);
 if (!$res) {
@@ -37,7 +37,14 @@ $endTs = strtotime($date . ' ' . $normalizeTime($end));
 
 $summary = 'Reserva Ze.EFE - ' . ($res['room_name'] ?: 'Sala');
 $desc = ($res['title'] ? ($res['title'] . "\n\n") : '') . trim($res['description'] ?? '');
-$location = $res['room_location'] ?: trim(($res['city'] ?: '') . ' - ' . strtoupper($res['state'] ?: ''));
+// Monta endereço completo: Rua/compl, Cidade-UF, CEP
+$street = trim((string)($res['street'] ?? ''));
+$compl = trim((string)($res['complement'] ?? ''));
+$addr1 = $street ? ($street . ($compl ? ' - ' . $compl : '')) : '';
+$cityState = trim((string)($res['city'] ?? '')) . (empty($res['state']) ? '' : ' - ' . strtoupper((string)$res['state']));
+$cep = trim((string)($res['cep'] ?? ''));
+$parts = array_filter([$addr1 ?: null, $cityState ?: null, ($cep ? ('CEP ' . $cep) : null)]);
+$location = $parts ? implode(', ', $parts) : ($res['room_location'] ?: trim(($res['city'] ?: '') . ' - ' . strtoupper($res['state'] ?: '')));
 
 $ics = ics_generate([
   'summary' => $summary,
