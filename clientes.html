@@ -312,38 +312,45 @@
           <div id="panel-company" class="portal-section" hidden>
             <section class="client-lists">
               <article class="form-card">
-                <h3>Empresa — Visão Geral</h3>
-                <div class="grid-cards-3" id="companyOverview">
-                  <div class="stat-card"><strong>Reservas ativas</strong><span id="coActive">—</span></div>
-                  <div class="stat-card"><strong>Próximos 7 dias</strong><span id="coNext">—</span></div>
-                  <div class="stat-card"><strong>Pagamentos pendentes</strong><span id="coPay">—</span></div>
-                </div>
-              </article>
-
-              <article class="form-card">
-                <div class="list-header">
-                  <h3>Usuários da Empresa</h3>
-                  <div class="inline-actions">
-                    <button class="btn btn-secondary" type="button" id="inviteCompanyUserBtn">Convidar usuário</button>
+                <div class="list-header" style="gap:8px; align-items:center">
+                  <h3 style="margin-right:auto">Empresa</h3>
+                  <div class="tabline" id="companyTabs" style="display:flex; gap:6px">
+                    <button class="btn btn-secondary btn-sm company-tab active" data-company-tab="overview">Visão Geral</button>
+                    <button class="btn btn-secondary btn-sm company-tab" data-company-tab="users">Membros</button>
+                    <button class="btn btn-secondary btn-sm company-tab" data-company-tab="reservations">Reservas</button>
+                    <button class="btn btn-secondary btn-sm company-tab" data-company-tab="finance">Financeiro</button>
                   </div>
                 </div>
-                <div id="companyUsersContainer" class="responsive-table">
-                  <div class="rooms-message">Em construção. Em breve você poderá gerenciar os usuários da sua empresa aqui.</div>
-                </div>
-              </article>
 
-              <article class="form-card">
-                <div class="list-header">
-                  <h3>Reservas da Empresa</h3>
+                <div id="companyTab-overview" class="company-panel">
+                  <div class="grid-cards-3" id="companyOverview">
+                    <div class="stat-card"><strong>Reservas ativas</strong><span id="coActive">—</span></div>
+                    <div class="stat-card"><strong>Próximos 7 dias</strong><span id="coNext">—</span></div>
+                    <div class="stat-card"><strong>Pagamentos pendentes</strong><span id="coPay">—</span></div>
+                  </div>
                 </div>
-                <div id="companyReservationsContainer" class="responsive-table">
-                  <div class="rooms-message">Em construção. As reservas da empresa aparecerão aqui.</div>
-                </div>
-              </article>
 
-              <article class="form-card">
-                <h3>Financeiro</h3>
-                <p class="rooms-message">Página em construção. Em breve será possível solicitar NF e acompanhar faturamento.</p>
+                <div id="companyTab-users" class="company-panel" hidden>
+                  <div class="inline-actions" style="margin-bottom:10px; display:flex; gap:8px; flex-wrap:wrap">
+                    <input type="text" id="companyInviteCpf" placeholder="CPF do membro (somente números)" maxlength="14" style="min-width:220px">
+                    <select id="companyInviteRole">
+                      <option value="membro">Membro</option>
+                      <option value="gestor">Gestor</option>
+                      <option value="leitor">Leitor</option>
+                      <option value="admin">Admin</option>
+                    </select>
+                    <button class="btn btn-secondary" type="button" id="companyInviteBtn">Convidar por CPF</button>
+                  </div>
+                  <div id="companyUsersContainer" class="responsive-table"></div>
+                </div>
+
+                <div id="companyTab-reservations" class="company-panel" hidden>
+                  <div id="companyReservationsContainer" class="responsive-table"></div>
+                </div>
+
+                <div id="companyTab-finance" class="company-panel" hidden>
+                  <div id="companyFinanceContainer" class="responsive-table"></div>
+                </div>
               </article>
             </section>
           </div>

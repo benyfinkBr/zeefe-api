@@ -144,6 +144,17 @@ const portalSections = {
   company: document.getElementById('panel-company')
 };
 const companyTabButton = document.getElementById('companyTab');
+// Company sub-tabs
+const companyTabs = Array.from(document.querySelectorAll('.company-tab'));
+const companyPanels = {
+  overview: document.getElementById('companyTab-overview'),
+  users: document.getElementById('companyTab-users'),
+  reservations: document.getElementById('companyTab-reservations'),
+  finance: document.getElementById('companyTab-finance')
+};
+const companyInviteCpf = document.getElementById('companyInviteCpf');
+const companyInviteRole = document.getElementById('companyInviteRole');
+const companyInviteBtn = document.getElementById('companyInviteBtn');
 // Scope switch (PF vs Empresa) at header
 let currentScope = 'pf';
 const scopePFBtn = document.getElementById('scopePFBtn');
@@ -295,6 +306,10 @@ async function initialize() {
   scopePFBtn?.addEventListener('click', () => setPortalScope('pf'));
   scopeCompanyBtn?.addEventListener('click', () => setPortalScope('company'));
 
+  // Company tab buttons
+  companyTabs.forEach(b => b.addEventListener('click', () => setCompanySubtab(b.dataset.companyTab)));
+  companyInviteBtn?.addEventListener('click', onCompanyInviteSubmit);
+
   portalNavButtons.forEach(btn => {
     btn.addEventListener('click', () => setActivePanel(btn.dataset.panel));
   });
@@ -410,6 +425,8 @@ function setActivePanel(panelName = 'book') {
       return;
     }
     carregarEmpresaOverview();
+    // default subtab
+    setCompanySubtab('overview');
   }
 }
 
@@ -438,6 +455,131 @@ async function carregarEmpresaOverview() {
     set('coNext', proximos7);
     set('coPay', pendPag);
   } catch (_) {}
+}
+
+function setCompanySubtab(tab) {
+  const key = ['overview','users','reservations','finance'].includes(tab) ? tab : 'overview';
+  companyTabs.forEach(b => b.classList.toggle('active', b.dataset.companyTab === key));
+  Object.entries(companyPanels).forEach(([k, el]) => { if (el) el.hidden = (k !== key); });
+  if (!activeClient || !activeClient.company_master) return;
+  if (key === 'users') loadCompanyUsers();
+  if (key === 'reservations') loadCompanyReservations();
+  if (key === 'finance') loadCompanyFinance();
+}
+
+async function loadCompanyUsers() {
+  const wrap = document.getElementById('companyUsersContainer');
+  if (!wrap) return;
+  try {
+    wrap.innerHTML = '<div class="rooms-message">Carregando membros…</div>';
+    const res = await fetch(`${API_BASE}/apiget.php?table=clients`, { credentials: 'include' });
+    const json = await res.json();
+    const cid = activeClient?.company_id;
+    const users = (json.success ? (json.data || []) : []).filter(u => String(u.company_id) === String(cid));
+    if (!users.length) { wrap.innerHTML = '<div class="rooms-message">Nenhum membro encontrado.</div>'; return; }
+    const rows = users.map(u => `
+      <tr>
+        <td>${escapeHtml(u.name || '--')}</td>
+        <td>${escapeHtml(u.email || '--')}</td>
+        <td>${escapeHtml(u.login || '--')}</td>
+        <td>${escapeHtml(u.company_role || '-')}</td>
+        <td><button class="btn btn-secondary btn-sm" data-act="remove" data-id="${u.id}">Remover</button></td>
+      </tr>
+    `).join('');
+    wrap.innerHTML = `
+      <table>
+        <thead><tr><th>Nome</th><th>E-mail</th><th>Login</th><th>Papel</th><th>Ações</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    `;
+    wrap.querySelectorAll('button[data-act="remove"]').forEach(btn => btn.addEventListener('click', () => removeCompanyUser(btn.dataset.id)));
+  } catch (e) {
+    wrap.innerHTML = '<div class="rooms-message">Falha ao carregar membros.</div>';
+  }
+}
+
+async function onCompanyInviteSubmit() {
+  if (!activeClient?.company_id) return;
+  const digits = somenteDigitos(companyInviteCpf?.value).slice(0,11);
+  if (companyInviteCpf) companyInviteCpf.value = formatCPF(digits);
+  if (digits.length !== 11) { alert('Informe um CPF válido.'); return; }
+  const role = companyInviteRole?.value || 'membro';
+  try {
+    companyInviteBtn.disabled = true;
+    const res = await fetch(`${API_BASE}/company_invite_user.php`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ company_id: activeClient.company_id, cpf: digits, role })
+    });
+    const json = await res.json();
+    if (!json.success) throw new Error(json.error || 'Não foi possível enviar o convite.');
+    alert(json.message || 'Convite enviado.');
+  } catch (e) {
+    alert(e.message || 'Falha ao convidar.');
+  } finally { companyInviteBtn.disabled = false; }
+}
+
+async function removeCompanyUser(clientId){
+  if (!activeClient?.company_id) return;
+  if (!confirm('Remover vínculo deste usuário com a empresa?')) return;
+  try {
+    const res = await fetch(`${API_BASE}/company_remove_user.php`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ company_id: activeClient.company_id, client_id: Number(clientId) })
+    });
+    const json = await res.json();
+    if (!json.success) throw new Error(json.error || 'Falha ao remover.');
+    loadCompanyUsers();
+  } catch (e) { alert(e.message || 'Erro ao remover.'); }
+}
+
+async function loadCompanyReservations(){
+  const wrap = document.getElementById('companyReservationsContainer');
+  if (!wrap) return;
+  try {
+    wrap.innerHTML = '<div class="rooms-message">Carregando reservas…</div>';
+    const res = await fetch(`${API_BASE}/apiget.php?table=reservations`, { credentials: 'include' });
+    const json = await res.json();
+    const cid = activeClient?.company_id;
+    const list = (json.success ? (json.data || []) : []).filter(r => String(r.company_id) === String(cid));
+    if (!list.length) { wrap.innerHTML = '<div class="rooms-message">Nenhuma reserva para a empresa.</div>'; return; }
+    const rows = list.map(r => {
+      const room = buscarSala(r.room_id);
+      const roomName = (r.room_name || room?.name || `Sala #${r.room_id}`);
+      const date = formatDate(r.date);
+      const time = formatTimeRange(r.time_start, r.time_end);
+      const status = statusLabel(r.status);
+      return `<tr><td>${escapeHtml(roomName)}</td><td>${escapeHtml(date)}</td><td>${escapeHtml(time)}</td><td>${escapeHtml(status)}</td></tr>`;
+    }).join('');
+    wrap.innerHTML = `
+      <table>
+        <thead><tr><th>Sala</th><th>Data</th><th>Horário</th><th>Status</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>`;
+  } catch (e) { wrap.innerHTML = '<div class="rooms-message">Falha ao carregar reservas.</div>'; }
+}
+
+async function loadCompanyFinance(){
+  const wrap = document.getElementById('companyFinanceContainer');
+  if (!wrap) return;
+  try {
+    wrap.innerHTML = '<div class="rooms-message">Carregando financeiro…</div>';
+    const res = await fetch(`${API_BASE}/apiget.php?table=reservations`, { credentials: 'include' });
+    const json = await res.json();
+    const cid = activeClient?.company_id;
+    const list = (json.success ? (json.data || []) : []).filter(r => String(r.company_id) === String(cid));
+    const sum = (arr, field) => arr.reduce((acc, it) => acc + (parseFloat(it[field] || 0) || 0), 0);
+    const pend = list.filter(r => String(r.payment_status||'').toLowerCase() === 'pendente');
+    const conf = list.filter(r => String(r.payment_status||'').toLowerCase() === 'confirmado');
+    const totalPend = sum(pend, 'total_price');
+    const totalConf = sum(conf, 'total_price');
+    wrap.innerHTML = `
+      <div class="grid-cards-3">
+        <div class="stat-card"><strong>Pagamentos pendentes</strong><span>${escapeHtml(formatCurrency(totalPend)) || '—'}</span></div>
+        <div class="stat-card"><strong>Pagamentos confirmados</strong><span>${escapeHtml(formatCurrency(totalConf)) || '—'}</span></div>
+        <div class="stat-card"><strong>Reservas</strong><span>${list.length}</span></div>
+      </div>
+    `;
+  } catch (e) { wrap.innerHTML = '<div class="rooms-message">Falha ao carregar financeiro.</div>'; }
 }
 
 async function carregarEmpresas() {
