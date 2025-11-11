@@ -7,6 +7,8 @@ try {
   $data = json_decode(file_get_contents('php://input'), true);
   $companyId = isset($data['company_id']) ? (int)$data['company_id'] : 0;
   $cpf = preg_replace('/\D/', '', $data['cpf'] ?? '');
+  $email = trim($data['email'] ?? '');
+  $name = trim($data['name'] ?? '');
   $role = strtolower(trim($data['role'] ?? 'membro'));
   if (!in_array($role, ['admin','gestor','membro','leitor'], true)) $role = 'membro';
 
@@ -34,14 +36,39 @@ try {
     // segue se não conseguir criar, mas é provável que falhe adiante se a tabela não existir
   }
 
-  // Localiza cliente por CPF
+  // Localiza cliente por CPF ou e-mail; se não existir e tiver dados mínimos, cria um cliente "stub" para receber convite
   $stmt = $pdo->prepare('SELECT id, name, email, login, company_id FROM clients WHERE REPLACE(REPLACE(REPLACE(cpf, ".", ""), "-", ""), " ", "") = :cpf LIMIT 1');
   $stmt->execute([':cpf' => $cpf]);
   $client = $stmt->fetch(PDO::FETCH_ASSOC);
+  if (!$client && $email !== '') {
+    $stmt2 = $pdo->prepare('SELECT id, name, email, login, company_id FROM clients WHERE email = :email LIMIT 1');
+    $stmt2->execute([':email' => $email]);
+    $client = $stmt2->fetch(PDO::FETCH_ASSOC);
+  }
   if (!$client) {
-    http_response_code(404);
-    echo json_encode(['success' => false, 'error' => 'Cliente não encontrado para o CPF informado.']);
-    exit;
+    if ($email === '' || $name === '') {
+      http_response_code(404);
+      echo json_encode(['success' => false, 'error' => 'Cliente não encontrado. Informe nome e e-mail para convidar novos usuários.']);
+      exit;
+    }
+    // Cria stub: sem senha, aguardando cadastro/validação por e-mail
+    $login = $email;
+    $insCli = $pdo->prepare('INSERT INTO clients (name, email, login, cpf, password_hash, status, created_at, updated_at) VALUES (:name,:email,:login,:cpf, :hash, :status, NOW(), NOW())');
+    $insCli->execute([
+      ':name' => $name,
+      ':email' => $email,
+      ':login' => $login,
+      ':cpf' => $cpf,
+      ':hash' => '',
+      ':status' => 'ativo'
+    ]);
+    $client = [
+      'id' => (int)$pdo->lastInsertId(),
+      'name' => $name,
+      'email' => $email,
+      'login' => $login,
+      'company_id' => null
+    ];
   }
 
   $token = bin2hex(random_bytes(24));
@@ -84,4 +111,3 @@ try {
   http_response_code(500);
   echo json_encode(['success' => false, 'error' => 'Erro interno: ' . $e->getMessage()]);
 }
-

@@ -639,7 +639,7 @@ async function onCompanyCsvSelected(evt){
       try {
         const res = await fetch(`${API_BASE}/company_invite_user.php`, {
           method:'POST', headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({ company_id: activeClient.company_id, cpf: row.cpf, role })
+          body: JSON.stringify({ company_id: activeClient.company_id, cpf: row.cpf, email: row.email || '', name: row.name || '', role })
         });
         const j = await res.json();
         if (!j.success) throw new Error();
