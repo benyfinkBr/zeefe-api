@@ -76,6 +76,8 @@ const bookingCalendarGrid = document.getElementById('bookingCalendarGrid');
 const bookingCalendarLabel = document.getElementById('bookingCalendarLabel');
 const bookingPrevMonthBtn = document.getElementById('bookingPrevMonth');
 const bookingNextMonthBtn = document.getElementById('bookingNextMonth');
+const bookingCompanyToggle = document.getElementById('bookingCompanyToggle');
+const companyBookingRow = document.getElementById('companyBookingRow');
 // Filtros removidos do portal para simplificação
 const bookingRoomSearchInput = null;
 const bookingCityFilterInput = null;
@@ -155,6 +157,8 @@ const companyPanels = {
 const companyInviteCpf = document.getElementById('companyInviteCpf');
 const companyInviteRole = document.getElementById('companyInviteRole');
 const companyInviteBtn = document.getElementById('companyInviteBtn');
+const companyCsvInput = document.getElementById('companyCsvInput');
+const quickActionsContainer = document.querySelector('#companyTab-overview .quick-actions');
 // Scope switch (PF vs Empresa) at header
 let currentScope = 'pf';
 const scopePFBtn = document.getElementById('scopePFBtn');
@@ -309,6 +313,16 @@ async function initialize() {
   // Company tab buttons
   companyTabs.forEach(b => b.addEventListener('click', () => setCompanySubtab(b.dataset.companyTab)));
   companyInviteBtn?.addEventListener('click', onCompanyInviteSubmit);
+  companyCsvInput?.addEventListener('change', onCompanyCsvSelected);
+
+  // Quick actions in overview
+  if (quickActionsContainer) {
+    quickActionsContainer.querySelectorAll('button[data-panel]')
+      .forEach(btn => btn.addEventListener('click', () => {
+        const panel = btn.getAttribute('data-panel');
+        setCompanySubtab(panel);
+      }));
+  }
 
   portalNavButtons.forEach(btn => {
     btn.addEventListener('click', () => setActivePanel(btn.dataset.panel));
@@ -541,6 +555,52 @@ async function onCompanyInviteSubmit() {
   } catch (e) {
     alert(e.message || 'Falha ao convidar.');
   } finally { companyInviteBtn.disabled = false; }
+}
+
+function parseCsv(text) {
+  const rows = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+  if (!rows.length) return [];
+  const header = rows.shift().split(',').map(h => h.trim().toLowerCase());
+  const idxNome = header.indexOf('nome');
+  const idxEmail = header.indexOf('e-mail') >= 0 ? header.indexOf('e-mail') : header.indexOf('email');
+  const idxCpf = header.indexOf('cpf');
+  if (idxNome < 0 || idxEmail < 0 || idxCpf < 0) return [];
+  return rows.map(line => {
+    const cols = line.split(',');
+    return {
+      name: (cols[idxNome] || '').trim(),
+      email: (cols[idxEmail] || '').trim(),
+      cpf: somenteDigitos(cols[idxCpf] || '').slice(0,11)
+    };
+  }).filter(r => r.name && r.email && r.cpf && r.cpf.length === 11);
+}
+
+async function onCompanyCsvSelected(evt){
+  const file = evt.target?.files?.[0];
+  if (!file) return;
+  try {
+    const text = await file.text();
+    const entries = parseCsv(text);
+    if (!entries.length) { alert('CSV inválido. Use o modelo com Nome,E-mail,CPF.'); return; }
+    if (!confirm(`Detectamos ${entries.length} linha(s). Enviar convites agora?`)) return;
+    let ok = 0, fail = 0;
+    for (const row of entries) {
+      try {
+        const res = await fetch(`${API_BASE}/company_invite_user.php`, {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ company_id: activeClient.company_id, cpf: row.cpf, role: 'membro' })
+        });
+        const j = await res.json();
+        if (!j.success) throw new Error();
+        ok += 1;
+      } catch (_) { fail += 1; }
+    }
+    alert(`Convites enviados: ${ok}. Falhas: ${fail}.`);
+  } catch (e) {
+    alert('Não foi possível ler o arquivo CSV.');
+  } finally {
+    evt.target.value = '';
+  }
 }
 
 async function removeCompanyUser(clientId){
@@ -1299,6 +1359,10 @@ function aplicarClienteAtivo(cliente) {
     const showCompany = Boolean(activeClient.company_master);
     scopeCompanyBtn.hidden = !showCompany;
   }
+  // Exibe checkbox "Reserva pela empresa" para qualquer usuário com company_id
+  if (companyBookingRow) {
+    companyBookingRow.hidden = !Boolean(activeClient.company_id);
+  }
   renderProfile();
   resetBookingForm();
   // Apply desired scope after login (fallback to PF if no company)
@@ -1686,6 +1750,12 @@ async function onBookingSubmit(event) {
   const formData = new FormData(bookingForm);
   const record = Object.fromEntries(formData.entries());
   record.client_id = activeClient.id;
+  // Se usuário pertence a uma empresa e marcou o toggle, salva company_id
+  if (activeClient.company_id && bookingCompanyToggle && bookingCompanyToggle.checked) {
+    record.company_id = activeClient.company_id;
+  } else {
+    record.company_id = null;
+  }
   if (!record.id) delete record.id;
   if (!record.date) {
     bookingMessage.textContent = 'Informe a data da reserva.';
