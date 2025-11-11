@@ -391,6 +391,18 @@
                 </div>
 
                 <div id="companyTab-finance" class="company-panel" hidden>
+                  <div class="finance-filters">
+                    <div class="preset-row">
+                      <button type="button" class="btn btn-secondary btn-sm finance-preset" data-range="30">Últimos 30 dias</button>
+                      <button type="button" class="btn btn-secondary btn-sm finance-preset" data-range="60">60 dias</button>
+                      <button type="button" class="btn btn-secondary btn-sm finance-preset" data-range="90">90 dias</button>
+                      <span class="chip">ou</span>
+                      <label>De <input type="date" id="finFrom"></label>
+                      <label>Até <input type="date" id="finTo"></label>
+                      <button type="button" class="btn btn-secondary btn-sm" id="finApply">Aplicar</button>
+                    </div>
+                    <small class="form-help">Período personalizado com limite máximo de 6 meses.</small>
+                  </div>
                   <div id="companyFinanceContainer" class="responsive-table"></div>
                 </div>
               </article>

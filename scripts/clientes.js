@@ -159,6 +159,11 @@ const companyInviteRole = document.getElementById('companyInviteRole');
 const companyInviteBtn = document.getElementById('companyInviteBtn');
 const companyCsvInput = document.getElementById('companyCsvInput');
 const quickActionsContainer = document.querySelector('#companyTab-overview .quick-actions');
+// Finance controls
+const finFromInput = document.getElementById('finFrom');
+const finToInput = document.getElementById('finTo');
+const finApplyBtn = document.getElementById('finApply');
+const finPresetButtons = Array.from(document.querySelectorAll('.finance-preset'));
 // Scope switch (PF vs Empresa) at header
 let currentScope = 'pf';
 const scopePFBtn = document.getElementById('scopePFBtn');
@@ -323,6 +328,10 @@ async function initialize() {
         setCompanySubtab(panel);
       }));
   }
+
+  // Finance filters
+  finPresetButtons.forEach(b => b.addEventListener('click', () => setFinancePreset(parseInt(b.dataset.range, 10) || 30)));
+  finApplyBtn?.addEventListener('click', () => loadCompanyFinance());
 
   portalNavButtons.forEach(btn => {
     btn.addEventListener('click', () => setActivePanel(btn.dataset.panel));
@@ -558,15 +567,20 @@ async function onCompanyInviteSubmit() {
 }
 
 function parseCsv(text) {
-  const rows = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+  // Remove BOM, normalize EOLs
+  const clean = text.replace(/^\uFEFF/, '');
+  const rows = clean.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
   if (!rows.length) return [];
-  const header = rows.shift().split(',').map(h => h.trim().toLowerCase());
+  // Detect delimiter (pt-BR Excel often uses ';')
+  const first = rows.shift();
+  const delimiter = (first.match(/;/g)?.length || 0) >= (first.match(/,/g)?.length || 0) ? ';' : ',';
+  const header = first.split(delimiter).map(h => h.trim().toLowerCase());
   const idxNome = header.indexOf('nome');
   const idxEmail = header.indexOf('e-mail') >= 0 ? header.indexOf('e-mail') : header.indexOf('email');
   const idxCpf = header.indexOf('cpf');
   if (idxNome < 0 || idxEmail < 0 || idxCpf < 0) return [];
   return rows.map(line => {
-    const cols = line.split(',');
+    const cols = line.split(delimiter).map(s => s.replace(/^\"|\"$/g, '').trim());
     return {
       name: (cols[idxNome] || '').trim(),
       email: (cols[idxEmail] || '').trim(),
@@ -651,20 +665,75 @@ async function loadCompanyFinance(){
     const res = await fetch(`${API_BASE}/apiget.php?table=reservations`, { credentials: 'include' });
     const json = await res.json();
     const cid = activeClient?.company_id;
-    const list = (json.success ? (json.data || []) : []).filter(r => String(r.company_id) === String(cid));
+    let list = (json.success ? (json.data || []) : []).filter(r => String(r.company_id) === String(cid));
+    // Apply date filters
+    const range = getFinanceRange();
+    if (range) {
+      const fromT = range.from ? new Date(range.from).getTime() : null;
+      const toT = range.to ? new Date(range.to).getTime() : null;
+      list = list.filter(r => {
+        const t = r.date ? new Date(r.date).getTime() : null;
+        if (t === null) return false;
+        if (fromT && t < fromT) return false;
+        if (toT && t > toT) return false;
+        return true;
+      });
+    }
     const sum = (arr, field) => arr.reduce((acc, it) => acc + (parseFloat(it[field] || 0) || 0), 0);
     const pend = list.filter(r => String(r.payment_status||'').toLowerCase() === 'pendente');
     const conf = list.filter(r => String(r.payment_status||'').toLowerCase() === 'confirmado');
     const totalPend = sum(pend, 'total_price');
     const totalConf = sum(conf, 'total_price');
+    // Build summary + table
+    const rows = list.sort((a,b)=> new Date(b.date) - new Date(a.date)).map(r => {
+      const room = buscarSala(r.room_id);
+      const roomName = escapeHtml(r.room_name || room?.name || `Sala #${r.room_id}`);
+      const date = escapeHtml(formatDate(r.date));
+      const price = escapeHtml(formatCurrency(r.total_price || r.price || 0));
+      const pstat = escapeHtml((r.payment_status || '—').replace('_',' '));
+      const rstat = escapeHtml(statusLabel(r.status));
+      return `<tr><td>${date}</td><td>${roomName}</td><td>${rstat}</td><td>${pstat}</td><td style="text-align:right">${price}</td></tr>`;
+    }).join('');
     wrap.innerHTML = `
-      <div class="grid-cards-3">
-        <div class="stat-card"><strong>Pagamentos pendentes</strong><span>${escapeHtml(formatCurrency(totalPend)) || '—'}</span></div>
-        <div class="stat-card"><strong>Pagamentos confirmados</strong><span>${escapeHtml(formatCurrency(totalConf)) || '—'}</span></div>
-        <div class="stat-card"><strong>Reservas</strong><span>${list.length}</span></div>
+      <div class="finance-summary grid-cards-3">
+        <div class="stat-card"><div class="stat-text"><span class="stat-label">Pagamentos pendentes</span><span class="stat-value">${escapeHtml(formatCurrency(totalPend))}</span></div></div>
+        <div class="stat-card"><div class="stat-text"><span class="stat-label">Pagamentos confirmados</span><span class="stat-value">${escapeHtml(formatCurrency(totalConf))}</span></div></div>
+        <div class="stat-card"><div class="stat-text"><span class="stat-label">Reservas</span><span class="stat-value">${list.length}</span></div></div>
       </div>
-    `;
+      <div class="finance-table">
+        <table>
+          <thead><tr><th>Data</th><th>Sala</th><th>Status</th><th>Pagamento</th><th style="text-align:right">Valor</th></tr></thead>
+          <tbody>${rows || '<tr><td colspan="5" style="text-align:center;padding:20px">Nenhum registro no período.</td></tr>'}</tbody>
+        </table>
+      </div>`;
   } catch (e) { wrap.innerHTML = '<div class="rooms-message">Falha ao carregar financeiro.</div>'; }
+}
+
+function setFinancePreset(days){
+  const today = new Date();
+  const from = new Date(today.getTime() - (days*24*60*60*1000));
+  if (finFromInput) finFromInput.value = toISODate(from);
+  if (finToInput) finToInput.value = toISODate(today);
+  loadCompanyFinance();
+}
+
+function getFinanceRange(){
+  if (!finFromInput || !finToInput) return null;
+  const from = finFromInput.value || '';
+  const to = finToInput.value || '';
+  if (!from && !to) return null;
+  // Limit personalizável a 6 meses
+  try {
+    if (from && to) {
+      const ms = new Date(to).getTime() - new Date(from).getTime();
+      const max = 183 * 24 * 60 * 60 * 1000; // ~6 meses
+      if (ms > max) {
+        alert('O período personalizado deve ter no máximo 6 meses.');
+        return null;
+      }
+    }
+  } catch (_) {}
+  return { from, to };
 }
 
 async function carregarEmpresas() {

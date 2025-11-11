@@ -1137,6 +1137,16 @@ td.actions {
   .overview-split { grid-template-columns: 1fr; }
 }
 
+/* --- Finance section --- */
+.finance-filters { margin-bottom: 12px; background:#fff; border:1px solid rgba(29,65,58,.12); padding:12px; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,.04); }
+.finance-filters .preset-row { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+.finance-summary { display:grid; grid-template-columns: repeat(3,1fr); gap:10px; margin-bottom:10px; }
+.finance-summary .stat-card { padding:10px 12px; }
+.finance-table table { width:100%; border-collapse:collapse; background:#fff; border:1px solid rgba(29,65,58,.12); border-radius:12px; overflow:hidden; }
+.finance-table thead { background:#EFE9E1; }
+.finance-table th, .finance-table td { padding:12px 14px; border-bottom:1px solid rgba(29,65,58,.08); }
+.finance-table tr:last-child td { border-bottom:none; }
+
 /* --- Formulários (pré-reserva / modal admin) --- */
 form fieldset {
   border: none;
