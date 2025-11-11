@@ -138,7 +138,20 @@ try {
   // Cabeçalho esperado
   $header = array_map('mb_strtolower', array_map('trim', $rows[0]));
   $start = 1;
-  $hOk = in_array('nome', $header, true) && (in_array('e-mail', $header, true) || in_array('email', $header, true)) && in_array('cpf', $header, true);
+  // Normaliza cabeçalho para tolerar variações (espaços, hífens, acentuação)
+  $normalize = function($s) {
+    $s = mb_strtolower(trim((string)$s));
+    $s = preg_replace('/[\x{2010}-\x{2015}]/u', '-', $s); // diferentes hífens
+    if (function_exists('iconv')) {
+      $conv = @iconv('UTF-8','ASCII//TRANSLIT',$s);
+      if ($conv !== false) $s = $conv;
+    }
+    $s = preg_replace('/[^a-z\-]/','', $s);
+    $s = str_replace('-', '', $s); // e-mail -> email
+    return $s;
+  };
+  $norm = array_map($normalize, $header);
+  $hOk = in_array('nome', $norm, true) && in_array('email', $norm, true) && in_array('cpf', $norm, true);
   if (!$hOk) { $start = 0; } // não reconheceu cabeçalho, assume dados já a partir da primeira
 
   $max = 50; $sent = 0; $failed = 0; $errors = [];
