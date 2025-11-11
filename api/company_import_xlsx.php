@@ -96,14 +96,35 @@ try {
         $r = (string)$c['r']; // ex: A1
         $col = preg_replace('/\d+/', '', $r);
         if (!isset($cells[$col])) continue; // ignora colunas > C
-        $v = (string)$c->v;
         $t = (string)$c['t'];
-        $val = $v;
+        $val = '';
         if ($t === 's') {
-          $idx = (int)$v; $val = $shared[$idx] ?? '';
+          // Shared string table
+          $idx = (int) ((string)$c->v);
+          $val = $shared[$idx] ?? '';
+        } elseif ($t === 'inlineStr') {
+          // Inline string
+          if (isset($c->is->t)) {
+            $val = (string)$c->is->t;
+          } elseif (isset($c->is)) {
+            // Concatena runs formatados, se existirem
+            $tmp = '';
+            foreach ($c->is->children() as $child) {
+              if ($child->getName() === 't') $tmp .= (string)$child;
+              if ($child->getName() === 'r' && isset($child->t)) $tmp .= (string)$child->t;
+            }
+            $val = $tmp;
+          } else {
+            $val = '';
+          }
+        } else {
+          // number, str, b, etc
+          $val = (string)$c->v;
         }
         $cells[$col] = trim($val);
       }
+      // Se todas colunas vazias, ignora a linha
+      if ($cells['A']==='' && $cells['B']==='' && $cells['C']==='') continue;
       $rows[] = [$cells['A'], $cells['B'], $cells['C']];
     }
   }
@@ -123,7 +144,7 @@ try {
   $max = 50; $sent = 0; $failed = 0; $errors = [];
   for ($i = $start; $i < count($rows) && $sent + $failed < $max; $i++) {
     [$name, $email, $cpf] = $rows[$i];
-    $name = trim($name); $email = trim($email); $cpfDigits = preg_replace('/\D/','',$cpf);
+    $name = trim((string)$name); $email = trim((string)$email); $cpfDigits = preg_replace('/\D/','', (string)$cpf);
     if ($name === '' || $email === '' || strlen($cpfDigits) !== 11) { $failed++; $errors[] = "Linha ".($i+1).": dados inválidos"; continue; }
 
     try {
@@ -170,4 +191,3 @@ try {
   http_response_code(500);
   echo json_encode(['success' => false, 'error' => 'Erro interno: ' . $e->getMessage()]);
 }
-
