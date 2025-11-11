@@ -379,9 +379,10 @@
                     </select>
                     <button class="btn btn-secondary" type="button" id="companyInviteBtn">Convidar por CPF</button>
                     <span class="chip" style="margin-left:8px">ou</span>
-                    <a id="downloadMembersTemplate" class="btn btn-secondary" href="templates/company_members_template.csv" download>Baixar modelo CSV</a>
+                    <a id="downloadMembersTemplate" class="btn btn-secondary" href="api/company_members_template_xlsx.php">Baixar modelo XLSX</a>
+                    <!-- CSV desabilitado por preferência de XLSX
                     <label class="btn btn-secondary" for="companyCsvInput" style="cursor:pointer">Importar CSV</label>
-                    <input type="file" id="companyCsvInput" accept=".csv,text/csv" hidden>
+                    <input type="file" id="companyCsvInput" accept=".csv,text/csv" hidden>-->
                     <label class="btn btn-secondary" for="companyXlsxInput" style="cursor:pointer">Importar XLSX (até 50 linhas)</label>
                     <input type="file" id="companyXlsxInput" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden>
                   </div>
