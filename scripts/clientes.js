@@ -158,6 +158,7 @@ const companyInviteCpf = document.getElementById('companyInviteCpf');
 const companyInviteRole = document.getElementById('companyInviteRole');
 const companyInviteBtn = document.getElementById('companyInviteBtn');
 const companyCsvInput = document.getElementById('companyCsvInput');
+const companyXlsxInput = document.getElementById('companyXlsxInput');
 const quickActionsContainer = document.querySelector('#companyTab-overview .quick-actions');
 // Finance controls
 const finFromInput = document.getElementById('finFrom');
@@ -319,6 +320,7 @@ async function initialize() {
   companyTabs.forEach(b => b.addEventListener('click', () => setCompanySubtab(b.dataset.companyTab)));
   companyInviteBtn?.addEventListener('click', onCompanyInviteSubmit);
   companyCsvInput?.addEventListener('change', onCompanyCsvSelected);
+  companyXlsxInput?.addEventListener('change', onCompanyXlsxSelected);
 
   // Quick actions in overview
   if (quickActionsContainer) {
@@ -649,6 +651,34 @@ async function onCompanyCsvSelected(evt){
     alert(`Convites enviados: ${ok}. Falhas: ${fail}.`);
   } catch (e) {
     alert('Não foi possível ler o arquivo CSV.');
+  } finally {
+    evt.target.value = '';
+  }
+}
+
+async function onCompanyXlsxSelected(evt){
+  const file = evt.target?.files?.[0];
+  if (!file) return;
+  try {
+    if (!/\.xlsx$/i.test(file.name)) { alert('Envie um arquivo .xlsx'); return; }
+    if (!activeClient?.company_id) { alert('Empresa inválida.'); return; }
+    const role = companyInviteRole?.value || 'membro';
+    // Apenas uma confirmação simples
+    if (!confirm('Importar este XLSX (máximo 50 linhas)? Os convites serão enviados por e‑mail.')) return;
+    const fd = new FormData();
+    fd.append('file', file);
+    fd.append('company_id', String(activeClient.company_id));
+    fd.append('role', role);
+    const res = await fetch(`${API_BASE}/company_import_xlsx.php`, { method:'POST', body: fd });
+    const json = await res.json();
+    if (!json.success) throw new Error(json.error || 'Falha ao importar XLSX.');
+    const errs = Array.isArray(json.errors) && json.errors.length ? `\nErros: \n- ${json.errors.slice(0,5).join('\n- ')}${json.errors.length>5?'\n…':''}` : '';
+    alert(`Convites enviados: ${json.sent || 0}. Falhas: ${json.failed || 0}.${errs}`);
+    // Atualiza convites
+    setCompanySubtab('users');
+    await loadCompanyInvites();
+  } catch (e) {
+    alert(e.message || 'Não foi possível processar o XLSX.');
   } finally {
     evt.target.value = '';
   }
