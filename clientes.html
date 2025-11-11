@@ -323,10 +323,42 @@
                 </div>
 
                 <div id="companyTab-overview" class="company-panel">
-                  <div class="grid-cards-3" id="companyOverview">
-                    <div class="stat-card"><strong>Reservas ativas</strong><span id="coActive">—</span></div>
-                    <div class="stat-card"><strong>Próximos 7 dias</strong><span id="coNext">—</span></div>
-                    <div class="stat-card"><strong>Pagamentos pendentes</strong><span id="coPay">—</span></div>
+                  <div class="grid-cards-3 stats-cards" id="companyOverview">
+                    <div class="stat-card">
+                      <div class="stat-icon" aria-hidden="true">📌</div>
+                      <div class="stat-text">
+                        <span class="stat-label">Reservas ativas</span>
+                        <span class="stat-value" id="coActive">—</span>
+                      </div>
+                    </div>
+                    <div class="stat-card">
+                      <div class="stat-icon" aria-hidden="true">📅</div>
+                      <div class="stat-text">
+                        <span class="stat-label">Próximos 7 dias</span>
+                        <span class="stat-value" id="coNext">—</span>
+                      </div>
+                    </div>
+                    <div class="stat-card">
+                      <div class="stat-icon" aria-hidden="true">💳</div>
+                      <div class="stat-text">
+                        <span class="stat-label">Pagamentos pendentes</span>
+                        <span class="stat-value" id="coPay">—</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="overview-split">
+                    <div class="overview-box">
+                      <h4>Próximas reservas</h4>
+                      <div id="companyOverviewNext" class="list-next"></div>
+                    </div>
+                    <div class="overview-box">
+                      <h4>Ações rápidas</h4>
+                      <div class="quick-actions">
+                        <button class="btn btn-secondary btn-sm" type="button" data-panel="reservations">Ver reservas</button>
+                        <button class="btn btn-secondary btn-sm" type="button" data-panel="users">Convidar membro</button>
+                        <button class="btn btn-secondary btn-sm" type="button" data-panel="finance">Financeiro</button>
+                      </div>
+                    </div>
                   </div>
                 </div>
 

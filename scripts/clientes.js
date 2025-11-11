@@ -454,6 +454,31 @@ async function carregarEmpresaOverview() {
     set('coActive', ativas);
     set('coNext', proximos7);
     set('coPay', pendPag);
+
+    // Lista próximas 3 reservas da empresa
+    const cid = activeClient?.company_id;
+    const proximas = (currentReservations || [])
+      .filter(r => String(r.company_id) === String(cid))
+      .filter(r => r.date && new Date(r.date) >= new Date())
+      .sort((a,b)=> new Date(a.date) - new Date(b.date))
+      .slice(0,3);
+    const box = document.getElementById('companyOverviewNext');
+    if (box) {
+      if (!proximas.length) {
+        box.innerHTML = '<div class="rooms-message">Sem reservas futuras.</div>';
+      } else {
+        box.innerHTML = proximas.map(r => {
+          const room = buscarSala(r.room_id);
+          const roomName = escapeHtml(r.room_name || room?.name || `Sala #${r.room_id}`);
+          const date = escapeHtml(formatDate(r.date));
+          const time = escapeHtml(formatTimeRange(r.time_start, r.time_end));
+          const status = (r.status||'').toLowerCase();
+          const chipClass = status === 'confirmada' ? 'success' : (status === 'pendente' ? 'pending' : (status === 'cancelada' ? 'warn' : ''));
+          const chipLabel = escapeHtml(statusLabel(r.status));
+          return `<div class="list-next-item"><span class="date">${date}</span><span class="room">${roomName} · ${time}</span><span class="chip ${chipClass}" style="margin-left:auto">${chipLabel}</span></div>`;
+        }).join('');
+      }
+    }
   } catch (_) {}
 }
 

@@ -1106,6 +1106,37 @@ td.actions {
   background: var(--brand-sand);
 }
 
+/* --- Company overview cards --- */
+.company-panel { padding-top: 6px; }
+.grid-cards-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.stats-cards .stat-card {
+  display: flex; align-items: center; gap: 12px;
+  background: #fff; border: 1px solid rgba(29,65,58,.12); border-radius: 12px;
+  padding: 14px 16px; box-shadow: 0 2px 8px rgba(0,0,0,.04);
+}
+.stat-icon { width: 40px; height: 40px; border-radius: 10px; display:flex; align-items:center; justify-content:center; background:#E7EFEA; color:#1D413A; font-size:20px; }
+.stat-text { display:flex; flex-direction:column; }
+.stat-label { color: var(--brand-muted); font-size: .9rem; }
+.stat-value { color: var(--brand-green); font-weight: 700; font-size: 1.4rem; }
+
+.overview-split { display:grid; grid-template-columns: 2fr 1fr; gap: 14px; margin-top: 16px; }
+.overview-box { background:#fff; border:1px solid rgba(29,65,58,.12); border-radius:12px; padding:16px; box-shadow: 0 2px 8px rgba(0,0,0,.04); }
+.overview-box h4 { margin:0 0 10px; color: var(--brand-green); }
+.list-next { display:flex; flex-direction:column; gap:8px; }
+.list-next-item { display:flex; align-items:center; gap:10px; padding:10px 12px; border:1px solid rgba(29,65,58,.08); border-radius:10px; background:#FAFBFA; }
+.list-next .date { font-weight:600; color:#1D413A; }
+.list-next .room { color: var(--brand-dark); }
+.chip { display:inline-block; font-size:.75rem; line-height:1; padding:6px 8px; border-radius:999px; background:#EDE7DF; color:#4b554f; }
+.chip.success { background:#DCEEE0; color:#2F6F55; }
+.chip.pending { background:#FFF3CD; color:#856404; }
+.chip.warn { background:#FDE2D0; color:#9C3F32; }
+.quick-actions { display:flex; flex-wrap:wrap; gap:8px; }
+
+@media (max-width: 900px) {
+  .grid-cards-3 { grid-template-columns: 1fr; }
+  .overview-split { grid-template-columns: 1fr; }
+}
+
 /* --- Formulários (pré-reserva / modal admin) --- */
 form fieldset {
   border: none;
