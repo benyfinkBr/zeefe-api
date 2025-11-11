@@ -511,6 +511,7 @@ function setCompanySubtab(tab) {
   Object.entries(companyPanels).forEach(([k, el]) => { if (el) el.hidden = (k !== key); });
   if (!activeClient || !activeClient.company_master) return;
   if (key === 'users') loadCompanyUsers();
+  if (key === 'users') loadCompanyInvites();
   if (key === 'reservations') loadCompanyReservations();
   if (key === 'finance') loadCompanyFinance();
 }
@@ -543,6 +544,41 @@ async function loadCompanyUsers() {
     wrap.querySelectorAll('button[data-act="remove"]').forEach(btn => btn.addEventListener('click', () => removeCompanyUser(btn.dataset.id)));
   } catch (e) {
     wrap.innerHTML = '<div class="rooms-message">Falha ao carregar membros.</div>';
+  }
+}
+
+async function loadCompanyInvites(){
+  const wrap = document.getElementById('companyInvitesContainer');
+  if (!wrap) return;
+  try {
+    wrap.innerHTML = '<div class="rooms-message">Carregando convites…</div>';
+    const cid = activeClient?.company_id;
+    const [invRes, cliRes] = await Promise.all([
+      fetch(`${API_BASE}/apiget.php?table=company_invitations`, { credentials:'include' }),
+      fetch(`${API_BASE}/apiget.php?table=clients`, { credentials:'include' })
+    ]);
+    const invJson = await invRes.json();
+    const cliJson = await cliRes.json();
+    const allCli = cliJson.success ? (cliJson.data || []) : [];
+    const list = (invJson.success ? (invJson.data || []) : []).filter(i => String(i.company_id) === String(cid));
+    const rows = list.sort((a,b)=> new Date(b.created_at||0) - new Date(a.created_at||0)).map(i => {
+      const c = allCli.find(x => String(x.id) === String(i.client_id));
+      const name = escapeHtml(c?.name || '--');
+      const email = escapeHtml(c?.email || '--');
+      const cpf = formatCPF(c?.cpf || i.cpf || '');
+      const role = escapeHtml(i.role || 'membro');
+      const status = escapeHtml(i.status || 'pendente');
+      const when = escapeHtml(i.created_at ? formatDate(String(i.created_at).slice(0,10)) : '--');
+      return `<tr><td>${name}</td><td>${email}</td><td>${cpf}</td><td>${role}</td><td>${status}</td><td>${when}</td></tr>`;
+    }).join('');
+    wrap.innerHTML = `
+      <h4 style="margin:10px 0 6px">Convites</h4>
+      <table>
+        <thead><tr><th>Nome</th><th>E-mail</th><th>CPF</th><th>Papel</th><th>Status</th><th>Enviado em</th></tr></thead>
+        <tbody>${rows || '<tr><td colspan="6" style="text-align:center;padding:20px">Nenhum convite encontrado.</td></tr>'}</tbody>
+      </table>`;
+  } catch (e) {
+    wrap.innerHTML = '<div class="rooms-message">Não foi possível carregar os convites.</div>';
   }
 }
 
@@ -598,11 +634,12 @@ async function onCompanyCsvSelected(evt){
     if (!entries.length) { alert('CSV inválido. Use o modelo com Nome,E-mail,CPF.'); return; }
     if (!confirm(`Detectamos ${entries.length} linha(s). Enviar convites agora?`)) return;
     let ok = 0, fail = 0;
+    const role = companyInviteRole?.value || 'membro';
     for (const row of entries) {
       try {
         const res = await fetch(`${API_BASE}/company_invite_user.php`, {
           method:'POST', headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({ company_id: activeClient.company_id, cpf: row.cpf, role: 'membro' })
+          body: JSON.stringify({ company_id: activeClient.company_id, cpf: row.cpf, role })
         });
         const j = await res.json();
         if (!j.success) throw new Error();
@@ -685,6 +722,7 @@ async function loadCompanyFinance(){
     const totalPend = sum(pend, 'total_price');
     const totalConf = sum(conf, 'total_price');
     // Build summary + table
+    const countByStatus = list.reduce((acc, r) => { const k=(r.status||'--').toLowerCase(); acc[k]=(acc[k]||0)+1; return acc; }, {});
     const rows = list.sort((a,b)=> new Date(b.date) - new Date(a.date)).map(r => {
       const room = buscarSala(r.room_id);
       const roomName = escapeHtml(r.room_name || room?.name || `Sala #${r.room_id}`);
@@ -694,11 +732,16 @@ async function loadCompanyFinance(){
       const rstat = escapeHtml(statusLabel(r.status));
       return `<tr><td>${date}</td><td>${roomName}</td><td>${rstat}</td><td>${pstat}</td><td style="text-align:right">${price}</td></tr>`;
     }).join('');
+    const statusSummary = Object.entries(countByStatus).map(([k,v])=>`<span class="chip" title="${v} reserva(s)">${statusLabel(k)}: ${v}</span>`).join(' ');
     wrap.innerHTML = `
       <div class="finance-summary grid-cards-3">
         <div class="stat-card"><div class="stat-text"><span class="stat-label">Pagamentos pendentes</span><span class="stat-value">${escapeHtml(formatCurrency(totalPend))}</span></div></div>
         <div class="stat-card"><div class="stat-text"><span class="stat-label">Pagamentos confirmados</span><span class="stat-value">${escapeHtml(formatCurrency(totalConf))}</span></div></div>
         <div class="stat-card"><div class="stat-text"><span class="stat-label">Reservas</span><span class="stat-value">${list.length}</span></div></div>
+      </div>
+      <div style="margin:6px 0 10px; display:flex; flex-wrap:wrap; gap:6px; align-items:center; justify-content:flex-start">
+        ${statusSummary || ''}
+        <button type="button" class="btn btn-secondary btn-sm" id="finExport">Exportar CSV</button>
       </div>
       <div class="finance-table">
         <table>
@@ -706,6 +749,8 @@ async function loadCompanyFinance(){
           <tbody>${rows || '<tr><td colspan="5" style="text-align:center;padding:20px">Nenhum registro no período.</td></tr>'}</tbody>
         </table>
       </div>`;
+    const finExportBtn = document.getElementById('finExport');
+    finExportBtn?.addEventListener('click', () => exportFinanceCSV(list));
   } catch (e) { wrap.innerHTML = '<div class="rooms-message">Falha ao carregar financeiro.</div>'; }
 }
 
@@ -734,6 +779,28 @@ function getFinanceRange(){
     }
   } catch (_) {}
   return { from, to };
+}
+
+function exportFinanceCSV(list){
+  const header = ['Data','Sala','Status','Pagamento','Valor'];
+  const rows = list.map(r => {
+    const room = buscarSala(r.room_id);
+    const roomName = (r.room_name || room?.name || `Sala #${r.room_id}`).replace(/;/g, ' ');
+    return [
+      formatDate(r.date||''),
+      roomName,
+      statusLabel(r.status||''),
+      (r.payment_status||'').replace('_',' '),
+      String(r.total_price || r.price || 0).replace('.', ',')
+    ];
+  });
+  const csv = [header, ...rows].map(cols => cols.map(v => String(v)).join(';')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'financeiro_zeefe.csv';
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
 }
 
 async function carregarEmpresas() {

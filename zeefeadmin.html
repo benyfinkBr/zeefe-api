@@ -1624,17 +1624,22 @@ input, select {
       companyClientsList.innerHTML = '<div class="reservations-empty">Carregando...</div>';
       companyClientsModal.classList.add('show');
       try {
-        const res = await fetch(`${API_BASE}/apiget.php?table=clients&company_id=${id}`, { credentials: 'include' });
-        const json = await res.json();
-        if (!json.success) throw new Error(json.error || 'Erro ao carregar clientes');
-        renderCompanyClients(json.data || []);
+        const [cRes, iRes] = await Promise.all([
+          fetch(`${API_BASE}/apiget.php?table=clients&company_id=${id}`, { credentials:'include' }),
+          fetch(`${API_BASE}/apiget.php?table=company_invitations&company_id=${id}`, { credentials:'include' })
+        ]);
+        const cJson = await cRes.json();
+        const iJson = await iRes.json();
+        const clients = cJson.success ? (cJson.data || []) : [];
+        const invites = iJson.success ? (iJson.data || []) : [];
+        renderCompanyClients(clients, invites);
       } catch (err) {
         console.error(err);
         companyClientsList.innerHTML = `<div class="reservations-empty">${escapeHtml(err.message)}</div>`;
       }
     }
 
-    function renderCompanyClients(lista) {
+    function renderCompanyClients(lista, invites) {
       const rows = (lista || []).map(client => {
         const statusHtml = statusFormatter(client.status);
         const role = client.company_role || '-';
@@ -1651,6 +1656,11 @@ input, select {
             </td>
           </tr>
         `;
+      }).join('');
+
+      const invRows = (invites || []).map(i => {
+        const created = i.created_at ? String(i.created_at).slice(0,10).split('-').reverse().join('/') : '-';
+        return `<tr><td>${escapeHtml(i.cpf || '')}</td><td>${escapeHtml(i.role || 'membro')}</td><td>${escapeHtml(i.status || 'pendente')}</td><td>${created}</td></tr>`;
       }).join('');
 
       companyClientsList.innerHTML = `
@@ -1671,6 +1681,12 @@ input, select {
           </thead>
           <tbody>${rows}</tbody>
         </table>` : '<div class=\\"reservations-empty\\">Nenhum cliente vinculado.</div>'}
+        <h4 style=\"margin:14px 0 6px\">Convites</h4>
+        ${invRows ? `
+        <table>
+          <thead><tr><th>CPF</th><th>Papel</th><th>Status</th><th>Enviado em</th></tr></thead>
+          <tbody>${invRows}</tbody>
+        </table>` : '<div class=\\"reservations-empty\\">Nenhum convite emitido.</div>'}
       `;
     }
 
