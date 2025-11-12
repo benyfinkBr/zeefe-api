@@ -23,18 +23,23 @@ try {
     $pdo->exec("CREATE TABLE IF NOT EXISTS company_invitations (
       id BIGINT AUTO_INCREMENT PRIMARY KEY,
       company_id BIGINT NOT NULL,
-      client_id BIGINT NOT NULL,
+      client_id BIGINT NULL,
+      invite_email VARCHAR(255) NULL,
+      invite_name VARCHAR(255) NULL,
       cpf VARCHAR(14) NOT NULL,
       role ENUM('admin','gestor','membro','leitor') NOT NULL DEFAULT 'membro',
       token VARCHAR(128) NOT NULL,
       status ENUM('pendente','aceito','cancelado','expirado') NOT NULL DEFAULT 'pendente',
       expires_at DATETIME NOT NULL,
       created_at DATETIME NOT NULL,
-      accepted_at DATETIME NULL
+      accepted_at DATETIME NULL,
+      INDEX idx_inv_company (company_id),
+      UNIQUE KEY uk_inv_token (token)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
-  } catch (Throwable $e) {
-    // segue se não conseguir criar, mas é provável que falhe adiante se a tabela não existir
-  }
+    @$pdo->exec("ALTER TABLE company_invitations MODIFY client_id BIGINT NULL");
+    @$pdo->exec("ALTER TABLE company_invitations ADD COLUMN invite_email VARCHAR(255) NULL");
+    @$pdo->exec("ALTER TABLE company_invitations ADD COLUMN invite_name VARCHAR(255) NULL");
+  } catch (Throwable $e) { }
 
   // Localiza cliente por CPF ou e-mail; se não existir e tiver dados mínimos, cria um cliente "stub" para receber convite
   $stmt = $pdo->prepare('SELECT id, name, email, login, company_id FROM clients WHERE REPLACE(REPLACE(REPLACE(cpf, ".", ""), "-", ""), " ", "") = :cpf LIMIT 1');
@@ -45,40 +50,23 @@ try {
     $stmt2->execute([':email' => $email]);
     $client = $stmt2->fetch(PDO::FETCH_ASSOC);
   }
-  if (!$client) {
-    if ($email === '' || $name === '') {
-      http_response_code(404);
-      echo json_encode(['success' => false, 'error' => 'Cliente não encontrado. Informe nome e e-mail para convidar novos usuários.']);
-      exit;
-    }
-    // Cria stub: sem senha, aguardando cadastro/validação por e-mail
-    $login = $email;
-    $insCli = $pdo->prepare('INSERT INTO clients (name, email, login, cpf, password_hash, status, created_at, updated_at) VALUES (:name,:email,:login,:cpf, :hash, :status, NOW(), NOW())');
-    $insCli->execute([
-      ':name' => $name,
-      ':email' => $email,
-      ':login' => $login,
-      ':cpf' => $cpf,
-      ':hash' => '',
-      ':status' => 'ativo'
-    ]);
-    $client = [
-      'id' => (int)$pdo->lastInsertId(),
-      'name' => $name,
-      'email' => $email,
-      'login' => $login,
-      'company_id' => null
-    ];
+  // Não criar usuário: se não houver cliente, segue com pré-cadastro via e-mail
+  if (!$client && $email === '') {
+    http_response_code(400);
+    echo json_encode(['success' => false, 'error' => 'Informe o e-mail para envio do convite.']);
+    exit;
   }
 
   $token = bin2hex(random_bytes(24));
   $expires = (new DateTime('+48 hours'))->format('Y-m-d H:i:s');
   $now = (new DateTime())->format('Y-m-d H:i:s');
 
-  $ins = $pdo->prepare('INSERT INTO company_invitations (company_id, client_id, cpf, role, token, status, expires_at, created_at) VALUES (:company_id, :client_id, :cpf, :role, :token, \"pendente\", :expires, :created)');
+  $ins = $pdo->prepare('INSERT INTO company_invitations (company_id, client_id, invite_email, invite_name, cpf, role, token, status, expires_at, created_at) VALUES (:company_id, :client_id, :invite_email, :invite_name, :cpf, :role, :token, \"pendente\", :expires, :created)');
   $ins->execute([
     ':company_id' => $companyId,
-    ':client_id' => (int)$client['id'],
+    ':client_id' => $client ? (int)$client['id'] : null,
+    ':invite_email' => $client['email'] ?? $email,
+    ':invite_name' => $client['name'] ?? $name,
     ':cpf' => $cpf,
     ':role' => $role,
     ':token' => $token,
@@ -98,9 +86,9 @@ try {
   $html = mailer_render('company_user_invite', [
     'company_name' => $companyName,
     'accept_url' => $acceptUrl,
-    'client_name' => $client['name'] ?? ''
+    'client_name' => ($client['name'] ?? $name ?? '')
   ]);
-  $ok = mailer_send([$client['email']], 'Convite para acessar empresa no portal Ze.EFE', $html);
+  $ok = mailer_send([($client['email'] ?? $email)], 'Convite para acessar empresa no portal Ze.EFE', $html);
 
   echo json_encode([
     'success' => true,

@@ -1660,7 +1660,11 @@ input, select {
 
       const invRows = (invites || []).map(i => {
         const created = i.created_at ? String(i.created_at).slice(0,10).split('-').reverse().join('/') : '-';
-        return `<tr><td>${escapeHtml(i.cpf || '')}</td><td>${escapeHtml(i.role || 'membro')}</td><td>${escapeHtml(i.status || 'pendente')}</td><td>${created}</td></tr>`;
+        const actions = String(i.status||'').toLowerCase() === 'pendente'
+          ? `<button class=\"btn-micro cancel\" onclick=\"adminCancelarConvite(${i.id}, ${companyClientsCompanyId})\">Cancelar</button>`
+          : '';
+        const email = i.invite_email || '';
+        return `<tr><td>${escapeHtml(i.cpf || '')}</td><td>${escapeHtml(email)}</td><td>${escapeHtml(i.role || 'membro')}</td><td>${escapeHtml(i.status || 'pendente')}</td><td>${created}</td><td>${actions}</td></tr>`;
       }).join('');
 
       companyClientsList.innerHTML = `
@@ -1684,7 +1688,7 @@ input, select {
         <h4 style=\"margin:14px 0 6px\">Convites</h4>
         ${invRows ? `
         <table>
-          <thead><tr><th>CPF</th><th>Papel</th><th>Status</th><th>Enviado em</th></tr></thead>
+          <thead><tr><th>CPF</th><th>E-mail</th><th>Papel</th><th>Status</th><th>Enviado em</th><th>Ações</th></tr></thead>
           <tbody>${invRows}</tbody>
         </table>` : '<div class=\\"reservations-empty\\">Nenhum convite emitido.</div>'}
       `;
@@ -1763,6 +1767,21 @@ input, select {
         listarClientesEmpresa(companyId, companyClientsTitle.textContent.replace('Clientes de ',''));
       } catch (e) {
         console.error(e); alert(e.message || 'Erro ao remover.');
+      }
+    }
+
+    async function adminCancelarConvite(inviteId, companyId){
+      if (!confirm('Cancelar este convite?')) return;
+      try {
+        const res = await fetch(`${API_BASE}/company_cancel_invite.php`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+          body: JSON.stringify({ id: inviteId })
+        });
+        const json = await res.json();
+        if (!json.success) throw new Error(json.error || 'Falha ao cancelar.');
+        listarClientesEmpresa(companyId, companyClientsTitle.textContent.replace('Clientes de ',''));
+      } catch (e) {
+        alert(e.message || 'Erro ao cancelar convite.');
       }
     }
 

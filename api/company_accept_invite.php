@@ -17,20 +17,34 @@ try {
   if ($inv['status'] !== 'pendente') throw new Exception('Este convite não está mais disponível.');
   if (new DateTime($inv['expires_at']) < new DateTime()) throw new Exception('Convite expirado.');
 
-  // Atualiza vínculo do cliente (tenta com company_role; se a coluna não existir, faz sem ela)
+  // Se já existir cliente com o e-mail/CPF, vincula; caso contrário apenas marca aceito e orienta cadastro
+  $linked = false;
   try {
-    $upd = $pdo->prepare('UPDATE clients SET company_id = :cid, company_role = :role, updated_at = NOW() WHERE id = :client');
-    $upd->execute([':cid' => $inv['company_id'], ':role' => $inv['role'], ':client' => $inv['client_id']]);
-  } catch (Throwable $e) {
-    $upd = $pdo->prepare('UPDATE clients SET company_id = :cid, updated_at = NOW() WHERE id = :client');
-    $upd->execute([':cid' => $inv['company_id'], ':client' => $inv['client_id']]);
-  }
+    $email = trim((string)($inv['invite_email'] ?? ''));
+    $cpfDigits = preg_replace('/\D/','', (string)($inv['cpf'] ?? ''));
+    if ($email !== '' || $cpfDigits !== '') {
+      $q = $pdo->prepare('SELECT id FROM clients WHERE email = :email OR REPLACE(REPLACE(REPLACE(cpf, ".", ""), "-", ""), " ", "") = :cpf LIMIT 1');
+      $q->execute([':email'=>$email, ':cpf'=>$cpfDigits]);
+      if ($row = $q->fetch(PDO::FETCH_ASSOC)) {
+        try {
+          $upd = $pdo->prepare('UPDATE clients SET company_id = :cid, company_role = :role, updated_at = NOW() WHERE id = :client');
+          $upd->execute([':cid' => $inv['company_id'], ':role' => $inv['role'], ':client' => $row['id']]);
+        } catch (Throwable $e) {
+          $upd = $pdo->prepare('UPDATE clients SET company_id = :cid, updated_at = NOW() WHERE id = :client');
+          $upd->execute([':cid' => $inv['company_id'], ':client' => $row['id']]);
+        }
+        $linked = true;
+      }
+    }
+  } catch (Throwable $e) { /* ignore */ }
 
   // Marca convite como aceito
   $acc = $pdo->prepare("UPDATE company_invitations SET status='aceito', accepted_at = NOW() WHERE id = :id");
   $acc->execute([':id' => $inv['id']]);
   $ok = true;
-  $msg = 'Convite aceito com sucesso. Você já pode acessar a Área do Cliente.';
+  $msg = $linked
+    ? 'Convite aceito e vínculo realizado. Acesse a Área do Cliente.'
+    : 'Convite aceito. Crie seu acesso no portal para concluir o vínculo.';
 } catch (Throwable $e) {
   $ok = false; $msg = $e->getMessage();
 }

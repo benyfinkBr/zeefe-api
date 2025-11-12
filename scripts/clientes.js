@@ -562,23 +562,47 @@ async function loadCompanyInvites(){
     const invJson = await invRes.json();
     const cliJson = await cliRes.json();
     const allCli = cliJson.success ? (cliJson.data || []) : [];
-    const list = (invJson.success ? (invJson.data || []) : []).filter(i => String(i.company_id) === String(cid));
-    const rows = list.sort((a,b)=> new Date(b.created_at||0) - new Date(a.created_at||0)).map(i => {
+  const list = (invJson.success ? (invJson.data || []) : []).filter(i => String(i.company_id) === String(cid));
+  const rows = list.sort((a,b)=> new Date(b.created_at||0) - new Date(a.created_at||0)).map(i => {
       const c = allCli.find(x => String(x.id) === String(i.client_id));
-      const name = escapeHtml(c?.name || '--');
-      const email = escapeHtml(c?.email || '--');
+      const name = escapeHtml(i.invite_name || c?.name || '--');
+      const email = escapeHtml(i.invite_email || c?.email || '--');
       const cpf = formatCPF(c?.cpf || i.cpf || '');
       const role = escapeHtml(i.role || 'membro');
       const status = escapeHtml(i.status || 'pendente');
       const when = escapeHtml(i.created_at ? formatDate(String(i.created_at).slice(0,10)) : '--');
-      return `<tr><td>${name}</td><td>${email}</td><td>${cpf}</td><td>${role}</td><td>${status}</td><td>${when}</td></tr>`;
+      const canCancel = (String(i.status||'').toLowerCase() === 'pendente');
+      const actions = canCancel ? `<button class="btn btn-secondary btn-sm" data-invite-cancel="${i.id}">Cancelar</button>` : '';
+      return `<tr>
+        <td>${name}</td><td>${email}</td><td>${cpf}</td><td>${role}</td><td>${status}</td><td>${when}</td><td>${actions}</td>
+      </tr>`;
     }).join('');
     wrap.innerHTML = `
       <h4 style="margin:10px 0 6px">Convites</h4>
       <table>
-        <thead><tr><th>Nome</th><th>E-mail</th><th>CPF</th><th>Papel</th><th>Status</th><th>Enviado em</th></tr></thead>
-        <tbody>${rows || '<tr><td colspan="6" style="text-align:center;padding:20px">Nenhum convite encontrado.</td></tr>'}</tbody>
+        <thead><tr><th>Nome</th><th>E-mail</th><th>CPF</th><th>Papel</th><th>Status</th><th>Enviado em</th><th>Ações</th></tr></thead>
+        <tbody>${rows || '<tr><td colspan="7" style="text-align:center;padding:20px">Nenhum convite encontrado.</td></tr>'}</tbody>
       </table>`;
+
+    // bind cancel buttons
+    wrap.querySelectorAll('button[data-invite-cancel]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const id = parseInt(btn.getAttribute('data-invite-cancel'), 10);
+        if (!id) return;
+        if (!confirm('Cancelar este convite?')) return;
+        try {
+          const res = await fetch(`${API_BASE}/company_cancel_invite.php`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id })
+          });
+          const json = await res.json();
+          if (!json.success) throw new Error(json.error || 'Falha ao cancelar.');
+          await loadCompanyInvites();
+        } catch (e) {
+          alert(e.message || 'Erro ao cancelar convite.');
+        }
+      });
+    });
   } catch (e) {
     wrap.innerHTML = '<div class="rooms-message">Não foi possível carregar os convites.</div>';
   }
