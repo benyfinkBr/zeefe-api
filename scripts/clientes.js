@@ -571,8 +571,13 @@ async function loadCompanyInvites(){
       const role = escapeHtml(i.role || 'membro');
       const status = escapeHtml(i.status || 'pendente');
       const when = escapeHtml(i.created_at ? formatDate(String(i.created_at).slice(0,10)) : '--');
-      const canCancel = (String(i.status||'').toLowerCase() === 'pendente');
-      const actions = canCancel ? `<button class="btn btn-secondary btn-sm" data-invite-cancel="${i.id}">Cancelar</button>` : '';
+      const statusLower = String(i.status||'').toLowerCase();
+      const canCancel = (statusLower === 'pendente');
+      const canResend = (statusLower === 'pendente' || statusLower === 'expirado');
+      const actions = `
+        ${canResend ? `<button class="btn btn-secondary btn-sm" data-invite-resend="${i.id}">Reenviar</button>` : ''}
+        ${canCancel ? `<button class="btn btn-secondary btn-sm" data-invite-cancel="${i.id}">Cancelar</button>` : ''}
+      `;
       return `<tr>
         <td>${name}</td><td>${email}</td><td>${cpf}</td><td>${role}</td><td>${status}</td><td>${when}</td><td>${actions}</td>
       </tr>`;
@@ -584,7 +589,7 @@ async function loadCompanyInvites(){
         <tbody>${rows || '<tr><td colspan="7" style="text-align:center;padding:20px">Nenhum convite encontrado.</td></tr>'}</tbody>
       </table>`;
 
-    // bind cancel buttons
+    // bind cancel/resend buttons
     wrap.querySelectorAll('button[data-invite-cancel]').forEach(btn => {
       btn.addEventListener('click', async () => {
         const id = parseInt(btn.getAttribute('data-invite-cancel'), 10);
@@ -600,6 +605,24 @@ async function loadCompanyInvites(){
           await loadCompanyInvites();
         } catch (e) {
           alert(e.message || 'Erro ao cancelar convite.');
+        }
+      });
+    });
+    wrap.querySelectorAll('button[data-invite-resend]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const id = parseInt(btn.getAttribute('data-invite-resend'), 10);
+        if (!id) return;
+        try {
+          const res = await fetch(`${API_BASE}/company_resend_invite.php`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id })
+          });
+          const json = await res.json();
+          if (!json.success) throw new Error(json.error || 'Falha ao reenviar.');
+          alert(json.message || 'Convite reenviado.');
+          await loadCompanyInvites();
+        } catch (e) {
+          alert(e.message || 'Erro ao reenviar convite.');
         }
       });
     });
