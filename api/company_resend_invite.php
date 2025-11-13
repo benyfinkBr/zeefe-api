@@ -55,7 +55,7 @@ try {
 
   $host = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https://' : 'http://') . ($_SERVER['HTTP_HOST'] ?? 'localhost');
   $acceptUrl = $host . '/api/company_accept_invite.php?token=' . urlencode($inv['token']);
-  $html = mailer_render('company_user_invite', [
+  $html = mailer_render('company_user_invite.php', [
     'company_name' => $companyName,
     'accept_url' => $acceptUrl,
     'client_name' => $clientName,
@@ -67,4 +67,3 @@ try {
   http_response_code(500);
   echo json_encode(['success' => false, 'error' => 'Erro interno: ' . $e->getMessage()]);
 }
-

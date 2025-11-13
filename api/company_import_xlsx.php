@@ -198,7 +198,7 @@ try {
       $companyName = $company['nome_fantasia'] ?? $company['razao_social'] ?? 'sua empresa';
       $host = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https://' : 'http://') . ($_SERVER['HTTP_HOST'] ?? 'localhost');
       $acceptUrl = $host . '/api/company_accept_invite.php?token=' . urlencode($token);
-      $html = mailer_render('company_user_invite', ['company_name'=>$companyName, 'accept_url'=>$acceptUrl, 'client_name'=>$name]);
+      $html = mailer_render('company_user_invite.php', ['company_name'=>$companyName, 'accept_url'=>$acceptUrl, 'client_name'=>$name]);
       mailer_send([$email], 'Convite para acessar empresa no portal Ze.EFE', $html);
 
       $sent++;
