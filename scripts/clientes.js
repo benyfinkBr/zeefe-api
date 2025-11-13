@@ -159,6 +159,8 @@ const companyInviteRole = document.getElementById('companyInviteRole');
 const companyInviteBtn = document.getElementById('companyInviteBtn');
 const companyCsvInput = document.getElementById('companyCsvInput');
 const companyXlsxInput = document.getElementById('companyXlsxInput');
+const companyInviteEmail = document.getElementById('companyInviteEmail');
+const companyResendBtn = document.getElementById('companyResendBtn');
 const quickActionsContainer = document.querySelector('#companyTab-overview .quick-actions');
 // Finance controls
 const finFromInput = document.getElementById('finFrom');
@@ -321,6 +323,7 @@ async function initialize() {
   companyInviteBtn?.addEventListener('click', onCompanyInviteSubmit);
   companyCsvInput?.addEventListener('change', onCompanyCsvSelected);
   companyXlsxInput?.addEventListener('change', onCompanyXlsxSelected);
+  companyResendBtn?.addEventListener('click', onCompanyResendLookup);
 
   // Quick actions in overview
   if (quickActionsContainer) {
@@ -641,14 +644,35 @@ async function onCompanyInviteSubmit() {
     companyInviteBtn.disabled = true;
     const res = await fetch(`${API_BASE}/company_invite_user.php`, {
       method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ company_id: activeClient.company_id, cpf: digits, role })
+      body: JSON.stringify({ company_id: activeClient.company_id, cpf: digits, email: (companyInviteEmail?.value||'').trim(), role })
     });
     const json = await res.json();
     if (!json.success) throw new Error(json.error || 'Não foi possível enviar o convite.');
     alert(json.message || 'Convite enviado.');
+    await loadCompanyInvites();
   } catch (e) {
     alert(e.message || 'Falha ao convidar.');
   } finally { companyInviteBtn.disabled = false; }
+}
+
+async function onCompanyResendLookup(){
+  if (!activeClient?.company_id) return;
+  const cpfDigits = somenteDigitos(companyInviteCpf?.value).slice(0,11);
+  const email = (companyInviteEmail?.value || '').trim();
+  if (!cpfDigits && !email) { alert('Informe CPF ou e‑mail para reenviar.'); return; }
+  try {
+    companyResendBtn.disabled = true;
+    const res = await fetch(`${API_BASE}/company_resend_invite_by_lookup.php`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ company_id: activeClient.company_id, cpf: cpfDigits, email })
+    });
+    const json = await res.json();
+    if (!json.success) throw new Error(json.error || 'Falha ao reenviar.');
+    alert(json.message || 'Convite reenviado.');
+    await loadCompanyInvites();
+  } catch (e) {
+    alert(e.message || 'Erro ao reenviar convite.');
+  } finally { companyResendBtn.disabled = false; }
 }
 
 function parseCsv(text) {

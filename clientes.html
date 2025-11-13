@@ -371,6 +371,7 @@
                 <div id="companyTab-users" class="company-panel" hidden>
                   <div class="inline-actions" style="margin-bottom:10px; display:flex; gap:8px; flex-wrap:wrap">
                     <input type="text" id="companyInviteCpf" placeholder="CPF do membro (somente números)" maxlength="14" style="min-width:220px">
+                    <input type="email" id="companyInviteEmail" placeholder="E-mail (opcional p/ reenviar)" style="min-width:240px">
                     <select id="companyInviteRole">
                       <option value="membro">Membro</option>
                       <option value="gestor">Gestor</option>
@@ -385,6 +386,7 @@
                     <input type="file" id="companyCsvInput" accept=".csv,text/csv" hidden>-->
                     <label class="btn btn-secondary" for="companyXlsxInput" style="cursor:pointer">Importar XLSX (até 50 linhas)</label>
                     <input type="file" id="companyXlsxInput" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden>
+                    <button class="btn btn-secondary" type="button" id="companyResendBtn" title="Informe CPF ou E-mail">Reenviar convite</button>
                   </div>
                   <div id="companyUsersContainer" class="responsive-table"></div>
                   <div id="companyInvitesContainer" class="responsive-table" style="margin-top:10px"></div>
