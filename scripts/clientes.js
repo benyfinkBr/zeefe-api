@@ -161,6 +161,7 @@ const companyCsvInput = document.getElementById('companyCsvInput');
 const companyXlsxInput = document.getElementById('companyXlsxInput');
 const companyInviteEmail = document.getElementById('companyInviteEmail');
 const companyResendBtn = document.getElementById('companyResendBtn');
+const companyManualBtn = document.getElementById('companyManualBtn');
 const quickActionsContainer = document.querySelector('#companyTab-overview .quick-actions');
 // Finance controls
 const finFromInput = document.getElementById('finFrom');
@@ -324,6 +325,7 @@ async function initialize() {
   companyCsvInput?.addEventListener('change', onCompanyCsvSelected);
   companyXlsxInput?.addEventListener('change', onCompanyXlsxSelected);
   companyResendBtn?.addEventListener('click', onCompanyResendLookup);
+  companyManualBtn?.addEventListener('click', () => showXlsxPreviewModal(null, []));
 
   // Quick actions in overview
   if (quickActionsContainer) {
@@ -529,24 +531,47 @@ async function loadCompanyUsers() {
     const res = await fetch(`${API_BASE}/apiget.php?table=clients`, { credentials: 'include' });
     const json = await res.json();
     const cid = activeClient?.company_id;
-    const users = (json.success ? (json.data || []) : []).filter(u => String(u.company_id) === String(cid));
-    if (!users.length) { wrap.innerHTML = '<div class="rooms-message">Nenhum membro encontrado.</div>'; return; }
-    const rows = users.map(u => `
-      <tr>
-        <td>${escapeHtml(u.name || '--')}</td>
-        <td>${escapeHtml(u.email || '--')}</td>
-        <td>${escapeHtml(u.login || '--')}</td>
-        <td>${escapeHtml(u.company_role || '-')}</td>
-        <td><button class="btn btn-secondary btn-sm" data-act="remove" data-id="${u.id}">Remover</button></td>
-      </tr>
-    `).join('');
-    wrap.innerHTML = `
-      <table>
-        <thead><tr><th>Nome</th><th>E-mail</th><th>Login</th><th>Papel</th><th>Ações</th></tr></thead>
-        <tbody>${rows}</tbody>
-      </table>
-    `;
-    wrap.querySelectorAll('button[data-act="remove"]').forEach(btn => btn.addEventListener('click', () => removeCompanyUser(btn.dataset.id)));
+    let users = (json.success ? (json.data || []) : []).filter(u => String(u.company_id) === String(cid));
+    const renderUsers = (list, sortKey='name', dir='asc') => {
+      const collator = new Intl.Collator('pt-BR', { sensitivity:'base' });
+      list = list.slice().sort((a,b)=>{
+        const va = (a[sortKey]||'').toString().toLowerCase();
+        const vb = (b[sortKey]||'').toString().toLowerCase();
+        const r = collator.compare(va, vb);
+        return dir==='asc' ? r : -r;
+      });
+      const rows = list.map(u => `
+        <tr>
+          <td>${escapeHtml(u.name || '--')}</td>
+          <td>${escapeHtml(u.email || '--')}</td>
+          <td>${escapeHtml(u.login || '--')}</td>
+          <td>${escapeHtml(u.company_role || '-')}</td>
+          <td><button class="btn btn-secondary btn-sm" data-act="remove" data-id="${u.id}">Remover</button></td>
+        </tr>`).join('');
+      wrap.innerHTML = `
+        <table>
+          <thead>
+            <tr>
+              <th data-sort="name">Nome</th>
+              <th data-sort="email">E-mail</th>
+              <th data-sort="login">Login</th>
+              <th data-sort="company_role">Papel</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody>${rows || '<tr><td colspan="5" style="text-align:center;padding:14px">Nenhum membro encontrado.</td></tr>'}</tbody>
+        </table>`;
+      wrap.querySelectorAll('button[data-act="remove"]').forEach(btn => btn.addEventListener('click', () => removeCompanyUser(btn.dataset.id)));
+      wrap.querySelectorAll('th[data-sort]').forEach(th => {
+        th.style.cursor = 'pointer';
+        th.onclick = () => {
+          const key = th.getAttribute('data-sort');
+          const newDir = (dir==='asc') ? 'desc' : 'asc';
+          renderUsers(users, key, newDir);
+        };
+      });
+    };
+    renderUsers(users);
   } catch (e) {
     wrap.innerHTML = '<div class="rooms-message">Falha ao carregar membros.</div>';
   }
@@ -565,70 +590,96 @@ async function loadCompanyInvites(){
     const invJson = await invRes.json();
     const cliJson = await cliRes.json();
     const allCli = cliJson.success ? (cliJson.data || []) : [];
-  const list = (invJson.success ? (invJson.data || []) : []).filter(i => String(i.company_id) === String(cid));
-  const rows = list.sort((a,b)=> new Date(b.created_at||0) - new Date(a.created_at||0)).map(i => {
-      const c = allCli.find(x => String(x.id) === String(i.client_id));
-      const name = escapeHtml(i.invite_name || c?.name || '--');
-      const email = escapeHtml(i.invite_email || c?.email || '--');
-      const cpf = formatCPF(c?.cpf || i.cpf || '');
-      const role = escapeHtml(i.role || 'membro');
-      const status = escapeHtml(i.status || 'pendente');
-      const when = escapeHtml(i.created_at ? formatDate(String(i.created_at).slice(0,10)) : '--');
-      const statusLower = String(i.status||'').toLowerCase();
-      const canCancel = (statusLower === 'pendente');
-      const canResend = (statusLower === 'pendente' || statusLower === 'expirado');
-      const actions = `
-        ${canResend ? `<button class="btn btn-secondary btn-sm" data-invite-resend="${i.id}">Reenviar</button>` : ''}
-        ${canCancel ? `<button class="btn btn-secondary btn-sm" data-invite-cancel="${i.id}">Cancelar</button>` : ''}
-      `;
-      return `<tr>
-        <td>${name}</td><td>${email}</td><td>${cpf}</td><td>${role}</td><td>${status}</td><td>${when}</td><td>${actions}</td>
-      </tr>`;
-    }).join('');
-    wrap.innerHTML = `
-      <h4 style="margin:10px 0 6px">Convites</h4>
-      <table>
-        <thead><tr><th>Nome</th><th>E-mail</th><th>CPF</th><th>Papel</th><th>Status</th><th>Enviado em</th><th>Ações</th></tr></thead>
-        <tbody>${rows || '<tr><td colspan="7" style="text-align:center;padding:20px">Nenhum convite encontrado.</td></tr>'}</tbody>
-      </table>`;
+    let list = (invJson.success ? (invJson.data || []) : []).filter(i => String(i.company_id) === String(cid));
+    const renderInvites = (arr, sortKey='created_at', dir='desc') => {
+      arr = arr.slice().sort((a,b)=>{
+        const va = (a[sortKey]||'').toString();
+        const vb = (b[sortKey]||'').toString();
+        let r = 0;
+        if (sortKey==='created_at') r = new Date(va) - new Date(vb); else r = va.localeCompare(vb,'pt-BR',{ sensitivity:'base' });
+        return dir==='asc'? r : -r;
+      });
+      const rows = arr.map(i => {
+        const c = allCli.find(x => String(x.id) === String(i.client_id));
+        const name = escapeHtml(i.invite_name || c?.name || '--');
+        const email = escapeHtml(i.invite_email || c?.email || '--');
+        const cpf = formatCPF(c?.cpf || i.cpf || '');
+        const role = escapeHtml(i.role || 'membro');
+        const status = escapeHtml(i.status || 'pendente');
+        const when = escapeHtml(i.created_at ? formatDate(String(i.created_at).slice(0,10)) : '--');
+        const statusLower = String(i.status||'').toLowerCase();
+        const canCancel = (statusLower === 'pendente');
+        const canResend = (statusLower === 'pendente' || statusLower === 'expirado');
+        const actions = `
+          ${canResend ? `<button class="btn btn-secondary btn-sm" data-invite-resend="${i.id}">Reenviar</button>` : ''}
+          ${canCancel ? `<button class="btn btn-secondary btn-sm" data-invite-cancel="${i.id}">Cancelar</button>` : ''}
+        `;
+        return `<tr>
+          <td>${name}</td><td>${email}</td><td>${cpf}</td><td>${role}</td><td>${status}</td><td>${when}</td><td>${actions}</td>
+        </tr>`;
+      }).join('');
+      wrap.innerHTML = `
+        <table>
+          <thead><tr>
+            <th data-sort="invite_name">Nome</th>
+            <th data-sort="invite_email">E-mail</th>
+            <th data-sort="cpf">CPF</th>
+            <th data-sort="role">Papel</th>
+            <th data-sort="status">Status</th>
+            <th data-sort="created_at">Enviado em</th>
+            <th>Ações</th>
+          </tr></thead>
+          <tbody>${rows || '<tr><td colspan="7" style="text-align:center;padding:20px">Nenhum convite encontrado.</td></tr>'}</tbody>
+        </table>`;
 
-    // bind cancel/resend buttons
-    wrap.querySelectorAll('button[data-invite-cancel]').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        const id = parseInt(btn.getAttribute('data-invite-cancel'), 10);
-        if (!id) return;
-        if (!confirm('Cancelar este convite?')) return;
-        try {
-          const res = await fetch(`${API_BASE}/company_cancel_invite.php`, {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ id })
-          });
-          const json = await res.json();
-          if (!json.success) throw new Error(json.error || 'Falha ao cancelar.');
-          await loadCompanyInvites();
-        } catch (e) {
-          alert(e.message || 'Erro ao cancelar convite.');
-        }
+      // bind cancel/resend buttons
+      wrap.querySelectorAll('button[data-invite-cancel]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const id = parseInt(btn.getAttribute('data-invite-cancel'), 10);
+          if (!id) return;
+          if (!confirm('Cancelar este convite?')) return;
+          try {
+            const res = await fetch(`${API_BASE}/company_cancel_invite.php`, {
+              method: 'POST', headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ id })
+            });
+            const json = await res.json();
+            if (!json.success) throw new Error(json.error || 'Falha ao cancelar.');
+            await loadCompanyInvites();
+          } catch (e) {
+            alert(e.message || 'Erro ao cancelar convite.');
+          }
+        });
       });
-    });
-    wrap.querySelectorAll('button[data-invite-resend]').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        const id = parseInt(btn.getAttribute('data-invite-resend'), 10);
-        if (!id) return;
-        try {
-          const res = await fetch(`${API_BASE}/company_resend_invite.php`, {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ id })
-          });
-          const json = await res.json();
-          if (!json.success) throw new Error(json.error || 'Falha ao reenviar.');
-          alert(json.message || 'Convite reenviado.');
-          await loadCompanyInvites();
-        } catch (e) {
-          alert(e.message || 'Erro ao reenviar convite.');
-        }
+      wrap.querySelectorAll('button[data-invite-resend]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const id = parseInt(btn.getAttribute('data-invite-resend'), 10);
+          if (!id) return;
+          try {
+            const res = await fetch(`${API_BASE}/company_resend_invite.php`, {
+              method: 'POST', headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ id })
+            });
+            const json = await res.json();
+            if (!json.success) throw new Error(json.error || 'Falha ao reenviar.');
+            alert(json.message || 'Convite reenviado.');
+            await loadCompanyInvites();
+          } catch (e) {
+            alert(e.message || 'Erro ao reenviar convite.');
+          }
+        });
       });
-    });
+      wrap.querySelectorAll('th[data-sort]').forEach(th => {
+        th.style.cursor = 'pointer';
+        th.onclick = () => {
+          const key = th.getAttribute('data-sort');
+          const currentDir = th.dataset.dir === 'asc' ? 'desc' : 'asc';
+          th.dataset.dir = currentDir;
+          renderInvites(list, key, currentDir);
+        };
+      });
+    };
+    renderInvites(list);
   } catch (e) {
     wrap.innerHTML = '<div class="rooms-message">Não foi possível carregar os convites.</div>';
   }
@@ -755,57 +806,130 @@ function showXlsxPreviewModal(file, rows) {
   const closeBtn = document.getElementById('xlsxPreviewClose');
   const cancelBtn = document.getElementById('xlsxPreviewCancel');
   const confirmBtn = document.getElementById('xlsxPreviewConfirm');
+  const addBtn = document.getElementById('xlsxPreviewAdd');
   if (!modal || !tableWrap) return;
 
-  const body = document.createElement('div');
-  const validRows = rows.filter(r => r.valid);
-  const header = `
-    <table>
-      <thead><tr>
-        <th><input type="checkbox" id="xlsxCheckAll" ${validRows.length? 'checked':''}></th>
-        <th>Linha</th><th>Nome</th><th>E‑mail</th><th>CPF</th><th>Status</th>
-      </tr></thead>
-      <tbody id="xlsxPreviewTBody"></tbody>
-    </table>`;
-  tableWrap.innerHTML = header;
-  const tbody = document.getElementById('xlsxPreviewTBody');
-  rows.forEach(r => {
-    const tr = document.createElement('tr');
-    if (!r.valid) tr.style.background = '#FFF3CD';
-    const status = r.valid ? 'ok' : ('Inválido: ' + (Array.isArray(r.reasons)? r.reasons.join(', ') : ''));
-    tr.innerHTML = `
-      <td><input type="checkbox" data-pos="${r.pos}" ${r.valid? 'checked':''}></td>
-      <td>${r.excel_row}</td>
-      <td>${escapeHtml(r.name||'')}</td>
-      <td>${escapeHtml(r.email||'')}</td>
-      <td>${formatCPF(r.cpf_digits||r.cpf_raw||'')}</td>
-      <td>${escapeHtml(status)}</td>`;
-    tbody.appendChild(tr);
+  // Editable state
+  let state = Array.isArray(rows) ? rows.map(r => ({
+    pos: r.pos ?? 0,
+    excel_row: r.excel_row ?? 0,
+    name: r.name || '',
+    email: r.email || '',
+    cpf_raw: r.cpf_raw || r.cpf_digits || '',
+    cpf_digits: r.cpf_digits || '',
+    valid: !!r.valid,
+    reasons: Array.isArray(r.reasons) ? r.reasons.slice() : [],
+    duplicate: false
+  })) : [];
+
+  const render = () => {
+    const header = `
+      <table>
+        <thead><tr>
+          <th><input type=\"checkbox\" id=\"xlsxCheckAll\"></th>
+          <th>Linha</th><th>Nome</th><th>E‑mail</th><th>CPF</th><th>Status</th><th></th>
+        </tr></thead>
+        <tbody id=\"xlsxPreviewTBody\"></tbody>
+      </table>`;
+    tableWrap.innerHTML = header;
+    const tbody = document.getElementById('xlsxPreviewTBody');
+    const checkAll = document.getElementById('xlsxCheckAll');
+
+    const validateRow = (i) => {
+      const row = state[i]; if (!row) return;
+      const digits = somenteDigitos(row.cpf_raw||'');
+      row.cpf_digits = digits;
+      const reasons = [];
+      if (!row.name || !row.name.trim()) reasons.push('nome vazio');
+      if (!row.email || !/^\S+@\S+\.\S+$/.test(row.email)) reasons.push('e‑mail inválido');
+      if (digits.length!==11) reasons.push('CPF inválido');
+      if (row.duplicate) reasons.push('duplicado');
+      row.valid = reasons.length===0; row.reasons = reasons;
+      const tr = tbody.children[i]; if (!tr) return;
+      tr.style.background = row.valid ? '' : '#FFF3CD';
+      const statusCell = tr.querySelector('.status-cell');
+      statusCell.textContent = row.valid ? 'ok' : ('Inválido: ' + reasons.join(', '));
+    };
+
+    const recomputeDuplicates = () => {
+      const seenEmail = new Map();
+      const seenCpf = new Map();
+      state.forEach(r => { r.duplicate = false; });
+      state.forEach((r, idx) => {
+        const e = (r.email || '').toLowerCase();
+        const c = r.cpf_digits || '';
+        if (e && !seenEmail.has(e)) seenEmail.set(e, idx); else if (e) r.duplicate = true;
+        if (c && !seenCpf.has(c)) seenCpf.set(c, idx); else if (c) r.duplicate = true;
+      });
+      state.forEach((_,i)=>validateRow(i));
+    };
+
+    tbody.innerHTML = '';
+    state.forEach((r, idx) => {
+      const tr = document.createElement('tr');
+      const status = r.valid ? 'ok' : ('Inválido: ' + (Array.isArray(r.reasons)? r.reasons.join(', ') : ''));
+      tr.innerHTML = `
+        <td><input type=\"checkbox\" data-idx=\"${idx}\" ${r.valid? 'checked':''} ${r.valid? '':'disabled'}></td>
+        <td>${r.excel_row || (idx+1)}</td>
+        <td><input type=\"text\" data-field=\"name\" data-idx=\"${idx}\" value=\"${escapeHtml(r.name)}\"/></td>
+        <td><input type=\"email\" data-field=\"email\" data-idx=\"${idx}\" value=\"${escapeHtml(r.email)}\"/></td>
+        <td><input type=\"text\" data-field=\"cpf\" data-idx=\"${idx}\" value=\"${escapeHtml(formatCPF(r.cpf_digits||r.cpf_raw||''))}\"/></td>
+        <td class=\"status-cell\">${escapeHtml(status)}</td>
+        <td><button type=\"button\" class=\"btn btn-secondary btn-sm\" data-remove=\"${idx}\">Remover</button></td>`;
+      tbody.appendChild(tr);
+    });
+
+    tbody.querySelectorAll('input[data-field]').forEach(inp => {
+      inp.addEventListener('input', () => {
+        const i = parseInt(inp.getAttribute('data-idx'),10);
+        const field = inp.getAttribute('data-field');
+        if (field==='name') state[i].name = inp.value;
+        else if (field==='email') state[i].email = inp.value.trim();
+        else if (field==='cpf') { state[i].cpf_raw = inp.value; state[i].cpf_digits = somenteDigitos(inp.value); inp.value = formatCPF(state[i].cpf_digits); }
+        validateRow(i);
+        recomputeDuplicates();
+      });
+    });
+    tbody.querySelectorAll('button[data-remove]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const i = parseInt(btn.getAttribute('data-remove'),10);
+        state.splice(i,1); render();
+      });
+    });
+
+    // Initial validation and duplicates
+    state.forEach((_,i)=>validateRow(i));
+    recomputeDuplicates();
+    checkAll?.addEventListener('change', () => {
+      tbody.querySelectorAll('input[type=\"checkbox\"]').forEach(ch => {
+        const i = parseInt(ch.getAttribute('data-idx'),10);
+        ch.checked = checkAll.checked && state[i]?.valid;
+      });
+    });
+  };
+
+  addBtn?.addEventListener('click', () => {
+    state.push({ pos: state.length, excel_row: state.length+1, name:'', email:'', cpf_raw:'', cpf_digits:'', valid:false, reasons:['nome vazio','e‑mail inválido','CPF inválido'], duplicate:false });
+    render();
   });
 
-  const checkAll = document.getElementById('xlsxCheckAll');
-  checkAll?.addEventListener('change', () => {
-    tbody.querySelectorAll('input[type="checkbox"]').forEach(ch => { if (rows.find(r=>String(r.pos)===ch.dataset.pos)?.valid) ch.checked = checkAll.checked; });
-  });
+  render();
 
   const hide = () => { modal.classList.remove('show'); modal.setAttribute('aria-hidden','true'); };
   closeBtn?.addEventListener('click', hide, { once:true });
   cancelBtn?.addEventListener('click', hide, { once:true });
   confirmBtn?.addEventListener('click', async () => {
-    const selected = Array.from(tbody.querySelectorAll('input[type="checkbox"]'))
-      .filter(ch => ch.checked)
-      .map(ch => parseInt(ch.dataset.pos,10))
-      .filter(n => !Number.isNaN(n));
+    const tbody = document.getElementById('xlsxPreviewTBody');
+    const selected = Array.from(tbody.querySelectorAll('input[type=\"checkbox\"]'))
+      .map((ch,i)=>({ idx:i, checked: ch.checked }))
+      .filter(s => s.checked && state[s.idx]?.valid)
+      .map(s => ({ name: state[s.idx].name.trim(), email: state[s.idx].email.trim(), cpf: state[s.idx].cpf_digits }));
     if (!selected.length) { alert('Selecione ao menos uma linha válida.'); return; }
     try {
       confirmBtn.disabled = true;
       const role = companyInviteRole?.value || 'membro';
-      const fd2 = new FormData();
-      fd2.append('file', xlsxPreviewFile);
-      fd2.append('company_id', String(activeClient.company_id));
-      fd2.append('role', role);
-      fd2.append('selected', JSON.stringify(selected));
-      const res2 = await fetch(`${API_BASE}/company_import_xlsx.php`, { method:'POST', body: fd2 });
+      const payload = { company_id: activeClient.company_id, role, rows: selected };
+      const res2 = await fetch(`${API_BASE}/company_import_xlsx.php`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
       const json2 = await res2.json();
       if (!json2.success) throw new Error(json2.error || 'Falha ao importar.');
       const errs = Array.isArray(json2.errors) && json2.errors.length ? `\nErros: \n- ${json2.errors.slice(0,5).join('\n- ')}${json2.errors.length>5?'\n…':''}` : '';

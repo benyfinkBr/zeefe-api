@@ -1147,6 +1147,13 @@ td.actions {
 .finance-table th, .finance-table td { padding:12px 14px; border-bottom:1px solid rgba(29,65,58,.08); }
 .finance-table tr:last-child td { border-bottom:none; }
 
+/* Empresa > Membros reorganização */
+.member-actions { background:#fff; border:1px solid rgba(29,65,58,.12); border-radius:12px; padding:12px; margin-bottom:12px; box-shadow:0 2px 8px rgba(0,0,0,.04); }
+.member-actions .field-row { display:grid; grid-template-columns: 1.1fr 1.3fr 0.6fr; gap:8px; margin-bottom:10px; }
+.member-actions .btn-row { display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+.card-block { background:#fff; border:1px solid rgba(29,65,58,.12); border-radius:12px; padding:12px; margin-bottom:12px; box-shadow:0 2px 8px rgba(0,0,0,.04); }
+.card-block h4 { margin:0 0 8px; color: var(--brand-green); }
+
 /* --- Formulários (pré-reserva / modal admin) --- */
 form fieldset {
   border: none;
