@@ -2672,6 +2672,17 @@ body.client-portal-page.client-authenticated .auth-container {
 .inbox-list { display:grid; gap:10px; }
 .inbox-list .invite-item { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px; border:1px solid rgba(29,65,58,.15); border-radius:10px; background:#fff; }
 
+.modal-dialog.wide { max-width: 1040px; }
+
+/* Manual members (Empresa) */
+.manual-table-wrap { max-height: 360px; overflow: auto; }
+.manual-members-table td input, .manual-members-table td select { width: 100%; }
+.manual-members-table th:nth-child(1), .manual-members-table td:nth-child(1) { width: 32%; }
+.manual-members-table th:nth-child(2), .manual-members-table td:nth-child(2) { width: 32%; }
+.manual-members-table th:nth-child(3), .manual-members-table td:nth-child(3) { width: 20%; }
+.manual-members-table th:nth-child(4), .manual-members-table td:nth-child(4) { width: 16%; }
+.manual-members-table td select { min-width: 120px; font-size: .95rem; }
+
 .modal-overlay.show {
   display: flex;
 }

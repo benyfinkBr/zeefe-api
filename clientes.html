@@ -540,6 +540,9 @@
       <div class="modal-body">
         <div class="modal-info" style="padding:24px; width:100%">
           <h2 id="inviteMemberTitle" style="margin-top:0">Convidar membro</h2>
+          <p class="rooms-message" style="margin-top:4px;margin-bottom:12px;">
+            A busca será realizada entre os usuários já cadastrados na plataforma Ze.EFE. Se não encontrado, enviaremos um convite de pré‑cadastro com os dados informados.
+          </p>
           <div class="form-grid-mini">
             <div>
               <label for="inviteCpf">CPF</label>
@@ -574,13 +577,16 @@
 
   <!-- Modal: Adicionar manualmente -->
   <div class="modal-overlay" id="manualMembersModal" aria-hidden="true">
-    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="manualMembersTitle">
+    <div class="modal-dialog wide" role="dialog" aria-modal="true" aria-labelledby="manualMembersTitle">
       <button class="modal-close" type="button" id="manualMembersClose" aria-label="Fechar">&times;</button>
       <div class="modal-body">
         <div class="modal-info" style="padding:24px; width:100%">
           <h2 id="manualMembersTitle" style="margin-top:0">Adicionar membros manualmente</h2>
-          <div class="responsive-table" style="max-height:50vh; overflow:auto;">
-            <table class="table">
+          <p class="rooms-message" style="margin-top:4px;margin-bottom:12px;">
+            Usuários já cadastrados na Ze.EFE serão adicionados à empresa. Para e‑mails/CPFs não encontrados, enviaremos um convite de pré‑cadastro para que concluam o registro e passem a fazer parte da empresa.
+          </p>
+          <div class="responsive-table manual-table-wrap">
+            <table class="table manual-members-table">
               <thead>
                 <tr>
                   <th>Nome</th>
@@ -596,7 +602,7 @@
             <button type="button" class="btn btn-secondary btn-sm" id="manualAddRow">Adicionar linha</button>
             <div>
               <button type="button" class="btn btn-secondary" id="manualMembersCancel">Cancelar</button>
-              <button type="button" class="btn btn-primary" id="manualMembersSubmit">Importar selecionados</button>
+              <button type="button" class="btn btn-primary" id="manualMembersSubmit">Enviar convites</button>
             </div>
           </div>
         </div>
