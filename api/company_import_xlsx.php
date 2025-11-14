@@ -181,9 +181,27 @@ try {
   $max = 50; $sent = 0; $failed = 0; $errors = [];
   $selectedMap = [];
   foreach ($selectedPositions as $p) { $selectedMap[(int)$p] = true; }
+  // Heurística igual a do parse
+  $mapHeuristic = function($tuple){
+    $vals = array_map(function($v){ return trim((string)$v); }, (array)$tuple);
+    $email=''; $cpfRaw=''; $name='';
+    foreach ($vals as $v) { if ($email==='' && filter_var($v, FILTER_VALIDATE_EMAIL)) { $email=$v; } }
+    foreach ($vals as $v) { if ($cpfRaw==='' && preg_match('/\d{3}[\. ]?\d{3}[\. ]?\d{3}[- ]?\d{2}/', $v)) { $cpfRaw=$v; } }
+    foreach ($vals as $v) {
+      $isEmail = filter_var($v, FILTER_VALIDATE_EMAIL);
+      $isCpfLike = preg_match('/\d{3}[\. ]?\d{3}[\. ]?\d{3}[- ]?\d{2}/', $v);
+      if (!$isEmail && !$isCpfLike && $v!=='') { $name=$v; break; }
+    }
+    if ($name==='' && isset($vals[0]) && $vals[0]!=='' && !$email) $name=$vals[0];
+    if ($email==='' && isset($vals[1]) && filter_var($vals[1], FILTER_VALIDATE_EMAIL)) $email=$vals[1];
+    if ($cpfRaw==='' && isset($vals[2])) $cpfRaw=$vals[2];
+    return [$name,$email,$cpfRaw];
+  };
+
   for ($i = $start; $i < count($rows) && $sent + $failed < $max; $i++) {
     if (!empty($selectedMap) && !isset($selectedMap[$i])) { continue; }
-    [$name, $email, $cpf] = $rows[$i];
+    [$name0, $email0, $cpf0] = $rows[$i];
+    [$name, $email, $cpf] = $mapHeuristic([$name0,$email0,$cpf0]);
     $name = trim((string)$name); $email = trim((string)$email); $cpfDigits = preg_replace('/\D/','', (string)$cpf);
     // Se por qualquer razão a primeira linha de dados ainda for um cabeçalho, ignore
     try {

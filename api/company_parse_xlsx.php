@@ -122,8 +122,28 @@ try {
 
   $rows = [];
   $max = 50; $count=0;
+  // Heurística para mapear colunas quando o XLSX não traz a referência da célula
+  $mapHeuristic = function($tuple){
+    $vals = array_map(function($v){ return trim((string)$v); }, (array)$tuple);
+    $email=''; $cpfRaw=''; $name='';
+    foreach ($vals as $v) { if ($email==='' && filter_var($v, FILTER_VALIDATE_EMAIL)) { $email=$v; } }
+    foreach ($vals as $v) { if ($cpfRaw==='' && preg_match('/\d{3}[\. ]?\d{3}[\. ]?\d{3}[- ]?\d{2}/', $v)) { $cpfRaw=$v; } }
+    // name = primeiro não email e não cpf
+    foreach ($vals as $v) {
+      $isEmail = filter_var($v, FILTER_VALIDATE_EMAIL);
+      $isCpfLike = preg_match('/\d{3}[\. ]?\d{3}[\. ]?\d{3}[- ]?\d{2}/', $v);
+      if (!$isEmail && !$isCpfLike && $v!=='') { $name=$v; break; }
+    }
+    // fallback posições A/B/C
+    if ($name==='' && isset($vals[0]) && $vals[0]!=='' && !$email) $name=$vals[0];
+    if ($email==='' && isset($vals[1]) && filter_var($vals[1], FILTER_VALIDATE_EMAIL)) $email=$vals[1];
+    if ($cpfRaw==='' && isset($vals[2])) $cpfRaw=$vals[2];
+    return [$name,$email,$cpfRaw];
+  };
+
   for ($i=$start; $i<count($rowsRaw) && $count < $max; $i++) {
-    [$name,$email,$cpfRaw] = $rowsRaw[$i];
+    [$name0,$email0,$cpfRaw0] = $rowsRaw[$i];
+    [$name,$email,$cpfRaw] = $mapHeuristic([$name0,$email0,$cpfRaw0]);
     // defensive: if this line is actually a header, skip
     $maybeHeader = ($normalize($name)==='nome' && $normalize($email)==='email' && $normalize($cpfRaw)==='cpf');
     if ($maybeHeader) continue;
@@ -152,4 +172,3 @@ try {
   http_response_code(500);
   echo json_encode(['success'=>false,'error'=>'Erro interno: '.$e->getMessage()]);
 }
-
