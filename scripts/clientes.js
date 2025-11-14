@@ -999,7 +999,7 @@ async function removeCompanyUser(clientId){
   try {
     const res = await fetch(`${API_BASE}/company_remove_user.php`, {
       method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ company_id: activeClient.company_id, client_id: Number(clientId) })
+      body: JSON.stringify({ company_id: activeClient.company_id, client_id: Number(clientId), actor_id: Number(activeClient.id) })
     });
     const json = await res.json();
     if (!json.success) throw new Error(json.error || 'Falha ao remover.');
@@ -1966,6 +1966,8 @@ function aplicarClienteAtivo(cliente) {
   if (scopeToApply === 'company') setActivePanel('company'); else setActivePanel('book');
   atualizarPainel();
   if (authMessage) authMessage.textContent = '';
+  // Checa convites pendentes na primeira entrada
+  checkPendingCompanyInvites();
 }
 
 function fazerLogout() {

@@ -696,6 +696,23 @@
     </div>
   </div>
 
+  <!-- Modal: Convites pendentes (inbox) -->
+  <div class="modal-overlay" id="inviteInboxModal" aria-hidden="true">
+    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="inviteInboxTitle">
+      <button class="modal-close" type="button" id="inviteInboxClose" aria-label="Fechar">&times;</button>
+      <div class="modal-body">
+        <div class="modal-info" style="padding:24px; width:100%">
+          <h2 id="inviteInboxTitle" style="margin-top:0">Convites para empresas</h2>
+          <p class="rooms-message">Você recebeu convites para participar de empresas. Aceite para ter acesso às funcionalidades de gestão.</p>
+          <div id="inviteInboxList" class="inbox-list"></div>
+          <div class="modal-actions" style="display:flex; gap:12px; justify-content:flex-end; margin-top:12px;">
+            <button type="button" class="btn btn-secondary" id="inviteInboxDismiss">Fechar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script src="scripts/clientes.js" defer></script>
 </body>
 </html>
