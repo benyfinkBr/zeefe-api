@@ -81,7 +81,8 @@ try {
   $companyName = $company['nome_fantasia'] ?? $company['razao_social'] ?? 'sua empresa';
 
   $host = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https://' : 'http://') . ($_SERVER['HTTP_HOST'] ?? 'localhost');
-  $acceptUrl = $host . '/api/company_accept_invite.php?token=' . urlencode($token);
+  // Direciona para a página do portal com o token para cadastro/aceite
+  $acceptUrl = $host . '/clientes.html?invite=' . urlencode($token);
 
   $html = mailer_render('company_user_invite.php', [
     'company_name' => $companyName,

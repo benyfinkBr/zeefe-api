@@ -33,7 +33,7 @@ try {
         $ins=$pdo->prepare('INSERT INTO company_invitations (company_id, client_id, invite_email, invite_name, cpf, role, token, status, expires_at, created_at) VALUES (:company_id, NULL, :invite_email, :invite_name, :cpf, :role, :token, "pendente", :expires, :created)');
         $ins->execute([':company_id'=>$companyId, ':invite_email'=>$email, ':invite_name'=>$name, ':cpf'=>$cpfDigits, ':role'=>$roleRow, ':token'=>$token, ':expires'=>$expires, ':created'=>$now]);
         $cstmt=$pdo->prepare('SELECT nome_fantasia, razao_social FROM companies WHERE id = :id LIMIT 1'); $cstmt->execute([':id'=>$companyId]); $company=$cstmt->fetch(PDO::FETCH_ASSOC)?:[]; $companyName=$company['nome_fantasia']??$company['razao_social']??'sua empresa';
-        $host=(isset($_SERVER['HTTPS'])&&$_SERVER['HTTPS']==='on'?'https://':'http://').($_SERVER['HTTP_HOST']??'localhost'); $acceptUrl=$host.'/api/company_accept_invite.php?token='.urlencode($token);
+        $host=(isset($_SERVER['HTTPS'])&&$_SERVER['HTTPS']==='on'?'https://':'http://').($_SERVER['HTTP_HOST']??'localhost'); $acceptUrl=$host.'/clientes.html?invite='.urlencode($token);
         $html=mailer_render('company_user_invite.php',['company_name'=>$companyName,'accept_url'=>$acceptUrl,'client_name'=>$name]); mailer_send([$email],'Convite para acessar empresa no portal Ze.EFE',$html);
         $sent++;
       } catch (Throwable $e) { $failed++; $errors[]='Linha '.($idx+1).': '.$e->getMessage(); }

@@ -43,7 +43,7 @@ try {
   $company = $cstmt->fetch(PDO::FETCH_ASSOC) ?: [];
   $companyName = $company['nome_fantasia'] ?? $company['razao_social'] ?? 'sua empresa';
   $host = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https://' : 'http://') . ($_SERVER['HTTP_HOST'] ?? 'localhost');
-  $acceptUrl = $host . '/api/company_accept_invite.php?token=' . urlencode($inv['token']);
+  $acceptUrl = $host . '/clientes.html?invite=' . urlencode($inv['token']);
   $html = mailer_render('company_user_invite.php', [
     'company_name' => $companyName,
     'accept_url' => $acceptUrl,
@@ -56,4 +56,3 @@ try {
   http_response_code(500);
   echo json_encode(['success' => false, 'error' => 'Erro interno: ' . $e->getMessage()]);
 }
-

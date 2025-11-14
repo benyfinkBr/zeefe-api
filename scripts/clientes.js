@@ -341,8 +341,14 @@ async function initialize() {
   document.getElementById('openManualModal')?.addEventListener('click', openManualMembersModal);
   document.getElementById('openImportModal')?.addEventListener('click', openImportContactsModal);
   document.getElementById('openManageInvites')?.addEventListener('click', () => {
+    const block = document.getElementById('companyInvitesBlock');
+    if (block) { block.hidden = false; }
     setCompanySubtab('users');
     document.getElementById('companyInvitesBlock')?.scrollIntoView({ behavior: 'smooth' });
+  });
+  document.getElementById('companyInvitesClose')?.addEventListener('click', () => {
+    const block = document.getElementById('companyInvitesBlock');
+    if (block) block.hidden = true;
   });
   inviteMemberClose?.addEventListener('click', closeInviteMemberModal);
   inviteMemberCancel?.addEventListener('click', closeInviteMemberModal);
@@ -391,6 +397,16 @@ async function initialize() {
 
   bookingCurrentMonth = new Date(bookingToday.getFullYear(), bookingToday.getMonth(), 1);
   renderBookingCalendar(bookingCurrentMonth);
+
+  // Detect invite token from URL to drive registration flow
+  const url = new URL(window.location.href);
+  const inviteToken = url.searchParams.get('invite');
+  if (inviteToken) {
+    window.pendingInviteToken = inviteToken;
+    showAuthOverlay();
+    setAuthView('register');
+    if (authMessage) authMessage.textContent = 'Convite recebido: conclua seu cadastro para aceitar o vínculo com a empresa.';
+  }
   renderVisitorChecklist();
   setBookingStep(0);
   renderRoomOptions(bookingDateInput?.value || '');
@@ -1895,11 +1911,20 @@ async function onPortalRegisterSubmit(event) {
     });
     const json = await res.json();
     if (!json.success) throw new Error(json.error || 'Não foi possível criar a conta.');
-    // Não fazer login automático. Orientar verificação de e-mail e redirecionar para o index.
-    authMessage.textContent = 'Cadastro realizado! Enviamos um e-mail para confirmação. Você será redirecionado ao início.';
+    // Caso tenha vindo de um convite, tenta aceitar automaticamente após cadastrar
+    if (window.pendingInviteToken) {
+      try {
+        await fetch(`${API_BASE}/company_accept_invite_json.php?token=${encodeURIComponent(window.pendingInviteToken)}`);
+      } catch (_) {}
+    }
+    authMessage.textContent = 'Cadastro realizado! Enviamos um e-mail para confirmação.' + (window.pendingInviteToken ? ' Convite aceito. Faça login para continuar.' : ' Você será redirecionado ao início.');
     setTimeout(() => {
-      window.location.href = 'index.html';
-    }, 2500);
+      if (window.pendingInviteToken) {
+        window.location.href = 'clientes.html';
+      } else {
+        window.location.href = 'index.html';
+      }
+    }, 2200);
   } catch (err) {
     authMessage.textContent = err.message || 'Erro ao criar conta.';
   }
