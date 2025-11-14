@@ -11,6 +11,12 @@ try {
   }
 
   $companyId = isset($_POST['company_id']) ? (int)$_POST['company_id'] : 0;
+  $selectedJson = $_POST['selected'] ?? '';
+  $selectedPositions = [];
+  if ($selectedJson) {
+    $tmpSel = json_decode($selectedJson, true);
+    if (is_array($tmpSel)) { $selectedPositions = array_values(array_filter($tmpSel, 'is_numeric')); }
+  }
   $role = isset($_POST['role']) ? strtolower(trim($_POST['role'])) : 'membro';
   if (!in_array($role, ['admin','gestor','membro','leitor'], true)) $role = 'membro';
 
@@ -173,7 +179,10 @@ try {
   if (!$hOk) { $start = 0; } // não reconheceu cabeçalho, assume dados já a partir da primeira
 
   $max = 50; $sent = 0; $failed = 0; $errors = [];
+  $selectedMap = [];
+  foreach ($selectedPositions as $p) { $selectedMap[(int)$p] = true; }
   for ($i = $start; $i < count($rows) && $sent + $failed < $max; $i++) {
+    if (!empty($selectedMap) && !isset($selectedMap[$i])) { continue; }
     [$name, $email, $cpf] = $rows[$i];
     $name = trim((string)$name); $email = trim((string)$email); $cpfDigits = preg_replace('/\D/','', (string)$cpf);
     // Se por qualquer razão a primeira linha de dados ainda for um cabeçalho, ignore

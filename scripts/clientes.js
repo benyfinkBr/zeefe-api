@@ -733,26 +733,95 @@ async function onCompanyXlsxSelected(evt){
   try {
     if (!/\.xlsx$/i.test(file.name)) { alert('Envie um arquivo .xlsx'); return; }
     if (!activeClient?.company_id) { alert('Empresa inválida.'); return; }
-    const role = companyInviteRole?.value || 'membro';
-    // Apenas uma confirmação simples
-    if (!confirm('Importar este XLSX (máximo 50 linhas)? Os convites serão enviados por e‑mail.')) return;
-    const fd = new FormData();
-    fd.append('file', file);
-    fd.append('company_id', String(activeClient.company_id));
-    fd.append('role', role);
-    const res = await fetch(`${API_BASE}/company_import_xlsx.php`, { method:'POST', body: fd });
+    // 1) Pré-visualização
+    const fd = new FormData(); fd.append('file', file);
+    const res = await fetch(`${API_BASE}/company_parse_xlsx.php`, { method:'POST', body: fd });
     const json = await res.json();
-    if (!json.success) throw new Error(json.error || 'Falha ao importar XLSX.');
-    const errs = Array.isArray(json.errors) && json.errors.length ? `\nErros: \n- ${json.errors.slice(0,5).join('\n- ')}${json.errors.length>5?'\n…':''}` : '';
-    alert(`Convites enviados: ${json.sent || 0}. Falhas: ${json.failed || 0}.${errs}`);
-    // Atualiza convites
-    setCompanySubtab('users');
-    await loadCompanyInvites();
+    if (!json.success) throw new Error(json.error || 'Falha ao ler XLSX.');
+    showXlsxPreviewModal(file, json.rows || []);
   } catch (e) {
     alert(e.message || 'Não foi possível processar o XLSX.');
   } finally {
     evt.target.value = '';
   }
+}
+
+// Pré-visualização de XLSX
+let xlsxPreviewFile = null;
+function showXlsxPreviewModal(file, rows) {
+  xlsxPreviewFile = file;
+  const modal = document.getElementById('xlsxPreviewModal');
+  const tableWrap = document.getElementById('xlsxPreviewTable');
+  const closeBtn = document.getElementById('xlsxPreviewClose');
+  const cancelBtn = document.getElementById('xlsxPreviewCancel');
+  const confirmBtn = document.getElementById('xlsxPreviewConfirm');
+  if (!modal || !tableWrap) return;
+
+  const body = document.createElement('div');
+  const validRows = rows.filter(r => r.valid);
+  const header = `
+    <table>
+      <thead><tr>
+        <th><input type="checkbox" id="xlsxCheckAll" ${validRows.length? 'checked':''}></th>
+        <th>Linha</th><th>Nome</th><th>E‑mail</th><th>CPF</th><th>Status</th>
+      </tr></thead>
+      <tbody id="xlsxPreviewTBody"></tbody>
+    </table>`;
+  tableWrap.innerHTML = header;
+  const tbody = document.getElementById('xlsxPreviewTBody');
+  rows.forEach(r => {
+    const tr = document.createElement('tr');
+    if (!r.valid) tr.style.background = '#FFF3CD';
+    const status = r.valid ? 'ok' : ('Inválido: ' + (Array.isArray(r.reasons)? r.reasons.join(', ') : ''));
+    tr.innerHTML = `
+      <td><input type="checkbox" data-pos="${r.pos}" ${r.valid? 'checked':''}></td>
+      <td>${r.excel_row}</td>
+      <td>${escapeHtml(r.name||'')}</td>
+      <td>${escapeHtml(r.email||'')}</td>
+      <td>${formatCPF(r.cpf_digits||r.cpf_raw||'')}</td>
+      <td>${escapeHtml(status)}</td>`;
+    tbody.appendChild(tr);
+  });
+
+  const checkAll = document.getElementById('xlsxCheckAll');
+  checkAll?.addEventListener('change', () => {
+    tbody.querySelectorAll('input[type="checkbox"]').forEach(ch => { if (rows.find(r=>String(r.pos)===ch.dataset.pos)?.valid) ch.checked = checkAll.checked; });
+  });
+
+  const hide = () => { modal.classList.remove('show'); modal.setAttribute('aria-hidden','true'); };
+  closeBtn?.addEventListener('click', hide, { once:true });
+  cancelBtn?.addEventListener('click', hide, { once:true });
+  confirmBtn?.addEventListener('click', async () => {
+    const selected = Array.from(tbody.querySelectorAll('input[type="checkbox"]'))
+      .filter(ch => ch.checked)
+      .map(ch => parseInt(ch.dataset.pos,10))
+      .filter(n => !Number.isNaN(n));
+    if (!selected.length) { alert('Selecione ao menos uma linha válida.'); return; }
+    try {
+      confirmBtn.disabled = true;
+      const role = companyInviteRole?.value || 'membro';
+      const fd2 = new FormData();
+      fd2.append('file', xlsxPreviewFile);
+      fd2.append('company_id', String(activeClient.company_id));
+      fd2.append('role', role);
+      fd2.append('selected', JSON.stringify(selected));
+      const res2 = await fetch(`${API_BASE}/company_import_xlsx.php`, { method:'POST', body: fd2 });
+      const json2 = await res2.json();
+      if (!json2.success) throw new Error(json2.error || 'Falha ao importar.');
+      const errs = Array.isArray(json2.errors) && json2.errors.length ? `\nErros: \n- ${json2.errors.slice(0,5).join('\n- ')}${json2.errors.length>5?'\n…':''}` : '';
+      alert(`Convites enviados: ${json2.sent || 0}. Falhas: ${json2.failed || 0}.${errs}`);
+      hide();
+      setCompanySubtab('users');
+      await loadCompanyInvites();
+    } catch (e) {
+      alert(e.message || 'Erro ao finalizar importação.');
+    } finally {
+      confirmBtn.disabled = false;
+    }
+  }, { once:true });
+
+  modal.classList.add('show');
+  modal.setAttribute('aria-hidden','false');
 }
 
 async function removeCompanyUser(clientId){

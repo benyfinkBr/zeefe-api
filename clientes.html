@@ -415,6 +415,24 @@
             </section>
           </div>
 
+          <!-- Modal de pré-visualização do XLSX -->
+          <div class="modal-overlay" id="xlsxPreviewModal" aria-hidden="true">
+            <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="xlsxPreviewTitle">
+              <button class="modal-close" type="button" id="xlsxPreviewClose" aria-label="Fechar">&times;</button>
+              <div class="modal-body">
+                <div class="modal-info" style="padding:24px; width:100%">
+                  <h2 id="xlsxPreviewTitle" style="margin-top:0">Pré‑visualização da importação</h2>
+                  <p class="rooms-message">Revise as linhas detectadas. Linhas inválidas aparecem destacadas e não serão importadas.</p>
+                  <div id="xlsxPreviewTable" class="responsive-table"></div>
+                  <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:12px;">
+                    <button type="button" class="btn btn-secondary" id="xlsxPreviewCancel">Cancelar</button>
+                    <button type="button" class="btn btn-primary" id="xlsxPreviewConfirm">Importar selecionados</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div id="panel-profile" class="portal-section" hidden>
             <article class="form-card profile-card">
               <h3>Dados do Cliente</h3>
