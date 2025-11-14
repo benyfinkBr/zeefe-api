@@ -92,22 +92,40 @@ try {
   if (isset($xml->sheetData->row)) {
     foreach ($xml->sheetData->row as $row) {
       $cells = ['A'=>'','B'=>'','C'=>''];
+      $colIndex = 0; // 0=>A,1=>B,2=>C
+
+      // helper para converter letras em índice (A=0, B=1, ...)
+      $toIndex = function($letters) {
+        if ($letters === '') return null;
+        $letters = strtoupper($letters);
+        $n = 0;
+        for ($i = 0; $i < strlen($letters); $i++) {
+          $n = $n * 26 + (ord($letters[$i]) - 64);
+        }
+        return $n - 1; // zero-based
+      };
+
       foreach ($row->c as $c) {
         $r = (string)$c['r']; // ex: A1
-        $col = preg_replace('/\d+/', '', $r);
-        if (!isset($cells[$col])) continue; // ignora colunas > C
+        $letters = preg_replace('/\d+/', '', $r);
+        $idx = $toIndex($letters);
+        if ($idx === null) { $idx = $colIndex; } // fallback sequencial quando 'r' não vem
+        // Atualiza colIndex para próxima célula
+        $colIndex = $idx + 1;
+        if ($idx < 0 || $idx > 2) continue; // só A/B/C
+        $col = $idx === 0 ? 'A' : ($idx === 1 ? 'B' : 'C');
+
         $t = (string)$c['t'];
         $val = '';
         if ($t === 's') {
           // Shared string table
-          $idx = (int) ((string)$c->v);
-          $val = $shared[$idx] ?? '';
+          $idxS = (int) ((string)$c->v);
+          $val = $shared[$idxS] ?? '';
         } elseif ($t === 'inlineStr') {
           // Inline string
           if (isset($c->is->t)) {
             $val = (string)$c->is->t;
           } elseif (isset($c->is)) {
-            // Concatena runs formatados, se existirem
             $tmp = '';
             foreach ($c->is->children() as $child) {
               if ($child->getName() === 't') $tmp .= (string)$child;
