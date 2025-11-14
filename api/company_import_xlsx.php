@@ -158,6 +158,19 @@ try {
   for ($i = $start; $i < count($rows) && $sent + $failed < $max; $i++) {
     [$name, $email, $cpf] = $rows[$i];
     $name = trim((string)$name); $email = trim((string)$email); $cpfDigits = preg_replace('/\D/','', (string)$cpf);
+    // Se por qualquer razão a primeira linha de dados ainda for um cabeçalho, ignore
+    try {
+      $isHeaderRow = false;
+      if (isset($normalize)) {
+        $nn = $normalize($name);
+        $ne = $normalize($email);
+        $nc = $normalize($cpf);
+        if ($nn === 'nome' && $ne === 'email' && $nc === 'cpf') {
+          $isHeaderRow = true;
+        }
+      }
+      if ($isHeaderRow) { continue; }
+    } catch (Throwable $e) { /* ignore */ }
     if ($name === '' || $email === '' || strlen($cpfDigits) !== 11) { $failed++; $errors[] = "Linha ".($i+1).": dados inválidos"; continue; }
 
     try {
