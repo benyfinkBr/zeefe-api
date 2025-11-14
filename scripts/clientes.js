@@ -674,6 +674,7 @@ async function loadCompanyInvites(){
         const actions = `
           ${canResend ? `<button class="btn btn-secondary btn-sm" data-invite-resend="${i.id}">Reenviar</button>` : ''}
           ${canCancel ? `<button class="btn btn-secondary btn-sm" data-invite-cancel="${i.id}">Cancelar</button>` : ''}
+          <button class="btn btn-secondary btn-sm" data-invite-delete="${i.id}">Excluir</button>
         `;
         return `<tr>
           <td>${name}</td><td>${email}</td><td>${cpf}</td><td>${role}</td><td>${status}</td><td>${when}</td><td>${actions}</td>
@@ -727,6 +728,24 @@ async function loadCompanyInvites(){
             await loadCompanyInvites();
           } catch (e) {
             alert(e.message || 'Erro ao reenviar convite.');
+          }
+        });
+      });
+      wrap.querySelectorAll('button[data-invite-delete]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const id = parseInt(btn.getAttribute('data-invite-delete'), 10);
+          if (!id) return;
+          if (!confirm('Excluir este convite?')) return;
+          try {
+            const res = await fetch(`${API_BASE}/company_delete_invite.php`, {
+              method:'POST', headers:{'Content-Type':'application/json'},
+              body: JSON.stringify({ id, company_id: activeClient.company_id, actor_id: activeClient.id })
+            });
+            const json = await res.json();
+            if (!json.success) throw new Error(json.error || 'Falha ao excluir.');
+            await loadCompanyInvites();
+          } catch (e) {
+            alert(e.message || 'Erro ao excluir convite.');
           }
         });
       });
