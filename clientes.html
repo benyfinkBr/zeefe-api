@@ -369,26 +369,26 @@
                 </div>
 
                 <div id="companyTab-users" class="company-panel" hidden>
-                  <div class="member-actions">
-                    <div class="field-row">
-                      <input type="text" id="companyInviteCpf" placeholder="CPF do membro (somente números)" maxlength="14">
-                      <input type="email" id="companyInviteEmail" placeholder="E-mail (opcional p/ reenviar)">
-                      <select id="companyInviteRole">
-                        <option value="membro">Membro</option>
-                        <option value="gestor">Gestor</option>
-                        <option value="leitor">Leitor</option>
-                        <option value="admin">Admin</option>
-                      </select>
+                  <div class="member-actions" id="companyMembersActions">
+                    <div class="company-action-cards">
+                      <button type="button" class="action-card" id="openInviteModal">
+                        <span class="icon">🔍</span>
+                        <span class="label">Convidar membro</span>
+                      </button>
+                      <button type="button" class="action-card" id="openManualModal">
+                        <span class="icon">✍️</span>
+                        <span class="label">Adicionar manualmente</span>
+                      </button>
+                      <button type="button" class="action-card" id="openImportModal">
+                        <span class="icon">📥</span>
+                        <span class="label">Importar contatos</span>
+                      </button>
+                      <button type="button" class="action-card" id="openManageInvites">
+                        <span class="icon">🗂️</span>
+                        <span class="label">Gerenciar convites</span>
+                      </button>
                     </div>
-                    <div class="btn-row">
-                      <button class="btn btn-secondary" type="button" id="companyInviteBtn">Convidar por CPF</button>
-                      <span class="chip">ou</span>
-                      <a class="btn btn-secondary" href="api/company_members_template_xlsx.php">Baixar modelo XLSX</a>
-                      <label class="btn btn-secondary" for="companyXlsxInput" style="cursor:pointer">Importar XLSX (até 50 linhas)</label>
-                      <input type="file" id="companyXlsxInput" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden>
-                      <button class="btn btn-secondary" type="button" id="companyResendBtn" title="Informe CPF ou E-mail">Reenviar convite</button>
-                      <button class="btn btn-secondary" type="button" id="companyManualBtn">Adicionar manualmente</button>
-                    </div>
+                    <input type="file" id="companyXlsxInput" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden>
                   </div>
 
                   <section class="card-block">
@@ -528,6 +528,94 @@
           <h2 id="reservationActionsTitle" style="margin-top:0">Ações da reserva</h2>
           <p id="reservationActionsMeta" class="rooms-message"></p>
           <div id="reservationActionsButtons" class="actions-grid"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Convidar membro -->
+  <div class="modal-overlay" id="inviteMemberModal" aria-hidden="true">
+    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="inviteMemberTitle">
+      <button class="modal-close" type="button" id="inviteMemberClose" aria-label="Fechar">&times;</button>
+      <div class="modal-body">
+        <div class="modal-info" style="padding:24px; width:100%">
+          <h2 id="inviteMemberTitle" style="margin-top:0">Convidar membro</h2>
+          <div class="form-grid-mini">
+            <div>
+              <label for="inviteCpf">CPF</label>
+              <input type="text" id="inviteCpf" maxlength="14" placeholder="Somente números" />
+            </div>
+            <div>
+              <label for="inviteEmail">E-mail</label>
+              <input type="email" id="inviteEmail" placeholder="Opcional para reenviar" />
+            </div>
+            <div>
+              <label for="inviteRole">Papel</label>
+              <select id="inviteRole">
+                <option value="membro">Membro</option>
+                <option value="gestor">Gestor</option>
+                <option value="leitor">Leitor</option>
+                <option value="admin">Admin</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row" style="display:flex; gap:8px; align-items:center;">
+            <button class="btn btn-secondary" type="button" id="inviteLookupBtn">Buscar</button>
+            <span id="inviteLookupResult" class="rooms-message"></span>
+          </div>
+          <div class="modal-actions" style="margin-top:12px; display:flex; gap:12px; justify-content:flex-end;">
+            <button type="button" class="btn btn-secondary" id="inviteMemberCancel">Cancelar</button>
+            <button type="button" class="btn btn-primary" id="inviteMemberSend">Enviar convite</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Adicionar manualmente -->
+  <div class="modal-overlay" id="manualMembersModal" aria-hidden="true">
+    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="manualMembersTitle">
+      <button class="modal-close" type="button" id="manualMembersClose" aria-label="Fechar">&times;</button>
+      <div class="modal-body">
+        <div class="modal-info" style="padding:24px; width:100%">
+          <h2 id="manualMembersTitle" style="margin-top:0">Adicionar membros manualmente</h2>
+          <div class="responsive-table" style="max-height:50vh; overflow:auto;">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Nome</th>
+                  <th>E-mail</th>
+                  <th>CPF</th>
+                  <th>Papel</th>
+                </tr>
+              </thead>
+              <tbody id="manualMembersTBody"></tbody>
+            </table>
+          </div>
+          <div style="display:flex; gap:8px; justify-content:space-between; margin-top:10px;">
+            <button type="button" class="btn btn-secondary btn-sm" id="manualAddRow">Adicionar linha</button>
+            <div>
+              <button type="button" class="btn btn-secondary" id="manualMembersCancel">Cancelar</button>
+              <button type="button" class="btn btn-primary" id="manualMembersSubmit">Importar selecionados</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Importar contatos -->
+  <div class="modal-overlay" id="importContactsModal" aria-hidden="true">
+    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="importContactsTitle">
+      <button class="modal-close" type="button" id="importContactsClose" aria-label="Fechar">&times;</button>
+      <div class="modal-body">
+        <div class="modal-info" style="padding:24px; width:100%">
+          <h2 id="importContactsTitle" style="margin-top:0">Importar contatos</h2>
+          <p class="rooms-message">Baixe o modelo, preencha até 50 linhas (Nome, E‑mail, CPF) e importe para revisar e enviar convites.</p>
+          <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+            <a class="btn btn-secondary" href="api/company_members_template_xlsx.php">Baixar modelo XLSX</a>
+            <button type="button" class="btn btn-primary" id="importPickFile">Selecionar arquivo</button>
+          </div>
         </div>
       </div>
     </div>

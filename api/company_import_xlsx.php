@@ -24,12 +24,14 @@ try {
       $name = trim((string)($r['name'] ?? ''));
       $email = trim((string)($r['email'] ?? ''));
       $cpfDigits = preg_replace('/\D/','', (string)($r['cpf'] ?? ''));
+      $roleRow = isset($r['role']) ? strtolower(trim((string)$r['role'])) : $role;
+      if (!in_array($roleRow, ['admin','gestor','membro','leitor'], true)) $roleRow = 'membro';
       if ($name==='' || $email==='' || !filter_var($email,FILTER_VALIDATE_EMAIL) || strlen($cpfDigits)!==11) { $failed++; $errors[]='Linha '.($idx+1).': dados inválidos'; continue; }
       try {
         try { $pdo->exec("CREATE TABLE IF NOT EXISTS company_invitations (id BIGINT AUTO_INCREMENT PRIMARY KEY, company_id BIGINT NOT NULL, client_id BIGINT NULL, invite_email VARCHAR(255) NULL, invite_name VARCHAR(255) NULL, cpf VARCHAR(14) NOT NULL, role ENUM('admin','gestor','membro','leitor') NOT NULL DEFAULT 'membro', token VARCHAR(128) NOT NULL, status ENUM('pendente','aceito','cancelado','expirado') NOT NULL DEFAULT 'pendente', expires_at DATETIME NOT NULL, created_at DATETIME NOT NULL, accepted_at DATETIME NULL, INDEX idx_inv_company (company_id), UNIQUE KEY uk_inv_token (token)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"); } catch (Throwable $e) {}
         $token = bin2hex(random_bytes(24)); $expires=(new DateTime('+48 hours'))->format('Y-m-d H:i:s'); $now=(new DateTime())->format('Y-m-d H:i:s');
         $ins=$pdo->prepare('INSERT INTO company_invitations (company_id, client_id, invite_email, invite_name, cpf, role, token, status, expires_at, created_at) VALUES (:company_id, NULL, :invite_email, :invite_name, :cpf, :role, :token, "pendente", :expires, :created)');
-        $ins->execute([':company_id'=>$companyId, ':invite_email'=>$email, ':invite_name'=>$name, ':cpf'=>$cpfDigits, ':role'=>$role, ':token'=>$token, ':expires'=>$expires, ':created'=>$now]);
+        $ins->execute([':company_id'=>$companyId, ':invite_email'=>$email, ':invite_name'=>$name, ':cpf'=>$cpfDigits, ':role'=>$roleRow, ':token'=>$token, ':expires'=>$expires, ':created'=>$now]);
         $cstmt=$pdo->prepare('SELECT nome_fantasia, razao_social FROM companies WHERE id = :id LIMIT 1'); $cstmt->execute([':id'=>$companyId]); $company=$cstmt->fetch(PDO::FETCH_ASSOC)?:[]; $companyName=$company['nome_fantasia']??$company['razao_social']??'sua empresa';
         $host=(isset($_SERVER['HTTPS'])&&$_SERVER['HTTPS']==='on'?'https://':'http://').($_SERVER['HTTP_HOST']??'localhost'); $acceptUrl=$host.'/api/company_accept_invite.php?token='.urlencode($token);
         $html=mailer_render('company_user_invite.php',['company_name'=>$companyName,'accept_url'=>$acceptUrl,'client_name'=>$name]); mailer_send([$email],'Convite para acessar empresa no portal Ze.EFE',$html);

@@ -91,6 +91,27 @@ const bookingDescriptionInput = bookingForm?.querySelector('textarea[name="descr
 const reservationsContainer = document.getElementById('reservationsContainer');
 // Modal de ações da reserva
 const reservationActionsModal = document.getElementById('reservationActionsModal');
+// Empresa/Membros modais
+const inviteMemberModal = document.getElementById('inviteMemberModal');
+const inviteMemberClose = document.getElementById('inviteMemberClose');
+const inviteMemberCancel = document.getElementById('inviteMemberCancel');
+const inviteCpfInput = document.getElementById('inviteCpf');
+const inviteEmailInput = document.getElementById('inviteEmail');
+const inviteRoleSelect = document.getElementById('inviteRole');
+const inviteLookupBtn = document.getElementById('inviteLookupBtn');
+const inviteLookupResult = document.getElementById('inviteLookupResult');
+const inviteMemberSend = document.getElementById('inviteMemberSend');
+
+const manualMembersModal = document.getElementById('manualMembersModal');
+const manualMembersClose = document.getElementById('manualMembersClose');
+const manualMembersCancel = document.getElementById('manualMembersCancel');
+const manualMembersTBody = document.getElementById('manualMembersTBody');
+const manualAddRowBtn = document.getElementById('manualAddRow');
+const manualMembersSubmit = document.getElementById('manualMembersSubmit');
+
+const importContactsModal = document.getElementById('importContactsModal');
+const importContactsClose = document.getElementById('importContactsClose');
+const importPickFileBtn = document.getElementById('importPickFile');
 const reservationActionsClose = document.getElementById('reservationActionsClose');
 const reservationActionsTitle = document.getElementById('reservationActionsTitle');
 const reservationActionsMeta = document.getElementById('reservationActionsMeta');
@@ -315,6 +336,30 @@ async function initialize() {
   editPhone?.addEventListener('input', () => { const d = somenteDigitos(editPhone.value).slice(0,11); editPhone.value = formatPhone(d); });
   editWhatsapp?.addEventListener('input', () => { const d = somenteDigitos(editWhatsapp.value).slice(0,11); editWhatsapp.value = formatPhone(d); });
 
+  // Empresa/Membros modais
+  document.getElementById('openInviteModal')?.addEventListener('click', openInviteMemberModal);
+  document.getElementById('openManualModal')?.addEventListener('click', openManualMembersModal);
+  document.getElementById('openImportModal')?.addEventListener('click', openImportContactsModal);
+  document.getElementById('openManageInvites')?.addEventListener('click', () => {
+    setCompanySubtab('users');
+    document.getElementById('companyInvitesBlock')?.scrollIntoView({ behavior: 'smooth' });
+  });
+  inviteMemberClose?.addEventListener('click', closeInviteMemberModal);
+  inviteMemberCancel?.addEventListener('click', closeInviteMemberModal);
+  inviteMemberModal?.addEventListener('click', (e) => { if (e.target === inviteMemberModal) closeInviteMemberModal(); });
+  inviteLookupBtn?.addEventListener('click', onInviteLookup);
+  inviteMemberSend?.addEventListener('click', onInviteSend);
+
+  manualMembersClose?.addEventListener('click', closeManualMembersModal);
+  manualMembersCancel?.addEventListener('click', closeManualMembersModal);
+  manualMembersModal?.addEventListener('click', (e)=>{ if (e.target===manualMembersModal) closeManualMembersModal(); });
+  manualAddRowBtn?.addEventListener('click', () => addManualRow());
+  manualMembersSubmit?.addEventListener('click', onManualMembersSubmit);
+
+  importContactsClose?.addEventListener('click', closeImportContactsModal);
+  importContactsModal?.addEventListener('click', (e)=>{ if (e.target===importContactsModal) closeImportContactsModal(); });
+  importPickFileBtn?.addEventListener('click', ()=> document.getElementById('companyXlsxInput')?.click());
+
   // Scope buttons
   scopePFBtn?.addEventListener('click', () => setPortalScope('pf'));
   scopeCompanyBtn?.addEventListener('click', () => setPortalScope('company'));
@@ -449,14 +494,14 @@ function setActivePanel(panelName = 'book') {
   } else if (target === 'profile') {
     renderProfile();
   } else if (target === 'company' && activeClient) {
-    if (!activeClient.company_master) {
+    if (!activeClient.company_id) {
       // fallback caso alguém force via hash/URL
       setPortalScope('pf');
       return;
     }
     carregarEmpresaOverview();
     // default subtab
-    setCompanySubtab('overview');
+    setCompanySubtab('users');
   }
 }
 
@@ -516,7 +561,7 @@ function setCompanySubtab(tab) {
   const key = ['overview','users','reservations','finance'].includes(tab) ? tab : 'overview';
   companyTabs.forEach(b => b.classList.toggle('active', b.dataset.companyTab === key));
   Object.entries(companyPanels).forEach(([k, el]) => { if (el) el.hidden = (k !== key); });
-  if (!activeClient || !activeClient.company_master) return;
+  if (!activeClient || !activeClient.company_id) return;
   if (key === 'users') loadCompanyUsers();
   if (key === 'users') loadCompanyInvites();
   if (key === 'reservations') loadCompanyReservations();
@@ -690,7 +735,7 @@ async function onCompanyInviteSubmit() {
   const digits = somenteDigitos(companyInviteCpf?.value).slice(0,11);
   if (companyInviteCpf) companyInviteCpf.value = formatCPF(digits);
   if (digits.length !== 11) { alert('Informe um CPF válido.'); return; }
-  const role = companyInviteRole?.value || 'membro';
+  const role = 'membro';
   try {
     companyInviteBtn.disabled = true;
     const res = await fetch(`${API_BASE}/company_invite_user.php`, {
@@ -758,7 +803,7 @@ async function onCompanyCsvSelected(evt){
     if (!entries.length) { alert('CSV inválido. Use o modelo com Nome,E-mail,CPF.'); return; }
     if (!confirm(`Detectamos ${entries.length} linha(s). Enviar convites agora?`)) return;
     let ok = 0, fail = 0;
-    const role = companyInviteRole?.value || 'membro';
+    const role = 'membro';
     for (const row of entries) {
       try {
         const res = await fetch(`${API_BASE}/company_invite_user.php`, {
@@ -927,7 +972,7 @@ function showXlsxPreviewModal(file, rows) {
     if (!selected.length) { alert('Selecione ao menos uma linha válida.'); return; }
     try {
       confirmBtn.disabled = true;
-      const role = companyInviteRole?.value || 'membro';
+      const role = 'membro';
       const payload = { company_id: activeClient.company_id, role, rows: selected };
       const res2 = await fetch(`${API_BASE}/company_import_xlsx.php`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
       const json2 = await res2.json();
@@ -960,6 +1005,126 @@ async function removeCompanyUser(clientId){
     if (!json.success) throw new Error(json.error || 'Falha ao remover.');
     loadCompanyUsers();
   } catch (e) { alert(e.message || 'Erro ao remover.'); }
+}
+
+// ===== Empresa/Membros — Novos Modais e Fluxos =====
+function openInviteMemberModal(){
+  if (!activeClient?.company_id || !inviteMemberModal) return;
+  inviteCpfInput && (inviteCpfInput.value = '');
+  inviteEmailInput && (inviteEmailInput.value = '');
+  inviteRoleSelect && (inviteRoleSelect.value = 'membro');
+  if (inviteLookupResult) inviteLookupResult.textContent = '';
+  inviteMemberModal.classList.add('show');
+  inviteMemberModal.setAttribute('aria-hidden','false');
+}
+function closeInviteMemberModal(){
+  inviteMemberModal?.classList.remove('show');
+  inviteMemberModal?.setAttribute('aria-hidden','true');
+}
+async function onInviteLookup(){
+  const cpf = somenteDigitos(inviteCpfInput?.value).slice(0,11);
+  const email = (inviteEmailInput?.value || '').trim();
+  if (!cpf && !email) { if (inviteLookupResult) inviteLookupResult.textContent = 'Informe CPF ou e‑mail.'; return; }
+  try {
+    const res = await fetch(`${API_BASE}/company_lookup_user.php`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ cpf, email }) });
+    const json = await res.json();
+    if (json.success && json.found) {
+      inviteLookupResult.textContent = `Encontrado: ${json.client.name || json.client.email}`;
+    } else {
+      inviteLookupResult.textContent = 'Não encontrado. Será enviado convite de pré‑cadastro.';
+    }
+  } catch (e) {
+    inviteLookupResult.textContent = 'Falha ao buscar.';
+  }
+}
+async function onInviteSend(){
+  if (!activeClient?.company_id) return;
+  const cpf = somenteDigitos(inviteCpfInput?.value).slice(0,11);
+  const email = (inviteEmailInput?.value || '').trim();
+  const role = inviteRoleSelect?.value || 'membro';
+  if (!cpf || cpf.length!==11) { alert('Informe um CPF válido.'); return; }
+  try {
+    inviteMemberSend.disabled = true;
+    const res = await fetch(`${API_BASE}/company_invite_user.php`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ company_id: activeClient.company_id, cpf, email, role }) });
+    const json = await res.json();
+    if (!json.success) throw new Error(json.error || 'Não foi possível enviar o convite.');
+    alert(json.message || 'Convite enviado.');
+    closeInviteMemberModal();
+    await loadCompanyInvites();
+  } catch (e) { alert(e.message || 'Falha ao convidar.'); }
+  finally { inviteMemberSend.disabled = false; }
+}
+
+function openManualMembersModal(){
+  if (!activeClient?.company_id || !manualMembersModal || !manualMembersTBody) return;
+  manualMembersTBody.innerHTML = '';
+  for (let i=0;i<20;i++) addManualRow();
+  manualMembersModal.classList.add('show');
+  manualMembersModal.setAttribute('aria-hidden','false');
+}
+function closeManualMembersModal(){
+  manualMembersModal?.classList.remove('show');
+  manualMembersModal?.setAttribute('aria-hidden','true');
+}
+function addManualRow(){
+  if (!manualMembersTBody) return;
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td><input type="text" placeholder="Nome"/></td>
+    <td><input type="email" placeholder="email@exemplo.com"/></td>
+    <td><input type="text" placeholder="000.000.000-00"/></td>
+    <td>
+      <select>
+        <option value="membro">Membro</option>
+        <option value="gestor">Gestor</option>
+        <option value="leitor">Leitor</option>
+        <option value="admin">Admin</option>
+      </select>
+    </td>`;
+  const cpfInput = tr.children[2].querySelector('input');
+  cpfInput.addEventListener('input', ()=> { const d = somenteDigitos(cpfInput.value).slice(0,11); cpfInput.value = formatCPF(d); });
+  manualMembersTBody.appendChild(tr);
+}
+async function onManualMembersSubmit(){
+  if (!activeClient?.company_id) return;
+  const rows = [];
+  Array.from(manualMembersTBody?.children || []).forEach(tr => {
+    const [nameEl, emailEl, cpfEl, roleEl] = [
+      tr.children[0].querySelector('input'),
+      tr.children[1].querySelector('input'),
+      tr.children[2].querySelector('input'),
+      tr.children[3].querySelector('select')
+    ];
+    const name = (nameEl?.value||'').trim();
+    const email = (emailEl?.value||'').trim();
+    const cpf = somenteDigitos(cpfEl?.value||'').slice(0,11);
+    const role = roleEl?.value || 'membro';
+    if (!name && !email && !cpf) return; // linha vazia
+    if (!name || !email || cpf.length!==11) return; // ignora inválida
+    rows.push({ name, email, cpf, role });
+  });
+  if (!rows.length) { alert('Preencha ao menos uma linha válida.'); return; }
+  try {
+    manualMembersSubmit.disabled = true;
+    const res = await fetch(`${API_BASE}/company_import_xlsx.php`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ company_id: activeClient.company_id, rows }) });
+    const json = await res.json();
+    if (!json.success) throw new Error(json.error || 'Falha ao enviar convites.');
+    const errs = Array.isArray(json.errors) && json.errors.length ? `\nErros: \n- ${json.errors.slice(0,5).join('\n- ')}${json.errors.length>5?'\n…':''}` : '';
+    alert(`Convites enviados: ${json.sent || 0}. Falhas: ${json.failed || 0}.${errs}`);
+    closeManualMembersModal();
+    await loadCompanyInvites();
+  } catch (e) { alert(e.message || 'Erro ao processar.'); }
+  finally { manualMembersSubmit.disabled = false; }
+}
+
+function openImportContactsModal(){
+  if (!importContactsModal) return;
+  importContactsModal.classList.add('show');
+  importContactsModal.setAttribute('aria-hidden','false');
+}
+function closeImportContactsModal(){
+  importContactsModal?.classList.remove('show');
+  importContactsModal?.setAttribute('aria-hidden','true');
 }
 
 async function loadCompanyReservations(){
@@ -1778,15 +1943,15 @@ function aplicarClienteAtivo(cliente) {
   if (clientCompanyEl) {
     clientCompanyEl.textContent = obterNomeEmpresa(activeClient.company_id) || (activeClient.company_id ? 'Empresa não localizada' : 'Cliente pessoa física');
   }
-  // Exibe a aba Empresa somente se houver company_id
+  // Exibe a aba Empresa para qualquer usuário que pertença a uma empresa
   if (companyTabButton) {
-    const showCompany = Boolean(activeClient.company_master);
+    const showCompany = Boolean(activeClient.company_id);
     companyTabButton.hidden = !showCompany;
     if (!showCompany && portalSections.company) portalSections.company.hidden = true;
   }
   // Toggle scope switch buttons visibility
   if (scopeCompanyBtn) {
-    const showCompany = Boolean(activeClient.company_master);
+    const showCompany = Boolean(activeClient.company_id);
     scopeCompanyBtn.hidden = !showCompany;
   }
   // Exibe checkbox "Reserva pela empresa" para qualquer usuário com company_id
@@ -1796,7 +1961,7 @@ function aplicarClienteAtivo(cliente) {
   renderProfile();
   resetBookingForm();
   // Apply desired scope after login (fallback to PF if no company)
-  const scopeToApply = (desiredScope === 'company' && activeClient.company_master) ? 'company' : 'pf';
+  const scopeToApply = (desiredScope === 'company' && activeClient.company_id) ? 'company' : 'pf';
   setPortalScope(scopeToApply);
   if (scopeToApply === 'company') setActivePanel('company'); else setActivePanel('book');
   atualizarPainel();
