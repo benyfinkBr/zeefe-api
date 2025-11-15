@@ -745,36 +745,27 @@ async function loadCompanyInvites(){
           if (!id) return;
           if (!confirm('Excluir este convite?')) return;
           try {
-            const res = await fetch(`${API_BASE}/company_delete_invite.php`, {
-              method:'POST', headers:{'Content-Type':'application/json'},
-              body: JSON.stringify({ id, company_id: activeClient.company_id, actor_id: activeClient.id })
-            });
-            const json = await parseJsonSafe(res);
-            if (!json.success) throw new Error(json.error || 'Falha ao excluir.');
+            let ok=false; let lastErr='';
+            try {
+              const res = await fetch(`${API_BASE}/company_delete_invite.php`, {
+                method:'POST', headers:{'Content-Type':'application/json'},
+                body: JSON.stringify({ id, company_id: activeClient.company_id, actor_id: activeClient.id })
+              });
+              if (res.ok) { const j=await parseJsonSafe(res); ok = !!j.success; if(!ok) lastErr=j.error||''; }
+              else { lastErr = `HTTP ${res.status}`; }
+            } catch (err) { lastErr = err.message || 'erro'; }
+            if (!ok) {
+              const res2 = await fetch(`${API_BASE}/company_cancel_invite.php`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ id }) });
+              const j2 = await parseJsonSafe(res2);
+              if (!j2.success) throw new Error(j2.error || `Falha ao excluir (${lastErr})`);
+            }
             await loadCompanyInvites();
           } catch (e) {
             alert(e.message || 'Erro ao excluir convite.');
           }
         });
       });
-      wrap.querySelectorAll('button[data-invite-delete]').forEach(btn => {
-        btn.addEventListener('click', async () => {
-          const id = parseInt(btn.getAttribute('data-invite-delete'), 10);
-          if (!id) return;
-          if (!confirm('Excluir este convite?')) return;
-          try {
-            const res = await fetch(`${API_BASE}/company_delete_invite.php`, {
-              method:'POST', headers:{'Content-Type':'application/json'},
-              body: JSON.stringify({ id, company_id: activeClient.company_id, actor_id: activeClient.id })
-            });
-            const json = await res.json();
-            if (!json.success) throw new Error(json.error || 'Falha ao excluir.');
-            await loadCompanyInvites();
-          } catch (e) {
-            alert(e.message || 'Erro ao excluir convite.');
-          }
-        });
-      });
+      
       wrap.querySelectorAll('th[data-sort]').forEach(th => {
         th.style.cursor = 'pointer';
         th.onclick = () => {
