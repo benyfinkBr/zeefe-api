@@ -34,13 +34,24 @@ try {
   if ($actorCompany !== $companyId) { http_response_code(403); echo json_encode(['success'=>false,'error'=>'Sem permissão']); exit; }
   $isMaster = ($masterId !== null && $masterId === $actorId);
   $isAdminish = in_array(strtolower((string)$actorRole), ['admin','gestor'], true);
-  if (!$isMaster && !$isAdminish) { http_response_code(403); echo json_encode(['success'=>false,'error':'Permissão negada']); exit; }
+  if (!$isMaster && !$isAdminish) { http_response_code(403); echo json_encode(['success'=>false,'error'=>'Permissão negada']); exit; }
 
-  $del = $pdo->prepare('DELETE FROM company_invitations WHERE id=:id AND company_id=:cid');
-  $del->execute([':id'=>$id, ':cid'=>$companyId]);
-  echo json_encode(['success'=>true, 'deleted'=> $del->rowCount()>0 ]);
+  // Tenta exclusão; se falhar, faz soft-cancel para evitar 500
+  try {
+    $del = $pdo->prepare('DELETE FROM company_invitations WHERE id=:id AND company_id=:cid');
+    $del->execute([':id'=>$id, ':cid'=>$companyId]);
+    if ($del->rowCount() > 0) {
+      echo json_encode(['success'=>true,'deleted'=>true]);
+      exit;
+    }
+  } catch (Throwable $e) {
+    // continua para soft-cancel
+  }
+  // Soft-cancel (status = cancelado)
+  $upd = $pdo->prepare("UPDATE company_invitations SET status='cancelado' WHERE id=:id AND company_id=:cid");
+  $upd->execute([':id'=>$id, ':cid'=>$companyId]);
+  echo json_encode(['success'=>true,'deleted'=>false,'status'=>'cancelado']);
 } catch (Throwable $e) {
   http_response_code(500);
   echo json_encode(['success'=>false,'error'=>'Erro interno: '.$e->getMessage()]);
 }
-
