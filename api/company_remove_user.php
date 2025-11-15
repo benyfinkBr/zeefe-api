@@ -72,12 +72,17 @@ try {
     exit;
   }
 
-  $upd = $pdo->prepare('UPDATE clients SET company_id = NULL, company_role = NULL, updated_at = NOW() WHERE id = :cid AND company_id = :company');
-  $upd->execute([':cid' => $clientId, ':company' => $companyId]);
+  // Atualiza vínculo; se a coluna company_role não existir, faz fallback
+  try {
+    $upd = $pdo->prepare('UPDATE clients SET company_id = NULL, company_role = NULL, updated_at = NOW() WHERE id = :cid AND company_id = :company');
+    $upd->execute([':cid' => $clientId, ':company' => $companyId]);
+  } catch (Throwable $e) {
+    $upd = $pdo->prepare('UPDATE clients SET company_id = NULL, updated_at = NOW() WHERE id = :cid AND company_id = :company');
+    $upd->execute([':cid' => $clientId, ':company' => $companyId]);
+  }
 
   echo json_encode(['success' => true, 'removed' => $upd->rowCount() > 0]);
 } catch (Throwable $e) {
   http_response_code(500);
   echo json_encode(['success' => false, 'error' => 'Erro interno: ' . $e->getMessage()]);
 }
-
