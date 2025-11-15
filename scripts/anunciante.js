@@ -7,7 +7,7 @@ let myRooms = [];
 let myReservations = [];
 
 // Seletores
-const authOverlay = document.getElementById('advAuthOverlay');
+const authContainer = document.getElementById('authContainer');
 const loginForm = document.getElementById('advLoginForm');
 const loginIdInput = document.getElementById('advLoginIdentifier');
 const loginPwInput = document.getElementById('advLoginPassword');
@@ -43,9 +43,16 @@ const savePayoutBtn = document.getElementById('savePayoutBtn');
 const payoutMessage = document.getElementById('payoutMessage');
 
 function setAuthVisible(show) {
-  if (!authOverlay) return;
-  authOverlay.hidden = !show;
-  if (show) authOverlay.classList.remove('fade-out');
+  if (!authContainer) return;
+  if (show) {
+    document.body.classList.add('client-logged-out');
+    document.body.classList.remove('client-authenticated');
+    authContainer.hidden = false;
+  } else {
+    document.body.classList.add('client-authenticated');
+    document.body.classList.remove('client-logged-out');
+    authContainer.hidden = true;
+  }
 }
 
 async function parseJsonSafe(res) {

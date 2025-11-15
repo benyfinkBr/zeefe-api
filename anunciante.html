@@ -7,7 +7,7 @@
   <link rel="icon" href="favicon.ico" />
   <link rel="stylesheet" href="style.css" />
 </head>
-<body>
+<body class="client-portal-page client-logged-out">
   <header class="site-header">
     <div class="header-inner">
       <a class="brand" href="index.html">Ze.EFE</a>
@@ -21,32 +21,57 @@
     </div>
   </header>
 
-  <main class="portal">
-    <aside class="portal-sidebar">
-      <div class="profile-mini">
-        <div class="avatar">🏢</div>
-        <div class="who">
-          <strong id="advDisplay">Anunciante</strong>
-          <div id="advOwner">—</div>
+  <main class="client-portal">
+    <!-- Auth overlay (reutiliza estilo do portal do cliente) -->
+    <section id="authContainer" class="auth-container">
+      <div class="auth-screen" id="authLogin">
+        <div class="login-card">
+          <img src="img/logo.jpg" alt="Ze.EFE">
+          <h2>Portal do Anunciante<br><span>Ze.EFE</span></h2>
+          <form id="advLoginForm" autocomplete="on">
+            <input type="text" id="advLoginIdentifier" placeholder="E‑mail ou CPF" required autocomplete="username" />
+            <input type="password" id="advLoginPassword" placeholder="Senha" required autocomplete="current-password" />
+            <label class="remember" style="display:flex;align-items:center;gap:8px;">
+              <input type="checkbox" id="advRememberMe" /> Lembrar login neste computador
+            </label>
+            <button class="btn btn-primary" type="submit">Entrar</button>
+          </form>
+          <div id="advAuthMessage" class="rooms-message" style="margin-top:8px"></div>
+          <p class="form-help">Não tem cadastro? <a href="divulgue.html">Divulgue sua sala</a>.</p>
         </div>
       </div>
-      <div class="sidebar-nav">
-        <button class="btn btn-secondary portal-nav active" data-panel="overview">Visão Geral</button>
-        <button class="btn btn-secondary portal-nav" data-panel="rooms">Minhas Salas</button>
-        <button class="btn btn-secondary portal-nav" data-panel="reservations">Reservas</button>
-        <button class="btn btn-secondary portal-nav" data-panel="finance">Financeiro</button>
-        <button class="btn btn-secondary portal-nav" data-panel="messages">Mensagens</button>
-        <button class="btn btn-secondary portal-nav" data-panel="reviews">Avaliações</button>
-        <hr/>
-        <button class="btn btn-secondary" id="advRefreshBtn">Atualizar</button>
-        <button class="btn btn-secondary" id="advLogoutBtn">Sair</button>
-      </div>
-    </aside>
+    </section>
 
-    <section class="portal-content" id="advPanels" hidden>
-      <header class="portal-title">
-        <h1>Portal do Anunciante</h1>
-      </header>
+    <div class="portal-shell">
+      <aside class="portal-nav">
+        <div class="portal-nav-brand">
+          <img src="img/logo.jpg" alt="Ze.EFE"/>
+          <h2 id="advDisplay">Anunciante</h2>
+          <div class="portal-subtitle" id="advOwner">—</div>
+        </div>
+        <nav class="portal-nav-links">
+          <button class="active" data-panel="overview">Visão Geral</button>
+          <button data-panel="rooms">Minhas Salas</button>
+          <button data-panel="reservations">Reservas</button>
+          <button data-panel="finance">Financeiro</button>
+          <button data-panel="messages">Mensagens</button>
+          <button data-panel="reviews">Avaliações</button>
+        </nav>
+        <button class="nav-logout" id="advLogoutBtn">Sair</button>
+      </aside>
+
+      <div class="portal-main">
+        <header class="portal-header">
+          <div>
+            <h1 style="margin:0">Portal do Anunciante</h1>
+            <div class="portal-subtitle">Gerencie suas salas, reservas e repasses</div>
+          </div>
+          <div class="portal-actions">
+            <button class="btn btn-secondary btn-sm" id="advRefreshBtn">Atualizar</button>
+          </div>
+        </header>
+
+        <div class="portal-content" id="advPanels" hidden>
 
       <div id="panel-overview" class="portal-section">
         <div class="grid-cards-3 stats-cards">
@@ -143,36 +168,28 @@
 
       <div id="panel-messages" class="portal-section" hidden>
         <h3>Mensagens</h3>
-        <div id="advThreadsContainer" class="responsive-table"></div>
+        <div class="messages-split">
+          <aside class="messages-threads" id="advThreadsContainer">
+            <div class="rooms-message">Carregando…</div>
+          </aside>
+          <section class="messages-chat" id="advChatArea" aria-live="polite">
+            <div id="advChatHeader" class="chat-header">Selecione uma conversa</div>
+            <div id="advChatMessages" class="chat-messages"></div>
+            <form id="advChatForm" class="chat-form" hidden>
+              <input type="text" id="advChatInput" placeholder="Digite uma mensagem" autocomplete="off" />
+              <button class="btn btn-primary" type="submit">Enviar</button>
+            </form>
+          </section>
+        </div>
       </div>
 
       <div id="panel-reviews" class="portal-section" hidden>
         <h3>Avaliações</h3>
         <div id="advReviewsContainer" class="responsive-table"></div>
+        </div>
       </div>
-    </section>
-  </main>
-
-  <!-- Overlay de autenticação (reutiliza login do portal de clientes) -->
-  <div class="auth-overlay" id="advAuthOverlay">
-    <div class="auth-card">
-      <h2>Entrar como Anunciante</h2>
-      <form id="advLoginForm">
-        <label>CPF ou E‑mail
-          <input type="text" id="advLoginIdentifier" autocomplete="username" />
-        </label>
-        <label>Senha
-          <input type="password" id="advLoginPassword" autocomplete="current-password" />
-        </label>
-        <label class="checkbox-inline">
-          <input type="checkbox" id="advRememberMe" /> Lembrar neste computador
-        </label>
-        <button class="btn btn-primary" type="submit">Entrar</button>
-        <div id="advAuthMessage" class="rooms-message" style="margin-top:8px"></div>
-        <p class="form-help">Não tem cadastro? Acesse <a href="divulgue.html">Divulgue sua sala</a>.</p>
-      </form>
     </div>
-  </div>
+  </main>
 
   <footer>
     <p>© 2025 Ze.EFE</p>
