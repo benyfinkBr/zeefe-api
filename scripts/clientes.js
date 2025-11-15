@@ -1062,7 +1062,7 @@ async function removeCompanyUser(clientId){
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({ company_id: activeClient.company_id, client_id: Number(clientId), actor_id: Number(activeClient.id) })
     });
-    const json = await res.json();
+    const json = await parseJsonSafe(res);
     if (!json.success) throw new Error(json.error || 'Falha ao remover.');
     loadCompanyUsers();
   } catch (e) { alert(e.message || 'Erro ao remover.'); }
@@ -1088,7 +1088,7 @@ async function onInviteLookup(){
   if (!cpf && !email) { if (inviteLookupResult) inviteLookupResult.textContent = 'Informe CPF ou e‑mail.'; return; }
   try {
     const res = await fetch(`${API_BASE}/company_lookup_user.php`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ cpf, email }) });
-    const json = await res.json();
+    const json = await parseJsonSafe(res);
     if (json.success && json.found) {
       inviteLookupResult.textContent = `Encontrado: ${json.client.name || json.client.email}`;
     } else {
@@ -1107,7 +1107,7 @@ async function onInviteSend(){
   try {
     inviteMemberSend.disabled = true;
     const res = await fetch(`${API_BASE}/company_invite_user.php`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ company_id: activeClient.company_id, cpf, email, role }) });
-    const json = await res.json();
+    const json = await parseJsonSafe(res);
     if (!json.success) throw new Error(json.error || 'Não foi possível enviar o convite.');
     alert(json.message || 'Convite enviado.');
     closeInviteMemberModal();
