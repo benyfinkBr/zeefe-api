@@ -14,6 +14,14 @@ let bookingCurrentMonth = new Date();
 const bookingToday = new Date();
 const bookingTodayISO = toISODate(bookingToday);
 
+// Helper: parse JSON safely to avoid "Unexpected end of JSON input"
+async function parseJsonSafe(res) {
+  const text = await res.text();
+  try { return JSON.parse(text); } catch (_) {
+    throw new Error(text || `Resposta inválida (HTTP ${res.status})`);
+  }
+}
+
 const bodyEl = document.body;
 const prefersReducedMotionQuery = window.matchMedia
   ? window.matchMedia('(prefers-reduced-motion: reduce)')
@@ -705,7 +713,7 @@ async function loadCompanyInvites(){
               method: 'POST', headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ id })
             });
-            const json = await res.json();
+            const json = await parseJsonSafe(res);
             if (!json.success) throw new Error(json.error || 'Falha ao cancelar.');
             await loadCompanyInvites();
           } catch (e) {
@@ -722,12 +730,30 @@ async function loadCompanyInvites(){
               method: 'POST', headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ id })
             });
-            const json = await res.json();
+            const json = await parseJsonSafe(res);
             if (!json.success) throw new Error(json.error || 'Falha ao reenviar.');
             alert(json.message || 'Convite reenviado.');
             await loadCompanyInvites();
           } catch (e) {
             alert(e.message || 'Erro ao reenviar convite.');
+          }
+        });
+      });
+      wrap.querySelectorAll('button[data-invite-delete]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const id = parseInt(btn.getAttribute('data-invite-delete'), 10);
+          if (!id) return;
+          if (!confirm('Excluir este convite?')) return;
+          try {
+            const res = await fetch(`${API_BASE}/company_delete_invite.php`, {
+              method:'POST', headers:{'Content-Type':'application/json'},
+              body: JSON.stringify({ id, company_id: activeClient.company_id, actor_id: activeClient.id })
+            });
+            const json = await parseJsonSafe(res);
+            if (!json.success) throw new Error(json.error || 'Falha ao excluir.');
+            await loadCompanyInvites();
+          } catch (e) {
+            alert(e.message || 'Erro ao excluir convite.');
           }
         });
       });
