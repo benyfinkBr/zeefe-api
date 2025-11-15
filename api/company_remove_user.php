@@ -72,14 +72,12 @@ try {
     exit;
   }
 
-  // Atualiza vínculo; se a coluna company_role não existir, faz fallback
+  // Atualiza vínculo (sempre remove company_id). Qualquer ajuste de role é best-effort e não bloqueia a operação.
+  $upd = $pdo->prepare('UPDATE clients SET company_id = NULL, updated_at = NOW() WHERE id = :cid AND company_id = :company');
+  $upd->execute([':cid' => $clientId, ':company' => $companyId]);
   try {
-    $upd = $pdo->prepare('UPDATE clients SET company_id = NULL, company_role = NULL, updated_at = NOW() WHERE id = :cid AND company_id = :company');
-    $upd->execute([':cid' => $clientId, ':company' => $companyId]);
-  } catch (Throwable $e) {
-    $upd = $pdo->prepare('UPDATE clients SET company_id = NULL, updated_at = NOW() WHERE id = :cid AND company_id = :company');
-    $upd->execute([':cid' => $clientId, ':company' => $companyId]);
-  }
+    @$pdo->exec("UPDATE clients SET company_role = NULL WHERE id = {$clientId} LIMIT 1");
+  } catch (Throwable $e) { /* ignora se coluna não existir */ }
 
   echo json_encode(['success' => true, 'removed' => $upd->rowCount() > 0]);
 } catch (Throwable $e) {
