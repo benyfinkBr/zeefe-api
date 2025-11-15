@@ -34,6 +34,13 @@ const resContainer = document.getElementById('advReservationsContainer');
 const finContainer = document.getElementById('advFinanceContainer');
 const threadsContainer = document.getElementById('advThreadsContainer');
 const reviewsContainer = document.getElementById('advReviewsContainer');
+// payout form
+const bankNameInput = document.getElementById('bankName');
+const accountTypeInput = document.getElementById('accountType');
+const accountNumberInput = document.getElementById('accountNumber');
+const pixKeyInput = document.getElementById('pixKey');
+const savePayoutBtn = document.getElementById('savePayoutBtn');
+const payoutMessage = document.getElementById('payoutMessage');
 
 function setAuthVisible(show) {
   if (!authOverlay) return;
@@ -94,6 +101,11 @@ async function loadAdvertiser() {
       advOwner.innerHTML = 'Acesse <a href="divulgue.html">Divulgue sua sala</a> para criar seu cadastro de anunciante.';
     } else {
       if (myAdvertiser.display_name) advDisplay.textContent = myAdvertiser.display_name;
+      // Preenche dados de repasse
+      bankNameInput && (bankNameInput.value = myAdvertiser.bank_name || '');
+      accountTypeInput && (accountTypeInput.value = myAdvertiser.account_type || '');
+      accountNumberInput && (accountNumberInput.value = myAdvertiser.account_number || '');
+      pixKeyInput && (pixKeyInput.value = myAdvertiser.pix_key || '');
     }
   } catch (_) { /* silencioso */ }
 }
@@ -242,7 +254,7 @@ async function loadReviews() {
         <tbody>${rows || '<tr><td colspan="4" style="text-align:center;padding:16px">Sem avaliações.</td></tr>'}</tbody>
       </table>`;
   } catch (e) {
-    reviewsContainer.innerHTML = '<div class="rooms-message">Falha ao carregar avaliações.</div>';
+  reviewsContainer.innerHTML = '<div class="rooms-message">Falha ao carregar avaliações.</div>';
   }
 }
 
@@ -256,7 +268,27 @@ loginForm?.addEventListener('submit', onLoginSubmit);
 logoutBtn?.addEventListener('click', () => { advClient = null; myAdvertiser=null; myRooms=[]; myReservations=[]; setAuthVisible(true); });
 refreshBtn?.addEventListener('click', () => { if (advClient) afterLogin(); });
 navButtons.forEach(btn => btn.addEventListener('click', () => setActivePanel(btn.dataset.panel)));
+savePayoutBtn?.addEventListener('click', async () => {
+  payoutMessage.textContent = '';
+  try {
+    const payload = {
+      advertiser_id: myAdvertiser?.id || null,
+      owner_type: 'client',
+      owner_id: advClient?.id,
+      bank_name: bankNameInput?.value || '',
+      account_type: accountTypeInput?.value || '',
+      account_number: accountNumberInput?.value || '',
+      pix_key: pixKeyInput?.value || ''
+    };
+    const res = await fetch(`${API_BASE}/advertiser_update_payment.php`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+    const json = await parseJsonSafe(res);
+    if (!json.success) throw new Error(json.error || 'Falha ao salvar.');
+    myAdvertiser = json.advertiser || myAdvertiser;
+    payoutMessage.textContent = 'Dados de repasse salvos.';
+  } catch (e) {
+    payoutMessage.textContent = e.message || 'Erro ao salvar.';
+  }
+});
 
 // Inicialização
 setAuthVisible(true);
-
