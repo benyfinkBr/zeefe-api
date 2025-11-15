@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Portal do Anunciante — Ze.EFE</title>
+  <link rel="icon" href="favicon.ico" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="brand" href="index.html">Ze.EFE</a>
+      <nav class="top-nav">
+        <a href="index.html">Início</a>
+        <a href="salas.html">Salas</a>
+        <a href="pre-reserva.html">Pré‑Reserva</a>
+        <a href="clientes.html">Área do cliente</a>
+        <a class="active" href="anunciante.html">Anunciante</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="portal">
+    <aside class="portal-sidebar">
+      <div class="profile-mini">
+        <div class="avatar">🏢</div>
+        <div class="who">
+          <strong id="advDisplay">Anunciante</strong>
+          <div id="advOwner">—</div>
+        </div>
+      </div>
+      <div class="sidebar-nav">
+        <button class="btn btn-secondary portal-nav active" data-panel="overview">Visão Geral</button>
+        <button class="btn btn-secondary portal-nav" data-panel="rooms">Minhas Salas</button>
+        <button class="btn btn-secondary portal-nav" data-panel="reservations">Reservas</button>
+        <button class="btn btn-secondary portal-nav" data-panel="finance">Financeiro</button>
+        <button class="btn btn-secondary portal-nav" data-panel="messages">Mensagens</button>
+        <button class="btn btn-secondary portal-nav" data-panel="reviews">Avaliações</button>
+        <hr/>
+        <button class="btn btn-secondary" id="advRefreshBtn">Atualizar</button>
+        <button class="btn btn-secondary" id="advLogoutBtn">Sair</button>
+      </div>
+    </aside>
+
+    <section class="portal-content" id="advPanels" hidden>
+      <header class="portal-title">
+        <h1>Portal do Anunciante</h1>
+      </header>
+
+      <div id="panel-overview" class="portal-section">
+        <div class="grid-cards-3 stats-cards">
+          <div class="stat-card">
+            <div class="stat-icon">👁️</div>
+            <div class="stat-text"><span class="stat-label">Visualizações (30 dias)</span><span class="stat-value" id="ovViews">—</span></div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">📅</div>
+            <div class="stat-text"><span class="stat-label">Reservas futuras</span><span class="stat-value" id="ovUpcoming">—</span></div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">💳</div>
+            <div class="stat-text"><span class="stat-label">Saldo disponível</span><span class="stat-value" id="ovBalance">—</span></div>
+          </div>
+        </div>
+        <div class="overview-split">
+          <div class="overview-box">
+            <h4>Próximas reservas</h4>
+            <div id="ovNextReservations" class="list-next"></div>
+          </div>
+          <div class="overview-box">
+            <h4>Ações rápidas</h4>
+            <div class="quick-actions">
+              <a class="btn btn-secondary btn-sm" href="divulgue.html">Divulgar nova sala</a>
+              <button class="btn btn-secondary btn-sm" data-panel="rooms">Gerir salas</button>
+              <button class="btn btn-secondary btn-sm" data-panel="finance">Ver extrato</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="panel-rooms" class="portal-section" hidden>
+        <h3>Minhas Salas</h3>
+        <div id="advRoomsContainer" class="rooms-grid"></div>
+      </div>
+
+      <div id="panel-reservations" class="portal-section" hidden>
+        <h3>Reservas</h3>
+        <div id="advReservationsContainer" class="responsive-table"></div>
+      </div>
+
+      <div id="panel-finance" class="portal-section" hidden>
+        <h3>Financeiro</h3>
+        <div class="finance-filters">
+          <div class="preset-row">
+            <button type="button" class="btn btn-secondary btn-sm adv-finance-preset" data-range="30">30 dias</button>
+            <button type="button" class="btn btn-secondary btn-sm adv-finance-preset" data-range="60">60 dias</button>
+            <button type="button" class="btn btn-secondary btn-sm adv-finance-preset" data-range="90">90 dias</button>
+            <span class="chip">ou</span>
+            <label>De <input type="date" id="advFinFrom"></label>
+            <label>Até <input type="date" id="advFinTo"></label>
+            <button type="button" class="btn btn-secondary btn-sm" id="advFinApply">Aplicar</button>
+          </div>
+        </div>
+        <div id="advFinanceContainer" class="responsive-table"></div>
+      </div>
+
+      <div id="panel-messages" class="portal-section" hidden>
+        <h3>Mensagens</h3>
+        <div id="advThreadsContainer" class="responsive-table"></div>
+      </div>
+
+      <div id="panel-reviews" class="portal-section" hidden>
+        <h3>Avaliações</h3>
+        <div id="advReviewsContainer" class="responsive-table"></div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Overlay de autenticação (reutiliza login do portal de clientes) -->
+  <div class="auth-overlay" id="advAuthOverlay">
+    <div class="auth-card">
+      <h2>Entrar como Anunciante</h2>
+      <form id="advLoginForm">
+        <label>CPF ou E‑mail
+          <input type="text" id="advLoginIdentifier" autocomplete="username" />
+        </label>
+        <label>Senha
+          <input type="password" id="advLoginPassword" autocomplete="current-password" />
+        </label>
+        <label class="checkbox-inline">
+          <input type="checkbox" id="advRememberMe" /> Lembrar neste computador
+        </label>
+        <button class="btn btn-primary" type="submit">Entrar</button>
+        <div id="advAuthMessage" class="rooms-message" style="margin-top:8px"></div>
+        <p class="form-help">Não tem cadastro? Acesse <a href="divulgue.html">Divulgue sua sala</a>.</p>
+      </form>
+    </div>
+  </div>
+
+  <footer>
+    <p>© 2025 Ze.EFE</p>
+  </footer>
+
+  <script src="scripts/anunciante.js" defer></script>
+</body>
+</html>
+

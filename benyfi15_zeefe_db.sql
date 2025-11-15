@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Tempo de geração: 01/11/2025 às 17:55
+-- Tempo de geração: 15/11/2025 às 08:48
 -- Versão do servidor: 5.7.23-23
 -- Versão do PHP: 8.1.33
 
@@ -34,6 +34,26 @@ CREATE TABLE `admins` (
   `password` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Estrutura para tabela `advertisers`
+--
+
+CREATE TABLE `advertisers` (
+  `id` bigint(20) NOT NULL,
+  `owner_type` enum('client','company') COLLATE utf8mb4_unicode_ci NOT NULL,
+  `owner_id` bigint(20) NOT NULL,
+  `display_name` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `status` enum('ativo','inativo','suspenso') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'ativo',
+  `bank_name` varchar(120) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `account_type` enum('corrente','poupanca','pix') COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `account_number` varchar(64) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `pix_key` varchar(140) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -70,8 +90,12 @@ CREATE TABLE `associates` (
 CREATE TABLE `clients` (
   `id` bigint(20) NOT NULL,
   `company_id` bigint(20) DEFAULT NULL,
+  `company_role` enum('admin','gestor','membro','leitor') COLLATE utf8_unicode_ci DEFAULT 'membro',
   `name` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
   `email` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
+  `email_verified_at` datetime DEFAULT NULL,
+  `verification_token` varchar(191) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `verification_token_expires` datetime DEFAULT NULL,
   `password` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
   `login` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
   `password_hash` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
@@ -82,7 +106,7 @@ CREATE TABLE `clients` (
   `type` varchar(50) COLLATE utf8_unicode_ci DEFAULT NULL,
   `birth_date` date DEFAULT NULL,
   `profession` varchar(120) COLLATE utf8_unicode_ci DEFAULT NULL,
-  `status` enum('ativo','inativo','bloqueado') COLLATE utf8_unicode_ci DEFAULT 'ativo',
+  `status` varchar(20) COLLATE utf8_unicode_ci NOT NULL DEFAULT 'ativo',
   `created_at` datetime DEFAULT NULL,
   `last_login` datetime DEFAULT NULL,
   `updated_at` datetime DEFAULT NULL
@@ -109,6 +133,7 @@ CREATE TABLE `companies` (
   `email` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
   `phone` varchar(30) COLLATE utf8_unicode_ci DEFAULT NULL,
   `whatsapp` varchar(20) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `master_client_id` bigint(20) DEFAULT NULL,
   `status` enum('ativo','inativo','suspenso') COLLATE utf8_unicode_ci DEFAULT 'ativo',
   `created_at` datetime DEFAULT NULL,
   `updated_at` datetime DEFAULT NULL
@@ -132,6 +157,48 @@ CREATE TABLE `company_employees` (
   `created_at` datetime DEFAULT NULL,
   `updated_at` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Estrutura para tabela `company_invitations`
+--
+
+CREATE TABLE `company_invitations` (
+  `id` bigint(20) NOT NULL,
+  `company_id` bigint(20) NOT NULL,
+  `client_id` bigint(20) DEFAULT NULL,
+  `cpf` varchar(14) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `role` enum('admin','gestor','membro','leitor') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'membro',
+  `token` varchar(128) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `status` enum('pendente','aceito','cancelado','expirado') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'pendente',
+  `expires_at` datetime NOT NULL,
+  `created_at` datetime NOT NULL,
+  `accepted_at` datetime DEFAULT NULL,
+  `invite_email` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `invite_name` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Estrutura para tabela `events`
+--
+
+CREATE TABLE `events` (
+  `id` bigint(20) NOT NULL,
+  `anonymous_id` varchar(64) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `client_id` bigint(20) DEFAULT NULL,
+  `room_id` bigint(20) DEFAULT NULL,
+  `event` varchar(64) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `ts` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `utm_source` varchar(64) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `utm_medium` varchar(64) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `utm_campaign` varchar(64) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `city` varchar(80) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `state` char(2) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `user_agent` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -163,6 +230,57 @@ CREATE TABLE `import_batches` (
   `created_at` datetime DEFAULT NULL,
   `finished_at` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Estrutura para tabela `ledger_entries`
+--
+
+CREATE TABLE `ledger_entries` (
+  `id` bigint(20) NOT NULL,
+  `advertiser_id` bigint(20) NOT NULL,
+  `reservation_id` bigint(20) DEFAULT NULL,
+  `type` enum('credito','debito','ajuste') COLLATE utf8mb4_unicode_ci NOT NULL,
+  `description` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `amount` decimal(12,2) NOT NULL,
+  `status` enum('pendente','disponivel','bloqueado','pago','estornado') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'pendente',
+  `available_at` datetime DEFAULT NULL,
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Estrutura para tabela `messages`
+--
+
+CREATE TABLE `messages` (
+  `id` bigint(20) NOT NULL,
+  `thread_id` bigint(20) NOT NULL,
+  `sender_type` enum('client','advertiser','system') COLLATE utf8mb4_unicode_ci NOT NULL,
+  `body` text COLLATE utf8mb4_unicode_ci,
+  `attachment_url` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  `read_by_client_at` datetime DEFAULT NULL,
+  `read_by_advertiser_at` datetime DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Estrutura para tabela `message_threads`
+--
+
+CREATE TABLE `message_threads` (
+  `id` bigint(20) NOT NULL,
+  `room_id` bigint(20) DEFAULT NULL,
+  `reservation_id` bigint(20) DEFAULT NULL,
+  `client_id` bigint(20) DEFAULT NULL,
+  `advertiser_id` bigint(20) DEFAULT NULL,
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  `last_message_at` datetime DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -238,6 +356,24 @@ CREATE TABLE `payments` (
 -- --------------------------------------------------------
 
 --
+-- Estrutura para tabela `payouts`
+--
+
+CREATE TABLE `payouts` (
+  `id` bigint(20) NOT NULL,
+  `advertiser_id` bigint(20) NOT NULL,
+  `amount` decimal(12,2) NOT NULL,
+  `method` enum('pix','ted') COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `scheduled_at` datetime DEFAULT NULL,
+  `paid_at` datetime DEFAULT NULL,
+  `status` enum('agendado','processando','pago','falhou','cancelado') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'agendado',
+  `receipt_url` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Estrutura para tabela `pre_reservations`
 --
 
@@ -280,6 +416,8 @@ CREATE TABLE `reservations` (
   `requirements` text COLLATE utf8_unicode_ci,
   `observations` text COLLATE utf8_unicode_ci,
   `status` enum('pendente','confirmada','cancelada','concluida') COLLATE utf8_unicode_ci DEFAULT 'pendente',
+  `payment_status` enum('pendente','confirmado','expirado') COLLATE utf8_unicode_ci NOT NULL DEFAULT 'pendente',
+  `hold_expires_at` datetime DEFAULT NULL,
   `notes` text COLLATE utf8_unicode_ci,
   `created_at` datetime DEFAULT NULL,
   `updated_at` datetime DEFAULT NULL
@@ -295,6 +433,27 @@ CREATE TABLE `reservation_visitors` (
   `reservation_id` bigint(20) NOT NULL,
   `visitor_id` bigint(20) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Estrutura para tabela `reviews`
+--
+
+CREATE TABLE `reviews` (
+  `id` bigint(20) NOT NULL,
+  `reservation_id` bigint(20) NOT NULL,
+  `room_id` bigint(20) NOT NULL,
+  `client_id` bigint(20) NOT NULL,
+  `rating_price` tinyint(4) NOT NULL,
+  `rating_benefits` tinyint(4) NOT NULL,
+  `rating_ease` tinyint(4) NOT NULL,
+  `comment` text COLLATE utf8mb4_unicode_ci,
+  `recommend` tinyint(1) DEFAULT NULL,
+  `status` enum('pendente','aprovado','oculto') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'pendente',
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -328,7 +487,8 @@ CREATE TABLE `rooms` (
   `photo_path` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
   `facilitated_access` tinyint(1) DEFAULT '0',
   `created_at` datetime DEFAULT NULL,
-  `updated_at` datetime DEFAULT NULL
+  `updated_at` datetime DEFAULT NULL,
+  `advertiser_id` bigint(20) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 -- --------------------------------------------------------
@@ -358,6 +518,22 @@ CREATE TABLE `room_photos` (
 -- --------------------------------------------------------
 
 --
+-- Estrutura para tabela `room_ratings`
+--
+
+CREATE TABLE `room_ratings` (
+  `room_id` bigint(20) NOT NULL,
+  `avg_overall` decimal(3,2) NOT NULL DEFAULT '0.00',
+  `avg_price` decimal(3,2) NOT NULL DEFAULT '0.00',
+  `avg_benefits` decimal(3,2) NOT NULL DEFAULT '0.00',
+  `avg_ease` decimal(3,2) NOT NULL DEFAULT '0.00',
+  `reviews_count` int(11) NOT NULL DEFAULT '0',
+  `last_calculated_at` datetime DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Estrutura para tabela `visitors`
 --
 
@@ -369,6 +545,8 @@ CREATE TABLE `visitors` (
   `rg` varchar(20) COLLATE utf8_unicode_ci DEFAULT NULL,
   `cpf` varchar(14) COLLATE utf8_unicode_ci DEFAULT NULL,
   `email` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `invite_token` varchar(191) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `invite_status` enum('pendente','completo') COLLATE utf8_unicode_ci NOT NULL DEFAULT 'pendente',
   `phone` varchar(30) COLLATE utf8_unicode_ci DEFAULT NULL,
   `whatsapp` varchar(20) COLLATE utf8_unicode_ci DEFAULT NULL,
   `status` enum('ativo','inativo') COLLATE utf8_unicode_ci DEFAULT 'ativo',
@@ -376,6 +554,43 @@ CREATE TABLE `visitors` (
   `created_at` datetime DEFAULT NULL,
   `updated_at` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Estrutura para tabela `vouchers`
+--
+
+CREATE TABLE `vouchers` (
+  `id` int(11) NOT NULL,
+  `code` varchar(64) NOT NULL,
+  `type` enum('percent','fixed') NOT NULL,
+  `value` decimal(10,2) NOT NULL,
+  `valid_from` datetime DEFAULT NULL,
+  `valid_to` datetime DEFAULT NULL,
+  `max_redemptions` int(11) DEFAULT NULL,
+  `used_count` int(11) NOT NULL DEFAULT '0',
+  `min_amount` decimal(10,2) DEFAULT NULL,
+  `room_id` int(11) DEFAULT NULL,
+  `status` enum('ativo','inativo') NOT NULL DEFAULT 'ativo',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- --------------------------------------------------------
+
+--
+-- Estrutura para tabela `voucher_redemptions`
+--
+
+CREATE TABLE `voucher_redemptions` (
+  `id` int(11) NOT NULL,
+  `voucher_id` int(11) NOT NULL,
+  `reservation_id` int(11) DEFAULT NULL,
+  `client_id` int(11) DEFAULT NULL,
+  `discount_amount` decimal(10,2) NOT NULL DEFAULT '0.00',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
 -- Índices para tabelas despejadas
@@ -388,6 +603,13 @@ ALTER TABLE `admins`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `username` (`username`),
   ADD UNIQUE KEY `email` (`email`);
+
+--
+-- Índices de tabela `advertisers`
+--
+ALTER TABLE `advertisers`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `uk_adv_owner` (`owner_type`,`owner_id`);
 
 --
 -- Índices de tabela `amenities`
@@ -409,14 +631,17 @@ ALTER TABLE `clients`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `email` (`email`),
   ADD UNIQUE KEY `login` (`login`),
-  ADD KEY `company_id` (`company_id`);
+  ADD KEY `idx_clients_verification_token` (`verification_token`),
+  ADD KEY `idx_clients_company_id` (`company_id`);
 
 --
 -- Índices de tabela `companies`
 --
 ALTER TABLE `companies`
   ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `cnpj` (`cnpj`);
+  ADD UNIQUE KEY `cnpj` (`cnpj`),
+  ADD KEY `idx_companies_master_client` (`master_client_id`),
+  ADD KEY `idx_comp_master` (`master_client_id`);
 
 --
 -- Índices de tabela `company_employees`
@@ -424,6 +649,21 @@ ALTER TABLE `companies`
 ALTER TABLE `company_employees`
   ADD PRIMARY KEY (`id`),
   ADD KEY `company_id` (`company_id`);
+
+--
+-- Índices de tabela `company_invitations`
+--
+ALTER TABLE `company_invitations`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- Índices de tabela `events`
+--
+ALTER TABLE `events`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_ev_event` (`event`,`ts`),
+  ADD KEY `idx_ev_room` (`room_id`,`ts`),
+  ADD KEY `idx_ev_client` (`client_id`,`ts`);
 
 --
 -- Índices de tabela `feedback_nps`
@@ -437,6 +677,31 @@ ALTER TABLE `feedback_nps`
 ALTER TABLE `import_batches`
   ADD PRIMARY KEY (`id`),
   ADD KEY `company_id` (`company_id`);
+
+--
+-- Índices de tabela `ledger_entries`
+--
+ALTER TABLE `ledger_entries`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_ledger_adv` (`advertiser_id`,`status`,`available_at`),
+  ADD KEY `idx_ledger_res` (`reservation_id`);
+
+--
+-- Índices de tabela `messages`
+--
+ALTER TABLE `messages`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_msg_thread` (`thread_id`,`created_at`);
+
+--
+-- Índices de tabela `message_threads`
+--
+ALTER TABLE `message_threads`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_msg_room` (`room_id`),
+  ADD KEY `idx_msg_res` (`reservation_id`),
+  ADD KEY `idx_msg_part` (`client_id`,`advertiser_id`),
+  ADD KEY `fk_msg_adv` (`advertiser_id`);
 
 --
 -- Índices de tabela `notification_logs`
@@ -467,6 +732,13 @@ ALTER TABLE `payments`
   ADD KEY `reservation_id` (`reservation_id`);
 
 --
+-- Índices de tabela `payouts`
+--
+ALTER TABLE `payouts`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_payouts_adv` (`advertiser_id`,`status`,`scheduled_at`);
+
+--
 -- Índices de tabela `pre_reservations`
 --
 ALTER TABLE `pre_reservations`
@@ -481,9 +753,13 @@ ALTER TABLE `pre_reservations`
 --
 ALTER TABLE `reservations`
   ADD PRIMARY KEY (`id`),
-  ADD KEY `room_id` (`room_id`),
-  ADD KEY `client_id` (`client_id`),
-  ADD KEY `company_id` (`company_id`);
+  ADD KEY `idx_reservations_payment_status` (`payment_status`),
+  ADD KEY `idx_reservations_hold_expires` (`hold_expires_at`),
+  ADD KEY `idx_reservations_date` (`date`),
+  ADD KEY `idx_reservations_room` (`room_id`),
+  ADD KEY `idx_reservations_client` (`client_id`),
+  ADD KEY `idx_res_company` (`company_id`,`status`,`date`),
+  ADD KEY `idx_res_payment` (`payment_status`,`hold_expires_at`);
 
 --
 -- Índices de tabela `reservation_visitors`
@@ -493,10 +769,22 @@ ALTER TABLE `reservation_visitors`
   ADD KEY `visitor_id` (`visitor_id`);
 
 --
+-- Índices de tabela `reviews`
+--
+ALTER TABLE `reviews`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `uk_review_once` (`reservation_id`),
+  ADD KEY `idx_review_room` (`room_id`,`status`),
+  ADD KEY `idx_review_client` (`client_id`);
+
+--
 -- Índices de tabela `rooms`
 --
 ALTER TABLE `rooms`
-  ADD PRIMARY KEY (`id`);
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_rooms_location` (`location`),
+  ADD KEY `idx_rooms_capacity` (`capacity`),
+  ADD KEY `idx_rooms_advertiser` (`advertiser_id`);
 
 --
 -- Índices de tabela `room_amenities`
@@ -513,12 +801,37 @@ ALTER TABLE `room_photos`
   ADD KEY `room_id` (`room_id`);
 
 --
+-- Índices de tabela `room_ratings`
+--
+ALTER TABLE `room_ratings`
+  ADD PRIMARY KEY (`room_id`);
+
+--
 -- Índices de tabela `visitors`
 --
 ALTER TABLE `visitors`
   ADD PRIMARY KEY (`id`),
   ADD KEY `client_id` (`client_id`),
-  ADD KEY `company_id` (`company_id`);
+  ADD KEY `company_id` (`company_id`),
+  ADD KEY `idx_visitors_invite_token` (`invite_token`);
+
+--
+-- Índices de tabela `vouchers`
+--
+ALTER TABLE `vouchers`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `uq_vouchers_code` (`code`),
+  ADD KEY `idx_vouchers_status` (`status`),
+  ADD KEY `idx_vouchers_room` (`room_id`);
+
+--
+-- Índices de tabela `voucher_redemptions`
+--
+ALTER TABLE `voucher_redemptions`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_redemptions_voucher` (`voucher_id`),
+  ADD KEY `idx_redemptions_reservation` (`reservation_id`),
+  ADD KEY `idx_redemptions_client` (`client_id`);
 
 --
 -- AUTO_INCREMENT para tabelas despejadas
@@ -529,6 +842,12 @@ ALTER TABLE `visitors`
 --
 ALTER TABLE `admins`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT de tabela `advertisers`
+--
+ALTER TABLE `advertisers`
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT de tabela `amenities`
@@ -555,9 +874,39 @@ ALTER TABLE `company_employees`
   MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT de tabela `company_invitations`
+--
+ALTER TABLE `company_invitations`
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT de tabela `events`
+--
+ALTER TABLE `events`
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT de tabela `import_batches`
 --
 ALTER TABLE `import_batches`
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT de tabela `ledger_entries`
+--
+ALTER TABLE `ledger_entries`
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT de tabela `messages`
+--
+ALTER TABLE `messages`
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT de tabela `message_threads`
+--
+ALTER TABLE `message_threads`
   MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT;
 
 --
@@ -585,6 +934,12 @@ ALTER TABLE `payments`
   MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT de tabela `payouts`
+--
+ALTER TABLE `payouts`
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT de tabela `pre_reservations`
 --
 ALTER TABLE `pre_reservations`
@@ -594,6 +949,12 @@ ALTER TABLE `pre_reservations`
 -- AUTO_INCREMENT de tabela `reservations`
 --
 ALTER TABLE `reservations`
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT de tabela `reviews`
+--
+ALTER TABLE `reviews`
   MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT;
 
 --
@@ -615,6 +976,18 @@ ALTER TABLE `visitors`
   MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT de tabela `vouchers`
+--
+ALTER TABLE `vouchers`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT de tabela `voucher_redemptions`
+--
+ALTER TABLE `voucher_redemptions`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
 -- Restrições para tabelas despejadas
 --
 
@@ -632,10 +1005,23 @@ ALTER TABLE `clients`
   ADD CONSTRAINT `clients_ibfk_1` FOREIGN KEY (`company_id`) REFERENCES `companies` (`id`);
 
 --
+-- Restrições para tabelas `companies`
+--
+ALTER TABLE `companies`
+  ADD CONSTRAINT `fk_companies_master_client` FOREIGN KEY (`master_client_id`) REFERENCES `clients` (`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+
+--
 -- Restrições para tabelas `company_employees`
 --
 ALTER TABLE `company_employees`
   ADD CONSTRAINT `company_employees_ibfk_1` FOREIGN KEY (`company_id`) REFERENCES `companies` (`id`);
+
+--
+-- Restrições para tabelas `events`
+--
+ALTER TABLE `events`
+  ADD CONSTRAINT `fk_ev_client` FOREIGN KEY (`client_id`) REFERENCES `clients` (`id`),
+  ADD CONSTRAINT `fk_ev_room` FOREIGN KEY (`room_id`) REFERENCES `rooms` (`id`);
 
 --
 -- Restrições para tabelas `feedback_nps`
@@ -650,6 +1036,28 @@ ALTER TABLE `import_batches`
   ADD CONSTRAINT `import_batches_ibfk_1` FOREIGN KEY (`company_id`) REFERENCES `companies` (`id`);
 
 --
+-- Restrições para tabelas `ledger_entries`
+--
+ALTER TABLE `ledger_entries`
+  ADD CONSTRAINT `fk_ledger_adv` FOREIGN KEY (`advertiser_id`) REFERENCES `advertisers` (`id`),
+  ADD CONSTRAINT `fk_ledger_res` FOREIGN KEY (`reservation_id`) REFERENCES `reservations` (`id`);
+
+--
+-- Restrições para tabelas `messages`
+--
+ALTER TABLE `messages`
+  ADD CONSTRAINT `fk_messages_thread` FOREIGN KEY (`thread_id`) REFERENCES `message_threads` (`id`);
+
+--
+-- Restrições para tabelas `message_threads`
+--
+ALTER TABLE `message_threads`
+  ADD CONSTRAINT `fk_msg_adv` FOREIGN KEY (`advertiser_id`) REFERENCES `advertisers` (`id`),
+  ADD CONSTRAINT `fk_msg_cli` FOREIGN KEY (`client_id`) REFERENCES `clients` (`id`),
+  ADD CONSTRAINT `fk_msg_res` FOREIGN KEY (`reservation_id`) REFERENCES `reservations` (`id`),
+  ADD CONSTRAINT `fk_msg_room` FOREIGN KEY (`room_id`) REFERENCES `rooms` (`id`);
+
+--
 -- Restrições para tabelas `notification_logs`
 --
 ALTER TABLE `notification_logs`
@@ -661,6 +1069,12 @@ ALTER TABLE `notification_logs`
 --
 ALTER TABLE `payments`
   ADD CONSTRAINT `payments_ibfk_1` FOREIGN KEY (`reservation_id`) REFERENCES `reservations` (`id`) ON DELETE CASCADE;
+
+--
+-- Restrições para tabelas `payouts`
+--
+ALTER TABLE `payouts`
+  ADD CONSTRAINT `fk_payouts_adv` FOREIGN KEY (`advertiser_id`) REFERENCES `advertisers` (`id`);
 
 --
 -- Restrições para tabelas `pre_reservations`
@@ -687,6 +1101,20 @@ ALTER TABLE `reservation_visitors`
   ADD CONSTRAINT `reservation_visitors_ibfk_2` FOREIGN KEY (`visitor_id`) REFERENCES `visitors` (`id`) ON DELETE CASCADE;
 
 --
+-- Restrições para tabelas `reviews`
+--
+ALTER TABLE `reviews`
+  ADD CONSTRAINT `fk_rev_cli` FOREIGN KEY (`client_id`) REFERENCES `clients` (`id`),
+  ADD CONSTRAINT `fk_rev_res` FOREIGN KEY (`reservation_id`) REFERENCES `reservations` (`id`),
+  ADD CONSTRAINT `fk_rev_room` FOREIGN KEY (`room_id`) REFERENCES `rooms` (`id`);
+
+--
+-- Restrições para tabelas `rooms`
+--
+ALTER TABLE `rooms`
+  ADD CONSTRAINT `fk_rooms_advertiser` FOREIGN KEY (`advertiser_id`) REFERENCES `advertisers` (`id`);
+
+--
 -- Restrições para tabelas `room_amenities`
 --
 ALTER TABLE `room_amenities`
@@ -700,11 +1128,23 @@ ALTER TABLE `room_photos`
   ADD CONSTRAINT `room_photos_ibfk_1` FOREIGN KEY (`room_id`) REFERENCES `rooms` (`id`) ON DELETE CASCADE;
 
 --
+-- Restrições para tabelas `room_ratings`
+--
+ALTER TABLE `room_ratings`
+  ADD CONSTRAINT `fk_rr_room` FOREIGN KEY (`room_id`) REFERENCES `rooms` (`id`);
+
+--
 -- Restrições para tabelas `visitors`
 --
 ALTER TABLE `visitors`
   ADD CONSTRAINT `visitors_ibfk_1` FOREIGN KEY (`client_id`) REFERENCES `clients` (`id`),
   ADD CONSTRAINT `visitors_ibfk_2` FOREIGN KEY (`company_id`) REFERENCES `companies` (`id`);
+
+--
+-- Restrições para tabelas `voucher_redemptions`
+--
+ALTER TABLE `voucher_redemptions`
+  ADD CONSTRAINT `fk_voucher_redemptions_voucher` FOREIGN KEY (`voucher_id`) REFERENCES `vouchers` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
