@@ -537,6 +537,24 @@
     </div>
   </div>
 
+  <!-- Modal: Chat com o anunciante (cliente) -->
+  <div class="modal-overlay" id="clientChatModal" aria-hidden="true">
+    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="clientChatTitle">
+      <button class="modal-close" type="button" id="clientChatClose" aria-label="Fechar">&times;</button>
+      <div class="modal-body">
+        <div class="modal-info" style="padding:24px; width:100%">
+          <h2 id="clientChatTitle" style="margin-top:0">Mensagens</h2>
+          <div id="clientChatHeader" class="rooms-message" style="margin-bottom:8px"></div>
+          <div id="clientChatMessages" class="chat-messages" style="min-height:220px; max-height:420px; overflow:auto; background:#fff; border:1px solid rgba(29,65,58,.08); border-radius:12px; padding:10px"></div>
+          <form id="clientChatForm" class="chat-form" style="display:flex; gap:8px; margin-top:10px">
+            <input type="text" id="clientChatInput" placeholder="Digite uma mensagem" style="flex:1" />
+            <button class="btn btn-primary" type="submit">Enviar</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Modal: Convidar membro -->
   <div class="modal-overlay" id="inviteMemberModal" aria-hidden="true">
     <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="inviteMemberTitle">

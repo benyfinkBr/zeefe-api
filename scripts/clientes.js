@@ -344,6 +344,11 @@ async function initialize() {
   editPhone?.addEventListener('input', () => { const d = somenteDigitos(editPhone.value).slice(0,11); editPhone.value = formatPhone(d); });
   editWhatsapp?.addEventListener('input', () => { const d = somenteDigitos(editWhatsapp.value).slice(0,11); editWhatsapp.value = formatPhone(d); });
 
+  // Client chat modal events
+  clientChatClose?.addEventListener('click', closeClientChat);
+  clientChatModal?.addEventListener('click', (e)=>{ if (e.target === clientChatModal) closeClientChat(); });
+  clientChatForm?.addEventListener('submit', onClientChatSubmit);
+
   // Empresa/Membros modais
   document.getElementById('openInviteModal')?.addEventListener('click', openInviteMemberModal);
   document.getElementById('openManualModal')?.addEventListener('click', openManualMembersModal);
@@ -2264,6 +2269,8 @@ function openReservationActions(id) {
   const ics = document.createElement('a'); ics.href=`api/reservation_ics.php?reservation=${encodeURIComponent(reserva.id)}`; ics.className='action-card'; ics.innerHTML=`<span class=\"icon\">${getActionIconSVG('Baixar convite')}</span><span class=\"label\">Baixar convite</span>`; ics.setAttribute('download',''); reservationActionsButtons.appendChild(ics);
   // Enviar convite (e‑mail com ICS)
   reservationActionsButtons.appendChild(mkCard('Enviar convite', ()=> { tratarAcaoReserva(reserva.id,'sendCalendar'); closeReservationActions(); }));
+  // Mensagens (chat com anunciante)
+  reservationActionsButtons.appendChild(mkCard('Mensagens', ()=> { openClientChatForReservation(reserva.id); }));
 
   // Solicitar NF (apenas após pagamento)
   if (paid) {
@@ -2297,6 +2304,90 @@ function getActionIconSVG(label){
     'Solicitar NF': `<svg viewBox='0 0 24 24'><path d='M6 3h12v18H6z' ${stroke}/><path d='M9 7h6M9 11h6M9 15h6' ${stroke}/></svg>`
   };
   return map[label] || `<svg viewBox='0 0 24 24'><circle cx='12' cy='12' r='9' ${stroke}/></svg>`;
+}
+
+// ===== Chat do cliente com anunciante =====
+async function openClientChatForReservation(reservationId) {
+  const reserva = currentReservations.find(r => String(r.id) === String(reservationId));
+  if (!reserva) return;
+  const sala = buscarSala(reserva.room_id);
+  const advertiserId = sala?.advertiser_id || null;
+  if (!advertiserId) {
+    alert('Esta sala ainda não está vinculada a um anunciante.');
+    return;
+  }
+  clientChatHeader.textContent = `${formatDate(reserva.date)} · ${(sala?.name || 'Sala #' + reserva.room_id)}`;
+  clientChatMessages.innerHTML = '<div class="rooms-message">Conectando…</div>';
+  clientChatForm.hidden = false;
+  clientChatThreadId = null;
+  showClientChatModal();
+  try {
+    // tenta localizar thread existente
+    const res = await fetch(`${API_BASE}/messages_list_threads.php?client_id=${encodeURIComponent(activeClient.id)}`);
+    const json = await res.json();
+    let t = null;
+    if (json.success && Array.isArray(json.data)) {
+      t = json.data.find(x => String(x.advertiser_id) === String(advertiserId) && String(x.reservation_id||'') === String(reserva.id));
+    }
+    if (!t) {
+      const res2 = await fetch(`${API_BASE}/messages_create_thread.php`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ room_id: reserva.room_id, reservation_id: reserva.id, client_id: activeClient.id, advertiser_id: advertiserId }) });
+      const j2 = await res2.json();
+      if (!j2.success) throw new Error(j2.error || 'Não foi possível iniciar a conversa.');
+      clientChatThreadId = Number(j2.id);
+    } else {
+      clientChatThreadId = Number(t.id);
+    }
+    await fetchClientChatMessages();
+    startClientChatPolling();
+  } catch (e) {
+    clientChatMessages.innerHTML = `<div class="rooms-message">${e.message || 'Falha ao abrir conversa.'}</div>`;
+  }
+}
+
+function showClientChatModal(){
+  clientChatModal?.classList.add('show');
+  clientChatModal?.setAttribute('aria-hidden','false');
+}
+function closeClientChat(){
+  stopClientChatPolling();
+  clientChatModal?.classList.remove('show');
+  clientChatModal?.setAttribute('aria-hidden','true');
+}
+
+async function fetchClientChatMessages(){
+  if (!clientChatThreadId) return;
+  try {
+    const res = await fetch(`${API_BASE}/messages_list_messages.php?thread_id=${encodeURIComponent(clientChatThreadId)}`);
+    const json = await res.json();
+    const list = json.success ? (json.data || []) : [];
+    if (!list.length) { clientChatMessages.innerHTML = '<div class="rooms-message">Nenhuma mensagem.</div>'; return; }
+    clientChatMessages.innerHTML = list.map(m => {
+      const me = (m.sender_type || '') === 'client';
+      return `<div class="chat-bubble ${me ? 'me' : 'them'}"><div class="chat-text">${escapeHtml(m.body)}</div><div class="chat-time">${escapeHtml((m.created_at||'').toString().slice(0,16).replace('T',' '))}</div></div>`;
+    }).join('');
+    clientChatMessages.scrollTop = clientChatMessages.scrollHeight;
+    try { await fetch(`${API_BASE}/messages_mark_read.php`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ thread_id: clientChatThreadId, who: 'client' }) }); } catch (_) {}
+  } catch (_) {
+    clientChatMessages.innerHTML = '<div class="rooms-message">Falha ao carregar mensagens.</div>';
+  }
+}
+
+function startClientChatPolling(){ stopClientChatPolling(); clientChatPollTimer = setInterval(fetchClientChatMessages, 10000); }
+function stopClientChatPolling(){ if (clientChatPollTimer) { clearInterval(clientChatPollTimer); clientChatPollTimer = null; } }
+
+async function onClientChatSubmit(e){
+  e.preventDefault();
+  const text = (clientChatInput?.value || '').trim();
+  if (!text || !clientChatThreadId) return;
+  try {
+    const res = await fetch(`${API_BASE}/messages_send.php`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ thread_id: clientChatThreadId, sender_type: 'client', body: text }) });
+    const json = await res.json();
+    if (!json.success) throw new Error(json.error || 'Falha ao enviar.');
+    clientChatInput.value = '';
+    await fetchClientChatMessages();
+  } catch (err) {
+    alert(err.message || 'Erro ao enviar.');
+  }
 }
 
 async function tratarAcaoReserva(id, action) {
@@ -3181,3 +3272,12 @@ async function enviarLinkPagamento(reservationId) {
   if (!json.success) throw new Error(json.error || 'Falha ao enviar link de pagamento.');
   return json;
 }
+// Client chat modal elements
+const clientChatModal = document.getElementById('clientChatModal');
+const clientChatClose = document.getElementById('clientChatClose');
+const clientChatHeader = document.getElementById('clientChatHeader');
+const clientChatMessages = document.getElementById('clientChatMessages');
+const clientChatForm = document.getElementById('clientChatForm');
+const clientChatInput = document.getElementById('clientChatInput');
+let clientChatThreadId = null;
+let clientChatPollTimer = null;

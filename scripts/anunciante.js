@@ -5,6 +5,8 @@ let advClient = null; // dados do cliente logado
 let myAdvertiser = null; // registro de advertisers do dono
 let myRooms = [];
 let myReservations = [];
+let currentThreadId = null;
+let chatPollTimer = null;
 
 // Seletores
 const authContainer = document.getElementById('authContainer');
@@ -34,6 +36,25 @@ const resContainer = document.getElementById('advReservationsContainer');
 const finContainer = document.getElementById('advFinanceContainer');
 const threadsContainer = document.getElementById('advThreadsContainer');
 const reviewsContainer = document.getElementById('advReviewsContainer');
+const chatArea = document.getElementById('advChatArea');
+const chatHeader = document.getElementById('advChatHeader');
+const chatMessages = document.getElementById('advChatMessages');
+const chatForm = document.getElementById('advChatForm');
+const chatInput = document.getElementById('advChatInput');
+// Room modal
+const newRoomBtn = document.getElementById('advNewRoomBtn');
+const roomModal = document.getElementById('advRoomModal');
+const roomClose = document.getElementById('advRoomClose');
+const roomCancel = document.getElementById('advRoomCancel');
+const roomForm = document.getElementById('advRoomForm');
+const roomMsg = document.getElementById('advRoomMessage');
+const roomName = document.getElementById('roomName');
+const roomCap = document.getElementById('roomCapacity');
+const roomCity = document.getElementById('roomCity');
+const roomState = document.getElementById('roomState');
+const roomPrice = document.getElementById('roomPrice');
+const roomStatus = document.getElementById('roomStatus');
+const roomDesc = document.getElementById('roomDescription');
 // payout form
 const bankNameInput = document.getElementById('bankName');
 const accountTypeInput = document.getElementById('accountType');
@@ -236,7 +257,24 @@ async function loadOverview() {
 }
 
 async function loadThreads() {
-  threadsContainer.innerHTML = '<div class="rooms-message">Em construção — mensagens serão exibidas aqui.</div>';
+  threadsContainer.innerHTML = '<div class="rooms-message">Carregando conversas…</div>';
+  try {
+    const advId = myAdvertiser?.id;
+    if (!advId) { threadsContainer.innerHTML = '<div class="rooms-message">Sem anunciante vinculado.</div>'; return; }
+    const res = await fetch(`${API_BASE}/messages_list_threads.php?advertiser_id=${encodeURIComponent(advId)}`);
+    const json = await parseJsonSafe(res);
+    const list = json.success ? (json.data || []) : [];
+    if (!list.length) { threadsContainer.innerHTML = '<div class="rooms-message">Nenhuma conversa ainda.</div>'; return; }
+    threadsContainer.innerHTML = list.map(t => `
+      <button type="button" class="thread-item" data-thread-id="${t.id}">
+        <div class="thread-title">${escapeHtml(t.room_id ? 'Sala #' + t.room_id : 'Conversa')}</div>
+        <div class="thread-meta">${escapeHtml((t.last_message_at || t.created_at || '').toString().slice(0,16).replace('T',' '))}</div>
+      </button>
+    `).join('');
+    threadsContainer.querySelectorAll('[data-thread-id]').forEach(btn => btn.addEventListener('click', () => openThread(btn.getAttribute('data-thread-id'))));
+  } catch (e) {
+    threadsContainer.innerHTML = '<div class="rooms-message">Falha ao carregar conversas.</div>';
+  }
 }
 
 async function loadReviews() {
@@ -264,6 +302,56 @@ async function loadReviews() {
   reviewsContainer.innerHTML = '<div class="rooms-message">Falha ao carregar avaliações.</div>';
   }
 }
+
+async function openThread(threadId) {
+  currentThreadId = Number(threadId);
+  if (!currentThreadId) return;
+  chatHeader.textContent = 'Conversando';
+  chatMessages.innerHTML = '<div class="rooms-message">Carregando mensagens…</div>';
+  chatForm.hidden = false;
+  await fetchMessagesOnce();
+  startChatPolling();
+}
+
+async function fetchMessagesOnce() {
+  if (!currentThreadId) return;
+  try {
+    const res = await fetch(`${API_BASE}/messages_list_messages.php?thread_id=${encodeURIComponent(currentThreadId)}`);
+    const json = await parseJsonSafe(res);
+    const list = json.success ? (json.data || []) : [];
+    if (!list.length) { chatMessages.innerHTML = '<div class="rooms-message">Nenhuma mensagem.</div>'; return; }
+    chatMessages.innerHTML = list.map(m => {
+      const me = (m.sender_type || '') === 'advertiser';
+      return `<div class="chat-bubble ${me ? 'me' : 'them'}"><div class="chat-text">${escapeHtml(m.body)}</div><div class="chat-time">${escapeHtml((m.created_at||'').toString().slice(0,16).replace('T',' '))}</div></div>`;
+    }).join('');
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+    // marca como lida para o anunciante
+    try { await fetch(`${API_BASE}/messages_mark_read.php`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ thread_id: currentThreadId, who: 'advertiser' }) }); } catch (_) {}
+  } catch (e) {
+    chatMessages.innerHTML = '<div class="rooms-message">Falha ao carregar mensagens.</div>';
+  }
+}
+
+function startChatPolling() {
+  stopChatPolling();
+  chatPollTimer = setInterval(fetchMessagesOnce, 10000);
+}
+function stopChatPolling() { if (chatPollTimer) { clearInterval(chatPollTimer); chatPollTimer = null; } }
+
+chatForm?.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const text = (chatInput?.value || '').trim();
+  if (!text || !currentThreadId) return;
+  try {
+    const res = await fetch(`${API_BASE}/messages_send.php`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ thread_id: currentThreadId, sender_type: 'advertiser', body: text }) });
+    const json = await parseJsonSafe(res);
+    if (!json.success) throw new Error(json.error || 'Falha ao enviar.');
+    chatInput.value = '';
+    await fetchMessagesOnce();
+  } catch (err) {
+    alert(err.message || 'Erro ao enviar mensagem.');
+  }
+});
 
 function escapeHtml(s) {
   return String(s == null ? '' : s)
@@ -299,3 +387,50 @@ savePayoutBtn?.addEventListener('click', async () => {
 
 // Inicialização
 setAuthVisible(true);
+
+// Modal Nova sala
+newRoomBtn?.addEventListener('click', () => { openRoomModal(); });
+roomClose?.addEventListener('click', () => { closeRoomModal(); });
+roomCancel?.addEventListener('click', () => { closeRoomModal(); });
+roomModal?.addEventListener('click', (e)=> { if (e.target === roomModal) closeRoomModal(); });
+roomForm?.addEventListener('submit', onRoomFormSubmit);
+
+function openRoomModal(){
+  if (!roomModal) return;
+  roomMsg.textContent = '';
+  [roomName, roomCap, roomCity, roomState, roomPrice, roomStatus, roomDesc].forEach(el => { if (el) el.value = el.tagName==='SELECT' ? el.value : el.value; });
+  roomModal.classList.add('show');
+  roomModal.setAttribute('aria-hidden','false');
+}
+function closeRoomModal(){ roomModal?.classList.remove('show'); roomModal?.setAttribute('aria-hidden','true'); }
+
+async function onRoomFormSubmit(e){
+  e.preventDefault(); roomMsg.textContent = '';
+  if (!myAdvertiser?.id) { roomMsg.textContent = 'Sem anunciante vinculado.'; return; }
+  const payload = {
+    table: 'rooms',
+    data: {
+      name: (roomName?.value||'').trim(),
+      capacity: roomCap?.value ? parseInt(roomCap.value,10) : null,
+      city: (roomCity?.value||'').trim(),
+      state: (roomState?.value||'').trim(),
+      price: roomPrice?.value ? Number(roomPrice.value) : null,
+      status: (roomStatus?.value||'ativo').trim(),
+      description: (roomDesc?.value||'').trim(),
+      advertiser_id: myAdvertiser.id,
+      created_at: new Date().toISOString().slice(0,19).replace('T',' ')
+    }
+  };
+  if (!payload.data.name) { roomMsg.textContent = 'Informe o nome da sala.'; return; }
+  try {
+    const res = await fetch(`${API_BASE}/apiadd.php`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+    const json = await parseJsonSafe(res);
+    if (!json.success) throw new Error(json.error || 'Falha ao criar sala.');
+    roomMsg.textContent = 'Sala criada com sucesso!';
+    await loadRooms();
+    closeRoomModal();
+    setActivePanel('rooms');
+  } catch (err) {
+    roomMsg.textContent = err.message || 'Erro ao salvar.';
+  }
+}
