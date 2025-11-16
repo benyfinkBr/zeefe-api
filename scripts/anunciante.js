@@ -41,6 +41,9 @@ const chatHeader = document.getElementById('advChatHeader');
 const chatMessages = document.getElementById('advChatMessages');
 const chatForm = document.getElementById('advChatForm');
 const chatInput = document.getElementById('advChatInput');
+const advChatModal = document.getElementById('advChatModal');
+const advChatClose = document.getElementById('advChatClose');
+const openAdvChatBtn = document.getElementById('openAdvChatBtn');
 // Room modal
 const newRoomBtn = document.getElementById('advNewRoomBtn');
 const roomModal = document.getElementById('advRoomModal');
@@ -434,3 +437,15 @@ async function onRoomFormSubmit(e){
     roomMsg.textContent = err.message || 'Erro ao salvar.';
   }
 }
+// Drawer chat
+openAdvChatBtn?.addEventListener('click', openAdvChatDrawer);
+document.querySelector('.portal-nav-links button[data-panel="messages"]')?.addEventListener('click', openAdvChatDrawer);
+advChatClose?.addEventListener('click', closeAdvChatDrawer);
+advChatModal?.addEventListener('click', (e)=> { if (e.target === advChatModal) closeAdvChatDrawer(); });
+
+function openAdvChatDrawer(){
+  advChatModal?.classList.add('show');
+  advChatModal?.setAttribute('aria-hidden','false');
+  loadThreads();
+}
+function closeAdvChatDrawer(){ stopChatPolling(); advChatModal?.classList.remove('show'); advChatModal?.setAttribute('aria-hidden','true'); }

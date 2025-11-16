@@ -228,6 +228,7 @@ input, select {
         <ul id="menu">
           <li data-section="companies" class="active">Empresas</li>
           <li data-section="clients">Clientes</li>
+          <li data-section="advertisers">Anunciantes</li>
           <li data-section="rooms">Salas</li>
           <li data-section="reservations">Reservas</li>
           <li data-section="visitors">Visitantes</li>
@@ -298,6 +299,23 @@ input, select {
       </div>
     </div>
   </div>
+  <!-- Modal: Anunciante da Sala -->
+  <div class="modal" id="advertiserModal">
+    <div class="modal-content" style="max-width:720px">
+      <div class="modal-header">
+        <h3 id="advertiserModalTitle">Anunciante da sala</h3>
+        <button class="modal-close" onclick="fecharAdvertiserModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div id="advertiserModalBody" class="form-grid"></div>
+        <div id="advertiserModalMsg" class="box-message" style="display:none"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" onclick="fecharAdvertiserModal()">Cancelar</button>
+        <button type="button" class="btn" onclick="salvarAdvertiserSala()">Salvar</button>
+      </div>
+    </div>
+  </div>
 
   <script>
     const API_BASE = '../api';
@@ -327,6 +345,7 @@ input, select {
     const modalEntities = {
       companies: 'Empresa',
       clients: 'Cliente',
+      advertisers: 'Anunciante',
       rooms: 'Sala',
       reservations: 'Reserva',
       visitors: 'Visitante',
@@ -540,6 +559,15 @@ input, select {
           { key: 'status', label: 'Status', formatter: statusFormatter }
         ]
       },
+      advertisers: {
+        columns: [
+          { key: 'id', label: 'ID' },
+          { key: 'display_name', label: 'Nome Público' },
+          { key: 'owner_type', label: 'Tipo' },
+          { key: 'owner_id', label: 'Dono (ID)' },
+          { key: 'status', label: 'Status', formatter: statusFormatter }
+        ]
+      },
       rooms: {
         columns: [
           { key: 'id', label: 'ID' },
@@ -733,6 +761,7 @@ input, select {
         const actionButtons = [];
         if (sec === 'rooms') {
           actionButtons.push(`<button class="btn-ghost" onclick="abrirChamadaReservas(${rowId})">Reservas</button>`);
+          actionButtons.push(`<button class="btn-ghost" onclick="abrirAnuncianteSala(${rowId})">Anunciante</button>`);
         }
         if (sec === 'companies') {
           const nomeEmpresa = escapeHtml(row.nome_fantasia || row.razao_social || `Empresa #${rowId}`).replace(/'/g, "\\'");
@@ -762,6 +791,54 @@ input, select {
 
       html += '</tbody></table></div>';
       body.innerHTML = html;
+    }
+
+    // ===== Modal Anunciante (vínculo de sala) =====
+    let advertiserSalaRoomId = null;
+    let advertisersCache = null;
+    async function abrirAnuncianteSala(roomId){
+      advertiserSalaRoomId = roomId;
+      const body = document.getElementById('advertiserModalBody');
+      const msg = document.getElementById('advertiserModalMsg');
+      msg.style.display='none'; msg.textContent='';
+      const sala = (dadosJSON || []).find(r => String(r.id) === String(roomId));
+      body.innerHTML = '<div class="box-message">Carregando…</div>';
+      try {
+        if (!advertisersCache) {
+          const r = await fetch(`${API_BASE}/apiget.php?table=advertisers`, { credentials:'include' });
+          const j = await r.json();
+          advertisersCache = j.success ? (j.data || []) : [];
+        }
+        const options = advertisersCache.map(a => `<option value="${a.id}">${escapeHtml(a.display_name || ('Anunciante #'+a.id))} (ID ${a.id})</option>`).join('');
+        const current = sala?.advertiser_id || '';
+        body.innerHTML = `
+          <div class="form-group" style="grid-column: span 2">
+            <label>Sala</label>
+            <input class="input-readonly" value="${escapeHtml(sala?.name || ('Sala #'+roomId))}" readonly />
+          </div>
+          <div class="form-group" style="grid-column: span 2">
+            <label>Anunciante</label>
+            <select id="advertiserSelect"><option value="">— Selecionar —</option>${options}</select>
+          </div>`;
+        const sel = document.getElementById('advertiserSelect'); if (current) sel.value = String(current);
+        document.getElementById('advertiserModal').classList.add('show');
+      } catch (e) {
+        body.innerHTML = '<div class="box-message">Falha ao carregar anunciantes.</div>';
+      }
+    }
+    function fecharAdvertiserModal(){ document.getElementById('advertiserModal').classList.remove('show'); advertiserSalaRoomId = null; }
+    async function salvarAdvertiserSala(){
+      const msg = document.getElementById('advertiserModalMsg'); msg.style.display='none'; msg.textContent='';
+      const sel = document.getElementById('advertiserSelect'); const advId = sel ? Number(sel.value)||null : null;
+      if (!advertiserSalaRoomId) return;
+      try {
+        const res = await fetch(`${API_BASE}/apiupdate.php`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ table:'rooms', id: advertiserSalaRoomId, data:{ advertiser_id: advId } }) });
+        const json = await res.json(); if (!json.success) throw new Error(json.error||'Falha ao salvar.');
+        msg.textContent = 'Vínculo salvo com sucesso.'; msg.style.display='block';
+        await loadSection('rooms'); fecharAdvertiserModal();
+      } catch (err) {
+        msg.textContent = err.message || 'Erro ao salvar.'; msg.style.display='block';
+      }
     }
 
     async function renderFilters(section) {
@@ -955,6 +1032,21 @@ input, select {
         { name: 'password_hash', label: 'Senha (hash)', span: 2, readonly: true },
         { name: 'created_at', label: 'Criado em', span: 1, type: 'date', readonly: true, cls: 'sm' },
         { name: 'updated_at', label: 'Atualizado em', span: 1, type: 'date', readonly: true, cls: 'sm' }
+      ],
+      advertisers: [
+        { name: 'display_name', label: 'Nome público', span: 2 },
+        { name: 'status', label: 'Status', span: 1, type: 'select', options: [ {value:'ativo',label:'Ativo'}, {value:'inativo',label:'Inativo'}, {value:'suspenso',label:'Suspenso'} ], cls:'sm', includeEmpty:false },
+        { type: 'break' },
+        { name: 'owner_type', label: 'Tipo de dono', span: 1, type: 'select', options: [ {value:'client',label:'Cliente'}, {value:'company',label:'Empresa'} ], cls:'sm', includeEmpty:false },
+        { name: 'owner_id', label: 'ID do dono', span: 1, cls:'sm' },
+        { type: 'break' },
+        { name: 'bank_name', label: 'Banco', span: 2 },
+        { name: 'account_type', label: 'Tipo de Conta', span: 1, type: 'select', options: [ {value:'corrente',label:'Corrente'}, {value:'poupanca',label:'Poupança'}, {value:'pix',label:'PIX'} ], cls:'sm', includeEmpty:true },
+        { name: 'account_number', label: 'Agência/Conta', span: 1, cls:'sm' },
+        { type: 'break' },
+        { name: 'pix_key', label: 'Chave PIX', span: 2 },
+        { name: 'created_at', label: 'Criado em', span: 1, type: 'date', readonly: true, cls:'sm' },
+        { name: 'updated_at', label: 'Atualizado em', span: 1, type: 'date', readonly: true, cls:'sm' }
       ],
       rooms: [
         { name: 'name', label: 'Nome da Sala', span: 4 },
