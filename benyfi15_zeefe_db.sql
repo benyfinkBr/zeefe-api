@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Tempo de geração: 15/11/2025 às 08:48
+-- Tempo de geração: 16/11/2025 às 18:42
 -- Versão do servidor: 5.7.23-23
 -- Versão do PHP: 8.1.33
 
@@ -46,6 +46,13 @@ CREATE TABLE `advertisers` (
   `owner_type` enum('client','company') COLLATE utf8mb4_unicode_ci NOT NULL,
   `owner_id` bigint(20) NOT NULL,
   `display_name` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `login_email` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `login_cpf` varchar(14) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `password_hash` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `email_verified_at` datetime DEFAULT NULL,
+  `verification_token` varchar(128) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `verification_token_expires` datetime DEFAULT NULL,
+  `last_login` datetime DEFAULT NULL,
   `status` enum('ativo','inativo','suspenso') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'ativo',
   `bank_name` varchar(120) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `account_type` enum('corrente','poupanca','pix') COLLATE utf8mb4_unicode_ci DEFAULT NULL,
@@ -90,27 +97,27 @@ CREATE TABLE `associates` (
 CREATE TABLE `clients` (
   `id` bigint(20) NOT NULL,
   `company_id` bigint(20) DEFAULT NULL,
-  `company_role` enum('admin','gestor','membro','leitor') COLLATE utf8_unicode_ci DEFAULT 'membro',
-  `name` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
-  `email` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
+  `company_role` enum('admin','gestor','membro','leitor') COLLATE utf8mb4_unicode_ci DEFAULT 'membro',
+  `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `email` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `email_verified_at` datetime DEFAULT NULL,
-  `verification_token` varchar(191) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `verification_token` varchar(191) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `verification_token_expires` datetime DEFAULT NULL,
-  `password` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
-  `login` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
-  `password_hash` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
-  `cpf` varchar(14) COLLATE utf8_unicode_ci DEFAULT NULL,
-  `rg` varchar(20) COLLATE utf8_unicode_ci DEFAULT NULL,
-  `phone` varchar(30) COLLATE utf8_unicode_ci DEFAULT NULL,
-  `whatsapp` varchar(30) COLLATE utf8_unicode_ci DEFAULT NULL,
-  `type` varchar(50) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `password` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `login` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `password_hash` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `cpf` varchar(14) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `rg` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `phone` varchar(30) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `whatsapp` varchar(30) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `type` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `birth_date` date DEFAULT NULL,
-  `profession` varchar(120) COLLATE utf8_unicode_ci DEFAULT NULL,
-  `status` varchar(20) COLLATE utf8_unicode_ci NOT NULL DEFAULT 'ativo',
+  `profession` varchar(120) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `status` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'ativo',
   `created_at` datetime DEFAULT NULL,
   `last_login` datetime DEFAULT NULL,
   `updated_at` datetime DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -120,24 +127,24 @@ CREATE TABLE `clients` (
 
 CREATE TABLE `companies` (
   `id` bigint(20) NOT NULL,
-  `razao_social` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
-  `nome_fantasia` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
-  `cnpj` varchar(18) COLLATE utf8_unicode_ci NOT NULL,
-  `inscricao_estadual` varchar(32) COLLATE utf8_unicode_ci DEFAULT NULL,
-  `street` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
-  `number` varchar(12) COLLATE utf8_unicode_ci DEFAULT NULL,
-  `complement` varchar(50) COLLATE utf8_unicode_ci DEFAULT NULL,
-  `zip_code` varchar(12) COLLATE utf8_unicode_ci DEFAULT NULL,
-  `city` varchar(100) COLLATE utf8_unicode_ci DEFAULT NULL,
-  `state` char(2) COLLATE utf8_unicode_ci DEFAULT NULL,
-  `email` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
-  `phone` varchar(30) COLLATE utf8_unicode_ci DEFAULT NULL,
-  `whatsapp` varchar(20) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `razao_social` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `nome_fantasia` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `cnpj` varchar(18) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `inscricao_estadual` varchar(32) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `street` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `number` varchar(12) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `complement` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `zip_code` varchar(12) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `city` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `state` char(2) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `email` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `phone` varchar(30) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `whatsapp` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `master_client_id` bigint(20) DEFAULT NULL,
-  `status` enum('ativo','inativo','suspenso') COLLATE utf8_unicode_ci DEFAULT 'ativo',
+  `status` enum('ativo','inativo','suspenso') COLLATE utf8mb4_unicode_ci DEFAULT 'ativo',
   `created_at` datetime DEFAULT NULL,
   `updated_at` datetime DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -406,22 +413,22 @@ CREATE TABLE `reservations` (
   `participants` int(11) DEFAULT '1',
   `price` decimal(10,2) DEFAULT '0.00',
   `company_id` bigint(20) DEFAULT NULL,
-  `title` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
-  `description` text COLLATE utf8_unicode_ci,
+  `title` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `description` mediumtext COLLATE utf8mb4_unicode_ci,
   `date` date NOT NULL,
   `time_start` time DEFAULT NULL,
   `time_end` time DEFAULT NULL,
   `total_price` decimal(10,2) DEFAULT '0.00',
   `attendees_count` int(11) DEFAULT '0',
-  `requirements` text COLLATE utf8_unicode_ci,
-  `observations` text COLLATE utf8_unicode_ci,
-  `status` enum('pendente','confirmada','cancelada','concluida') COLLATE utf8_unicode_ci DEFAULT 'pendente',
-  `payment_status` enum('pendente','confirmado','expirado') COLLATE utf8_unicode_ci NOT NULL DEFAULT 'pendente',
+  `requirements` mediumtext COLLATE utf8mb4_unicode_ci,
+  `observations` mediumtext COLLATE utf8mb4_unicode_ci,
+  `status` enum('pendente','confirmada','cancelada','concluida') COLLATE utf8mb4_unicode_ci DEFAULT 'pendente',
+  `payment_status` enum('pendente','confirmado','expirado') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'pendente',
   `hold_expires_at` datetime DEFAULT NULL,
-  `notes` text COLLATE utf8_unicode_ci,
+  `notes` mediumtext COLLATE utf8mb4_unicode_ci,
   `created_at` datetime DEFAULT NULL,
   `updated_at` datetime DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -463,33 +470,33 @@ CREATE TABLE `reviews` (
 
 CREATE TABLE `rooms` (
   `id` bigint(20) NOT NULL,
-  `name` varchar(120) COLLATE utf8_unicode_ci NOT NULL,
+  `name` varchar(120) COLLATE utf8mb4_unicode_ci NOT NULL,
   `capacity` int(11) NOT NULL,
-  `description` text COLLATE utf8_unicode_ci,
-  `street` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
-  `complement` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
-  `cep` varchar(15) COLLATE utf8_unicode_ci DEFAULT NULL,
-  `city` varchar(100) COLLATE utf8_unicode_ci DEFAULT NULL,
-  `state` varchar(50) COLLATE utf8_unicode_ci DEFAULT NULL,
-  `responsavel_nome` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
-  `responsavel_telefone` varchar(50) COLLATE utf8_unicode_ci DEFAULT NULL,
-  `responsavel_email` varchar(150) COLLATE utf8_unicode_ci DEFAULT NULL,
-  `portaria_telefone` varchar(50) COLLATE utf8_unicode_ci DEFAULT NULL,
-  `portaria_email` varchar(150) COLLATE utf8_unicode_ci DEFAULT NULL,
-  `portaria_inteligente` enum('Sim','Não') COLLATE utf8_unicode_ci DEFAULT 'Não',
+  `description` mediumtext COLLATE utf8mb4_unicode_ci,
+  `street` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `complement` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `cep` varchar(15) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `city` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `state` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `responsavel_nome` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `responsavel_telefone` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `responsavel_email` varchar(150) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `portaria_telefone` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `portaria_email` varchar(150) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `portaria_inteligente` enum('Sim','Não') COLLATE utf8mb4_unicode_ci DEFAULT 'Não',
   `dailyrate` decimal(10,2) DEFAULT NULL,
   `daily_rate` decimal(10,2) NOT NULL DEFAULT '0.00',
-  `location` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
-  `status` enum('ativo','inativo','manutencao','desativada') COLLATE utf8_unicode_ci DEFAULT 'ativo',
+  `location` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `status` enum('ativo','inativo','manutencao','desativada') COLLATE utf8mb4_unicode_ci DEFAULT 'ativo',
   `maintenance_start` date DEFAULT NULL,
   `maintenance_end` date DEFAULT NULL,
   `deactivated_from` date DEFAULT NULL,
-  `photo_path` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `photo_path` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `facilitated_access` tinyint(1) DEFAULT '0',
   `created_at` datetime DEFAULT NULL,
   `updated_at` datetime DEFAULT NULL,
   `advertiser_id` bigint(20) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -541,19 +548,19 @@ CREATE TABLE `visitors` (
   `id` bigint(20) NOT NULL,
   `client_id` bigint(20) DEFAULT NULL,
   `company_id` bigint(20) DEFAULT NULL,
-  `name` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
-  `rg` varchar(20) COLLATE utf8_unicode_ci DEFAULT NULL,
-  `cpf` varchar(14) COLLATE utf8_unicode_ci DEFAULT NULL,
-  `email` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
-  `invite_token` varchar(191) COLLATE utf8_unicode_ci DEFAULT NULL,
-  `invite_status` enum('pendente','completo') COLLATE utf8_unicode_ci NOT NULL DEFAULT 'pendente',
-  `phone` varchar(30) COLLATE utf8_unicode_ci DEFAULT NULL,
-  `whatsapp` varchar(20) COLLATE utf8_unicode_ci DEFAULT NULL,
-  `status` enum('ativo','inativo') COLLATE utf8_unicode_ci DEFAULT 'ativo',
-  `observations` text COLLATE utf8_unicode_ci,
+  `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `rg` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `cpf` varchar(14) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `email` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `invite_token` varchar(191) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `invite_status` enum('pendente','completo') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'pendente',
+  `phone` varchar(30) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `whatsapp` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `status` enum('ativo','inativo') COLLATE utf8mb4_unicode_ci DEFAULT 'ativo',
+  `observations` mediumtext COLLATE utf8mb4_unicode_ci,
   `created_at` datetime DEFAULT NULL,
   `updated_at` datetime DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -609,7 +616,8 @@ ALTER TABLE `admins`
 --
 ALTER TABLE `advertisers`
   ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `uk_adv_owner` (`owner_type`,`owner_id`);
+  ADD UNIQUE KEY `uk_adv_owner` (`owner_type`,`owner_id`),
+  ADD UNIQUE KEY `uk_advertisers_login_email` (`login_email`);
 
 --
 -- Índices de tabela `amenities`
@@ -632,7 +640,9 @@ ALTER TABLE `clients`
   ADD UNIQUE KEY `email` (`email`),
   ADD UNIQUE KEY `login` (`login`),
   ADD KEY `idx_clients_verification_token` (`verification_token`),
-  ADD KEY `idx_clients_company_id` (`company_id`);
+  ADD KEY `idx_clients_company_id` (`company_id`),
+  ADD KEY `idx_cli_email` (`email`),
+  ADD KEY `idx_cli_cpf` (`cpf`);
 
 --
 -- Índices de tabela `companies`
@@ -654,7 +664,9 @@ ALTER TABLE `company_employees`
 -- Índices de tabela `company_invitations`
 --
 ALTER TABLE `company_invitations`
-  ADD PRIMARY KEY (`id`);
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_inv_company_status` (`company_id`,`status`,`created_at`),
+  ADD KEY `idx_inv_email` (`invite_email`(120),`status`,`company_id`);
 
 --
 -- Índices de tabela `events`
@@ -701,7 +713,8 @@ ALTER TABLE `message_threads`
   ADD KEY `idx_msg_room` (`room_id`),
   ADD KEY `idx_msg_res` (`reservation_id`),
   ADD KEY `idx_msg_part` (`client_id`,`advertiser_id`),
-  ADD KEY `fk_msg_adv` (`advertiser_id`);
+  ADD KEY `fk_msg_adv` (`advertiser_id`),
+  ADD KEY `idx_threads_lastmsg` (`last_message_at`);
 
 --
 -- Índices de tabela `notification_logs`
