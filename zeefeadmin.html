@@ -832,7 +832,9 @@ input, select {
       const sel = document.getElementById('advertiserSelect'); const advId = sel ? Number(sel.value)||null : null;
       if (!advertiserSalaRoomId) return;
       try {
-        const res = await fetch(`${API_BASE}/apiupdate.php`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ table:'rooms', id: advertiserSalaRoomId, data:{ advertiser_id: advId } }) });
+        // apiupdate.php espera o id dentro de data
+        const payload = { table: 'rooms', data: { id: advertiserSalaRoomId, advertiser_id: advId } };
+        const res = await fetch(`${API_BASE}/apiupdate.php`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
         const json = await res.json(); if (!json.success) throw new Error(json.error||'Falha ao salvar.');
         msg.textContent = 'Vínculo salvo com sucesso.'; msg.style.display='block';
         await loadSection('rooms'); fecharAdvertiserModal();
