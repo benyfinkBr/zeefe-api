@@ -557,7 +557,7 @@ function openAdvChatDrawer(){
 }
 function closeAdvChatDrawer(){ stopChatPolling(); advChatModal?.classList.remove('show'); advChatModal?.setAttribute('aria-hidden','true'); }
 // View toggles
-advShowRegister?.addEventListener('click', () => { advLoginScreen.hidden = true; advRecoveryScreen.hidden = true; advRegisterScreen.hidden = false; authMsg.textContent=''; });
+advShowRegister?.addEventListener('click', () => { advLoginScreen.hidden = true; advRecoveryScreen.hidden = true; advRegisterScreen.hidden = false; authMsg.textContent=''; avaliarSenhaAdv(); });
 advShowRecovery?.addEventListener('click', () => { advLoginScreen.hidden = true; advRegisterScreen.hidden = true; advRecoveryScreen.hidden = false; authMsg.textContent=''; });
 advBackToLogin1?.addEventListener('click', () => { advLoginScreen.hidden = false; advRegisterScreen.hidden = true; });
 advBackToLogin2?.addEventListener('click', () => { advLoginScreen.hidden = false; advRecoveryScreen.hidden = true; });
@@ -577,7 +577,8 @@ advRegisterForm?.addEventListener('submit', async (e) => {
   if (!validarSenhaForteAdv(pw)) { advRegisterMessage.textContent='A senha deve ter letras, números e símbolos (mín. 8).'; return; }
   if (pw !== pw2) { advRegisterMessage.textContent='As senhas não conferem.'; return; }
   try {
-    const res = await fetch(`${API_BASE}/advertiser_register.php`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ display_name: name, login_email: email, login_cpf: cpfDigits || null, phone: phoneDigits || null, password: pw }) });
+    const publicName = (document.getElementById('advRegPublicName')?.value || '').trim() || name;
+    const res = await fetch(`${API_BASE}/advertiser_register.php`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ full_name: name, display_name: publicName, login_email: email, login_cpf: cpfDigits || null, phone: phoneDigits || null, password: pw }) });
     const json = await parseJsonSafe(res);
     if (!json.success) throw new Error(json.error || 'Falha ao criar conta.');
     advRegisterMessage.textContent = 'Cadastro realizado! Enviamos um e‑mail para confirmação.';
