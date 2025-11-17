@@ -95,6 +95,10 @@ const bookingClearFiltersBtn = null;
 let bookingSelectedAmenities = new Set();
 const bookingTitleInput = bookingForm?.querySelector('input[name="title"]');
 const bookingDescriptionInput = bookingForm?.querySelector('textarea[name="description"]');
+const bookingVoucherInput = document.getElementById('bookingVoucherCode');
+const bookingVoucherApplyBtn = document.getElementById('bookingVoucherApply');
+const bookingVoucherResult = document.getElementById('bookingVoucherResult');
+let bookingVoucherApplied = null; // { code, discount, payable }
 
 const reservationsContainer = document.getElementById('reservationsContainer');
 // Modal de ações da reserva
@@ -303,6 +307,8 @@ async function initialize() {
   // Sem filtros no portal
   bookingTitleInput?.addEventListener('input', onBookingDetailsChange);
   bookingDescriptionInput?.addEventListener('input', onBookingDetailsChange);
+  bookingVoucherInput?.addEventListener('input', () => { if (bookingVoucherResult) bookingVoucherResult.textContent=''; bookingVoucherApplied = null; });
+  bookingVoucherApplyBtn?.addEventListener('click', onApplyVoucherClick);
 
   cancelReservationEditBtn?.addEventListener('click', () => resetBookingForm());
   newReservationBtn?.addEventListener('click', () => {
@@ -1703,6 +1709,9 @@ function renderBookingCalendar(referenceDate) {
 function selectRoomOption(roomId) {
   if (!bookingRoomHiddenInput) return;
   bookingRoomHiddenInput.value = roomId;
+  // alterando a sala: descarta voucher aplicado
+  bookingVoucherApplied = null;
+  if (bookingVoucherResult) bookingVoucherResult.textContent = '';
   if (bookingRoomOptions) {
     Array.from(bookingRoomOptions.querySelectorAll('.room-option')).forEach(option => {
       option.classList.toggle('selected', option.dataset.roomId === String(roomId));
@@ -2529,6 +2538,16 @@ async function onBookingSubmit(event) {
     if (!json.success) throw new Error(json.error || 'Erro ao salvar reserva.');
 
     const reservationId = record.id || json.insertId;
+    // Aplica voucher na reserva se houver
+    let voucherWarn = false;
+    if (bookingVoucherApplied && bookingVoucherApplied.code && reservationId) {
+      try {
+        await fetch(`${API_BASE}/apply_voucher.php`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+          body: JSON.stringify({ reservation_id: reservationId, code: bookingVoucherApplied.code })
+        }).then(r => r.json()).then(j => { if (!j.success) throw new Error(j.error||'Falha ao aplicar voucher'); });
+      } catch (e) { voucherWarn = true; }
+    }
     let inviteWarn = false;
     if (formData.get('send_invites') && reservationId && bookingVisitorIds.length) {
       try {
@@ -2538,13 +2557,37 @@ async function onBookingSubmit(event) {
         console.warn('Falha ao enviar convites:', err);
       }
     }
-    const baseMessage = record.id ? 'Reserva atualizada com sucesso.' : 'Sua solicitação de reserva foi enviada. Você receberá a confirmação e o link de pagamento por e‑mail.';
+    let baseMessage = record.id ? 'Reserva atualizada com sucesso.' : 'Sua solicitação de reserva foi enviada. Você receberá a confirmação e o link de pagamento por e‑mail.';
+    if (voucherWarn) baseMessage += ' Observação: não foi possível aplicar o voucher.';
     resetBookingForm(true);
     bookingMessage.textContent = inviteWarn ? `${baseMessage} Porém, não foi possível enviar todos os convites.` : baseMessage;
     atualizarPainel();
   } catch (err) {
     console.error(err);
     bookingMessage.textContent = err.message || 'Não foi possível salvar a reserva.';
+  }
+}
+
+async function onApplyVoucherClick() {
+  if (!bookingVoucherInput || !bookingVoucherInput.value.trim()) { if (bookingVoucherResult) bookingVoucherResult.textContent = 'Informe um código.'; return; }
+  const code = bookingVoucherInput.value.trim();
+  const roomId = bookingRoomHiddenInput?.value ? Number(bookingRoomHiddenInput.value) : 0;
+  if (!roomId) { if (bookingVoucherResult) bookingVoucherResult.textContent = 'Selecione a sala antes de aplicar o voucher.'; return; }
+  const room = roomsCache.find(r => String(r.id) === String(roomId));
+  const amount = room && room.daily_rate ? Number(room.daily_rate) : 0;
+  try {
+    const payload = { code, room_id: roomId, advertiser_id: room?.advertiser_id || null, amount };
+    const res = await fetch(`${API_BASE}/validate_voucher.php`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify(payload) });
+    const json = await res.json();
+    if (!json.success) throw new Error(json.error || 'Voucher inválido.');
+    const v = json.voucher || {};
+    const discount = Number(v.discount || 0);
+    const payable = Math.max(0, amount - discount);
+    bookingVoucherApplied = { code: v.code, discount, payable };
+    if (bookingVoucherResult) bookingVoucherResult.textContent = `Voucher aplicado: -${formatCurrency(discount)}. Total previsto: ${formatCurrency(payable)}.`;
+  } catch (err) {
+    bookingVoucherApplied = null;
+    if (bookingVoucherResult) bookingVoucherResult.textContent = err.message || 'Não foi possível validar o voucher.';
   }
 }
 

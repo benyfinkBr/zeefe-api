@@ -217,6 +217,14 @@
                     <label for="bookingDescriptionInput">Descrição / Observações</label>
                     <textarea id="bookingDescriptionInput" name="description" rows="3"></textarea>
                   </div>
+                  <div class="form-row">
+                    <label for="bookingVoucherCode">Voucher (opcional)</label>
+                    <div style="display:flex; gap:8px; align-items:center; width:100%">
+                      <input type="text" id="bookingVoucherCode" placeholder="Código do voucher" style="flex:1" />
+                      <button type="button" class="btn btn-secondary btn-sm" id="bookingVoucherApply">Aplicar</button>
+                    </div>
+                    <small id="bookingVoucherResult" class="input-hint"></small>
+                  </div>
                 </section>
 
                 <section class="booking-step" data-step-index="3" hidden>
