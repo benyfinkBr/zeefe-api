@@ -33,7 +33,8 @@ const rememberMe = document.getElementById('advRememberMe');
 const authMsg = document.getElementById('advAuthMessage');
 
 const panelsWrap = document.getElementById('advPanels');
-const navButtons = Array.from(document.querySelectorAll('.portal-nav'));
+// Navegação lateral + atalhos no header (mesmo callback)
+const navButtons = Array.from(document.querySelectorAll('.portal-nav-links button, .quick-actions button[data-panel]'));
 const logoutBtn = document.getElementById('advLogoutBtn');
 const refreshBtn = document.getElementById('advRefreshBtn');
 
