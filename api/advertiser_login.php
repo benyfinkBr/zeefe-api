@@ -57,6 +57,7 @@ try {
   $payload = [
     'id' => (int)$adv['id'],
     'display_name' => $adv['display_name'] ?? null,
+    'full_name' => $adv['full_name'] ?? null,
     'email' => $adv['login_email'] ?? null,
     'login_cpf' => $adv['login_cpf'] ?? null,
     'status' => $adv['status'] ?? 'ativo',
@@ -65,7 +66,8 @@ try {
     'bank_name' => $adv['bank_name'] ?? null,
     'account_type' => $adv['account_type'] ?? null,
     'account_number' => $adv['account_number'] ?? null,
-    'pix_key' => $adv['pix_key'] ?? null
+    'pix_key' => $adv['pix_key'] ?? null,
+    'contact_phone' => $adv['contact_phone'] ?? null
   ];
 
   echo json_encode(['success' => true, 'advertiser' => $payload]);
@@ -73,4 +75,3 @@ try {
   http_response_code(500);
   echo json_encode(['success' => false, 'error' => 'Erro interno: ' . $e->getMessage()]);
 }
-

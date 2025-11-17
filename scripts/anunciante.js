@@ -566,18 +566,36 @@ advRegisterForm?.addEventListener('submit', async (e) => {
   e.preventDefault(); advRegisterMessage.textContent='';
   const name = (advRegName?.value||'').trim();
   const email = (advRegEmail?.value||'').trim();
+  const cpfDigits = advRegCpf ? (advRegCpf.value||'').replace(/\D/g,'') : '';
+  const phoneDigits = advRegPhone ? (advRegPhone.value||'').replace(/\D/g,'') : '';
+  if (advRegCpf) advRegCpf.value = formatCPFAdv(cpfDigits);
+  if (advRegPhone) advRegPhone.value = formatPhoneAdv(phoneDigits);
   const pw = advRegPassword?.value || '';
   const pw2 = advRegPasswordConfirm?.value || '';
-  if (!name || !email || !pw || !pw2) { advRegisterMessage.textContent='Preencha todos os campos.'; return; }
+  if (!name || !email || !pw || !pw2) { advRegisterMessage.textContent='Preencha todos os campos obrigatórios.'; return; }
+  if (cpfDigits && !cpfValidoAdv(cpfDigits)) { advRegisterMessage.textContent='CPF inválido.'; atualizarFeedbackCPFAdv(cpfDigits, true); return; }
+  if (!validarSenhaForteAdv(pw)) { advRegisterMessage.textContent='A senha deve ter letras, números e símbolos (mín. 8).'; return; }
   if (pw !== pw2) { advRegisterMessage.textContent='As senhas não conferem.'; return; }
   try {
-    const res = await fetch(`${API_BASE}/advertiser_register.php`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ display_name: name, login_email: email, password: pw }) });
+    const res = await fetch(`${API_BASE}/advertiser_register.php`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ display_name: name, login_email: email, login_cpf: cpfDigits || null, phone: phoneDigits || null, password: pw }) });
     const json = await parseJsonSafe(res);
     if (!json.success) throw new Error(json.error || 'Falha ao criar conta.');
-    advRegisterMessage.textContent = 'Cadastro realizado! Enviamos um e-mail para confirmação.';
+    advRegisterMessage.textContent = 'Cadastro realizado! Enviamos um e‑mail para confirmação.';
     setTimeout(()=>{ advLoginScreen.hidden=false; advRegisterScreen.hidden=true; }, 2000);
   } catch (err) { advRegisterMessage.textContent = err.message || 'Erro ao criar conta.'; }
 });
+
+// Validadores/formatadores (escopo anunciante)
+function formatCPFAdv(value){ const d=(value||'').toString().replace(/\D/g,'').slice(0,11); if(!d) return ''; let f=d; f=f.replace(/^(\d{3})(\d)/,'$1.$2'); f=f.replace(/^(\d{3}\.\d{3})(\d)/,'$1.$2'); f=f.replace(/^(\d{3}\.\d{3}\.\d{3})(\d{1,2})$/,'$1-$2'); return f; }
+function formatPhoneAdv(value){ const d=(value||'').toString().replace(/\D/g,''); if(!d) return ''; if(d.length<=2) return `(${d}`; const ddd=d.slice(0,2); const isMob=d.length>10; const mid=isMob?d.slice(2,7):d.slice(2,6); const end=isMob?d.slice(7):d.slice(6); return `(${ddd}) ${mid}${end?'-'+end:''}`; }
+function cpfValidoAdv(cpf){ const digits=(cpf||'').replace(/\D/g,''); if(digits.length!==11) return false; if(/^(\d)\1{10}$/.test(digits)) return false; let sum=0; for(let i=0;i<9;i++){ sum+=Number(digits[i])*(10-i);} let check=(sum*10)%11; if(check===10) check=0; if(check!==Number(digits[9])) return false; sum=0; for(let i=0;i<10;i++){ sum+=Number(digits[i])*(11-i);} check=(sum*10)%11; if(check===10) check=0; return check===Number(digits[10]); }
+function setIndicatorAdv(el,state,text){ if(!el) return; el.textContent=text; el.classList.remove('state-ok','state-warning','state-error','state-neutral'); el.classList.add(`state-${state}`); }
+function validarSenhaForteAdv(s){ if(typeof s!=='string'||s.length<8) return false; return /[A-Za-z]/.test(s)&&/\d/.test(s)&&/[^A-Za-z0-9]/.test(s); }
+function avaliarSenhaAdv(){ const s=advRegPassword?.value||''; const c=advRegPasswordConfirm?.value||''; let st='neutral',lbl='aguardando'; if(s){ const ok=validarSenhaForteAdv(s); st= ok?'ok':'error'; lbl= ok?'forte':'fraca'; } setIndicatorAdv(advPwStrength,st,`Força da senha: ${lbl}`); let ms='neutral',ml='aguardando'; if(s||c){ if(!c){ ms='warning'; ml='pendente'; } else if(s===c){ ms='ok'; ml='senhas combinam'; } else { ms='error'; ml='senhas diferentes'; } } setIndicatorAdv(advPwMatch,ms,`Confirmação: ${ml}`); if(advPasswordHint){ const invalid=(s && st!=='ok')||(c && s!==c); advPasswordHint.classList.toggle('invalid', invalid); } }
+function atualizarFeedbackCPFAdv(cpfDigits, forceInvalid=false){ if(!advCpfHint) return; const d=(cpfDigits||'').toString().replace(/\D/g,''); if(!d){ setIndicatorAdv(advCpfHint,'neutral','Informe os 11 dígitos do CPF.'); return; } if(d.length<11){ setIndicatorAdv(advCpfHint,'warning',`Faltam ${11-d.length} dígitos.`); return; } if(!cpfValidoAdv(d)||forceInvalid){ setIndicatorAdv(advCpfHint,'error','CPF inválido.'); return; } setIndicatorAdv(advCpfHint,'ok','CPF válido.'); }
+advRegCpf?.addEventListener('input', ()=> { const d=(advRegCpf.value||'').replace(/\D/g,'').slice(0,11); advRegCpf.value = formatCPFAdv(d); atualizarFeedbackCPFAdv(d); });
+advRegPassword?.addEventListener('input', avaliarSenhaAdv);
+advRegPasswordConfirm?.addEventListener('input', avaliarSenhaAdv);
 
 advRecoveryForm?.addEventListener('submit', async (e) => {
   e.preventDefault(); advRecoveryMessage.textContent='';

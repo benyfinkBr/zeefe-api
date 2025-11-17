@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Tempo de geração: 16/11/2025 às 19:14
+-- Tempo de geração: 16/11/2025 às 22:09
 -- Versão do servidor: 5.7.23-23
 -- Versão do PHP: 8.1.33
 
@@ -46,8 +46,10 @@ CREATE TABLE `advertisers` (
   `owner_type` enum('client','company') COLLATE utf8mb4_unicode_ci NOT NULL,
   `owner_id` bigint(20) NOT NULL,
   `display_name` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `full_name` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `login_email` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `login_cpf` varchar(14) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `contact_phone` varchar(30) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `password_hash` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `email_verified_at` datetime DEFAULT NULL,
   `verification_token` varchar(128) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
