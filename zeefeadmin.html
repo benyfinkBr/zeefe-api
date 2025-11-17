@@ -233,6 +233,7 @@ input, select {
           <li data-section="reservations">Reservas</li>
           <li data-section="visitors">Visitantes</li>
           <li data-section="amenities">Comodidades</li>
+          <li data-section="vouchers">Vouchers</li>
           <li data-section="campaigns">Campanhas</li>
         </ul>
         <div class="logout-link" id="logoutBtn">Sair</div>
@@ -1154,6 +1155,24 @@ input, select {
           { value: 'ativo', label: 'Ativo' },
           { value: 'inativo', label: 'Inativo' }
         ], cls: 'sm', includeEmpty: false }
+      ],
+      vouchers: [
+        { name: 'code', label: 'Código', span: 1, cls:'sm' },
+        { name: 'type', label: 'Tipo', span: 1, type: 'select', options: [ {value:'percent',label:'% Desconto'}, {value:'fixed',label:'Valor Fixo'} ], cls:'sm', includeEmpty:false },
+        { name: 'value', label: 'Valor', span: 1, cls:'sm' },
+        { name: 'max_discount', label: 'Teto máx. (opcional)', span: 1, cls:'sm' },
+        { type: 'break' },
+        { name: 'advertiser_id', label: 'Anunciante (opcional)', span: 2, type: 'select', source: 'advertisers', includeEmpty: true },
+        { name: 'room_id', label: 'Sala (opcional)', span: 2, type: 'select', source: 'rooms', includeEmpty: true },
+        { type: 'break' },
+        { name: 'client_id', label: 'Cliente (opcional)', span: 2, type: 'select', source: 'clients', includeEmpty: true },
+        { name: 'max_uses', label: 'Qtd. máxima de usos', span: 1, cls:'sm' },
+        { name: 'used_count', label: 'Usos realizados', span: 1, cls:'sm', readonly: true },
+        { type: 'break' },
+        { name: 'starts_at', label: 'Válido a partir de', span: 1, cls:'sm', type: 'date' },
+        { name: 'ends_at', label: 'Válido até', span: 1, cls:'sm', type: 'date' },
+        { name: 'status', label: 'Status', span: 1, type: 'select', options: [ {value:'ativo',label:'Ativo'}, {value:'inativo',label:'Inativo'} ], cls:'sm', includeEmpty:false },
+        { name: 'notes', label: 'Observações', span: 4, type: 'textarea' }
       ]
     };
 
@@ -1375,6 +1394,24 @@ input, select {
 
       container.appendChild(fragment);
 
+      // Ajustes específicos por seção
+      if (sec === 'vouchers') {
+        const codeWrap = container.querySelector('input[name="code"]')?.parentElement;
+        const codeInput = container.querySelector('input[name="code"]');
+        if (codeWrap && codeInput) {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'btn btn-secondary btn-sm';
+          btn.textContent = 'Gerar código';
+          btn.style.marginTop = '6px';
+          btn.addEventListener('click', () => {
+            codeInput.value = gerarCodigoVoucher();
+          });
+          codeWrap.appendChild(btn);
+          codeInput.placeholder = 'Ex.: ZE-' + gerarCodigoVoucher().slice(0,6);
+        }
+      }
+
       aplicarMascarasPadrao(container);
 
       if (sec === 'visitors') {
@@ -1405,6 +1442,13 @@ input, select {
         statusField.addEventListener('change', toggleConditional);
         toggleConditional();
       }
+    }
+
+    function gerarCodigoVoucher() {
+      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+      let s = '';
+      for (let i = 0; i < 10; i++) s += chars[Math.floor(Math.random()*chars.length)];
+      return 'ZEF-' + s;
     }
 
     async function salvarItem(e) {
