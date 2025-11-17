@@ -44,62 +44,54 @@
         </div>
       </div>
       <div class="auth-screen" id="advRegister" hidden>
-        <div class="login-card">
-          <img src="img/logo.jpg" alt="Ze.EFE">
-          <h2>Criar acesso<br><span>Portal do Anunciante</span></h2>
-          <form id="advRegisterForm" class="auth-form" autocomplete="on">
-            <div class="form-grid-mini">
-              <div>
-                <label for="advRegName">Nome completo</label>
-                <input type="text" id="advRegName" placeholder="Nome completo" required />
-              </div>
-              <div>
-                <label for="advRegEmail">E‑mail</label>
-                <input type="email" id="advRegEmail" placeholder="Seu e‑mail" required autocomplete="email" />
-                <small class="input-hint">Use este e‑mail ou CPF para acessar o portal.</small>
-              </div>
+        <div class="login-card register-card">
+          <div class="register-hero">
+            <img src="img/logo.jpg" alt="Ze.EFE">
+            <h2>Criar acesso<br><span>Portal do Anunciante</span></h2>
+          </div>
+          <form id="advRegisterForm" class="auth-form auth-form-grid" autocomplete="on">
+            <div class="form-field">
+              <label for="advRegName">Nome completo</label>
+              <input type="text" id="advRegName" required />
             </div>
-
-            <div class="form-grid-mini">
-              <div>
-                <label for="advRegPublicName">Nome para exibição (no anúncio)</label>
-                <input type="text" id="advRegPublicName" placeholder="Como aparecerá no anúncio" />
-              </div>
-              <div>
-                <!-- espaço para balancear a grade -->
-              </div>
+            <div class="form-field">
+              <label for="advRegEmail">E‑mail</label>
+              <input type="email" id="advRegEmail" required autocomplete="email" />
+              <small class="input-hint">Use este e‑mail ou CPF para acessar o portal.</small>
             </div>
-
-            <div class="form-grid-mini">
-              <div>
-                <label for="advRegCpf">CPF</label>
-                <input type="text" id="advRegCpf" placeholder="000.000.000-00" maxlength="14" />
-                <small id="advCpfHint" class="input-hint">Informe os 11 dígitos do CPF.</small>
-              </div>
-              <div>
-                <label for="advRegPhone">Telefone (opcional)</label>
-                <input type="text" id="advRegPhone" placeholder="(11) 99999-9999" />
-              </div>
+            <div class="form-field">
+              <label for="advRegPublicName">Nome para exibição (no anúncio)</label>
+              <input type="text" id="advRegPublicName" placeholder="Como aparecerá no anúncio" />
             </div>
-
-            <div class="form-grid-mini">
-              <div>
-                <label for="advRegPassword">Senha</label>
-                <input type="password" id="advRegPassword" placeholder="Senha" required autocomplete="new-password" />
-              </div>
-              <div>
-                <label for="advRegPasswordConfirm">Confirmar senha</label>
-                <input type="password" id="advRegPasswordConfirm" placeholder="Confirmar senha" required autocomplete="new-password" />
-              </div>
+            <div class="form-field">
+              <!-- coluna vazia para manter grade como no cliente -->
             </div>
-            <div class="input-indicators">
-              <div id="advPasswordStrength" class="input-indicator state-neutral">Força da senha: aguardando</div>
-              <div id="advPasswordMatch" class="input-indicator state-neutral">Confirmação: aguardando</div>
+            <div class="form-field">
+              <label for="advRegCpf">CPF</label>
+              <input type="text" id="advRegCpf" maxlength="14" autocomplete="off" />
+              <small id="advCpfHint" class="input-hint">Informe os 11 dígitos do CPF.</small>
             </div>
-            <small id="advPasswordHint" class="input-hint">A senha deve conter no mínimo 8 caracteres, incluindo letras, números e símbolos.</small>
-
-            <div class="form-row" style="margin-top:10px; display:flex; gap:10px; justify-content:center;">
-              <button class="btn btn-primary" type="submit">Criar conta</button>
+            <div class="form-field">
+              <label for="advRegPhone">Telefone (opcional)</label>
+              <input type="text" id="advRegPhone" maxlength="15" autocomplete="tel" />
+            </div>
+            <div class="form-field form-field-duo">
+              <label for="advRegPassword">Senha</label>
+              <input type="password" id="advRegPassword" required autocomplete="new-password" />
+            </div>
+            <div class="form-field form-field-duo">
+              <label for="advRegPasswordConfirm">Confirmar senha</label>
+              <input type="password" id="advRegPasswordConfirm" required autocomplete="new-password" />
+            </div>
+            <div class="form-field form-field-full password-indicators">
+              <span id="advPasswordStrength" class="password-indicator state-neutral">Força da senha: aguardando</span>
+              <span id="advPasswordMatch" class="password-indicator state-neutral">Confirmação: aguardando</span>
+            </div>
+            <div class="form-field form-field-full">
+              <p id="advPasswordHint" class="password-hint">A senha deve conter no mínimo 8 caracteres, incluindo letras, números e símbolos.</p>
+            </div>
+            <div class="form-field form-field-full">
+              <button class="btn btn-primary" type="submit">Concluir cadastro</button>
             </div>
           </form>
           <div id="advRegisterMessage" class="rooms-message" style="margin-top:8px"></div>

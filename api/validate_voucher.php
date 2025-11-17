@@ -1,0 +1,53 @@
+<?php
+require_once __DIR__ . '/apiconfig.php';
+header('Content-Type: application/json');
+
+// Input: { code, room_id?, advertiser_id?, amount? }
+try {
+  $data = json_decode(file_get_contents('php://input'), true) ?: [];
+  $code = strtoupper(trim($data['code'] ?? ''));
+  $roomId = isset($data['room_id']) ? (int)$data['room_id'] : null;
+  $advId = isset($data['advertiser_id']) ? (int)$data['advertiser_id'] : null;
+  $amount = isset($data['amount']) ? (float)$data['amount'] : null;
+
+  if ($code === '') { echo json_encode(['success'=>false,'error'=>'Informe o código.']); exit; }
+
+  $stmt = $pdo->prepare('SELECT * FROM vouchers WHERE code = :c LIMIT 1');
+  $stmt->execute([':c' => $code]);
+  $v = $stmt->fetch(PDO::FETCH_ASSOC);
+  if (!$v) { echo json_encode(['success'=>false,'error'=>'Voucher não encontrado.']); exit; }
+
+  // Regras básicas
+  if (strtolower($v['status'] ?? '') !== 'ativo') { echo json_encode(['success'=>false,'error'=>'Voucher inativo.']); exit; }
+  if (!empty($v['starts_at']) && (new DateTimeImmutable()) < new DateTimeImmutable($v['starts_at'])) { echo json_encode(['success'=>false,'error'=>'Voucher ainda não válido.']); exit; }
+  if (!empty($v['ends_at']) && (new DateTimeImmutable()) > new DateTimeImmutable($v['ends_at'])) { echo json_encode(['success'=>false,'error'=>'Voucher expirado.']); exit; }
+  if (!empty($v['max_uses']) && (int)$v['used_count'] >= (int)$v['max_uses']) { echo json_encode(['success'=>false,'error'=>'Limite de uso atingido.']); exit; }
+  if (!empty($v['advertiser_id']) && $advId && (int)$v['advertiser_id'] !== (int)$advId) { echo json_encode(['success'=>false,'error'=>'Voucher não aplicável para este anunciante.']); exit; }
+  if (!empty($v['room_id']) && $roomId && (int)$v['room_id'] !== (int)$roomId) { echo json_encode(['success'=>false,'error'=>'Voucher não aplicável para esta sala.']); exit; }
+
+  $type = strtolower($v['type'] ?? 'percent');
+  $val = (float)($v['value'] ?? 0);
+  $discount = 0.0;
+  if ($amount !== null) {
+    if ($type === 'percent') $discount = round(max(0, $amount) * ($val/100.0), 2);
+    else $discount = round(min($val, max(0, $amount)), 2);
+  }
+
+  echo json_encode([
+    'success' => true,
+    'voucher' => [
+      'code' => $v['code'],
+      'type' => $type,
+      'value' => $val,
+      'max_uses' => $v['max_uses'] ?? null,
+      'used_count' => $v['used_count'] ?? 0,
+      'advertiser_id' => $v['advertiser_id'] ?? null,
+      'room_id' => $v['room_id'] ?? null,
+      'discount' => $discount
+    ]
+  ]);
+} catch (Throwable $e) {
+  http_response_code(500);
+  echo json_encode(['success'=>false,'error'=>'Erro interno: '.$e->getMessage()]);
+}
+
