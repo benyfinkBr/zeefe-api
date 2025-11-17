@@ -11,6 +11,22 @@ let chatPollTimer = null;
 // Seletores
 const authContainer = document.getElementById('authContainer');
 const loginForm = document.getElementById('advLoginForm');
+const advShowRegister = document.getElementById('advShowRegister');
+const advShowRecovery = document.getElementById('advShowRecovery');
+const advRegisterScreen = document.getElementById('advRegister');
+const advRecoveryScreen = document.getElementById('advRecovery');
+const advLoginScreen = document.getElementById('authLogin');
+const advBackToLogin1 = document.getElementById('advBackToLogin1');
+const advBackToLogin2 = document.getElementById('advBackToLogin2');
+const advRegisterForm = document.getElementById('advRegisterForm');
+const advRegName = document.getElementById('advRegName');
+const advRegEmail = document.getElementById('advRegEmail');
+const advRegPassword = document.getElementById('advRegPassword');
+const advRegPasswordConfirm = document.getElementById('advRegPasswordConfirm');
+const advRegisterMessage = document.getElementById('advRegisterMessage');
+const advRecoveryForm = document.getElementById('advRecoveryForm');
+const advRecEmail = document.getElementById('advRecEmail');
+const advRecoveryMessage = document.getElementById('advRecoveryMessage');
 const loginIdInput = document.getElementById('advLoginIdentifier');
 const loginPwInput = document.getElementById('advLoginPassword');
 const rememberMe = document.getElementById('advRememberMe');
@@ -58,6 +74,22 @@ const roomState = document.getElementById('roomState');
 const roomPrice = document.getElementById('roomPrice');
 const roomStatus = document.getElementById('roomStatus');
 const roomDesc = document.getElementById('roomDescription');
+// extra admin-like fields
+const dailyRate = document.getElementById('dailyRate');
+const facilitatedAccess = document.getElementById('facilitatedAccess');
+const portariaInteligente = document.getElementById('portariaInteligente');
+const streetInput = document.getElementById('street');
+const complementInput = document.getElementById('complement');
+const cepInput = document.getElementById('cep');
+const respNome = document.getElementById('responsavelNome');
+const respFone = document.getElementById('responsavelTelefone');
+const respEmail = document.getElementById('responsavelEmail');
+const portariaFone = document.getElementById('portariaTelefone');
+const portariaEmail = document.getElementById('portariaEmail');
+const locationInternal = document.getElementById('locationInternal');
+const maintenanceStart = document.getElementById('maintenanceStart');
+const maintenanceEnd = document.getElementById('maintenanceEnd');
+const deactivatedFrom = document.getElementById('deactivatedFrom');
 // payout form
 const bankNameInput = document.getElementById('bankName');
 const accountTypeInput = document.getElementById('accountType');
@@ -100,10 +132,10 @@ async function onLoginSubmit(e) {
   const pw = loginPwInput?.value || '';
   if (!id || !pw) { authMsg.textContent = 'Informe login e senha.'; return; }
   try {
-    const res = await fetch(`${API_BASE}/client_portal_login.php`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ login: id, password: pw }) });
+    const res = await fetch(`${API_BASE}/advertiser_login.php`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ login: id, password: pw }) });
     const json = await parseJsonSafe(res);
     if (!json.success) throw new Error(json.error || 'Falha no login');
-    advClient = json.client;
+    advClient = json.advertiser; // anunciante autenticado
     await afterLogin();
   } catch (err) {
     authMsg.textContent = err.message || 'Erro ao autenticar.';
@@ -113,32 +145,27 @@ async function onLoginSubmit(e) {
 async function afterLogin() {
   setAuthVisible(false);
   if (panelsWrap) panelsWrap.hidden = false;
-  advDisplay.textContent = advClient?.name || advClient?.login || 'Anunciante';
-  advOwner.textContent = advClient?.email || '';
+  // Preenche direto a partir do anunciante autenticado
+  myAdvertiser = advClient || null;
+  if (myAdvertiser?.display_name) {
+    advDisplay.textContent = myAdvertiser.display_name;
+  } else {
+    advDisplay.textContent = 'Anunciante';
+  }
+  advOwner.textContent = myAdvertiser?.email || '';
+  // Preenche payout se existir
+  bankNameInput && (bankNameInput.value = myAdvertiser?.bank_name || '');
+  accountTypeInput && (accountTypeInput.value = myAdvertiser?.account_type || '');
+  accountNumberInput && (accountNumberInput.value = myAdvertiser?.account_number || '');
+  pixKeyInput && (pixKeyInput.value = myAdvertiser?.pix_key || '');
 
-  await loadAdvertiser();
   await Promise.all([loadRooms(), loadReservations(), loadFinance(), loadOverview(), loadReviews(), loadThreads()]);
   setActivePanel('overview');
 }
 
 async function loadAdvertiser() {
-  try {
-    const res = await fetch(`${API_BASE}/apiget.php?table=advertisers`, { credentials:'include' });
-    const json = await parseJsonSafe(res);
-    const list = (json.success ? (json.data || []) : []);
-    myAdvertiser = list.find(a => String(a.owner_type) === 'client' && String(a.owner_id) === String(advClient.id)) || null;
-    if (!myAdvertiser) {
-      advDisplay.textContent = 'Sem anunciante vinculado';
-      advOwner.innerHTML = 'Acesse <a href="divulgue.html">Divulgue sua sala</a> para criar seu cadastro de anunciante.';
-    } else {
-      if (myAdvertiser.display_name) advDisplay.textContent = myAdvertiser.display_name;
-      // Preenche dados de repasse
-      bankNameInput && (bankNameInput.value = myAdvertiser.bank_name || '');
-      accountTypeInput && (accountTypeInput.value = myAdvertiser.account_type || '');
-      accountNumberInput && (accountNumberInput.value = myAdvertiser.account_number || '');
-      pixKeyInput && (pixKeyInput.value = myAdvertiser.pix_key || '');
-    }
-  } catch (_) { /* silencioso */ }
+  // Mantido apenas por compatibilidade; já atribuímos myAdvertiser em afterLogin.
+  return;
 }
 
 async function loadRooms() {
@@ -202,6 +229,18 @@ async function loadReservations() {
   }
 }
 
+// Finance helpers
+function parseDateOnly(s) { if (!s) return null; const d = new Date(s.replace(' ','T')); return isNaN(d) ? null : d; }
+function formatMoney(n){ return 'R$ ' + Number(n||0).toFixed(2); }
+function exportCSV(rows){
+  const header = ['#','Tipo','Valor','Status','Disponível em','Criado em'];
+  const data = rows.map(l => [l.id, l.type, Number(l.amount||0).toFixed(2), l.status, (l.available_at||''), (l.created_at||'')]);
+  const csv = [header].concat(data).map(r => r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = 'financeiro.csv'; a.click(); URL.revokeObjectURL(url);
+}
+
 async function loadFinance() {
   finContainer.innerHTML = '<div class="rooms-message">Carregando…</div>';
   try {
@@ -213,20 +252,68 @@ async function loadFinance() {
       const list = json.success ? (json.data || []) : [];
       rows = list.filter(x => String(x.advertiser_id) === String(advId));
     }
-    const body = rows.map(l => `
+
+    // Apply filters by created_at
+    const fromEl = document.getElementById('advFinFrom');
+    const toEl = document.getElementById('advFinTo');
+    const fromDate = fromEl?.value ? new Date(fromEl.value+'T00:00:00') : null;
+    const toDate = toEl?.value ? new Date(toEl.value+'T23:59:59') : null;
+    let filtered = rows;
+    if (fromDate || toDate) {
+      filtered = rows.filter(r => {
+        const created = parseDateOnly(r.created_at) || parseDateOnly(r.available_at) || null;
+        if (!created) return false;
+        if (fromDate && created < fromDate) return false;
+        if (toDate && created > toDate) return false;
+        return true;
+      });
+    }
+
+    // Totals by status
+    const sum = { pendente:0, disponivel:0, pago:0, bloqueado:0 };
+    filtered.forEach(l => { const st = String(l.status||'').toLowerCase(); if (sum.hasOwnProperty(st)) sum[st] += Number(l.amount||0); });
+
+    const body = filtered.map(l => `
       <tr>
         <td>${escapeHtml(l.id)}</td>
         <td>${escapeHtml(l.type)}</td>
-        <td>R$ ${Number(l.amount || 0).toFixed(2)}</td>
+        <td>${formatMoney(l.amount)}</td>
         <td>${escapeHtml(l.status)}</td>
         <td>${escapeHtml(l.available_at || '')}</td>
       </tr>
     `).join('');
-    finContainer.innerHTML = `
+
+    const summary = `
+      <div class="finance-summary" style="display:flex;gap:12px;flex-wrap:wrap;margin:8px 0 12px">
+        <span class="chip">Pendente: ${formatMoney(sum.pendente)}</span>
+        <span class="chip">Disponível: ${formatMoney(sum.disponivel)}</span>
+        <span class="chip">Pago: ${formatMoney(sum.pago)}</span>
+      </div>
+      <div style="display:flex; gap:10px; justify-content:flex-end; margin-bottom:6px">
+        <button type="button" class="btn btn-secondary btn-sm" id="advFinExport">Exportar CSV</button>
+      </div>`;
+
+    finContainer.innerHTML = summary + `
       <table>
         <thead><tr><th>#</th><th>Tipo</th><th>Valor</th><th>Status</th><th>Disponível em</th></tr></thead>
         <tbody>${body || '<tr><td colspan="5" style="text-align:center;padding:16px">Sem lançamentos.</td></tr>'}</tbody>
       </table>`;
+
+    document.getElementById('advFinExport')?.addEventListener('click', ()=> exportCSV(filtered));
+
+    // Hook presets
+    document.querySelectorAll('.adv-finance-preset').forEach(btn => {
+      btn.onclick = () => {
+        const days = Number(btn.dataset.range||'0');
+        const to = new Date();
+        const from = new Date(); from.setDate(to.getDate() - days);
+        if (fromEl) fromEl.value = from.toISOString().slice(0,10);
+        if (toEl) toEl.value = to.toISOString().slice(0,10);
+        loadFinance();
+      };
+    });
+    document.getElementById('advFinApply')?.addEventListener('click', ()=> loadFinance());
+
   } catch (e) {
     finContainer.innerHTML = '<div class="rooms-message">Falha ao carregar extrato.</div>';
   }
@@ -393,6 +480,12 @@ setAuthVisible(true);
 
 // Modal Nova sala
 newRoomBtn?.addEventListener('click', () => { openRoomModal(); });
+document.getElementById('advQuickRegisterBtn')?.addEventListener('click', ()=>{
+  // manda para a tela de registro direto
+  document.getElementById('authLogin').hidden = true;
+  document.getElementById('advRegister').hidden = false;
+  setAuthVisible(true);
+});
 roomClose?.addEventListener('click', () => { closeRoomModal(); });
 roomCancel?.addEventListener('click', () => { closeRoomModal(); });
 roomModal?.addEventListener('click', (e)=> { if (e.target === roomModal) closeRoomModal(); });
@@ -414,12 +507,26 @@ async function onRoomFormSubmit(e){
     table: 'rooms',
     data: {
       name: (roomName?.value||'').trim(),
-      capacity: roomCap?.value ? parseInt(roomCap.value,10) : null,
-      city: (roomCity?.value||'').trim(),
-      state: (roomState?.value||'').trim(),
-      price: roomPrice?.value ? Number(roomPrice.value) : null,
-      status: (roomStatus?.value||'ativo').trim(),
       description: (roomDesc?.value||'').trim(),
+      capacity: roomCap?.value ? parseInt(roomCap.value,10) : null,
+      daily_rate: dailyRate?.value ? Number(dailyRate.value) : null,
+      facilitated_access: facilitatedAccess?.value || null,
+      portaria_inteligente: portariaInteligente?.value || null,
+      street: (streetInput?.value||'').trim(),
+      complement: (complementInput?.value||'').trim(),
+      cep: (cepInput?.value||'').trim(),
+      state: (roomState?.value||'').trim(),
+      city: (roomCity?.value||'').trim(),
+      responsavel_nome: (respNome?.value||'').trim(),
+      responsavel_telefone: (respFone?.value||'').trim(),
+      responsavel_email: (respEmail?.value||'').trim(),
+      portaria_telefone: (portariaFone?.value||'').trim(),
+      portaria_email: (portariaEmail?.value||'').trim(),
+      location: (locationInternal?.value||'').trim(),
+      status: (roomStatus?.value||'ativo').trim(),
+      maintenance_start: (maintenanceStart?.value||'') || null,
+      maintenance_end: (maintenanceEnd?.value||'') || null,
+      deactivated_from: (deactivatedFrom?.value||'') || null,
       advertiser_id: myAdvertiser.id,
       created_at: new Date().toISOString().slice(0,19).replace('T',' ')
     }
@@ -449,3 +556,37 @@ function openAdvChatDrawer(){
   loadThreads();
 }
 function closeAdvChatDrawer(){ stopChatPolling(); advChatModal?.classList.remove('show'); advChatModal?.setAttribute('aria-hidden','true'); }
+// View toggles
+advShowRegister?.addEventListener('click', () => { advLoginScreen.hidden = true; advRecoveryScreen.hidden = true; advRegisterScreen.hidden = false; authMsg.textContent=''; });
+advShowRecovery?.addEventListener('click', () => { advLoginScreen.hidden = true; advRegisterScreen.hidden = true; advRecoveryScreen.hidden = false; authMsg.textContent=''; });
+advBackToLogin1?.addEventListener('click', () => { advLoginScreen.hidden = false; advRegisterScreen.hidden = true; });
+advBackToLogin2?.addEventListener('click', () => { advLoginScreen.hidden = false; advRecoveryScreen.hidden = true; });
+
+advRegisterForm?.addEventListener('submit', async (e) => {
+  e.preventDefault(); advRegisterMessage.textContent='';
+  const name = (advRegName?.value||'').trim();
+  const email = (advRegEmail?.value||'').trim();
+  const pw = advRegPassword?.value || '';
+  const pw2 = advRegPasswordConfirm?.value || '';
+  if (!name || !email || !pw || !pw2) { advRegisterMessage.textContent='Preencha todos os campos.'; return; }
+  if (pw !== pw2) { advRegisterMessage.textContent='As senhas não conferem.'; return; }
+  try {
+    const res = await fetch(`${API_BASE}/advertiser_register.php`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ display_name: name, login_email: email, password: pw }) });
+    const json = await parseJsonSafe(res);
+    if (!json.success) throw new Error(json.error || 'Falha ao criar conta.');
+    advRegisterMessage.textContent = 'Cadastro realizado! Enviamos um e-mail para confirmação.';
+    setTimeout(()=>{ advLoginScreen.hidden=false; advRegisterScreen.hidden=true; }, 2000);
+  } catch (err) { advRegisterMessage.textContent = err.message || 'Erro ao criar conta.'; }
+});
+
+advRecoveryForm?.addEventListener('submit', async (e) => {
+  e.preventDefault(); advRecoveryMessage.textContent='';
+  const email = (advRecEmail?.value||'').trim();
+  if (!email) { advRecoveryMessage.textContent='Informe o e‑mail.'; return; }
+  try {
+    const res = await fetch(`${API_BASE}/advertiser_reset_password.php`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ email }) });
+    const json = await parseJsonSafe(res);
+    if (!json.success) throw new Error(json.error || 'Falha ao enviar e‑mail.');
+    advRecoveryMessage.textContent = json.message || 'Enviamos um e‑mail com instruções.';
+  } catch (err) { advRecoveryMessage.textContent = err.message || 'Erro ao enviar.'; }
+});

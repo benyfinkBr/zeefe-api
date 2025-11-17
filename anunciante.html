@@ -37,7 +37,37 @@
             <button class="btn btn-primary" type="submit">Entrar</button>
           </form>
           <div id="advAuthMessage" class="rooms-message" style="margin-top:8px"></div>
-          <p class="form-help">Não tem cadastro? <a href="divulgue.html">Divulgue sua sala</a>.</p>
+          <div class="auth-quick-actions" style="margin-top:10px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+            <button type="button" class="ghost-btn" id="advShowRecovery">Esqueci minha senha</button>
+            <button type="button" class="ghost-btn" id="advShowRegister">Criar acesso</button>
+          </div>
+        </div>
+      </div>
+      <div class="auth-screen" id="advRegister" hidden>
+        <div class="login-card">
+          <img src="img/logo.jpg" alt="Ze.EFE">
+          <h2>Criar acesso<br><span>Portal do Anunciante</span></h2>
+          <form id="advRegisterForm" autocomplete="on">
+            <input type="text" id="advRegName" placeholder="Nome público do anunciante" required />
+            <input type="email" id="advRegEmail" placeholder="E‑mail de login" required autocomplete="email" />
+            <input type="password" id="advRegPassword" placeholder="Senha" required autocomplete="new-password" />
+            <input type="password" id="advRegPasswordConfirm" placeholder="Confirmar senha" required autocomplete="new-password" />
+            <button class="btn btn-primary" type="submit">Criar conta</button>
+          </form>
+          <div id="advRegisterMessage" class="rooms-message" style="margin-top:8px"></div>
+          <button type="button" class="ghost-btn" id="advBackToLogin1">Voltar ao login</button>
+        </div>
+      </div>
+      <div class="auth-screen" id="advRecovery" hidden>
+        <div class="login-card">
+          <img src="img/logo.jpg" alt="Ze.EFE">
+          <h2>Recuperar acesso<br><span>Portal do Anunciante</span></h2>
+          <form id="advRecoveryForm" autocomplete="on">
+            <input type="email" id="advRecEmail" placeholder="E‑mail de login" required autocomplete="email" />
+            <button class="btn btn-primary" type="submit">Enviar instruções</button>
+          </form>
+          <div id="advRecoveryMessage" class="rooms-message" style="margin-top:8px"></div>
+          <button type="button" class="ghost-btn" id="advBackToLogin2">Voltar ao login</button>
         </div>
       </div>
     </section>
@@ -96,8 +126,8 @@
           <div class="overview-box">
             <h4>Ações rápidas</h4>
             <div class="quick-actions">
-              <button class="btn btn-secondary btn-sm" type="button" id="advNewRoomBtn">Nova sala</button>
-              <a class="btn btn-secondary btn-sm" href="divulgue.html">Divulgar nova sala</a>
+              <button class="btn btn-secondary btn-sm" type="button" id="advNewRoomBtn">Cadastrar sala</button>
+              <button class="btn btn-secondary btn-sm" type="button" id="advQuickRegisterBtn">Cadastre-se para anunciar</button>
               <button class="btn btn-secondary btn-sm" data-panel="rooms">Gerir salas</button>
               <button class="btn btn-secondary btn-sm" data-panel="finance">Ver extrato</button>
             </div>
@@ -214,44 +244,107 @@
       <button class="modal-close" type="button" id="advRoomClose" aria-label="Fechar">&times;</button>
       <div class="modal-body">
         <div class="modal-info" style="padding:24px; width:100%">
-          <h2 id="advRoomTitle" style="margin-top:0">Criar nova sala</h2>
+          <h2 id="advRoomTitle" style="margin-top:0">Cadastrar sala</h2>
           <form id="advRoomForm" class="auth-form">
-            <div class="form-grid-mini">
-              <div>
-                <label for="roomName">Nome</label>
+            <div class="form-grid">
+              <div class="form-group" style="grid-column: span 4">
+                <label for="roomName">Nome da Sala</label>
                 <input type="text" id="roomName" required />
               </div>
-              <div>
-                <label for="roomCapacity">Capacidade</label>
-                <input type="number" id="roomCapacity" min="1" step="1" placeholder="Ex.: 12" />
+              <div class="form-group" style="grid-column: span 4">
+                <label for="roomDescription">Descrição</label>
+                <textarea id="roomDescription" rows="3" placeholder="Breve descrição"></textarea>
               </div>
-            </div>
-            <div class="form-grid-mini">
-              <div>
+              <div class="form-group">
+                <label for="roomCapacity">Capacidade</label>
+                <input type="number" id="roomCapacity" min="1" step="1" />
+              </div>
+              <div class="form-group">
+                <label for="dailyRate">Valor Diário (R$)</label>
+                <input type="number" id="dailyRate" min="0" step="0.01" />
+              </div>
+              <div class="form-group">
+                <label for="facilitatedAccess">Acesso Facilitado</label>
+                <select id="facilitatedAccess"><option value="1">Sim</option><option value="0">Não</option></select>
+              </div>
+              <div class="form-group">
+                <label for="portariaInteligente">Portaria Inteligente</label>
+                <select id="portariaInteligente"><option value="Sim">Sim</option><option value="Não">Não</option></select>
+              </div>
+              <div class="form-group" style="grid-column: span 3">
+                <label for="street">Rua</label>
+                <input type="text" id="street" />
+              </div>
+              <div class="form-group">
+                <label for="complement">Complemento</label>
+                <input type="text" id="complement" />
+              </div>
+              <div class="form-group">
+                <label for="cep">CEP</label>
+                <input type="text" id="cep" />
+              </div>
+              <div class="form-group">
+                <label for="roomState">Estado (UF)</label>
+                <input type="text" id="roomState" maxlength="2" />
+              </div>
+              <div class="form-group" style="grid-column: span 2">
                 <label for="roomCity">Cidade</label>
                 <input type="text" id="roomCity" />
               </div>
-              <div>
-                <label for="roomState">UF</label>
-                <input type="text" id="roomState" maxlength="2" />
+              <div class="form-group" style="grid-column: span 2">
+                <label for="responsavelNome">Nome do Responsável</label>
+                <input type="text" id="responsavelNome" />
               </div>
-            </div>
-            <div class="form-grid-mini">
-              <div>
-                <label for="roomPrice">Preço (R$)</label>
-                <input type="number" id="roomPrice" min="0" step="0.01" placeholder="Ex.: 250.00" />
+              <div class="form-group">
+                <label for="responsavelTelefone">Telefone do Responsável</label>
+                <input type="text" id="responsavelTelefone" />
               </div>
-              <div>
+              <div class="form-group">
+                <label for="responsavelEmail">E‑mail do Responsável</label>
+                <input type="email" id="responsavelEmail" />
+              </div>
+              <div class="form-group">
+                <label for="portariaTelefone">Telefone Portaria</label>
+                <input type="text" id="portariaTelefone" />
+              </div>
+              <div class="form-group">
+                <label for="portariaEmail">E‑mail Portaria</label>
+                <input type="email" id="portariaEmail" />
+              </div>
+              <div class="form-group" style="grid-column: span 4">
+                <label for="locationInternal">Localização Interna (andar, bloco...)</label>
+                <input type="text" id="locationInternal" />
+              </div>
+              <div class="form-group">
                 <label for="roomStatus">Status</label>
                 <select id="roomStatus">
-                  <option value="ativo">Ativo</option>
-                  <option value="inativo">Inativo</option>
+                  <option value="ativo">Ativa</option>
+                  <option value="inativo">Inativa</option>
+                  <option value="manutencao">Em Manutenção</option>
+                  <option value="desativada">Desativada</option>
                 </select>
               </div>
-            </div>
-            <div class="form-row">
-              <label for="roomDescription">Descrição</label>
-              <textarea id="roomDescription" rows="3" placeholder="Breve descrição"></textarea>
+              <div class="form-group">
+                <label for="maintenanceStart">Manutenção - De</label>
+                <input type="date" id="maintenanceStart" />
+              </div>
+              <div class="form-group">
+                <label for="maintenanceEnd">Manutenção - Até</label>
+                <input type="date" id="maintenanceEnd" />
+              </div>
+              <div class="form-group">
+                <label for="deactivatedFrom">Desativada a partir de</label>
+                <input type="date" id="deactivatedFrom" />
+              </div>
+              <div class="form-group" style="grid-column: span 4">
+                <label for="roomPhotos">Fotos da sala</label>
+                <input type="file" id="roomPhotos" accept="image/*" multiple />
+                <small class="input-hint">Envie imagens JPG/PNG/WEBP (até 8MB cada).</small>
+              </div>
+              <div class="form-group" style="grid-column: span 4">
+                <label>Comodidades disponíveis</label>
+                <div id="advAmenitiesGrid" class="checkbox-grid"></div>
+              </div>
             </div>
             <div class="modal-actions" style="display:flex; gap:12px; justify-content:flex-end;">
               <button type="button" class="btn btn-secondary" id="advRoomCancel">Cancelar</button>

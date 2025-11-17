@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Tempo de geração: 16/11/2025 às 18:42
+-- Tempo de geração: 16/11/2025 às 19:14
 -- Versão do servidor: 5.7.23-23
 -- Versão do PHP: 8.1.33
 
@@ -54,6 +54,7 @@ CREATE TABLE `advertisers` (
   `verification_token_expires` datetime DEFAULT NULL,
   `last_login` datetime DEFAULT NULL,
   `status` enum('ativo','inativo','suspenso') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'ativo',
+  `fee_pct` decimal(5,2) DEFAULT NULL,
   `bank_name` varchar(120) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `account_type` enum('corrente','poupanca','pix') COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `account_number` varchar(64) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
@@ -253,6 +254,8 @@ CREATE TABLE `ledger_entries` (
   `amount` decimal(12,2) NOT NULL,
   `status` enum('pendente','disponivel','bloqueado','pago','estornado') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'pendente',
   `available_at` datetime DEFAULT NULL,
+  `paid_at` datetime DEFAULT NULL,
+  `txid` varchar(128) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -419,6 +422,12 @@ CREATE TABLE `reservations` (
   `time_start` time DEFAULT NULL,
   `time_end` time DEFAULT NULL,
   `total_price` decimal(10,2) DEFAULT '0.00',
+  `amount_gross` decimal(10,2) DEFAULT NULL,
+  `voucher_code` varchar(64) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `voucher_amount` decimal(10,2) DEFAULT NULL,
+  `fee_pct_at_time` decimal(5,2) DEFAULT NULL,
+  `fee_amount` decimal(10,2) DEFAULT NULL,
+  `amount_net` decimal(10,2) DEFAULT NULL,
   `attendees_count` int(11) DEFAULT '0',
   `requirements` mediumtext COLLATE utf8mb4_unicode_ci,
   `observations` mediumtext COLLATE utf8mb4_unicode_ci,
@@ -617,7 +626,8 @@ ALTER TABLE `admins`
 ALTER TABLE `advertisers`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `uk_adv_owner` (`owner_type`,`owner_id`),
-  ADD UNIQUE KEY `uk_advertisers_login_email` (`login_email`);
+  ADD UNIQUE KEY `uk_advertisers_login_email` (`login_email`),
+  ADD KEY `idx_adv_fee` (`fee_pct`);
 
 --
 -- Índices de tabela `amenities`
