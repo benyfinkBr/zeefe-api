@@ -257,22 +257,87 @@
 
   <!-- Drawer: Chat do anunciante -->
   <div class="modal-overlay chat-drawer" id="advChatModal" aria-hidden="true">
-    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="advChatTitle">
+    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="advChatTitle" style="width: 960px; max-width: 96vw; height: 82vh; display:flex; flex-direction:column;">
       <button class="modal-close" type="button" id="advChatClose" aria-label="Fechar">&times;</button>
       <div class="modal-body">
         <div class="modal-info" style="padding:8px; width:100%">
           <h2 id="advChatTitle" style="margin:8px 0 12px">Mensagens</h2>
-          <div style="display:grid; grid-template-columns: 160px 1fr; gap:10px; height:100%">
-            <aside id="advThreadsContainer" style="overflow:auto; border:1px solid rgba(29,65,58,.12); border-radius:10px; background:#fff; padding:6px"></aside>
-            <section id="advChatArea" aria-live="polite" style="display:flex; flex-direction:column; gap:8px;">
+          <div style="display:grid; grid-template-columns: 220px 1fr; gap:12px; height:62vh">
+            <aside id="advThreadsContainer" style="overflow:auto; border:1px solid rgba(29,65,58,.12); border-radius:10px; background:#fff; padding:8px"></aside>
+            <section id="advChatArea" aria-live="polite" style="display:flex; flex-direction:column; gap:10px; height:62vh;">
               <div id="advChatHeader" class="rooms-message">Selecione uma conversa</div>
-              <div id="advChatMessages" class="chat-messages"></div>
-              <form id="advChatForm" class="chat-form" hidden>
-                <input type="text" id="advChatInput" placeholder="Digite uma mensagem" autocomplete="off" />
-                <button class="btn btn-primary" type="submit">Enviar</button>
+              <div id="advChatMessages" class="chat-messages" style="flex:1; min-height: 360px;"></div>
+              <form id="advChatForm" class="chat-form" hidden style="display:flex; gap:10px;">
+                <input type="text" id="advChatInput" placeholder="Digite uma mensagem" autocomplete="off" style="flex:1" />
+                <button class="btn btn-primary" type="submit" style="flex:0 0 auto">Enviar</button>
               </form>
             </section>
           </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Detalhes da Reserva (Anunciante) -->
+  <div class="modal-overlay" id="advReservationModal" aria-hidden="true">
+    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="advResTitle" style="width:760px; max-width:96vw;">
+      <button class="modal-close" type="button" id="advResClose" aria-label="Fechar">&times;</button>
+      <div class="modal-body">
+        <div class="modal-info" style="padding:20px; width:100%">
+          <h2 id="advResTitle" style="margin:0 0 10px">Reserva</h2>
+          <div id="advResContent" class="responsive-table" style="margin-bottom:12px"></div>
+          <div class="actions-grid" style="display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-end;">
+            <button class="btn btn-secondary" id="advResOpenChat">Mensagens</button>
+            <button class="btn btn-secondary" id="advResCancel">Cancelar</button>
+            <button class="btn btn-secondary" id="advResDeny">Recusar</button>
+            <button class="btn btn-primary" id="advResConfirm">Confirmar</button>
+          </div>
+          <div id="advResMessage" class="rooms-message" style="margin-top:8px"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Detalhes da Sala (edição rápida) -->
+  <div class="modal-overlay" id="advRoomDetailsModal" aria-hidden="true">
+    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="advRoomDetTitle" style="width:720px; max-width:96vw;">
+      <button class="modal-close" type="button" id="advRoomDetClose" aria-label="Fechar">&times;</button>
+      <div class="modal-body">
+        <div class="modal-info" style="padding:20px; width:100%">
+          <h2 id="advRoomDetTitle" style="margin:0 0 10px">Sala</h2>
+          <form id="advRoomDetailsForm" class="auth-form">
+            <input type="hidden" id="advRoomDetId" />
+            <div class="form-grid-mini">
+              <div>
+                <label>Nome</label>
+                <input type="text" id="advRoomDetName" />
+              </div>
+              <div>
+                <label>Valor Diário (R$)</label>
+                <input type="number" id="advRoomDetRate" step="0.01" min="0" />
+              </div>
+            </div>
+            <div class="form-grid-mini">
+              <div>
+                <label>Status</label>
+                <select id="advRoomDetStatus">
+                  <option value="ativo">Ativa</option>
+                  <option value="inativo">Inativa</option>
+                  <option value="manutencao">Em Manutenção</option>
+                  <option value="desativada">Desativada</option>
+                </select>
+              </div>
+              <div>
+                <label>Cidade/UF</label>
+                <input type="text" id="advRoomDetCityUf" readonly />
+              </div>
+            </div>
+            <div class="modal-actions" style="display:flex; gap:10px; justify-content:flex-end;">
+              <button type="button" class="btn btn-secondary" id="advRoomDetCancel">Cancelar</button>
+              <button type="submit" class="btn btn-primary">Salvar</button>
+            </div>
+            <div id="advRoomDetMsg" class="rooms-message" style="margin-top:6px"></div>
+          </form>
         </div>
       </div>
     </div>

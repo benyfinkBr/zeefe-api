@@ -60,6 +60,27 @@ const chatInput = document.getElementById('advChatInput');
 const advChatModal = document.getElementById('advChatModal');
 const advChatClose = document.getElementById('advChatClose');
 const openAdvChatBtn = document.getElementById('openAdvChatBtn');
+// Reservation details modal
+const advResModal = document.getElementById('advReservationModal');
+const advResContent = document.getElementById('advResContent');
+const advResMessage = document.getElementById('advResMessage');
+const advResClose = document.getElementById('advResClose');
+const advResConfirm = document.getElementById('advResConfirm');
+const advResDeny = document.getElementById('advResDeny');
+const advResCancel = document.getElementById('advResCancel');
+const advResOpenChat = document.getElementById('advResOpenChat');
+let advResCurrentId = null;
+// Room details modal
+const advRoomDetModal = document.getElementById('advRoomDetailsModal');
+const advRoomDetClose = document.getElementById('advRoomDetClose');
+const advRoomDetCancel = document.getElementById('advRoomDetCancel');
+const advRoomDetForm = document.getElementById('advRoomDetailsForm');
+const advRoomDetId = document.getElementById('advRoomDetId');
+const advRoomDetName = document.getElementById('advRoomDetName');
+const advRoomDetRate = document.getElementById('advRoomDetRate');
+const advRoomDetStatus = document.getElementById('advRoomDetStatus');
+const advRoomDetCityUf = document.getElementById('advRoomDetCityUf');
+const advRoomDetMsg = document.getElementById('advRoomDetMsg');
 // Room modal
 const newRoomBtn = document.getElementById('advNewRoomBtn');
 const roomModal = document.getElementById('advRoomModal');
@@ -192,6 +213,8 @@ async function loadRooms() {
         </div>
       </article>
     `).join('');
+    // Eventos dos botões de sala
+    roomsContainer.querySelectorAll('button[data-room][data-act="details"]').forEach(btn => btn.addEventListener('click', () => openRoomDetailsModal(btn.getAttribute('data-room'))));
   } catch (e) {
     roomsContainer.innerHTML = '<div class="rooms-message">Falha ao carregar salas.</div>';
   }
@@ -217,13 +240,15 @@ async function loadReservations() {
         <td>${escapeHtml(String(r.room_id))}</td>
         <td>${escapeHtml(r.status || '')}</td>
         <td>${escapeHtml(r.payment_status || '')}</td>
+        <td><button class="btn btn-secondary btn-sm" data-res="${r.id}" data-act="open">Ações</button></td>
       </tr>
     `).join('');
     resContainer.innerHTML = `
       <table>
-        <thead><tr><th>#</th><th>Data</th><th>Sala</th><th>Status</th><th>Pagamento</th></tr></thead>
+        <thead><tr><th>#</th><th>Data</th><th>Sala</th><th>Status</th><th>Pagamento</th><th></th></tr></thead>
         <tbody>${rows || '<tr><td colspan="5" style="text-align:center;padding:16px">Nenhuma reserva.</td></tr>'}</tbody>
       </table>`;
+    resContainer.querySelectorAll('button[data-res][data-act="open"]').forEach(btn => btn.addEventListener('click', () => openReservationModal(btn.getAttribute('data-res'))));
   } catch (e) {
     resContainer.innerHTML = '<div class="rooms-message">Falha ao carregar reservas.</div>';
   }
@@ -597,6 +622,85 @@ function atualizarFeedbackCPFAdv(cpfDigits, forceInvalid=false){ if(!advCpfHint)
 advRegCpf?.addEventListener('input', ()=> { const d=(advRegCpf.value||'').replace(/\D/g,'').slice(0,11); advRegCpf.value = formatCPFAdv(d); atualizarFeedbackCPFAdv(d); });
 advRegPassword?.addEventListener('input', avaliarSenhaAdv);
 advRegPasswordConfirm?.addEventListener('input', avaliarSenhaAdv);
+
+// ===== Reservation Modal logic =====
+function openReservationModal(id){
+  advResCurrentId = Number(id);
+  if (!advResCurrentId){ return; }
+  const r = (myReservations||[]).find(x => String(x.id) === String(id));
+  if (!r){ advResContent.innerHTML = '<div class="rooms-message">Reserva não encontrada.</div>'; }
+  else {
+    const room = (myRooms||[]).find(rr => String(rr.id)===String(r.room_id));
+    advResContent.innerHTML = `
+      <table>
+        <tbody>
+          <tr><th style="text-align:left;width:160px">Reserva</th><td>#${escapeHtml(r.id)}</td></tr>
+          <tr><th style="text-align:left">Data</th><td>${escapeHtml(r.date || '')}</td></tr>
+          <tr><th style="text-align:left">Sala</th><td>${escapeHtml(room?.name || ('Sala #'+r.room_id))}</td></tr>
+          <tr><th style="text-align:left">Status</th><td>${escapeHtml(r.status||'')}</td></tr>
+          <tr><th style="text-align:left">Pagamento</th><td>${escapeHtml(r.payment_status||'')}</td></tr>
+          <tr><th style="text-align:left">Título</th><td>${escapeHtml(r.title||'')}</td></tr>
+          <tr><th style="text-align:left">Observações</th><td>${escapeHtml(r.description||'')}</td></tr>
+        </tbody>
+      </table>`;
+  }
+  advResMessage.textContent='';
+  advResModal?.classList.add('show'); advResModal?.setAttribute('aria-hidden','false');
+}
+function closeReservationModal(){ advResModal?.classList.remove('show'); advResModal?.setAttribute('aria-hidden','true'); advResCurrentId=null; }
+advResClose?.addEventListener('click', closeReservationModal);
+advResCancel?.addEventListener('click', () => updateReservationStatus('cancel'));
+advResDeny?.addEventListener('click', () => updateReservationStatus('deny'));
+advResConfirm?.addEventListener('click', () => updateReservationStatus('confirm'));
+advResOpenChat?.addEventListener('click', () => { closeReservationModal(); openAdvChatDrawer(); });
+
+async function updateReservationStatus(action){
+  if (!advResCurrentId) return;
+  advResMessage.textContent = '';
+  try {
+    const res = await fetch(`${API_BASE}/update_reservation_status.php`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ id: advResCurrentId, action }) });
+    const json = await parseJsonSafe(res);
+    if (!json.success) throw new Error(json.error || 'Falha ao atualizar.');
+    advResMessage.textContent = json.message || 'Atualizado.';
+    await loadReservations();
+  } catch (e) {
+    advResMessage.textContent = e.message || 'Erro ao atualizar.';
+  }
+}
+
+// ===== Room Details Modal =====
+function openRoomDetailsModal(roomId){
+  const r = (myRooms||[]).find(x => String(x.id)===String(roomId));
+  if (!r) return;
+  advRoomDetId.value = r.id;
+  advRoomDetName.value = r.name || '';
+  advRoomDetRate.value = r.daily_rate || '';
+  advRoomDetStatus.value = (r.status||'ativo');
+  advRoomDetCityUf.value = `${r.city||''}${r.state? ' - '+r.state:''}`;
+  advRoomDetMsg.textContent = '';
+  advRoomDetModal?.classList.add('show'); advRoomDetModal?.setAttribute('aria-hidden','false');
+}
+function closeRoomDetailsModal(){ advRoomDetModal?.classList.remove('show'); advRoomDetModal?.setAttribute('aria-hidden','true'); }
+advRoomDetClose?.addEventListener('click', closeRoomDetailsModal);
+advRoomDetCancel?.addEventListener('click', closeRoomDetailsModal);
+advRoomDetModal?.addEventListener('click', (e)=> { if (e.target === advRoomDetModal) closeRoomDetailsModal(); });
+advResModal?.addEventListener('click', (e)=> { if (e.target === advResModal) closeReservationModal(); });
+
+advRoomDetForm?.addEventListener('submit', async (e) => {
+  e.preventDefault(); advRoomDetMsg.textContent='';
+  const id = Number(advRoomDetId.value||0);
+  const data = { id, name: advRoomDetName.value.trim(), daily_rate: advRoomDetRate.value ? Number(advRoomDetRate.value) : null, status: advRoomDetStatus.value };
+  try {
+    const res = await fetch(`${API_BASE}/apiupdate.php`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ table:'rooms', data }) });
+    const json = await parseJsonSafe(res);
+    if (!json.success) throw new Error(json.error || 'Falha ao salvar.');
+    advRoomDetMsg.textContent = 'Sala atualizada.';
+    await loadRooms();
+    setTimeout(closeRoomDetailsModal, 600);
+  } catch (err) {
+    advRoomDetMsg.textContent = err.message || 'Erro ao salvar.';
+  }
+});
 
 advRecoveryForm?.addEventListener('submit', async (e) => {
   e.preventDefault(); advRecoveryMessage.textContent='';
