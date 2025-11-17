@@ -99,11 +99,13 @@ main {
   box-shadow: 0 24px 48px rgba(29, 65, 58, 0.25);
 }
 
-.hero-grid { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 20px; align-items: center; }
-.landing-hero-content { display: grid; gap: 16px; }
+.hero-grid { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 20px; align-items: stretch; }
+.landing-hero-content { display: flex; flex-direction: column; gap: 16px; }
 .landing-hero-media { display: grid; place-items: center; }
 .hero-video { width: 100%; height: 280px; border-radius: 16px; background: rgba(245,240,233,.2); border: 1px solid rgba(255,255,255,.35); overflow: hidden; box-shadow: 0 10px 24px rgba(0,0,0,.12); }
 .hero-video video { width: 100%; height: 100%; object-fit: cover; display: block; }
+/* When the video sits under the hero copy, let it stretch to bottom */
+.landing-hero-content .hero-video { flex: 1 1 auto; height: auto; min-height: 220px; }
 
 .landing-hero-content h2 {
   margin: 0;
