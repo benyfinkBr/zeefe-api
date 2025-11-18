@@ -123,6 +123,40 @@ main {
   color: rgba(245, 240, 233, 0.88);
 }
 
+/* Reserva – escolha de fluxo (datas vs salas) */
+.booking-mode-choice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+.booking-mode-label {
+  font-size: .9rem;
+  color: var(--brand-cream);
+}
+.booking-mode-buttons {
+  display: inline-flex;
+  gap: 8px;
+}
+.mode-btn {
+  border-radius: 999px;
+  border: 1px solid rgba(245,240,233,.6);
+  background: transparent;
+  color: var(--brand-cream);
+  padding: 6px 14px;
+  font-size: .85rem;
+  cursor: default;
+}
+.mode-btn.active {
+  background: #fff;
+  color: var(--brand-green);
+}
+.mode-btn:disabled {
+  opacity: .4;
+  cursor: not-allowed;
+}
+
 .landing-actions {
   display: inline-flex;
   flex-wrap: wrap;

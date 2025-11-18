@@ -162,6 +162,14 @@
                 <input type="hidden" name="time_start" value="08:00" />
                 <input type="hidden" name="time_end" value="20:00" />
 
+                <div class="booking-mode-choice">
+                  <span class="booking-mode-label">Como você prefere buscar?</span>
+                  <div class="booking-mode-buttons">
+                    <button type="button" class="mode-btn active" id="bookingModeDate" data-mode="date">Datas primeiro</button>
+                    <button type="button" class="mode-btn" id="bookingModeRoom" data-mode="room" disabled>Salas primeiro (em breve)</button>
+                  </div>
+                </div>
+
                 <div class="booking-stepper">
                   <div class="booking-stepper-item active" data-step-index="0">
                     <span>1</span>

@@ -99,6 +99,7 @@ const bookingVoucherInput = document.getElementById('bookingVoucherCode');
 const bookingVoucherApplyBtn = document.getElementById('bookingVoucherApply');
 const bookingVoucherResult = document.getElementById('bookingVoucherResult');
 let bookingVoucherApplied = null; // { code, discount, payable }
+let bookingSelectedDates = [];
 
 const reservationsContainer = document.getElementById('reservationsContainer');
 // Modal de ações da reserva
@@ -206,6 +207,11 @@ let currentScope = 'pf';
 const scopePFBtn = document.getElementById('scopePFBtn');
 const scopeCompanyBtn = document.getElementById('scopeCompanyBtn');
 
+// Fluxo de busca (datas primeiro vs salas primeiro)
+let bookingSearchMode = 'date'; // 'date' | 'room' (room em breve)
+const bookingModeDateBtn = document.getElementById('bookingModeDate');
+const bookingModeRoomBtn = document.getElementById('bookingModeRoom');
+
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', initialize, { once: true });
 } else {
@@ -309,6 +315,20 @@ async function initialize() {
   bookingDescriptionInput?.addEventListener('input', onBookingDetailsChange);
   bookingVoucherInput?.addEventListener('input', () => { if (bookingVoucherResult) bookingVoucherResult.textContent=''; bookingVoucherApplied = null; });
   bookingVoucherApplyBtn?.addEventListener('click', onApplyVoucherClick);
+
+  // Modo de busca (datas primeiro)
+  bookingModeDateBtn?.addEventListener('click', () => {
+    bookingSearchMode = 'date';
+    bookingModeDateBtn.classList.add('active');
+    if (bookingModeRoomBtn) bookingModeRoomBtn.classList.remove('active');
+    // datas primeiro sempre começa no passo 0
+    bookingStepIndex = 0;
+    setBookingStep(bookingStepIndex);
+  });
+  bookingModeRoomBtn?.addEventListener('click', () => {
+    // por enquanto apenas datas primeiro está disponível
+    alert('Fluxo “salas primeiro” ainda está em construção. Use “Datas primeiro”.');
+  });
 
   cancelReservationEditBtn?.addEventListener('click', () => resetBookingForm());
   newReservationBtn?.addEventListener('click', () => {
@@ -1647,7 +1667,7 @@ function renderBookingCalendar(referenceDate) {
   }
 
   const monthEnd = new Date(monthRef.getFullYear(), monthRef.getMonth() + 1, 0);
-  const selectedISO = bookingDateInput?.value;
+  const selectedSet = new Set(bookingSelectedDates || []);
 
   for (let day = 1; day <= monthEnd.getDate(); day++) {
     const currentDate = new Date(monthRef.getFullYear(), monthRef.getMonth(), day);
@@ -1688,15 +1708,29 @@ function renderBookingCalendar(referenceDate) {
       button.disabled = true;
     } else {
       button.addEventListener('click', () => {
+        // Datas primeiro: permite múltipla seleção; por sala: apenas um dia
+        if (bookingSearchMode === 'date') {
+          const set = new Set(bookingSelectedDates || []);
+          if (set.has(iso)) {
+            set.delete(iso);
+          } else {
+            set.add(iso);
+          }
+          bookingSelectedDates = Array.from(set).sort();
+        } else {
+          bookingSelectedDates = [iso];
+        }
         if (bookingDateInput) {
-          bookingDateInput.value = iso;
-          renderBookingCalendar(bookingCurrentMonth);
+          bookingDateInput.value = bookingSelectedDates[0] || '';
+        }
+        renderBookingCalendar(bookingCurrentMonth);
+        if (bookingDateInput) {
           bookingDateInput.dispatchEvent(new Event('change', { bubbles: true }));
         }
       });
     }
 
-    if (selectedISO && iso === selectedISO) {
+    if (selectedSet.has(iso)) {
       button.classList.add('selected');
     }
 
