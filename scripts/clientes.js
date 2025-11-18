@@ -2689,6 +2689,7 @@ function resetBookingForm(preserveMessage = false) {
   if (startInput) startInput.value = DEFAULT_START_TIME;
   if (endInput) endInput.value = DEFAULT_END_TIME;
   if (bookingDateInput) bookingDateInput.value = '';
+  bookingSelectedDates = [];
   if (bookingRoomHiddenInput) bookingRoomHiddenInput.value = '';
   bookingStepIndex = 0;
   setBookingStep(bookingStepIndex);
