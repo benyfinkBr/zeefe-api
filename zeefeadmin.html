@@ -260,6 +260,7 @@ input, select {
         </div>
         <div class="modal-footer">
           <button type="button" class="btn-warning" id="resetSenhaBtn" style="display:none">Resetar senha</button>
+          <button type="button" class="btn-secondary" id="geocodeBtn" style="display:none">Geocodificar</button>
           <button type="button" class="btn-secondary" onclick="fecharModal()">Cancelar</button>
           <button type="submit" class="btn-primary">Salvar</button>
         </div>
@@ -1010,6 +1011,16 @@ input, select {
           resetSenhaBtn.onclick = null;
         }
       }
+      const geocodeBtn = document.getElementById('geocodeBtn');
+      if (geocodeBtn) {
+        if (sec === 'rooms' && itemEdit && itemEdit.id) {
+          geocodeBtn.style.display = 'inline-block';
+          geocodeBtn.onclick = () => geocodificarSalaAtual(itemEdit.id);
+        } else {
+          geocodeBtn.style.display = 'none';
+          geocodeBtn.onclick = null;
+        }
+      }
     }
 
     function abrirModalExcluir(id) {
@@ -1023,6 +1034,8 @@ input, select {
         resetSenhaBtn.style.display = 'none';
         resetSenhaBtn.onclick = null;
       }
+      const geocodeBtn = document.getElementById('geocodeBtn');
+      if (geocodeBtn) { geocodeBtn.style.display = 'none'; geocodeBtn.onclick = null; }
     }
 
     const UF = ['AC','AL','AM','AP','BA','CE','DF','ES','GO','MA','MG','MS','MT','PA','PB','PE','PI','PR','RJ','RN','RO','RR','RS','SC','SE','SP','TO'];
@@ -1841,6 +1854,17 @@ input, select {
         console.error(err);
         alert('Erro ao resetar a senha.');
       }
+    }
+
+    async function geocodificarSalaAtual(roomId) {
+      if (!roomId) return;
+      if (!confirm('Tentar localizar esta sala no mapa usando o endereço?')) return;
+      try {
+        const res = await fetch(`${API_BASE}/geocode_room.php`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ room_id: roomId }) });
+        const json = await res.json();
+        if (!json.success) throw new Error(json.error || 'Falha ao geocodificar.');
+        alert('Localização atualizada com sucesso.');
+      } catch (e) { alert(e.message || 'Erro ao geocodificar.'); }
     }
 
     async function listarClientesEmpresa(id, nome) {
