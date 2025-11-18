@@ -99,7 +99,7 @@ main {
   box-shadow: 0 24px 48px rgba(29, 65, 58, 0.25);
 }
 
-.hero-grid { display: grid; grid-template-columns: 1.45fr 0.55fr; grid-template-rows: auto; grid-template-areas: 'copy claims'; gap: 20px; align-items: center; }
+.hero-grid { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: auto; grid-template-areas: 'copy claims'; gap: 20px; align-items: center; }
 .landing-hero-content { display: none; }
 .hero-copy { grid-area: copy; display: grid; gap: 16px; align-content: center; justify-items: start; }
 .landing-hero-media { display: grid; place-items: center; }
