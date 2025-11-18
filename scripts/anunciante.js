@@ -213,7 +213,7 @@ async function loadRooms() {
         <div class="room-photo">📷</div>
         <div class="room-info">
           <h4>${escapeHtml(r.name || 'Sala')}</h4>
-          <p class="room-meta">${escapeHtml(r.city || '')} - ${escapeHtml(r.state || '')}</p>
+          <p class="room-meta">${escapeHtml(r.city || '')} - ${escapeHtml(r.state || '')} ${r.lat && r.lon ? ' • <span title="Tem localização no mapa">📍</span>' : ''}</p>
           <div class="room-actions">
             <button class="btn btn-secondary btn-sm" data-room="${r.id}" data-act="details">Ver detalhes</button>
           </div>
@@ -711,6 +711,20 @@ advRoomDetForm?.addEventListener('submit', async (e) => {
     advRoomDetMsg.textContent = err.message || 'Erro ao salvar.';
   }
 });
+
+// Geocodificação no modal de sala (edição)
+async function onRoomGeocode(){
+  const idEl = document.getElementById('roomIdHidden');
+  const id = idEl && idEl.value ? Number(idEl.value) : 0;
+  if (!id) { roomMsg.textContent = 'Salve a sala antes de geocodificar.'; return; }
+  roomMsg.textContent = 'Geocodificando…';
+  try {
+    const res = await fetch(`${API_BASE}/geocode_room.php`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ room_id: id }) });
+    const json = await parseJsonSafe(res);
+    if (!json.success) throw new Error(json.error || 'Falha ao geocodificar.');
+    roomMsg.textContent = 'Localização atualizada.';
+  } catch (e) { roomMsg.textContent = e.message || 'Erro ao geocodificar.'; }
+}
 
 advRecoveryForm?.addEventListener('submit', async (e) => {
   e.preventDefault(); advRecoveryMessage.textContent='';

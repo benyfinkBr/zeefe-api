@@ -157,8 +157,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const meta = document.createElement('div');
         meta.className = 'room-meta';
+        const hasMap = (Number(room.lat||room.latitude) && Number(room.lon||room.lng||room.longitude));
         meta.innerHTML = `
-          <span class="room-location">${room.location ? escapeHtml(room.location) : 'Localização não informada'}</span>
+          <span class="room-location">${room.location ? escapeHtml(room.location) : 'Localização não informada'} ${hasMap ? ' • <span title="Tem localização no mapa">📍</span>' : ''}</span>
           <span class="room-capacity">${room.capacity || 0} pessoas</span>
         `;
         info.appendChild(meta);
