@@ -108,7 +108,7 @@ main {
 /* Claims compactos no herói (lado direito) */
 .hero-claims { grid-area: claims; display:grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 10px; align-content: start; align-items: stretch; justify-items: stretch; width: 100%; max-width: 420px; margin: 0 auto; }
 .landing-hero .hero-claims .card { padding: 10px 12px; min-height: 96px; height: 100%; }
-.landing-hero .hero-claims .card h4 { margin: 0 0 4px; font-size: .95rem; }
+.landing-hero .hero-claims .card h4 { margin: 0 0 4px; font-size: .95rem; color: #000; }
 .landing-hero .hero-claims .card p { margin: 0; font-size: .88rem; line-height: 1.28; }
 
 .landing-hero-content h2 {
