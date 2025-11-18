@@ -654,6 +654,18 @@ input, select {
           { key: 'type', label: 'Tipo' },
           { key: 'status', label: 'Status', formatter: statusFormatter }
         ]
+      },
+      vouchers: {
+        columns: [
+          { key: 'id', label: 'ID' },
+          { key: 'code', label: 'Código' },
+          { key: 'type', label: 'Tipo' },
+          { key: 'value', label: 'Valor' },
+          { key: 'status', label: 'Status', formatter: statusFormatter },
+          { key: 'used_count', label: 'Usos' },
+          { key: 'starts_at', label: 'Início', formatter: dateFormatter },
+          { key: 'ends_at', label: 'Fim', formatter: dateFormatter }
+        ]
       }
     };
 
@@ -771,6 +783,14 @@ input, select {
       if (filtro) {
         linhas = linhas.filter(reg => recordToSearchString(reg).toLowerCase().includes(filtro));
       }
+      if (sec === 'vouchers' && voucherFilters.status) {
+        const st = voucherFilters.status.toLowerCase();
+        linhas = linhas.filter(v => {
+          const vs = String(v.status || '').toLowerCase();
+          if (st === 'expirado') return isVoucherExpirado(v);
+          return vs === st;
+        });
+      }
       const body = document.getElementById('content-body');
       if (!linhas.length) {
         body.innerHTML = '<div class="box-message">Nenhum registro encontrado</div>';
@@ -780,7 +800,17 @@ input, select {
       const config = sectionConfigs[sec] || {};
       const columns = config.columns || Object.keys(linhas[0]).map(key => ({ key, label: friendlyLabel(key) }));
 
-      let html = '<div class="table-container"><table><thead><tr>';
+      let resumo = '';
+      if (sec === 'vouchers') {
+        const tot = linhas.length;
+        const ativos = linhas.filter(v => !isVoucherExpirado(v) && String(v.status||'').toLowerCase()==='ativo').length;
+        const inativos = linhas.filter(v => String(v.status||'').toLowerCase()==='inativo').length;
+        const expirados = linhas.filter(v => isVoucherExpirado(v)).length;
+        const usos = linhas.reduce((acc,v)=> acc + (Number(v.used_count)||0), 0);
+        resumo = `<div class=\"box-message\" style=\"text-align:left\"><strong>Resumo:</strong> Total: ${tot} · Ativos: ${ativos} · Inativos: ${inativos} · Expirados: ${expirados} · Usos acumulados: ${usos}</div>`;
+      }
+
+      let html = resumo + '<div class="table-container"><table><thead><tr>';
       columns.forEach(col => { html += `<th>${escapeHtml(col.label)}</th>`; });
       html += '<th>Ações</th></tr></thead><tbody>';
 
@@ -828,6 +858,29 @@ input, select {
 
       html += '</tbody></table></div>';
       body.innerHTML = html;
+    }
+
+    function isVoucherExpirado(v) {
+      const end = v.ends_at || v.valid_until || v.expires_at;
+      if (!end) return false;
+      const d = new Date(end);
+      if (isNaN(d.getTime())) return false;
+      const today = new Date();
+      return d < today;
+    }
+
+    function exportarCSV() {
+      const rows = Array.isArray(dadosJSON) ? [...dadosJSON] : [];
+      if (!rows.length) { alert('Nada para exportar'); return; }
+      const colsDef = sectionConfigs[sec]?.columns;
+      const cols = colsDef ? colsDef.map(c=>c.key) : Object.keys(rows[0]);
+      const esc = s => '"' + String(s==null?'':s).replace(/"/g,'""') + '"';
+      const header = cols.join(',');
+      const lines = rows.map(r => cols.map(k => esc(r[k])).join(','));
+      const csv = [header].concat(lines).join('\n');
+      const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = `${sec}.csv`; a.click(); URL.revokeObjectURL(url);
     }
 
     // ===== Modal Anunciante (vínculo de sala) =====
@@ -886,9 +939,22 @@ input, select {
         await renderReservationFilters(container);
         return;
       }
-      container.innerHTML =
-        `<input type="text" id="inputBusca" placeholder="Buscar..." value="${escapeHtml(filtro)}" oninput="buscar(this.value)">
-         <button class="btn" onclick="abrirModalNovo()">+ Novo</button>`;
+      if (section === 'vouchers') {
+        container.innerHTML = `
+          <input type="text" id="inputBusca" placeholder="Buscar código..." value="${escapeHtml(filtro)}" oninput="buscar(this.value)">
+          <select id="voucherStatusSel" onchange="(function(s){ voucherFilters.status=s.value; renderTable(); })(this)">
+            <option value="">Todos</option>
+            <option value="ativo">Ativo</option>
+            <option value="inativo">Inativo</option>
+            <option value="expirado">Expirado</option>
+          </select>
+          <button class="btn" onclick="abrirModalNovo()">+ Novo</button>
+          <button class="btn-secondary" onclick="exportarCSV()">Exportar CSV</button>`;
+      } else {
+        container.innerHTML =
+          `<input type="text" id="inputBusca" placeholder="Buscar..." value="${escapeHtml(filtro)}" oninput="buscar(this.value)">
+           <button class="btn" onclick="abrirModalNovo()">+ Novo</button>`;
+      }
     }
 
     async function renderReservationFilters(container) {

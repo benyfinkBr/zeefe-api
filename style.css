@@ -2715,6 +2715,16 @@ body.client-portal-page.client-authenticated .auth-container {
 .chat-form { display:flex; gap:8px; margin-top:10px; }
 .chat-form input { flex:1; }
 
+/* Anunciante: chat maior (drawer mais largo/alto) */
+body.anunciante-page .modal-overlay.chat-drawer .modal-dialog {
+  max-width: 960px;
+  width: 96vw;
+  height: 85vh;
+}
+body.anunciante-page #advChatMessages.chat-messages {
+  min-height: 420px;
+}
+
 .modal-overlay.show {
   display: flex;
 }

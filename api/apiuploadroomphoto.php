@@ -21,13 +21,24 @@ if (!isset($_FILES['files'])) {
 }
 
 try {
-  $stmt = $pdo->prepare('SELECT photo_path FROM rooms WHERE id = ? LIMIT 1');
+  $stmt = $pdo->prepare('SELECT photo_path, advertiser_id FROM rooms WHERE id = ? LIMIT 1');
   $stmt->execute([$roomId]);
-  $current = $stmt->fetchColumn();
+  $row = $stmt->fetch(PDO::FETCH_ASSOC);
+  $current = $row ? ($row['photo_path'] ?? null) : false;
   if ($current === false) {
     http_response_code(404);
     echo json_encode(['success' => false, 'error' => 'Sala não encontrada']);
     exit;
+  }
+  // Optional ownership check: if advertiser_id provided, ensure it matches room's advertiser
+  $actorAdvertiserId = isset($_POST['advertiser_id']) ? (int)$_POST['advertiser_id'] : 0;
+  if ($actorAdvertiserId > 0) {
+    $roomAdv = (int)($row['advertiser_id'] ?? 0);
+    if ($roomAdv > 0 && $roomAdv !== $actorAdvertiserId) {
+      http_response_code(403);
+      echo json_encode(['success'=>false,'error'=>'Acesso negado ao recurso']);
+      exit;
+    }
   }
 } catch (Exception $e) {
   http_response_code(500);
@@ -55,6 +66,7 @@ if (!is_dir($roomDir) && !mkdir($roomDir, 0755, true)) {
 }
 
 $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+$allowedMimes = ['image/jpeg','image/png','image/gif','image/webp'];
 $maxFileSize = 8 * 1024 * 1024; // 8 MB
 $uploaded = [];
 
@@ -80,6 +92,13 @@ for ($i = 0; $i < $count; $i++) {
   $originalName = $files['name'][$i] ?? 'arquivo';
   $ext = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
   if (!in_array($ext, $allowedExtensions, true)) {
+    continue;
+  }
+
+  // MIME check using finfo
+  $fi = new finfo(FILEINFO_MIME_TYPE);
+  $mime = $fi->file($tmpName) ?: '';
+  if (!in_array($mime, $allowedMimes, true)) {
     continue;
   }
 

@@ -15,6 +15,30 @@ try {
   if (!$adv) { echo json_encode(['success'=>false,'error'=>'Conta não encontrada.']); exit; }
   if (!empty($adv['email_verified_at'])) { echo json_encode(['success'=>true,'message'=>'E‑mail já está verificado.']); exit; }
 
+  // Simple IP/email rate-limit: 3 per 10 minutes
+  $rlKey = 'adv_resend_' . sha1(($login ?: 'x') . '|' . ($_SERVER['REMOTE_ADDR'] ?? '0'));
+  $rlDir = sys_get_temp_dir() . '/zeefe_rl';
+  if (!is_dir($rlDir)) { @mkdir($rlDir, 0700, true); }
+  $rlFile = $rlDir . '/' . $rlKey;
+  $now = time();
+  $window = 600; $limit = 3;
+  try {
+    $history = [];
+    if (is_file($rlFile)) {
+      $raw = @file_get_contents($rlFile);
+      $history = $raw ? array_filter(array_map('intval', explode('\n', $raw))) : [];
+      $history = array_values(array_filter($history, function($t) use ($now, $window){ return ($now - $t) <= $window; }));
+    }
+    if (count($history) >= $limit) {
+      http_response_code(429);
+      header('Retry-After: 600');
+      echo json_encode(['success'=>false,'error'=>'Muitas tentativas. Tente novamente em alguns minutos.']);
+      exit;
+    }
+    $history[] = $now;
+    @file_put_contents($rlFile, implode("\n", $history), LOCK_EX);
+  } catch (Throwable $e) { /* best-effort */ }
+
   $token = bin2hex(random_bytes(32));
   $expires = (new DateTimeImmutable('+48 hours'))->format('Y-m-d H:i:s');
   $upd = $pdo->prepare('UPDATE advertisers SET verification_token = :t, verification_token_expires = :x, updated_at = NOW() WHERE id = :id');
@@ -38,4 +62,3 @@ try {
   http_response_code(500);
   echo json_encode(['success'=>false,'error'=>'Erro interno: '.$e->getMessage()]);
 }
-
