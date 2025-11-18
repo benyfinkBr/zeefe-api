@@ -2,6 +2,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const benefitsContainer = document.getElementById('benefits-cards');
   const roomsStrip = document.getElementById('rooms-strip');
   const roomsMessage = document.getElementById('rooms-message');
+  const roomsMapEl = document.getElementById('rooms-map');
+  let map = null; let markersLayer = null;
   const navPrev = document.querySelector('.rooms-nav-prev');
   const navNext = document.querySelector('.rooms-nav-next');
   let amenitiesMap = {};
@@ -62,6 +64,8 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       roomsMessage.textContent = '';
       renderRooms();
+      initMapIfNeeded();
+      renderMapMarkers(allRooms);
       requestAnimationFrame(() => updateCarouselNavState());
     } catch (err) {
       console.error(err);
@@ -190,7 +194,45 @@ document.addEventListener('DOMContentLoaded', () => {
         card.appendChild(info);
         roomsStrip.appendChild(card);
     });
+    // Atualiza marcadores do mapa conforme filtros aplicados
+    renderMapMarkers(filtered);
     requestAnimationFrame(() => updateCarouselNavState());
+  }
+
+  function initMapIfNeeded() {
+    if (!roomsMapEl || typeof L === 'undefined') return;
+    if (map) return;
+    map = L.map(roomsMapEl).setView([-14.235, -51.9253], 4);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; OpenStreetMap'
+    }).addTo(map);
+    markersLayer = L.layerGroup().addTo(map);
+  }
+
+  function renderMapMarkers(rooms) {
+    if (!markersLayer) return;
+    markersLayer.clearLayers();
+    const bounds = [];
+    (rooms || []).forEach(r => {
+      const lat = Number(r.lat || r.latitude || r.latitud);
+      const lon = Number(r.lon || r.lng || r.longitude);
+      if (!isFinite(lat) || !isFinite(lon)) return;
+      const m = L.marker([lat, lon]);
+      const name = escapeHtml(r.name || `Sala #${r.id}`);
+      const city = escapeHtml(r.city || '');
+      const uf = escapeHtml(r.state || r.uf || '');
+      const detailsLink = `salas.html#${r.id}`;
+      const reserveLink = `pre-reserva.html?room=${encodeURIComponent(r.id)}`;
+      m.bindPopup(`<strong>${name}</strong><br>${city}${uf ? ' - '+uf : ''}<br>`+
+                  `<div style="margin-top:6px;display:flex;gap:8px">`+
+                  `<a class=\"btn btn-secondary btn-sm\" href=\"${detailsLink}\">Ver detalhes</a>`+
+                  `<a class=\"btn btn-primary btn-sm\" href=\"${reserveLink}\">Solicitar reserva</a>`+
+                  `</div>`);
+      m.addTo(markersLayer);
+      bounds.push([lat, lon]);
+    });
+    if (bounds.length && map) map.fitBounds(bounds, { padding: [20, 20] });
   }
 
   function isRoomAvailable(room, today) {
