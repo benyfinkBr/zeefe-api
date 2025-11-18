@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Tempo de geração: 17/11/2025 às 21:30
+-- Tempo de geração: 17/11/2025 às 21:56
 -- Versão do servidor: 5.7.23-23
 -- Versão do PHP: 8.1.33
 
@@ -500,6 +500,8 @@ CREATE TABLE `rooms` (
   `dailyrate` decimal(10,2) DEFAULT NULL,
   `daily_rate` decimal(10,2) NOT NULL DEFAULT '0.00',
   `location` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `lat` decimal(10,7) DEFAULT NULL,
+  `lon` decimal(10,7) DEFAULT NULL,
   `status` enum('ativo','inativo','manutencao','desativada') COLLATE utf8mb4_unicode_ci DEFAULT 'ativo',
   `maintenance_start` date DEFAULT NULL,
   `maintenance_end` date DEFAULT NULL,
@@ -811,7 +813,8 @@ ALTER TABLE `rooms`
   ADD PRIMARY KEY (`id`),
   ADD KEY `idx_rooms_location` (`location`),
   ADD KEY `idx_rooms_capacity` (`capacity`),
-  ADD KEY `idx_rooms_advertiser` (`advertiser_id`);
+  ADD KEY `idx_rooms_advertiser` (`advertiser_id`),
+  ADD KEY `idx_rooms_geo` (`lat`,`lon`);
 
 --
 -- Índices de tabela `room_amenities`

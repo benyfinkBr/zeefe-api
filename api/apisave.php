@@ -10,6 +10,7 @@ header('Content-Type: application/json');
 require_once 'apiconfig.php';
 require_once __DIR__ . '/lib/mailer.php';
 require_once __DIR__ . '/lib/reservations.php';
+require_once __DIR__ . '/lib/geocode.php';
 
 
 $payload = json_decode(file_get_contents('php://input'), true);
@@ -191,6 +192,15 @@ try {
 
     if ($table === 'rooms') {
       sincronizarAmenidadesSala($pdo, $id, $roomAmenities);
+      // Tentativa de geocodificação quando endereço mudou e lat/lon estiverem vazios
+      try {
+        $r = $pdo->prepare('SELECT street, complement, city, state, cep, lat, lon FROM rooms WHERE id = ?');
+        $r->execute([$id]);
+        $row = $r->fetch(PDO::FETCH_ASSOC);
+        if ($row && (empty($row['lat']) || empty($row['lon']))) {
+          attempt_room_geocode($pdo, $id, $row);
+        }
+      } catch (Throwable $ge) { /* ignora */ }
     }
 
     if ($table === 'reservations' && $reservationVisitors !== null) {
@@ -216,6 +226,15 @@ try {
 
     if ($table === 'rooms') {
       sincronizarAmenidadesSala($pdo, $id, $roomAmenities);
+      // Geocodificação automática após criação se possível
+      try {
+        $r = $pdo->prepare('SELECT street, complement, city, state, cep, lat, lon FROM rooms WHERE id = ?');
+        $r->execute([$id]);
+        $row = $r->fetch(PDO::FETCH_ASSOC);
+        if ($row && (empty($row['lat']) || empty($row['lon']))) {
+          attempt_room_geocode($pdo, $id, $row);
+        }
+      } catch (Throwable $ge) { /* ignora */ }
     }
 
     if ($table === 'reservations' && $reservationVisitors !== null) {
