@@ -513,6 +513,15 @@ section h3 {
   display: none;
 }
 
+/* Mapa na home */
+.rooms-map {
+  height: 380px;
+  border-radius: 16px;
+  border: 1px solid rgba(29,65,58,.18);
+  box-shadow: 0 10px 24px rgba(29,65,58,.15);
+  overflow: hidden;
+}
+
 .rooms-nav {
   background: #fff;
   border: 1px solid rgba(29, 65, 58, 0.15);

@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Tempo de geração: 16/11/2025 às 22:09
+-- Tempo de geração: 17/11/2025 às 21:30
 -- Versão do servidor: 5.7.23-23
 -- Versão do PHP: 8.1.33
 
@@ -45,6 +45,7 @@ CREATE TABLE `advertisers` (
   `id` bigint(20) NOT NULL,
   `owner_type` enum('client','company') COLLATE utf8mb4_unicode_ci NOT NULL,
   `owner_id` bigint(20) NOT NULL,
+  `bank_code` varchar(10) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `display_name` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `full_name` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `login_email` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
@@ -59,6 +60,7 @@ CREATE TABLE `advertisers` (
   `fee_pct` decimal(5,2) DEFAULT NULL,
   `bank_name` varchar(120) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `account_type` enum('corrente','poupanca','pix') COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `agency_number` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `account_number` varchar(64) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `pix_key` varchar(140) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP,

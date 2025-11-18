@@ -138,6 +138,7 @@
             <div class="portal-subtitle">Gerencie suas salas, reservas e repasses</div>
           </div>
           <div class="portal-actions">
+            <button class="btn btn-secondary btn-sm" id="advEditProfileBtn">Editar perfil</button>
             <button class="btn btn-secondary btn-sm" id="advRefreshBtn">Atualizar</button>
           </div>
         </header>
@@ -207,7 +208,8 @@
           <form id="advPayoutForm" class="auth-form" autocomplete="on">
             <div class="form-grid-mini">
               <div>
-                <label for="bankName">Banco</label>
+                <label for="bankCode">Banco</label>
+                <input type="text" id="bankCode" name="bank_code" placeholder="Cód." style="max-width:100px" />
                 <input type="text" id="bankName" name="bank_name" placeholder="Nome do banco" />
               </div>
               <div>
@@ -222,8 +224,12 @@
             </div>
             <div class="form-grid-mini">
               <div>
-                <label for="accountNumber">Agência/Conta</label>
-                <input type="text" id="accountNumber" name="account_number" placeholder="Agência/Conta ou chave secundária" />
+                <label for="agencyNumber">Agência</label>
+                <input type="text" id="agencyNumber" name="agency_number" placeholder="Agência" />
+              </div>
+              <div>
+                <label for="accountNumber">Conta</label>
+                <input type="text" id="accountNumber" name="account_number" placeholder="Conta" />
               </div>
               <div>
                 <label for="pixKey">Chave PIX (opcional)</label>
@@ -350,8 +356,9 @@
       <button class="modal-close" type="button" id="advRoomClose" aria-label="Fechar">&times;</button>
       <div class="modal-body">
         <div class="modal-info" style="padding:24px; width:100%">
-          <h2 id="advRoomTitle" style="margin-top:0">Cadastrar sala</h2>
+          <h2 id="advRoomTitle" style="margin-top:0">Sala</h2>
           <form id="advRoomForm" class="auth-form">
+            <input type="hidden" id="roomIdHidden" />
             <div class="form-grid">
               <div class="form-group" style="grid-column: span 4">
                 <label for="roomName">Nome da Sala</label>
@@ -457,6 +464,35 @@
               <button type="submit" class="btn btn-primary">Salvar</button>
             </div>
             <div id="advRoomMessage" class="rooms-message"></div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Editar Perfil do Anunciante -->
+  <div class="modal-overlay" id="advProfileModal" aria-hidden="true">
+    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="advProfileTitle">
+      <button class="modal-close" type="button" id="advProfileClose" aria-label="Fechar">&times;</button>
+      <div class="modal-body">
+        <div class="modal-info" style="padding:24px; width:100%">
+          <h2 id="advProfileTitle" style="margin-top:0">Editar perfil</h2>
+          <form id="advProfileForm" class="auth-form">
+            <div class="form-grid-mini">
+              <div>
+                <label for="advProfileDisplay">Nome público (anúncio)</label>
+                <input type="text" id="advProfileDisplay" />
+              </div>
+              <div>
+                <label for="advProfilePhone">Telefone</label>
+                <input type="text" id="advProfilePhone" />
+              </div>
+            </div>
+            <div class="modal-actions" style="display:flex; gap:12px; justify-content:flex-end;">
+              <button type="button" class="btn btn-secondary" id="advProfileCancelBtn">Cancelar</button>
+              <button type="submit" class="btn btn-primary">Salvar</button>
+            </div>
+            <div id="advProfileMsg" class="rooms-message"></div>
           </form>
         </div>
       </div>

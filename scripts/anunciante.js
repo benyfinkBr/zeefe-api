@@ -113,8 +113,10 @@ const maintenanceStart = document.getElementById('maintenanceStart');
 const maintenanceEnd = document.getElementById('maintenanceEnd');
 const deactivatedFrom = document.getElementById('deactivatedFrom');
 // payout form
+const bankCodeInput = document.getElementById('bankCode');
 const bankNameInput = document.getElementById('bankName');
 const accountTypeInput = document.getElementById('accountType');
+const agencyNumberInput = document.getElementById('agencyNumber');
 const accountNumberInput = document.getElementById('accountNumber');
 const pixKeyInput = document.getElementById('pixKey');
 const savePayoutBtn = document.getElementById('savePayoutBtn');
@@ -176,8 +178,10 @@ async function afterLogin() {
   }
   advOwner.textContent = myAdvertiser?.email || '';
   // Preenche payout se existir
+  bankCodeInput && (bankCodeInput.value = myAdvertiser?.bank_code || '');
   bankNameInput && (bankNameInput.value = myAdvertiser?.bank_name || '');
   accountTypeInput && (accountTypeInput.value = myAdvertiser?.account_type || '');
+  agencyNumberInput && (agencyNumberInput.value = myAdvertiser?.agency_number || '');
   accountNumberInput && (accountNumberInput.value = myAdvertiser?.account_number || '');
   pixKeyInput && (pixKeyInput.value = myAdvertiser?.pix_key || '');
 
@@ -486,8 +490,10 @@ savePayoutBtn?.addEventListener('click', async () => {
       advertiser_id: myAdvertiser?.id || null,
       owner_type: 'client',
       owner_id: advClient?.id,
+      bank_code: bankCodeInput?.value || '',
       bank_name: bankNameInput?.value || '',
       account_type: accountTypeInput?.value || '',
+      agency_number: agencyNumberInput?.value || '',
       account_number: accountNumberInput?.value || '',
       pix_key: pixKeyInput?.value || ''
     };
