@@ -188,7 +188,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const actions = document.createElement('div');
         actions.className = 'room-actions';
         actions.innerHTML = `
-          <a class="btn btn-primary${available ? '' : ' disabled'}" ${available ? '' : 'aria-disabled="true" tabindex="-1"'} href="${available ? `pre-reserva.html?room=${room.id}` : '#'}">${available ? 'Solicitar reserva' : 'Indisponível'}</a>
+          <a class="btn btn-primary${available ? '' : ' disabled'}" ${available ? '' : 'aria-disabled="true" tabindex="-1"'} href="${available ? `clientes.html` : '#'}">${available ? 'Solicitar reserva' : 'Indisponível'}</a>
           <a class="btn btn-secondary" href="salas.html#sala-${room.id}">Ver detalhes</a>
         `;
         info.appendChild(actions);
@@ -224,7 +224,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const city = escapeHtml(r.city || '');
       const uf = escapeHtml(r.state || r.uf || '');
       const detailsLink = `salas.html#${r.id}`;
-      const reserveLink = `pre-reserva.html?room=${encodeURIComponent(r.id)}`;
+      const reserveLink = `clientes.html`;
       m.bindPopup(`<strong>${name}</strong><br>${city}${uf ? ' - '+uf : ''}<br>`+
                   `<div style="margin-top:6px;display:flex;gap:8px">`+
                   `<a class=\"btn btn-secondary btn-sm\" href=\"${detailsLink}\">Ver detalhes</a>`+

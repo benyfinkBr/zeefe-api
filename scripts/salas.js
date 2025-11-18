@@ -242,7 +242,7 @@ function createRoomCard(room) {
   const disabledCta = !availableToday;
   actions.innerHTML = `
     <button class="btn btn-secondary" type="button" data-room="${room.id}">Ver detalhes</button>
-    <a class="btn btn-primary${disabledCta ? ' disabled' : ''}" ${disabledCta ? 'aria-disabled=\"true\" tabindex=\"-1\"' : ''} href="${disabledCta ? '#' : `pre-reserva.html?room=${room.id}`}">${disabledCta ? 'Indisponível' : 'Reservar diária'}</a>`;
+    <a class="btn btn-primary${disabledCta ? ' disabled' : ''}" ${disabledCta ? 'aria-disabled=\"true\" tabindex=\"-1\"' : ''} href="${disabledCta ? '#' : `clientes.html`}">${disabledCta ? 'Indisponível' : 'Reservar diária'}</a>`;
   info.appendChild(actions);
 
   card.appendChild(info);
@@ -258,7 +258,7 @@ function openModal(room) {
   modalStatus.textContent = statusLabel(room.status);
   modalLocation.textContent = room.location || 'Não informado';
   modalRate.textContent = formatCurrency(room.daily_rate) || '--';
-  modalReserve.href = `pre-reserva.html?room=${encodeURIComponent(room.id)}`;
+  modalReserve.href = `clientes.html`;
   modalReserve.classList.toggle('disabled', ['manutencao', 'desativada', 'inativo'].includes((room.status || '').toLowerCase()));
   if (modalReserve.classList.contains('disabled')) {
     modalReserve.setAttribute('aria-disabled', 'true');
