@@ -321,13 +321,11 @@ async function initialize() {
     bookingSearchMode = 'date';
     bookingModeDateBtn.classList.add('active');
     if (bookingModeRoomBtn) bookingModeRoomBtn.classList.remove('active');
-    // datas primeiro sempre começa no passo 0
-    bookingStepIndex = 0;
-    setBookingStep(bookingStepIndex);
   });
   bookingModeRoomBtn?.addEventListener('click', () => {
-    // por enquanto apenas datas primeiro está disponível
-    alert('Fluxo “salas primeiro” ainda está em construção. Use “Datas primeiro”.');
+    bookingSearchMode = 'room';
+    bookingModeRoomBtn.classList.add('active');
+    if (bookingModeDateBtn) bookingModeDateBtn.classList.remove('active');
   });
 
   cancelReservationEditBtn?.addEventListener('click', () => resetBookingForm());
@@ -1668,13 +1666,27 @@ function renderBookingCalendar(referenceDate) {
 
   const monthEnd = new Date(monthRef.getFullYear(), monthRef.getMonth() + 1, 0);
   const selectedSet = new Set(bookingSelectedDates || []);
+  const selectedRoomId = bookingRoomHiddenInput?.value ? String(bookingRoomHiddenInput.value) : null;
+  const selectedRoom = selectedRoomId ? roomsCache.find(r => String(r.id) === selectedRoomId) : null;
 
   for (let day = 1; day <= monthEnd.getDate(); day++) {
     const currentDate = new Date(monthRef.getFullYear(), monthRef.getMonth(), day);
     const iso = toISODate(currentDate);
-    const hasRooms = Array.isArray(roomsCache) && roomsCache.length > 0;
-    const totalSelectable = hasRooms ? roomsCache.filter(room => isRoomSelectable(room, iso)).length : 1; // se não há dados de salas, não bloqueia
-    const availableRooms = hasRooms ? (totalSelectable ? getAvailableRoomsForDate(iso, reservationIdInput?.value) : []) : [{}];
+
+    let hasRooms;
+    let totalSelectable;
+    let availableRooms;
+
+    if (bookingSearchMode === 'room' && selectedRoom) {
+      hasRooms = true;
+      totalSelectable = isRoomSelectable(selectedRoom, iso) ? 1 : 0;
+      const ok = totalSelectable && isRoomAvailableOnDate(selectedRoom, iso, reservationIdInput?.value);
+      availableRooms = ok ? [selectedRoom] : [];
+    } else {
+      hasRooms = Array.isArray(roomsCache) && roomsCache.length > 0;
+      totalSelectable = hasRooms ? roomsCache.filter(room => isRoomSelectable(room, iso)).length : 1; // se não há dados de salas, não bloqueia
+      availableRooms = hasRooms ? (totalSelectable ? getAvailableRoomsForDate(iso, reservationIdInput?.value) : []) : [{}];
+    }
 
     const button = document.createElement('button');
     button.type = 'button';
@@ -1752,6 +1764,10 @@ function selectRoomOption(roomId) {
     });
   }
   if (bookingMessage) bookingMessage.textContent = '';
+  // Atualiza o calendário quando estiver filtrando por sala específica
+  if (bookingCalendarGrid) {
+    renderBookingCalendar(bookingCurrentMonth);
+  }
   updateBookingNavigation();
 }
 
@@ -2562,37 +2578,75 @@ async function onBookingSubmit(event) {
   record.visitor_ids = bookingVisitorIds;
 
   try {
-    const res = await fetch(`${API_BASE}/apisave.php`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({ table: 'reservations', record })
-    });
-    const json = await res.json();
-    if (!json.success) throw new Error(json.error || 'Erro ao salvar reserva.');
+    const isMultiDate = bookingSearchMode === 'date' && Array.isArray(bookingSelectedDates) && bookingSelectedDates.length > 1;
+    const datesToCreate = isMultiDate
+      ? Array.from(new Set(bookingSelectedDates)).sort()
+      : [record.date];
 
-    const reservationId = record.id || json.insertId;
-    // Aplica voucher na reserva se houver
-    let voucherWarn = false;
-    if (bookingVoucherApplied && bookingVoucherApplied.code && reservationId) {
-      try {
-        await fetch(`${API_BASE}/apply_voucher.php`, {
-          method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
-          body: JSON.stringify({ reservation_id: reservationId, code: bookingVoucherApplied.code })
-        }).then(r => r.json()).then(j => { if (!j.success) throw new Error(j.error||'Falha ao aplicar voucher'); });
-      } catch (e) { voucherWarn = true; }
+    // Confirmação amigável para múltiplas reservas
+    if (datesToCreate.length > 1) {
+      const resumoDatas = datesToCreate.map(d => formatDate(d)).join(', ');
+      const ok = window.confirm(`Você está criando ${datesToCreate.length} reservas nas datas: ${resumoDatas}. Deseja confirmar?`);
+      if (!ok) return;
+      // Força sempre criar novas reservas quando há múltiplas datas
+      delete record.id;
     }
+
+    let totalCreated = 0;
+    let voucherWarn = false;
     let inviteWarn = false;
-    if (formData.get('send_invites') && reservationId && bookingVisitorIds.length) {
-      try {
-        await enviarConvites(reservationId, bookingVisitorIds);
-      } catch (err) {
-        inviteWarn = true;
-        console.warn('Falha ao enviar convites:', err);
+
+    for (const date of datesToCreate) {
+      const payloadRecord = { ...record, date };
+      const res = await fetch(`${API_BASE}/apisave.php`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ table: 'reservations', record: payloadRecord })
+      });
+      const json = await res.json();
+      if (!json.success) {
+        throw new Error(json.error || 'Erro ao salvar reserva.');
+      }
+      const reservationId = payloadRecord.id || json.insertId;
+      if (reservationId) totalCreated++;
+
+      // Aplica voucher por reserva, se houver
+      if (bookingVoucherApplied && bookingVoucherApplied.code && reservationId) {
+        try {
+          const r = await fetch(`${API_BASE}/apply_voucher.php`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ reservation_id: reservationId, code: bookingVoucherApplied.code })
+          });
+          const j = await r.json();
+          if (!j.success) throw new Error(j.error || 'Falha ao aplicar voucher');
+        } catch (e) {
+          voucherWarn = true;
+        }
+      }
+
+      // Envia convites para cada reserva criada
+      if (formData.get('send_invites') && reservationId && bookingVisitorIds.length) {
+        try {
+          await enviarConvites(reservationId, bookingVisitorIds);
+        } catch (err) {
+          inviteWarn = true;
+          console.warn('Falha ao enviar convites:', err);
+        }
       }
     }
-    let baseMessage = record.id ? 'Reserva atualizada com sucesso.' : 'Sua solicitação de reserva foi enviada. Você receberá a confirmação e o link de pagamento por e‑mail.';
-    if (voucherWarn) baseMessage += ' Observação: não foi possível aplicar o voucher.';
+
+    let baseMessage;
+    if (record.id && datesToCreate.length === 1) {
+      baseMessage = 'Reserva atualizada com sucesso.';
+    } else if (datesToCreate.length > 1) {
+      baseMessage = `Criamos ${totalCreated} reservas. Você receberá as confirmações e links de pagamento por e‑mail.`;
+    } else {
+      baseMessage = 'Sua solicitação de reserva foi enviada. Você receberá a confirmação e o link de pagamento por e‑mail.';
+    }
+    if (voucherWarn) baseMessage += ' Observação: uma ou mais reservas não aceitaram o voucher.';
     resetBookingForm(true);
     bookingMessage.textContent = inviteWarn ? `${baseMessage} Porém, não foi possível enviar todos os convites.` : baseMessage;
     atualizarPainel();
