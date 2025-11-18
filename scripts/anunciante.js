@@ -89,6 +89,8 @@ const roomClose = document.getElementById('advRoomClose');
 const roomCancel = document.getElementById('advRoomCancel');
 const roomForm = document.getElementById('advRoomForm');
 const roomMsg = document.getElementById('advRoomMessage');
+const roomIdHidden = document.getElementById('roomIdHidden');
+const roomGeocodeBtn = document.getElementById('advRoomGeocode');
 const roomName = document.getElementById('roomName');
 const roomCap = document.getElementById('roomCapacity');
 const roomCity = document.getElementById('roomCity');
@@ -520,6 +522,7 @@ document.getElementById('advQuickRegisterBtn')?.addEventListener('click', ()=>{
 });
 roomClose?.addEventListener('click', () => { closeRoomModal(); });
 roomCancel?.addEventListener('click', () => { closeRoomModal(); });
+roomGeocodeBtn?.addEventListener('click', onRoomGeocode);
 roomModal?.addEventListener('click', (e)=> { if (e.target === roomModal) closeRoomModal(); });
 roomForm?.addEventListener('submit', onRoomFormSubmit);
 
