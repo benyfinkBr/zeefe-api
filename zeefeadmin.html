@@ -365,6 +365,7 @@ input, select {
 
     let cachedRooms = null;
     let cachedClients = null;
+    let cachedBanks = null;
 
     function escapeHtml(value) {
       return String(value ?? '')
@@ -373,6 +374,25 @@ input, select {
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#039;');
+    }
+
+    async function loadBanksCSV() {
+      if (cachedBanks) return cachedBanks;
+      try {
+        const res = await fetch('img/Bancos.csv', { cache: 'no-store' });
+        const text = await res.text();
+        const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+        if (!lines.length) { cachedBanks = []; return cachedBanks; }
+        // Detect delimiter ; or ,
+        const delim = (lines[0].includes(';') ? ';' : ',');
+        const rows = lines.map(l => l.split(delim).map(s => s.trim()));
+        // Try to detect header
+        let start = 0;
+        if (/cod|código|codigo|code/i.test(rows[0][0])) start = 1;
+        cachedBanks = rows.slice(start).map(cols => ({ code: (cols[0]||'').replace(/\D/g,''), name: cols[1]||'' }))
+          .filter(b => b.code && b.name);
+      } catch (_) { cachedBanks = []; }
+      return cachedBanks;
     }
 
     function formatDate(value) {
@@ -1433,6 +1453,46 @@ input, select {
       } else if (sec === 'advertisers') {
         const feeInput = container.querySelector('input[name="fee_pct"]');
         if (feeInput && (!feeInput.value || feeInput.value === '0')) feeInput.value = '15.00';
+
+        // Conectar seleção de bancos (CSV) aos campos bank_code/bank_name
+        (async () => {
+          const banks = await loadBanksCSV();
+          const codeInput = container.querySelector('input[name="bank_code"]');
+          const nameInput = container.querySelector('input[name="bank_name"]');
+          if (!codeInput || !nameInput) return;
+
+          const wrap = codeInput.parentElement;
+          const label = wrap && wrap.querySelector('label');
+          if (label) label.textContent = 'Banco';
+
+          const sel = document.createElement('select');
+          sel.className = 'form-select';
+          sel.style.marginTop = '4px';
+          const optEmpty = document.createElement('option');
+          optEmpty.value = '';
+          optEmpty.textContent = '-- Selecione --';
+          sel.appendChild(optEmpty);
+          banks.forEach(b => {
+            const o = document.createElement('option');
+            o.value = b.code;
+            o.textContent = `${b.code} - ${b.name}`;
+            sel.appendChild(o);
+          });
+          // Preselect
+          const currentCode = (codeInput.value || '').trim();
+          if (currentCode) sel.value = currentCode;
+          // Keep inputs as real fields to save; make them readonly to avoid conflito
+          codeInput.readOnly = true; nameInput.readOnly = true;
+
+          sel.addEventListener('change', () => {
+            const code = sel.value;
+            const found = banks.find(b => b.code === code);
+            codeInput.value = found ? found.code : '';
+            nameInput.value = found ? found.name : '';
+          });
+
+          wrap.appendChild(sel);
+        })();
       }
 
       aplicarMascarasPadrao(container);
