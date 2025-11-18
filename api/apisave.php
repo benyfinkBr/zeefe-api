@@ -18,7 +18,7 @@ if (!$payload || !isset($payload['table']) || !isset($payload['record'])) {
   echo json_encode(['error'=>'Formato inválido']); exit;
 }
 
-$allowed = ['companies','clients','rooms','reservations','visitors','amenities','campaigns'];
+$allowed = ['companies','clients','rooms','reservations','visitors','amenities','campaigns','vouchers'];
 $table   = $payload['table'];
 $rawRecord = $payload['record'];
 $record = $rawRecord;

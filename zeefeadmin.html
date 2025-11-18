@@ -351,6 +351,7 @@ input, select {
       reservations: 'Reserva',
       visitors: 'Visitante',
       amenities: 'Comodidade',
+      vouchers: 'Voucher',
       campaigns: 'Campanha'
     };
 
@@ -447,6 +448,20 @@ input, select {
         input.addEventListener('input', handler);
         input.dataset.maskPhoneAttached = '1';
       });
+    }
+
+    async function resetSenhaAnunciante(email) {
+      if (!email) { alert('E-mail do anunciante não encontrado.'); return; }
+      if (!confirm(`Gerar e enviar nova senha temporária para ${email}?`)) return;
+      try {
+        const res = await fetch(`${API_BASE}/advertiser_reset_password.php`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email })
+        });
+        const json = await res.json();
+        if (!json.success) throw new Error(json.error || 'Falha ao resetar.');
+        alert(json.message || 'Senha temporária enviada por e-mail.');
+      } catch (e) { alert(e.message || 'Erro ao resetar senha.'); }
     }
 
     let clientesDetalhadosCache = null;
@@ -967,6 +982,9 @@ input, select {
         if (sec === 'clients' && itemEdit && itemEdit.id) {
           resetSenhaBtn.style.display = 'inline-block';
           resetSenhaBtn.onclick = () => resetSenhaCliente(itemEdit.id);
+        } else if (sec === 'advertisers' && itemEdit && itemEdit.login_email) {
+          resetSenhaBtn.style.display = 'inline-block';
+          resetSenhaBtn.onclick = () => resetSenhaAnunciante(itemEdit.login_email);
         } else {
           resetSenhaBtn.style.display = 'none';
           resetSenhaBtn.onclick = null;
@@ -1047,9 +1065,11 @@ input, select {
         { name: 'owner_type', label: 'Tipo de dono', span: 1, type: 'select', options: [ {value:'client',label:'Cliente'}, {value:'company',label:'Empresa'} ], cls:'sm', includeEmpty:false },
         { name: 'owner_id', label: 'ID do dono', span: 1, cls:'sm' },
         { type: 'break' },
-        { name: 'bank_name', label: 'Banco', span: 2 },
+        { name: 'bank_code', label: 'Banco (cód.)', span: 1, cls:'sm' },
+        { name: 'bank_name', label: 'Banco (nome)', span: 1 },
         { name: 'account_type', label: 'Tipo de Conta', span: 1, type: 'select', options: [ {value:'corrente',label:'Corrente'}, {value:'poupanca',label:'Poupança'}, {value:'pix',label:'PIX'} ], cls:'sm', includeEmpty:true },
-        { name: 'account_number', label: 'Agência/Conta', span: 1, cls:'sm' },
+        { name: 'agency_number', label: 'Agência', span: 1, cls:'sm' },
+        { name: 'account_number', label: 'Conta', span: 1, cls:'sm' },
         { type: 'break' },
         { name: 'pix_key', label: 'Chave PIX', span: 2 },
         { name: 'created_at', label: 'Criado em', span: 1, type: 'date', readonly: true, cls:'sm' },
@@ -1410,6 +1430,9 @@ input, select {
           codeWrap.appendChild(btn);
           codeInput.placeholder = 'Ex.: ZE-' + gerarCodigoVoucher().slice(0,6);
         }
+      } else if (sec === 'advertisers') {
+        const feeInput = container.querySelector('input[name="fee_pct"]');
+        if (feeInput && (!feeInput.value || feeInput.value === '0')) feeInput.value = '15.00';
       }
 
       aplicarMascarasPadrao(container);
