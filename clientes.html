@@ -641,6 +641,23 @@
     </div>
   </div>
 
+  <!-- Modal: aviso sobre visitantes/invites -->
+  <div class="modal-overlay" id="bookingVisitorsModal" aria-hidden="true">
+    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="bookingVisitorsTitle">
+      <button class="modal-close" type="button" id="bookingVisitorsClose" aria-label="Fechar">&times;</button>
+      <div class="modal-body">
+        <div class="modal-info" style="padding:24px; width:100%">
+          <h2 id="bookingVisitorsTitle" style="margin-top:0">Visitantes</h2>
+          <p id="bookingVisitorsMessage" class="rooms-message" style="margin-bottom:16px"></p>
+          <div style="display:flex; gap:10px; justify-content:flex-end; flex-wrap:wrap">
+            <button type="button" class="btn btn-secondary" id="bookingVisitorsAddBtn">Adicionar convidados</button>
+            <button type="button" class="btn btn-primary" id="bookingVisitorsContinueBtn">Continuar assim mesmo</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Modal: Adicionar manualmente -->
   <div class="modal-overlay" id="manualMembersModal" aria-hidden="true">
     <div class="modal-dialog wide" role="dialog" aria-modal="true" aria-labelledby="manualMembersTitle">

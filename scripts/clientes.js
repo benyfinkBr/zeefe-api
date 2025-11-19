@@ -223,6 +223,16 @@ const bookingStepperItemsEls = Array.from(document.querySelectorAll('.booking-st
 const stepLabelData = bookingStepperItemsEls[0]?.querySelector('strong');
 const stepLabelRooms = bookingStepperItemsEls[1]?.querySelector('strong');
 
+// Modal de aviso sobre visitantes
+const bookingVisitorsModal = document.getElementById('bookingVisitorsModal');
+const bookingVisitorsMessage = document.getElementById('bookingVisitorsMessage');
+const bookingVisitorsClose = document.getElementById('bookingVisitorsClose');
+const bookingVisitorsAddBtn = document.getElementById('bookingVisitorsAddBtn');
+const bookingVisitorsContinueBtn = document.getElementById('bookingVisitorsContinueBtn');
+let bookingVisitorsModalMode = null; // 'noVisitors' | 'invites'
+let bookingPendingRecord = null;
+let bookingPendingFormData = null;
+
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', initialize, { once: true });
 } else {
@@ -326,6 +336,20 @@ async function initialize() {
   bookingDescriptionInput?.addEventListener('input', onBookingDetailsChange);
   bookingVoucherInput?.addEventListener('input', () => { if (bookingVoucherResult) bookingVoucherResult.textContent=''; bookingVoucherApplied = null; });
   bookingVoucherApplyBtn?.addEventListener('click', onApplyVoucherClick);
+
+  // Modal de visitantes (confirmação antes de enviar)
+  bookingVisitorsClose?.addEventListener('click', () => hideBookingVisitorsModal());
+  bookingVisitorsModal?.addEventListener('click', (e) => { if (e.target === bookingVisitorsModal) hideBookingVisitorsModal(); });
+  bookingVisitorsAddBtn?.addEventListener('click', () => {
+    hideBookingVisitorsModal();
+    // leva o usuário para a etapa de Visitantes
+    bookingStepIndex = 3;
+    setBookingStep(bookingStepIndex);
+    setActivePanel('book');
+  });
+  bookingVisitorsContinueBtn?.addEventListener('click', () => {
+    hideBookingVisitorsModal(true);
+  });
 
   // Modo de datas: simples x múltiplas
   dateModeSingleBtn?.addEventListener('click', () => {
@@ -2707,20 +2731,11 @@ async function onBookingSubmit(event) {
     const visitorsCount = Array.isArray(bookingVisitorIds) ? bookingVisitorIds.length : 0;
     const sendInvites = !!formData.get('send_invites');
     if (visitorsCount === 0) {
-      const goAdd = window.confirm(
-        'Você não cadastrou nenhum visitante. Sem pré-cadastro, a recepção poderá levar mais tempo para validar documentos. Clique em OK para adicionar convidados agora, ou Cancelar para continuar sem visitantes.'
-      );
-      if (goAdd) {
-        // Leva o usuário para a etapa de Visitantes
-        bookingStepIndex = 3;
-        setBookingStep(bookingStepIndex);
-        return;
-      }
+      showBookingVisitorsModal('Você não cadastrou nenhum visitante. Sem pré-cadastro, a recepção poderá levar mais tempo para validar documentos. Deseja adicionar convidados agora?');
+      return;
     } else if (sendInvites) {
-      const ok = window.confirm(
-        'Após a confirmação da reserva, enviaremos por e-mail um convite para todos os visitantes selecionados. Deseja continuar?'
-      );
-      if (!ok) return;
+      showBookingVisitorsModal('Após a confirmação da reserva, enviaremos por e-mail um convite para todos os visitantes selecionados. Deseja continuar?');
+      return;
     }
 
     const isMultiDate = bookingSearchMode === 'date' && Array.isArray(bookingSelectedDates) && bookingSelectedDates.length > 1;
@@ -2860,6 +2875,20 @@ function updateMultiDateSummary() {
   }
   multiDateSummaryEl.hidden = false;
   multiDateSummaryEl.textContent = `Você selecionou ${total} dias.`;
+}
+
+function showBookingVisitorsModal(message) {
+  if (!bookingVisitorsModal || !bookingVisitorsMessage) return;
+  bookingVisitorsMessage.textContent = message;
+  bookingVisitorsModal.classList.add('show');
+  bookingVisitorsModal.setAttribute('aria-hidden', 'false');
+}
+
+function hideBookingVisitorsModal(continueFlag = false) {
+  if (!bookingVisitorsModal) return;
+  bookingVisitorsModal.classList.remove('show');
+  bookingVisitorsModal.setAttribute('aria-hidden', 'true');
+  // Quando continueFlag for true, onBookingSubmit continuará normalmente
 }
 
 function renderBookingSummary() {
