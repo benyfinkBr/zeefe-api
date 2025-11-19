@@ -219,6 +219,7 @@ const bookingModeHint = document.getElementById('bookingModeHint');
 const dateModeSingleBtn = document.getElementById('dateModeSingle');
 const dateModeMultiBtn = document.getElementById('dateModeMulti');
 const multiDateSummaryEl = document.getElementById('multiDateSummary');
+const bookingSummaryEl = document.getElementById('bookingSummary');
 
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', initialize, { once: true });
@@ -1515,6 +1516,9 @@ function setBookingStep(index) {
   if (bookingStepIndex === 1) {
     renderRoomOptions(bookingDateInput?.value || '');
   }
+  if (bookingStepIndex === 4) {
+    renderBookingSummary();
+  }
 }
 
 function updateBookingNavigation() {
@@ -1528,7 +1532,7 @@ function updateBookingNavigation() {
   if (bookingSubmitBtn) {
     const isSubmitVisible = bookingStepIndex === lastIndex;
     bookingSubmitBtn.hidden = !isSubmitVisible;
-    bookingSubmitBtn.textContent = 'Solicitar reserva';
+    bookingSubmitBtn.textContent = 'Confirmar reserva';
     bookingSubmitBtn.disabled = isSubmitVisible ? !isStepComplete(lastIndex) : true;
   }
   if (cancelReservationEditBtn) {
@@ -2803,6 +2807,62 @@ function updateMultiDateSummary() {
   }
   multiDateSummaryEl.hidden = false;
   multiDateSummaryEl.textContent = `Você selecionou ${total} dias.`;
+}
+
+function renderBookingSummary() {
+  if (!bookingSummaryEl || !bookingForm) return;
+
+  const roomId = bookingRoomHiddenInput?.value ? String(bookingRoomHiddenInput.value) : null;
+  const room = roomId ? roomsCache.find(r => String(r.id) === roomId) : null;
+
+  let dates = [];
+  if (bookingSearchMode === 'date' && bookingDateMulti && bookingSelectedDates.length > 1) {
+    dates = Array.from(new Set(bookingSelectedDates)).sort();
+  } else if (bookingDateInput?.value) {
+    dates = [bookingDateInput.value];
+  }
+
+  const datesLabel = dates.length
+    ? dates.map(d => formatDate(d)).join(', ')
+    : '--';
+
+  const title = bookingTitleInput?.value?.trim() || '--';
+  const desc = bookingDescriptionInput?.value?.trim() || '--';
+  const useCompany = !!(activeClient && activeClient.company_name && bookingCompanyToggle && bookingCompanyToggle.checked);
+
+  const visitorsCount = Array.isArray(bookingVisitorIds) ? bookingVisitorIds.length : 0;
+  const visitorNames = visitorsCount && Array.isArray(currentVisitors)
+    ? currentVisitors.filter(v => bookingVisitorIds.includes(String(v.id))).map(v => v.name || '').filter(Boolean)
+    : [];
+
+  const voucherInfo = bookingVoucherApplied
+    ? `Voucher ${bookingVoucherApplied.code} aplicado. Desconto: ${formatCurrency(bookingVoucherApplied.discount || 0)}. Previsto: ${formatCurrency(bookingVoucherApplied.payable || 0)}.`
+    : 'Nenhum voucher aplicado.';
+
+  const modo = bookingSearchMode === 'room' ? 'Sala específica' : 'Datas primeiro';
+
+  bookingSummaryEl.innerHTML = `
+    <div>
+      <h5>Geral</h5>
+      <ul>
+        <li><strong>Modo de busca:</strong> ${modo}</li>
+        <li><strong>Datas:</strong> ${datesLabel}${dates.length > 1 ? ` (total ${dates.length} dias)` : ''}</li>
+        <li><strong>Sala:</strong> ${room ? escapeHtml(room.name || `Sala #${room.id}`) : 'Não selecionada'}</li>
+        <li><strong>Reserva pela empresa:</strong> ${useCompany ? (activeClient.company_name || 'Sim') : 'Não'}</li>
+      </ul>
+      <h5>Detalhes</h5>
+      <ul>
+        <li><strong>Título:</strong> ${escapeHtml(title)}</li>
+        <li><strong>Descrição:</strong> ${escapeHtml(desc)}</li>
+        <li><strong>Voucher:</strong> ${escapeHtml(voucherInfo)}</li>
+      </ul>
+      <h5>Visitantes</h5>
+      <ul>
+        <li><strong>Quantidade:</strong> ${visitorsCount}</li>
+        <li><strong>Nomes:</strong> ${visitorNames.length ? escapeHtml(visitorNames.join(', ')) : 'Nenhum selecionado'}</li>
+      </ul>
+    </div>
+  `;
 }
 
 async function carregarVisitantes(clientId) {
