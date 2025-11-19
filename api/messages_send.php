@@ -14,7 +14,8 @@ try {
     echo json_encode(['success'=>false,'error'=>'Dados inválidos']);
     exit;
   }
-  if (!in_array($sender, ['client','advertiser'], true)) {
+  // Permitimos client, advertiser e admin (painel administrativo)
+  if (!in_array($sender, ['client','advertiser','admin'], true)) {
     http_response_code(400);
     echo json_encode(['success'=>false,'error'=>'sender_type inválido']);
     exit;
