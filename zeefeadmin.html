@@ -867,6 +867,10 @@ input, select {
 
     document.getElementById('logoutBtn').onclick = () => location.reload();
 
+    if (adminMessagesForm) {
+      adminMessagesForm.addEventListener('submit', enviarMensagemAdmin);
+    }
+
     async function loadSection(section) {
       sec = section;
       if (section === 'rooms') cachedRooms = null;
