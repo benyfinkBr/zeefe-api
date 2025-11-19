@@ -1003,7 +1003,7 @@ input, select {
     }
 
     function isVoucherExpirado(v) {
-      const end = v.ends_at || v.valid_until || v.expires_at;
+      const end = v.ends_at || v.valid_to || v.valid_until || v.expires_at;
       if (!end) return false;
       const d = new Date(end);
       if (isNaN(d.getTime())) return false;

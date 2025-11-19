@@ -161,6 +161,33 @@ try {
       echo json_encode(['success' => true, 'data' => $rows]);
       break;
 
+    case 'vouchers':
+      $stmt = $pdo->query("SELECT * FROM `vouchers` ORDER BY id DESC");
+      $rows = $stmt->fetchAll();
+
+      foreach ($rows as &$row) {
+        // Normaliza campos para o painel do admin
+        $row['starts_at'] = $row['valid_from'] ?? null;
+        $row['ends_at'] = $row['valid_to'] ?? null;
+        $row['max_uses'] = $row['max_redemptions'] ?? null;
+        if (!array_key_exists('max_discount', $row)) {
+          $row['max_discount'] = null;
+        }
+        if (!array_key_exists('notes', $row)) {
+          $row['notes'] = null;
+        }
+        if (!array_key_exists('advertiser_id', $row)) {
+          $row['advertiser_id'] = null;
+        }
+        if (!array_key_exists('client_id', $row)) {
+          $row['client_id'] = null;
+        }
+      }
+      unset($row);
+
+      echo json_encode(['success' => true, 'data' => $rows]);
+      break;
+
     case 'visitors':
       $sql = "
         SELECT v.*,
