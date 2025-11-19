@@ -2567,11 +2567,13 @@ function openReservationActions(id) {
   reservationActionsButtons.classList.add('actions-grid');
   reservationActionsButtons.innerHTML = '';
 
-  // Linha 1: ações principais
+  const cards = [];
+
+  // Ações principais
   if (showPayment) {
-    reservationActionsButtons.appendChild(mkCard('Pagamento', ()=> { tratarAcaoReserva(reserva.id,'payment'); closeReservationActions(); }));
+    cards.push(mkCard('Pagamento', ()=> { tratarAcaoReserva(reserva.id,'payment'); closeReservationActions(); }));
   }
-  reservationActionsButtons.appendChild(mkCard('Mensagens', ()=> { openClientChatForReservation(reserva.id); }));
+  cards.push(mkCard('Mensagens', ()=> { openClientChatForReservation(reserva.id); }));
   // Se pagamento já foi confirmado, exibir informação logo abaixo do meta
   if (paid) {
     try {
@@ -2579,25 +2581,33 @@ function openReservationActions(id) {
       reservationActionsMeta.innerHTML = `${reservationActionsMeta.textContent}<br><span style=\"color:#8A7766\">Pagamento – realizado em ${dt || 'data não disponível'}</span>`;
     } catch (_) {}
   }
-  // Linha 2: convites
   const publicCode = reserva.public_code || reserva.code || '';
   const icsHref = publicCode
     ? `api/reservation_ics.php?code=${encodeURIComponent(publicCode)}`
     : `api/reservation_ics.php?reservation=${encodeURIComponent(reserva.id)}`;
-  const ics = document.createElement('a'); ics.href=icsHref; ics.className='action-card'; ics.innerHTML=`<span class=\"icon\">${getActionIconSVG('Baixar convite')}</span><span class=\"label\">Baixar convite</span>`; ics.setAttribute('download',''); reservationActionsButtons.appendChild(ics);
+  const ics = document.createElement('a');
+  ics.href=icsHref;
+  ics.className='action-card';
+  ics.innerHTML=`<span class=\"icon\">${getActionIconSVG('Baixar convite')}</span><span class=\"label\">Baixar convite</span>`;
+  ics.setAttribute('download','');
+  cards.push(ics);
+
   // Enviar convite (e‑mail com ICS)
-  reservationActionsButtons.appendChild(mkCard('Enviar convite', ()=> { tratarAcaoReserva(reserva.id,'sendCalendar'); closeReservationActions(); }));
+  cards.push(mkCard('Enviar convite', ()=> { tratarAcaoReserva(reserva.id,'sendCalendar'); closeReservationActions(); }));
 
   // Solicitar NF (apenas após pagamento)
   if (paid) {
-    reservationActionsButtons.appendChild(mkCard('Solicitar NF', ()=> { alert('Solicitação de NF registrada. Em breve você receberá por e‑mail.'); closeReservationActions(); }));
+    cards.push(mkCard('Solicitar NF', ()=> { alert('Solicitação de NF registrada. Em breve você receberá por e‑mail.'); closeReservationActions(); }));
   }
 
-  // Linha inferior: Cancelar (vermelho) e Editar
-  const bottom = document.createElement('div'); bottom.className='actions-bottom';
-  bottom.appendChild(mkCard('Editar', ()=> { tratarAcaoReserva(reserva.id,'edit'); closeReservationActions(); }));
-  if (showCancel) bottom.appendChild(mkCard('Cancelar', ()=> { tratarAcaoReserva(reserva.id,'cancel'); closeReservationActions(); }, 'danger'));
-  reservationActionsButtons.appendChild(bottom);
+  // Ajustes: Editar e Cancelar
+  cards.push(mkCard('Editar', ()=> { tratarAcaoReserva(reserva.id,'edit'); closeReservationActions(); }));
+  if (showCancel) {
+    cards.push(mkCard('Cancelar', ()=> { tratarAcaoReserva(reserva.id,'cancel'); closeReservationActions(); }, 'danger'));
+  }
+
+  // Render em grid único (duas linhas auto-fit)
+  cards.forEach(card => reservationActionsButtons.appendChild(card));
 
   reservationActionsModal.classList.add('show');
   reservationActionsModal.setAttribute('aria-hidden','false');
