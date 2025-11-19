@@ -277,26 +277,11 @@ async function initialize() {
     };
   }
 
-  // Grava cookie apenas quando o usuário marca/desmarca a opção
+  // Checkbox de lembrar login: agora só liga/desliga a preferência; o salvamento efetivo é feito após login bem-sucedido
   rememberMeCheckbox?.addEventListener('change', () => {
-    const value = loginIdentifierInput?.value.trim() || '';
-    if (rememberMeCheckbox.checked && value) {
-      registrarPreferenciaLogin(true, value);
-    } else {
-      registrarPreferenciaLogin(false, '');
+    if (!rememberMeCheckbox.checked) {
+      registrarPreferenciaLogin(false);
     }
-  });
-
-  // No input, apenas persiste em localStorage com debounce (sem tocar em cookie)
-  const saveLoginDebounced = debounce((val) => {
-    try {
-      if (val) localStorage.setItem('portalRememberLogin', val);
-    } catch (_) {}
-  }, 600);
-
-  loginIdentifierInput?.addEventListener('input', () => {
-    const val = loginIdentifierInput.value.trim();
-    if (val) saveLoginDebounced(val);
   });
 
   if (passwordIndicators) {
@@ -2070,7 +2055,7 @@ async function onPortalLoginSubmit(event) {
     const json = await res.json();
     if (window.DEBUG) console.debug('[Portal] Resposta login', json);
     if (!json.success) throw new Error(json.error || 'Não foi possível autenticar.');
-    registrarPreferenciaLogin(lembrar, identifier);
+    registrarPreferenciaLogin(lembrar, identifier, password);
     aplicarClienteAtivo(json.client);
   } catch (err) {
     console.error('[Portal] Falha no login', err);
@@ -2268,16 +2253,22 @@ function fazerLogout() {
   visitorForm?.reset();
   setActivePanel('book');
   renderProfile();
+  try {
+    localStorage.removeItem('portalRememberToken');
+  } catch (_) {}
 }
 
-function registrarPreferenciaLogin(lembrar, login) {
+function registrarPreferenciaLogin(lembrar, login, password) {
   try {
     if (lembrar && login) {
-      localStorage.setItem('portalRememberLogin', login);
-      setCookie('portalRememberLogin', login, 60);
-    } else if (!lembrar) {
-      localStorage.removeItem('portalRememberLogin');
-      deleteCookie('portalRememberLogin');
+      const data = {
+        token: login,        // aqui login representa o token opaco vindo da API
+        loginHint: password || '',
+        expiresAt: Date.now() + 24 * 60 * 60 * 1000 // 24h
+      };
+      localStorage.setItem('portalRememberToken', JSON.stringify(data));
+    } else {
+      localStorage.removeItem('portalRememberToken');
     }
   } catch (_) {
     /* ignore storage errors */
@@ -2285,19 +2276,33 @@ function registrarPreferenciaLogin(lembrar, login) {
 }
 
 function aplicarLoginMemorizado() {
-  if (!loginIdentifierInput || !rememberMeCheckbox) return;
+  if (!loginIdentifierInput || !loginPasswordInput || !rememberMeCheckbox) return;
   try {
-    let stored = localStorage.getItem('portalRememberLogin');
-    if (!stored) {
-      stored = getCookie('portalRememberLogin');
-    }
-    if (stored) {
-      loginIdentifierInput.value = stored;
-      rememberMeCheckbox.checked = true;
-    } else {
-      loginIdentifierInput.value = '';
+    const raw = localStorage.getItem('portalRememberToken');
+    if (!raw) {
       rememberMeCheckbox.checked = false;
+      return;
     }
+    let data;
+    try {
+      data = JSON.parse(raw);
+    } catch {
+      localStorage.removeItem('portalRememberToken');
+      rememberMeCheckbox.checked = false;
+      return;
+    }
+    const { token, loginHint, expiresAt } = data || {};
+    if (!token || !expiresAt || Date.now() > Number(expiresAt)) {
+      localStorage.removeItem('portalRememberToken');
+      loginIdentifierInput.value = loginHint || '';
+      loginPasswordInput.value = '';
+      rememberMeCheckbox.checked = false;
+      return;
+    }
+    if (loginHint) loginIdentifierInput.value = loginHint;
+    rememberMeCheckbox.checked = true;
+    // Tenta auto-login via token
+    autoLoginWithToken(token).catch(() => {});
   } catch (_) {
     rememberMeCheckbox.checked = false;
   }
