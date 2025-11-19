@@ -142,8 +142,8 @@ main {
 .mode-btn {
   border-radius: 999px;
   border: 1px solid rgba(245,240,233,.6);
-  background: transparent;
-  color: var(--brand-cream);
+  background: rgba(221, 231, 227, 0.85); /* light green for non selecionado */
+  color: var(--brand-green);
   padding: 6px 14px;
   font-size: .85rem;
   cursor: default;
@@ -151,6 +151,7 @@ main {
 .mode-btn.active {
   background: #fff;
   color: var(--brand-green);
+  border-color: var(--brand-green);
 }
 .mode-btn:disabled {
   opacity: .4;

@@ -221,6 +221,11 @@ const dateModeMultiBtn = document.getElementById('dateModeMulti');
 const multiDateSummaryEl = document.getElementById('multiDateSummary');
 const bookingSummaryEl = document.getElementById('bookingSummary');
 
+// Stepper labels (Data/Salas) para ajustar conforme o fluxo
+const bookingStepperItemsEls = Array.from(document.querySelectorAll('.booking-stepper-item'));
+const stepLabelData = bookingStepperItemsEls[0]?.querySelector('strong');
+const stepLabelRooms = bookingStepperItemsEls[1]?.querySelector('strong');
+
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', initialize, { once: true });
 } else {
@@ -351,6 +356,8 @@ async function initialize() {
     bookingModeDateBtn.classList.add('active');
     if (bookingModeRoomBtn) bookingModeRoomBtn.classList.remove('active');
     if (bookingModeHint) bookingModeHint.textContent = 'Datas primeiro: selecione um ou mais dias no calendário e depois escolha a sala.';
+    if (stepLabelData) stepLabelData.textContent = 'DATA';
+    if (stepLabelRooms) stepLabelRooms.textContent = 'SALAS';
     // Datas primeiro: começa escolhendo datas (etapa 0)
     bookingStepIndex = 0;
     setBookingStep(bookingStepIndex);
@@ -368,6 +375,8 @@ async function initialize() {
     renderRoomOptions(bookingDateInput?.value || '');
     if (bookingModeHint) bookingModeHint.textContent = 'Sala específica: escolha a sala primeiro, depois veja as datas disponíveis no calendário.';
     if (roomPickerInline) roomPickerInline.hidden = false;
+    if (stepLabelData) stepLabelData.textContent = 'SALAS';
+    if (stepLabelRooms) stepLabelRooms.textContent = 'DATA';
   });
 
   cancelReservationEditBtn?.addEventListener('click', () => resetBookingForm());
