@@ -589,21 +589,62 @@
     <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="clientChatTitle">
       <button class="modal-close" type="button" id="clientChatClose" aria-label="Fechar">&times;</button>
       <div class="modal-body">
+        <div class="modal-info chat-layout" style="padding:24px; width:100%">
+          <aside class="chat-sidebar">
+            <h2 id="clientChatTitle" style="margin-top:0">Mensagens</h2>
+            <div class="chat-sidebar-section">
+              <h4>Suporte</h4>
+              <button type="button" class="chat-thread-item" id="clientSupportThreadItem">Equipe Ze.EFE</button>
+            </div>
+            <div class="chat-sidebar-section">
+              <h4>Reservas</h4>
+              <div id="clientChatThreadsList"></div>
+            </div>
+          </aside>
+          <section class="chat-main">
+            <div id="clientChatHeader" class="rooms-message chat-header-line"></div>
+            <div id="clientChatMessages" class="chat-messages"></div>
+            <div class="chat-report-row">
+              <button type="button" class="btn btn-secondary btn-sm" id="openReportProblemBtn">Relatar problema</button>
+            </div>
+            <form id="clientChatForm" class="chat-form">
+              <input type="text" id="clientChatInput" placeholder="Digite uma mensagem" style="flex:1" />
+              <button class="btn btn-primary" type="submit">Enviar</button>
+            </form>
+          </section>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Relatar problema -->
+  <div class="modal-overlay" id="reportProblemModal" aria-hidden="true">
+    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="reportProblemTitle">
+      <button class="modal-close" type="button" id="reportProblemClose" aria-label="Fechar">&times;</button>
+      <div class="modal-body">
         <div class="modal-info" style="padding:24px; width:100%">
-          <h2 id="clientChatTitle" style="margin-top:0">Mensagens</h2>
-          <div class="chat-target-row" style="display:flex; flex-direction:column; gap:4px; margin-bottom:8px;">
-            <label style="font-size:0.85rem; color:#567; display:flex; align-items:center; gap:8px;">
-              <span>Conversar com</span>
-              <select id="clientChatTargetSelect" style="flex:1; padding:6px 10px; border-radius:999px; border:1px solid rgba(29,65,58,.18); background:#fff;">
-                <option value="support">Equipe Ze.EFE (suporte)</option>
+          <h2 id="reportProblemTitle" style="margin-top:0">Relatar problema</h2>
+          <p class="rooms-message">Conte para a equipe Ze.EFE o que aconteceu. Suas mensagens desta conversa serão usadas como contexto.</p>
+          <form id="reportProblemForm" class="profile-edit-form">
+            <div class="form-row">
+              <label for="reportIssueType">Tipo de problema</label>
+              <select id="reportIssueType" required>
+                <option value="reserva">Reserva</option>
+                <option value="atendimento">Atendimento</option>
+                <option value="cancelamento">Cancelamento</option>
+                <option value="pagamento">Pagamento</option>
+                <option value="outro">Outro</option>
               </select>
-            </label>
-            <div id="clientChatHeader" class="rooms-message"></div>
-          </div>
-          <div id="clientChatMessages" class="chat-messages"></div>
-          <form id="clientChatForm" class="chat-form">
-            <input type="text" id="clientChatInput" placeholder="Digite uma mensagem" style="flex:1" />
-            <button class="btn btn-primary" type="submit">Enviar</button>
+            </div>
+            <div class="form-row">
+              <label for="reportIssueDescription">Descrição</label>
+              <textarea id="reportIssueDescription" rows="4" placeholder="Descreva o problema com o máximo de detalhes possível." required></textarea>
+            </div>
+            <div class="modal-actions" style="margin-top:12px; display:flex; gap:12px; justify-content:flex-end;">
+              <button type="button" class="btn btn-secondary" id="reportProblemCancel">Cancelar</button>
+              <button type="submit" class="btn btn-primary">Enviar relato</button>
+            </div>
+            <div class="form-row"><div id="reportProblemMessage" class="rooms-message"></div></div>
           </form>
         </div>
       </div>

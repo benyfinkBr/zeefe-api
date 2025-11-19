@@ -452,6 +452,12 @@ async function initialize() {
   openSupportChatBtn?.addEventListener('click', () => {
     openClientSupportChat();
   });
+  clientSupportThreadItem?.addEventListener('click', () => { openClientSupportChat(); });
+  openReportProblemBtn?.addEventListener('click', openReportProblemModal);
+  reportProblemClose?.addEventListener('click', closeReportProblemModal);
+  reportProblemCancel?.addEventListener('click', closeReportProblemModal);
+  reportProblemModal?.addEventListener('click', (e) => { if (e.target === reportProblemModal) closeReportProblemModal(); });
+  reportProblemForm?.addEventListener('submit', onReportProblemSubmit);
 
   // Empresa/Membros modais
   document.getElementById('openInviteModal')?.addEventListener('click', openInviteMemberModal);
@@ -2624,7 +2630,6 @@ async function openClientChatForReservation(reservationId) {
   clientChatMessages.innerHTML = '<div class="rooms-message">Conectando…</div>';
   clientChatForm.hidden = false;
   clientChatThreadId = null;
-  showClientChatModal();
   try {
     // tenta localizar thread existente
     clientChatThreadsCache = await loadClientThreads();
@@ -2637,11 +2642,9 @@ async function openClientChatForReservation(reservationId) {
     } else {
       clientChatThreadId = Number(t.id);
     }
-    await buildClientChatTargetOptions(clientChatThreadId);
-    if (clientChatTargetSelect) clientChatTargetSelect.value = String(clientChatThreadId);
-    clientChatTargetSelect?.addEventListener('change', onClientChatTargetChange);
-    await fetchClientChatMessages();
-    startClientChatPolling();
+    await buildClientChatSidebar(clientChatThreadId);
+    showClientChatModal();
+    await openClientChatByThreadId(clientChatThreadId);
   } catch (e) {
     clientChatMessages.innerHTML = `<div class="rooms-message">${e.message || 'Falha ao abrir conversa.'}</div>`;
   }
@@ -2657,7 +2660,6 @@ async function openClientSupportChat() {
   clientChatMessages.innerHTML = '<div class="rooms-message">Conectando…</div>';
   if (clientChatForm) clientChatForm.hidden = false;
   clientChatThreadId = null;
-  showClientChatModal();
   try {
     clientChatThreadsCache = await loadClientThreads();
     let t = clientChatThreadsCache.find(x => (!x.advertiser_id || Number(x.advertiser_id) === 0) && !x.room_id && !x.reservation_id);
@@ -2670,16 +2672,13 @@ async function openClientSupportChat() {
       const j2 = await res2.json();
       if (!j2.success) throw new Error(j2.error || 'Não foi possível iniciar a conversa com o suporte.');
       clientChatThreadId = Number(j2.id);
-      // push into cache to aparecer na lista
       clientChatThreadsCache.push({ id: clientChatThreadId, client_id: activeClient.id, advertiser_id: null, room_id: null, reservation_id: null });
     } else {
       clientChatThreadId = Number(t.id);
     }
-    await buildClientChatTargetOptions(clientChatThreadId);
-    if (clientChatTargetSelect) clientChatTargetSelect.value = String(clientChatThreadId);
-    clientChatTargetSelect?.addEventListener('change', onClientChatTargetChange);
-    await fetchClientChatMessages();
-    startClientChatPolling();
+    await buildClientChatSidebar(clientChatThreadId);
+    showClientChatModal();
+    await openClientChatByThreadId(clientChatThreadId);
   } catch (e) {
     clientChatMessages.innerHTML = `<div class="rooms-message">${e.message || 'Falha ao abrir conversa.'}</div>`;
   }
@@ -2697,55 +2696,36 @@ async function loadClientThreads() {
   }
 }
 
-async function buildClientChatTargetOptions(activeThreadId) {
-  if (!clientChatTargetSelect) return;
-  clientChatTargetSelect.innerHTML = '';
+async function buildClientChatSidebar(activeThreadId) {
+  if (!clientChatThreadsList) return;
+  clientChatThreadsList.innerHTML = '';
   const threads = clientChatThreadsCache || [];
-  // suporte
-  let supportThread = threads.find(x => (!x.advertiser_id || Number(x.advertiser_id) === 0) && !x.room_id && !x.reservation_id);
-  const supportOption = document.createElement('option');
-  supportOption.value = supportThread ? String(supportThread.id) : 'support-new';
-  supportOption.textContent = 'Equipe Ze.EFE (suporte)';
-  clientChatTargetSelect.appendChild(supportOption);
-
-  // reservas
   const reservationOptions = [];
   threads.filter(x => x.reservation_id).forEach(t => {
     const res = currentReservations.find(r => String(r.id) === String(t.reservation_id));
     const sala = res ? buscarSala(res.room_id) : null;
     const labelDate = res ? formatDate(res.date) : 'Reserva #' + t.reservation_id;
     const labelRoom = sala?.name || (res ? 'Sala #' + res.room_id : '');
-    const opt = document.createElement('option');
-    opt.value = String(t.id);
-    opt.textContent = `${labelRoom ? labelRoom + ' · ' : ''}${labelDate}`;
-    reservationOptions.push(opt);
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'chat-thread-item';
+    const isActive = isReservationActiveForChat(res);
+    if (!isActive) btn.classList.add('disabled');
+    if (activeThreadId && String(activeThreadId) === String(t.id)) btn.classList.add('active');
+    btn.dataset.threadId = String(t.id);
+    btn.textContent = `${labelRoom ? labelRoom + ' · ' : ''}${labelDate}`;
+    if (isActive) {
+      btn.addEventListener('click', () => openClientChatByThreadId(t.id));
+    }
+    reservationOptions.push(btn);
   });
   reservationOptions.sort((a,b) => a.textContent.localeCompare(b.textContent,'pt-BR'));
-  reservationOptions.forEach(opt => clientChatTargetSelect.appendChild(opt));
-
-  // Seleção inicial
-  if (activeThreadId && String(activeThreadId) !== '0') {
-    clientChatTargetSelect.value = String(activeThreadId);
-  } else if (supportThread) {
-    clientChatTargetSelect.value = String(supportThread.id);
-  } else {
-    clientChatTargetSelect.value = supportOption.value;
-  }
+  reservationOptions.forEach(btn => clientChatThreadsList.appendChild(btn));
 }
 
-async function onClientChatTargetChange() {
-  const val = clientChatTargetSelect?.value || '';
-  if (!val) return;
-  // Se for suporte novo
-  if (val === 'support-new') {
-    await openClientSupportChat();
-    return;
-  }
-  const idNum = Number(val);
-  if (!idNum) return;
-  clientChatThreadId = idNum;
-  // atualiza header de acordo com o thread
-  const t = (clientChatThreadsCache || []).find(x => Number(x.id) === idNum);
+async function openClientChatByThreadId(threadId) {
+  clientChatThreadId = Number(threadId);
+  const t = (clientChatThreadsCache || []).find(x => Number(x.id) === clientChatThreadId);
   if (!t) return;
   if (!t.reservation_id) {
     if (clientChatHeader) clientChatHeader.textContent = 'Fale com a equipe Ze.EFE';
@@ -2754,8 +2734,19 @@ async function onClientChatTargetChange() {
     const sala = res ? buscarSala(res.room_id) : null;
     if (clientChatHeader) clientChatHeader.textContent = `${res ? formatDate(res.date) : ''} · ${(sala?.name || (res ? 'Sala #' + res.room_id : 'Reserva #' + t.reservation_id))}`;
   }
+  if (clientChatThreadsList) {
+    clientChatThreadsList.querySelectorAll('.chat-thread-item').forEach(el => {
+      el.classList.toggle('active', el.dataset.threadId === String(clientChatThreadId));
+    });
+  }
   await fetchClientChatMessages();
   startClientChatPolling();
+}
+
+function isReservationActiveForChat(reserva) {
+  if (!reserva) return false;
+  const status = String(reserva.status || '').toLowerCase();
+  return !['cancelada','cancelado','concluida','concluída','finalizada'].includes(status);
 }
 
 function showClientChatModal(){
@@ -2801,6 +2792,50 @@ async function onClientChatSubmit(e){
     await fetchClientChatMessages();
   } catch (err) {
     alert(err.message || 'Erro ao enviar.');
+  }
+}
+
+function openReportProblemModal() {
+  if (!reportProblemModal || !clientChatThreadId || !activeClient) return;
+  if (reportProblemMessage) reportProblemMessage.textContent = '';
+  if (reportIssueType) reportIssueType.value = 'reserva';
+  if (reportIssueDescription) reportIssueDescription.value = '';
+  reportProblemModal.classList.add('show');
+  reportProblemModal.setAttribute('aria-hidden','false');
+}
+
+function closeReportProblemModal() {
+  if (!reportProblemModal) return;
+  reportProblemModal.classList.remove('show');
+  reportProblemModal.setAttribute('aria-hidden','true');
+}
+
+async function onReportProblemSubmit(e) {
+  e.preventDefault();
+  if (!activeClient || !clientChatThreadId) return;
+  const type = reportIssueType?.value || '';
+  const desc = (reportIssueDescription?.value || '').trim();
+  if (!type || !desc) {
+    if (reportProblemMessage) reportProblemMessage.textContent = 'Preencha o tipo e a descrição do problema.';
+    return;
+  }
+  try {
+    const res = await fetch(`${API_BASE}/messages_report_issue.php`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        thread_id: clientChatThreadId,
+        client_id: activeClient.id,
+        issue_type: type,
+        description: desc
+      })
+    });
+    const json = await res.json();
+    if (!json.success) throw new Error(json.error || 'Não foi possível enviar o relato.');
+    if (reportProblemMessage) reportProblemMessage.textContent = 'Relato enviado para a equipe Ze.EFE.';
+    closeReportProblemModal();
+  } catch (err) {
+    if (reportProblemMessage) reportProblemMessage.textContent = err.message || 'Falha ao enviar o relato.';
   }
 }
 
@@ -3920,6 +3955,15 @@ const clientChatInput = document.getElementById('clientChatInput');
 let clientChatThreadId = null;
 let clientChatPollTimer = null;
 const openSupportChatBtn = document.getElementById('openSupportChatBtn');
-const clientChatTargetSelect = document.getElementById('clientChatTargetSelect');
 const clientChatTitleEl = document.getElementById('clientChatTitle');
+const clientSupportThreadItem = document.getElementById('clientSupportThreadItem');
+const clientChatThreadsList = document.getElementById('clientChatThreadsList');
+const openReportProblemBtn = document.getElementById('openReportProblemBtn');
+const reportProblemModal = document.getElementById('reportProblemModal');
+const reportProblemClose = document.getElementById('reportProblemClose');
+const reportProblemCancel = document.getElementById('reportProblemCancel');
+const reportProblemForm = document.getElementById('reportProblemForm');
+const reportIssueType = document.getElementById('reportIssueType');
+const reportIssueDescription = document.getElementById('reportIssueDescription');
+const reportProblemMessage = document.getElementById('reportProblemMessage');
 let clientChatThreadsCache = [];
