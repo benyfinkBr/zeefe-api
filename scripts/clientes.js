@@ -2440,7 +2440,10 @@ function renderReservas(reservas) {
       ? reserva.visitor_names.map(name => `<span class=\"table-chip\">${escapeHtml(name)}</span>`).join(' ')
       : '<span class=\"table-chip muted\">Sem visitantes</span>';
     const timeRange = formatTimeRange(reserva.time_start, reserva.time_end);
-    const icsLink = `api/reservation_ics.php?reservation=${encodeURIComponent(reserva.id)}`;
+    const publicCode = reserva.public_code || reserva.code || '';
+    const icsLink = publicCode
+      ? `api/reservation_ics.php?code=${encodeURIComponent(publicCode)}`
+      : `api/reservation_ics.php?reservation=${encodeURIComponent(reserva.id)}`;
     const stage = renderStageIcons(reserva);
     return `
       <tr data-id=\"${reserva.id}\">
@@ -2575,7 +2578,11 @@ function openReservationActions(id) {
     } catch (_) {}
   }
   // Baixar convite (ICS)
-  const ics = document.createElement('a'); ics.href=`api/reservation_ics.php?reservation=${encodeURIComponent(reserva.id)}`; ics.className='action-card'; ics.innerHTML=`<span class=\"icon\">${getActionIconSVG('Baixar convite')}</span><span class=\"label\">Baixar convite</span>`; ics.setAttribute('download',''); reservationActionsButtons.appendChild(ics);
+  const publicCode = reserva.public_code || reserva.code || '';
+  const icsHref = publicCode
+    ? `api/reservation_ics.php?code=${encodeURIComponent(publicCode)}`
+    : `api/reservation_ics.php?reservation=${encodeURIComponent(reserva.id)}`;
+  const ics = document.createElement('a'); ics.href=icsHref; ics.className='action-card'; ics.innerHTML=`<span class=\"icon\">${getActionIconSVG('Baixar convite')}</span><span class=\"label\">Baixar convite</span>`; ics.setAttribute('download',''); reservationActionsButtons.appendChild(ics);
   // Enviar convite (e‑mail com ICS)
   reservationActionsButtons.appendChild(mkCard('Enviar convite', ()=> { tratarAcaoReserva(reserva.id,'sendCalendar'); closeReservationActions(); }));
   // Mensagens (chat com anunciante)

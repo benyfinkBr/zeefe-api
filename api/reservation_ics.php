@@ -1,16 +1,24 @@
 <?php
 require 'apiconfig.php';
 require_once __DIR__ . '/lib/ics.php';
+require_once __DIR__ . '/lib/reservations.php';
 
-$id = isset($_GET['reservation']) ? (int) $_GET['reservation'] : 0;
-if ($id <= 0) {
+$codeParam = isset($_GET['code']) ? trim($_GET['code']) : '';
+$idParam = isset($_GET['reservation']) ? (int) $_GET['reservation'] : 0;
+
+if ($codeParam === '' && $idParam <= 0) {
   http_response_code(400);
   echo 'Reserva inválida';
   exit;
 }
 
-$stmt = $pdo->prepare('SELECT r.*, rooms.name AS room_name, rooms.location AS room_location, rooms.city, rooms.state, rooms.street, rooms.complement, rooms.cep FROM reservations r LEFT JOIN rooms ON rooms.id = r.room_id WHERE r.id = ? LIMIT 1');
-$stmt->execute([$id]);
+if ($codeParam !== '') {
+  $stmt = $pdo->prepare('SELECT r.*, rooms.name AS room_name, rooms.location AS room_location, rooms.city, rooms.state, rooms.street, rooms.complement, rooms.cep FROM reservations r LEFT JOIN rooms ON rooms.id = r.room_id WHERE r.public_code = ? LIMIT 1');
+  $stmt->execute([$codeParam]);
+} else {
+  $stmt = $pdo->prepare('SELECT r.*, rooms.name AS room_name, rooms.location AS room_location, rooms.city, rooms.state, rooms.street, rooms.complement, rooms.cep FROM reservations r LEFT JOIN rooms ON rooms.id = r.room_id WHERE r.id = ? LIMIT 1');
+  $stmt->execute([$idParam]);
+}
 $res = $stmt->fetch(PDO::FETCH_ASSOC);
 if (!$res) {
   http_response_code(404);
@@ -52,10 +60,10 @@ $ics = ics_generate([
   'location' => $location,
   'start' => $startTs,
   'end' => $endTs,
-  'uid' => 'zeefe-' . $id . '-' . md5($summary . $date),
+  'uid' => 'zeefe-' . ($res['public_code'] ?? $res['id']) . '-' . md5($summary . $date),
   'tz' => 'America/Sao_Paulo'
 ]);
 
 header('Content-Type: text/calendar; charset=UTF-8');
-header('Content-Disposition: attachment; filename="reserva-' . $id . '.ics"');
+header('Content-Disposition: attachment; filename="reserva-' . ($res['public_code'] ?? $res['id']) . '.ics"');
 echo $ics;

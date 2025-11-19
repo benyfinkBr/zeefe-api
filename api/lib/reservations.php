@@ -19,6 +19,33 @@ function reservation_load(PDO $pdo, int $reservationId): ?array {
   return $row;
 }
 
+/**
+ * Gera ou retorna um código público não sequencial para a reserva.
+ * Requer coluna reservations.public_code (VARCHAR) no banco.
+ */
+function reservation_get_public_code(PDO $pdo, array $reservation): string {
+  if (!empty($reservation['public_code'])) {
+    return $reservation['public_code'];
+  }
+  // Gera código do tipo ZF-AB12-9XK3 (10–12 caracteres mistos)
+  $alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  $length = 10;
+  $code = '';
+  $max = strlen($alphabet) - 1;
+  for ($i = 0; $i < $length; $i++) {
+    $code .= $alphabet[random_int(0, $max)];
+  }
+  $code = 'ZF-' . substr($code, 0, 4) . '-' . substr($code, 4);
+
+  try {
+    $stmt = $pdo->prepare('UPDATE reservations SET public_code = :code WHERE id = :id');
+    $stmt->execute([':code' => $code, ':id' => $reservation['id']]);
+  } catch (Throwable $e) {
+    // Se coluna não existir ou houver erro, apenas devolve o código em memória.
+  }
+  return $code;
+}
+
 function reservation_format_date(string $date): string {
   $dt = DateTime::createFromFormat('Y-m-d', $date);
   return $dt ? $dt->format('d/m/Y') : $date;

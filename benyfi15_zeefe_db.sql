@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Tempo de geração: 19/11/2025 às 14:02
+-- Tempo de geração: 19/11/2025 às 14:42
 -- Versão do servidor: 5.7.23-23
 -- Versão do PHP: 8.1.33
 
@@ -91,7 +91,7 @@ CREATE TABLE `advertisers` (
 --
 
 INSERT INTO `advertisers` (`id`, `owner_type`, `owner_id`, `bank_code`, `display_name`, `full_name`, `login_email`, `login_cpf`, `contact_phone`, `password_hash`, `email_verified_at`, `verification_token`, `verification_token_expires`, `last_login`, `status`, `fee_pct`, `bank_name`, `account_type`, `agency_number`, `account_number`, `pix_key`, `created_at`, `updated_at`) VALUES
-(1, 'client', 0, NULL, 'MZF', 'Mira Zlotnik', 'benyfinkelstein@gmail.com', '41836484836', NULL, '$2y$10$coY86ax3NyQXEr1DAE4Q4uX6JMCV6LAI.gAHpLTdZ2Q7MdCTO.nW6', '2025-11-16 22:46:54', NULL, NULL, '2025-11-19 08:21:01', 'ativo', NULL, NULL, NULL, NULL, NULL, NULL, '2025-11-16 22:46:39', '2025-11-16 22:46:54');
+(1, 'client', 0, NULL, 'MZF', 'Mira Zlotnik', 'benyfinkelstein@gmail.com', '41836484836', NULL, '$2y$10$coY86ax3NyQXEr1DAE4Q4uX6JMCV6LAI.gAHpLTdZ2Q7MdCTO.nW6', '2025-11-16 22:46:54', NULL, NULL, '2025-11-19 14:16:44', 'ativo', NULL, NULL, NULL, NULL, NULL, NULL, '2025-11-16 22:46:39', '2025-11-16 22:46:54');
 
 -- --------------------------------------------------------
 
@@ -114,7 +114,8 @@ CREATE TABLE `advertiser_remember_tokens` (
 
 INSERT INTO `advertiser_remember_tokens` (`id`, `advertiser_id`, `token_hash`, `user_agent`, `created_at`, `expires_at`) VALUES
 (1, 1, '1a7e21637d97c739c6b3ad9bcdd18708e8400441963d0e1ea1802bbe4b7c338d', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36 Edg/141.0.0.0', '2025-11-19 07:07:30', '2025-11-20 07:07:30'),
-(2, 1, 'a1f8fb48845c5accd70843be168222017e3f81a5dfa3fe8b5080fbada014584d', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0', '2025-11-19 08:21:01', '2025-11-20 08:21:01');
+(2, 1, 'a1f8fb48845c5accd70843be168222017e3f81a5dfa3fe8b5080fbada014584d', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0', '2025-11-19 08:21:01', '2025-11-20 08:21:01'),
+(3, 1, '1a911af8850c4580a306445eaec2ebd986edbd9e4b0eec480e77a1f07fc4e7b1', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0', '2025-11-19 14:16:44', '2025-11-20 14:16:44');
 
 -- --------------------------------------------------------
 
@@ -634,23 +635,24 @@ CREATE TABLE `reservations` (
   `hold_expires_at` datetime DEFAULT NULL,
   `notes` mediumtext COLLATE utf8mb4_unicode_ci,
   `created_at` datetime DEFAULT NULL,
-  `updated_at` datetime DEFAULT NULL
+  `updated_at` datetime DEFAULT NULL,
+  `public_code` varchar(32) COLLATE utf8mb4_unicode_ci DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Despejando dados para a tabela `reservations`
 --
 
-INSERT INTO `reservations` (`id`, `room_id`, `client_id`, `participants`, `price`, `company_id`, `title`, `description`, `date`, `time_start`, `time_end`, `total_price`, `amount_gross`, `voucher_code`, `voucher_amount`, `fee_pct_at_time`, `fee_amount`, `amount_net`, `attendees_count`, `requirements`, `observations`, `status`, `payment_status`, `hold_expires_at`, `notes`, `created_at`, `updated_at`) VALUES
-(1, 1, 2, 1, 0.00, 1, 'Reunião Diretoria', 'Pauta estratégica', '2025-10-30', '00:00:00', '00:00:00', 500.00, NULL, NULL, NULL, NULL, NULL, NULL, 5, 'Café, Projetor', '', 'cancelada', 'pendente', NULL, '', '2025-10-23 21:58:21', '2025-11-01 23:33:54'),
-(18, 1, 11, 1, 0.00, NULL, 'teste', '123', '2025-11-12', '08:00:00', '20:00:00', 0.00, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, 'cancelada', 'confirmado', '2025-11-10 10:58:48', NULL, NULL, '2025-11-09 16:17:01'),
-(19, 1, 11, 1, 0.00, NULL, 'teste', '', '2025-11-11', '08:00:00', '20:00:00', 0.00, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, 'confirmada', 'confirmado', '2025-11-10 20:54:36', NULL, NULL, '2025-11-09 21:08:32'),
-(20, 1, 11, 1, 0.00, 1, 'Sabc', '', '2025-11-25', '08:00:00', '20:00:00', 0.00, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, 'confirmada', 'confirmado', '2025-11-11 21:42:01', NULL, NULL, '2025-11-10 21:42:30'),
-(21, 1, 14, 1, 0.00, NULL, '123', '321', '2025-11-26', '08:00:00', '20:00:00', 0.00, 1500.00, NULL, NULL, 15.00, 225.00, 1275.00, 0, NULL, NULL, 'confirmada', 'confirmado', '2025-11-17 23:13:38', NULL, NULL, '2025-11-16 23:14:00'),
-(22, 1, 11, 1, 0.00, NULL, '123', '', '2025-11-27', '08:00:00', '20:00:00', 0.00, NULL, 'ZEF-4T5DUVYCSH', 1500.00, NULL, NULL, NULL, 0, NULL, NULL, 'pendente', 'pendente', NULL, NULL, NULL, '2025-11-17 21:11:46'),
-(23, 1, 11, 1, 0.00, NULL, '123', '', '2025-11-27', '08:00:00', '20:00:00', 0.00, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, 'pendente', 'pendente', NULL, NULL, NULL, NULL),
-(24, 1, 11, 1, 0.00, NULL, '132', '', '2025-11-19', '08:00:00', '20:00:00', 0.00, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, 'pendente', 'pendente', NULL, NULL, NULL, NULL),
-(25, 4, 11, 1, 0.00, NULL, '321', '', '2025-11-18', '08:00:00', '20:00:00', 0.00, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, 'pendente', 'pendente', NULL, NULL, NULL, NULL);
+INSERT INTO `reservations` (`id`, `room_id`, `client_id`, `participants`, `price`, `company_id`, `title`, `description`, `date`, `time_start`, `time_end`, `total_price`, `amount_gross`, `voucher_code`, `voucher_amount`, `fee_pct_at_time`, `fee_amount`, `amount_net`, `attendees_count`, `requirements`, `observations`, `status`, `payment_status`, `hold_expires_at`, `notes`, `created_at`, `updated_at`, `public_code`) VALUES
+(1, 1, 2, 1, 0.00, 1, 'Reunião Diretoria', 'Pauta estratégica', '2025-10-30', '00:00:00', '00:00:00', 500.00, NULL, NULL, NULL, NULL, NULL, NULL, 5, 'Café, Projetor', '', 'cancelada', 'pendente', NULL, '', '2025-10-23 21:58:21', '2025-11-01 23:33:54', NULL),
+(18, 1, 11, 1, 0.00, NULL, 'teste', '123', '2025-11-12', '08:00:00', '20:00:00', 0.00, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, 'cancelada', 'confirmado', '2025-11-10 10:58:48', NULL, NULL, '2025-11-09 16:17:01', NULL),
+(19, 1, 11, 1, 0.00, NULL, 'teste', '', '2025-11-11', '08:00:00', '20:00:00', 0.00, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, 'confirmada', 'confirmado', '2025-11-10 20:54:36', NULL, NULL, '2025-11-09 21:08:32', NULL),
+(20, 1, 11, 1, 0.00, 1, 'Sabc', '', '2025-11-25', '08:00:00', '20:00:00', 0.00, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, 'confirmada', 'confirmado', '2025-11-11 21:42:01', NULL, NULL, '2025-11-10 21:42:30', NULL),
+(21, 1, 14, 1, 0.00, NULL, '123', '321', '2025-11-26', '08:00:00', '20:00:00', 0.00, 1500.00, NULL, NULL, 15.00, 225.00, 1275.00, 0, NULL, NULL, 'confirmada', 'confirmado', '2025-11-17 23:13:38', NULL, NULL, '2025-11-16 23:14:00', NULL),
+(22, 1, 11, 1, 0.00, NULL, '123', '', '2025-11-27', '08:00:00', '20:00:00', 0.00, NULL, 'ZEF-4T5DUVYCSH', 1500.00, NULL, NULL, NULL, 0, NULL, NULL, 'pendente', 'pendente', NULL, NULL, NULL, '2025-11-17 21:11:46', NULL),
+(23, 1, 11, 1, 0.00, NULL, '123', '', '2025-11-27', '08:00:00', '20:00:00', 0.00, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, 'pendente', 'pendente', NULL, NULL, NULL, NULL, NULL),
+(24, 1, 11, 1, 0.00, NULL, '132', '', '2025-11-19', '08:00:00', '20:00:00', 0.00, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, 'pendente', 'pendente', NULL, NULL, NULL, NULL, NULL),
+(25, 4, 11, 1, 0.00, NULL, '321', '', '2025-11-18', '08:00:00', '20:00:00', 0.00, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, 'pendente', 'pendente', NULL, NULL, NULL, NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -1047,6 +1049,7 @@ ALTER TABLE `pre_reservations`
 --
 ALTER TABLE `reservations`
   ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `public_code` (`public_code`),
   ADD KEY `idx_reservations_payment_status` (`payment_status`),
   ADD KEY `idx_reservations_hold_expires` (`hold_expires_at`),
   ADD KEY `idx_reservations_date` (`date`),
@@ -1148,7 +1151,7 @@ ALTER TABLE `advertisers`
 -- AUTO_INCREMENT de tabela `advertiser_remember_tokens`
 --
 ALTER TABLE `advertiser_remember_tokens`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT de tabela `amenities`
