@@ -580,9 +580,15 @@ async function loadThreads() {
   try {
     const advId = myAdvertiser?.id;
     if (!advId) { threadsContainer.innerHTML = '<div class="rooms-message">Sem anunciante vinculado.</div>'; return; }
-    const res = await fetch(`${API_BASE}/messages_list_threads.php?advertiser_id=${encodeURIComponent(advId)}`);
+    const res = await fetch(`${API_BASE}/messages_list_threads.php`);
     const json = await parseJsonSafe(res);
-    const list = json.success ? (json.data || []) : [];
+    let list = json.success ? (json.data || []) : [];
+    const roomIds = new Set((myRooms || []).map(r => String(r.id)));
+    // Mostra threads onde advertiser_id bate ou a sala pertence a este anunciante (para compatibilidade com dados antigos).
+    list = list.filter(t =>
+      String(t.advertiser_id || '') === String(advId) ||
+      (t.room_id && roomIds.has(String(t.room_id)))
+    );
     if (!list.length) { threadsContainer.innerHTML = '<div class="rooms-message">Nenhuma conversa ainda.</div>'; return; }
     threadsContainer.innerHTML = list.map(t => `
       <button type="button" class="thread-item" data-thread-id="${t.id}">
