@@ -41,6 +41,17 @@ const refreshBtn = document.getElementById('advRefreshBtn');
 
 const advDisplay = document.getElementById('advDisplay');
 const advOwner = document.getElementById('advOwner');
+const advEditProfileBtn = document.getElementById('advEditProfileBtn');
+const advEditProfileSideBtn = document.getElementById('advEditProfileSideBtn');
+
+// Perfil / modal de edição
+const advProfileModal = document.getElementById('advProfileModal');
+const advProfileClose = document.getElementById('advProfileClose');
+const advProfileForm = document.getElementById('advProfileForm');
+const advProfileCancelBtn = document.getElementById('advProfileCancelBtn');
+const advProfileDisplay = document.getElementById('advProfileDisplay');
+const advProfilePhone = document.getElementById('advProfilePhone');
+const advProfileMsg = document.getElementById('advProfileMsg');
 
 // Overview
 const ovViews = document.getElementById('ovViews');
@@ -152,6 +163,21 @@ function setActivePanel(name) {
   navButtons.forEach(b => b.classList.toggle('active', b.dataset.panel === name));
 }
 
+function openAdvProfileModal() {
+  if (!advProfileModal) return;
+  advProfileMsg && (advProfileMsg.textContent = '');
+  if (advProfileDisplay) advProfileDisplay.value = myAdvertiser?.display_name || '';
+  if (advProfilePhone) advProfilePhone.value = myAdvertiser?.contact_phone || '';
+  advProfileModal.classList.add('show');
+  advProfileModal.setAttribute('aria-hidden', 'false');
+}
+
+function closeAdvProfileModal() {
+  if (!advProfileModal) return;
+  advProfileModal.classList.remove('show');
+  advProfileModal.setAttribute('aria-hidden', 'true');
+}
+
 async function onLoginSubmit(e) {
   e.preventDefault();
   authMsg.textContent = '';
@@ -200,6 +226,14 @@ async function afterLogin() {
 
   await Promise.all([loadRooms(), loadReservations(), loadFinance(), loadOverview(), loadReviews(), loadThreads()]);
   setActivePanel('overview');
+
+  // Eventos de perfil (somente após login)
+  advEditProfileBtn?.addEventListener('click', openAdvProfileModal);
+  advEditProfileSideBtn?.addEventListener('click', openAdvProfileModal);
+  advProfileClose?.addEventListener('click', closeAdvProfileModal);
+  advProfileCancelBtn?.addEventListener('click', closeAdvProfileModal);
+  advProfileModal?.addEventListener('click', (e)=>{ if (e.target === advProfileModal) closeAdvProfileModal(); });
+  advProfileForm?.addEventListener('submit', onAdvProfileSubmit);
 }
 
 async function loadAdvertiser() {
@@ -359,6 +393,39 @@ async function loadFinance() {
 
   } catch (e) {
     finContainer.innerHTML = '<div class="rooms-message">Falha ao carregar extrato.</div>';
+  }
+}
+
+async function onAdvProfileSubmit(e) {
+  e.preventDefault();
+  if (!myAdvertiser) return;
+  advProfileMsg && (advProfileMsg.textContent = '');
+  const display = advProfileDisplay?.value.trim() || '';
+  const phone = advProfilePhone?.value.trim() || '';
+  try {
+    const res = await fetch(`${API_BASE}/advertiser_update_profile.php`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id: myAdvertiser.id,
+        display_name: display,
+        contact_phone: phone
+      })
+    });
+    const json = await parseJsonSafe(res);
+    if (!json.success) throw new Error(json.error || 'Não foi possível atualizar o perfil.');
+    myAdvertiser = json.advertiser || myAdvertiser;
+    advClient = myAdvertiser;
+    if (myAdvertiser.display_name) {
+      advDisplay.textContent = myAdvertiser.display_name;
+    }
+    if (myAdvertiser.email) {
+      advOwner.textContent = myAdvertiser.email;
+    }
+    advProfileMsg && (advProfileMsg.textContent = 'Perfil atualizado com sucesso.');
+    closeAdvProfileModal();
+  } catch (err) {
+    advProfileMsg && (advProfileMsg.textContent = err.message || 'Falha ao salvar.');
   }
 }
 
