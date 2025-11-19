@@ -1845,6 +1845,15 @@ function renderBookingCalendar(referenceDate) {
             set.add(iso);
           }
           bookingSelectedDates = Array.from(set).sort();
+        } else if (bookingSearchMode === 'room' && bookingDateMulti) {
+          // Sala específica + vários dias: múltipla seleção permitida
+          const set = new Set(bookingSelectedDates || []);
+          if (set.has(iso)) {
+            set.delete(iso);
+          } else {
+            set.add(iso);
+          }
+          bookingSelectedDates = Array.from(set).sort();
         } else {
           bookingSelectedDates = [iso];
         }
@@ -1875,13 +1884,11 @@ function selectRoomOption(roomId) {
   // alterando a sala: descarta voucher aplicado
   bookingVoucherApplied = null;
   if (bookingVoucherResult) bookingVoucherResult.textContent = '';
-  const optionsContainers = [bookingRoomOptions, bookingRoomOptionsInline];
-  optionsContainers.forEach(container => {
-    if (!container) return;
-    Array.from(container.querySelectorAll('.room-option')).forEach(option => {
+  if (bookingRoomOptions) {
+    Array.from(bookingRoomOptions.querySelectorAll('.room-option')).forEach(option => {
       option.classList.toggle('selected', option.dataset.roomId === String(roomId));
     });
-  });
+  }
   if (bookingMessage) bookingMessage.textContent = '';
   // Atualiza o calendário quando estiver filtrando por sala específica
   if (bookingCalendarGrid) {
