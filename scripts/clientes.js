@@ -75,6 +75,9 @@ const newReservationBtn = document.getElementById('newReservationBtn');
 const openVisitorsPanelBtn = document.getElementById('openVisitorsPanel');
 const bookingRoomOptions = document.getElementById('bookingRoomOptions');
 const bookingRoomFeedback = document.getElementById('bookingRoomFeedback');
+const bookingRoomOptionsInline = document.getElementById('bookingRoomOptionsInline');
+const bookingRoomFeedbackInline = document.getElementById('bookingRoomFeedbackInline');
+const roomPickerInline = document.getElementById('roomPickerInline');
 const bookingStepperItems = Array.from(document.querySelectorAll('.booking-stepper-item'));
 const bookingStepSections = Array.from(document.querySelectorAll('.booking-step'));
 const bookingPrevBtn = document.getElementById('bookingPrevBtn');
@@ -350,6 +353,7 @@ async function initialize() {
     // Datas primeiro: começa escolhendo datas (etapa 0)
     bookingStepIndex = 0;
     setBookingStep(bookingStepIndex);
+    if (roomPickerInline) roomPickerInline.hidden = true;
   });
   bookingModeRoomBtn?.addEventListener('click', () => {
     bookingSearchMode = 'room';
@@ -357,11 +361,12 @@ async function initialize() {
     if (bookingModeDateBtn) bookingModeDateBtn.classList.remove('active');
     bookingSelectedDates = [];
     if (bookingDateInput) bookingDateInput.value = '';
-    // Sala específica: começa escolhendo sala (etapa 1)
-    bookingStepIndex = 1;
+    // Sala específica: escolhe sala dentro do passo de data
+    bookingStepIndex = 0;
     setBookingStep(bookingStepIndex);
     renderRoomOptions(bookingDateInput?.value || '');
     if (bookingModeHint) bookingModeHint.textContent = 'Sala específica: escolha a sala primeiro, depois veja as datas disponíveis no calendário.';
+    if (roomPickerInline) roomPickerInline.hidden = false;
   });
 
   cancelReservationEditBtn?.addEventListener('click', () => resetBookingForm());
@@ -1434,7 +1439,8 @@ async function carregarSalas() {
 async function ensureRoomsLoaded() {
   if (Array.isArray(roomsCache) && roomsCache.length) return true;
   try {
-    if (bookingRoomFeedback) bookingRoomFeedback.textContent = 'Carregando salas disponíveis...';
+    const feedbackEl = bookingSearchMode === 'room' ? (bookingRoomFeedbackInline || bookingRoomFeedback) : bookingRoomFeedback;
+    if (feedbackEl) feedbackEl.textContent = 'Carregando salas disponíveis...';
     await carregarSalas();
     return Array.isArray(roomsCache) && roomsCache.length > 0;
   } catch (_) {
@@ -1587,18 +1593,24 @@ function validateBookingStep(step) {
 }
 
 function renderRoomOptions(date) {
-  if (!bookingRoomOptions) return;
-  bookingRoomOptions.innerHTML = '';
+  const inlineMode = bookingSearchMode === 'room';
+  const optionsEl = inlineMode ? (bookingRoomOptionsInline || bookingRoomOptions) : bookingRoomOptions;
+  const feedbackEl = inlineMode ? (bookingRoomFeedbackInline || bookingRoomFeedback) : bookingRoomFeedback;
+  if (!optionsEl) return;
+  // Limpa ambos os containers para evitar resíduos ao alternar modos
+  if (bookingRoomOptions) bookingRoomOptions.innerHTML = '';
+  if (bookingRoomOptionsInline) bookingRoomOptionsInline.innerHTML = '';
   if (bookingRoomFeedback) bookingRoomFeedback.textContent = '';
+  if (bookingRoomFeedbackInline) bookingRoomFeedbackInline.textContent = '';
   if (!date) {
     if (!roomsCache.length) {
       ensureRoomsLoaded().then(() => renderRoomOptions(''));
-      if (bookingRoomFeedback) bookingRoomFeedback.textContent = 'Carregando salas disponíveis...';
+      if (feedbackEl) feedbackEl.textContent = 'Carregando salas disponíveis...';
       return;
     }
     // Sem data: lista todas as salas para não travar o fluxo
-    bookingRoomOptions.innerHTML = '';
-    if (bookingRoomFeedback) bookingRoomFeedback.textContent = 'Selecione uma sala; a disponibilidade será validada no envio.';
+    optionsEl.innerHTML = '';
+    if (feedbackEl) feedbackEl.textContent = 'Selecione uma sala; a disponibilidade será validada no envio.';
     roomsCache.slice().sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'pt-BR')).forEach(room => {
       const button = document.createElement('button');
       button.type = 'button';
@@ -1614,14 +1626,14 @@ function renderRoomOptions(date) {
         ${priceHtml}
       `;
       button.addEventListener('click', () => selectRoomOption(room.id));
-      bookingRoomOptions.appendChild(button);
+      optionsEl.appendChild(button);
     });
     return;
   }
   if (!roomsCache.length) {
     ensureRoomsLoaded().then(ok => {
       if (!ok) {
-        if (bookingRoomFeedback) bookingRoomFeedback.textContent = 'Não foi possível carregar as salas no momento.';
+      if (feedbackEl) feedbackEl.textContent = 'Não foi possível carregar as salas no momento.';
       } else {
         renderRoomOptions(date);
       }
@@ -1667,7 +1679,7 @@ function renderRoomOptions(date) {
         hasSelected = true;
       }
       button.addEventListener('click', () => selectRoomOption(room.id));
-      bookingRoomOptions.appendChild(button);
+      optionsEl.appendChild(button);
     });
     if (bookingRoomHiddenInput && selectedId && !hasSelected) {
       bookingRoomHiddenInput.value = '';
@@ -1698,7 +1710,7 @@ function renderRoomOptions(date) {
       hasSelected = true;
     }
     button.addEventListener('click', () => selectRoomOption(room.id));
-    bookingRoomOptions.appendChild(button);
+    optionsEl.appendChild(button);
   });
   if (bookingRoomHiddenInput && selectedId && !hasSelected) {
     bookingRoomHiddenInput.value = '';
@@ -1832,11 +1844,13 @@ function selectRoomOption(roomId) {
   // alterando a sala: descarta voucher aplicado
   bookingVoucherApplied = null;
   if (bookingVoucherResult) bookingVoucherResult.textContent = '';
-  if (bookingRoomOptions) {
-    Array.from(bookingRoomOptions.querySelectorAll('.room-option')).forEach(option => {
+  const optionsContainers = [bookingRoomOptions, bookingRoomOptionsInline];
+  optionsContainers.forEach(container => {
+    if (!container) return;
+    Array.from(container.querySelectorAll('.room-option')).forEach(option => {
       option.classList.toggle('selected', option.dataset.roomId === String(roomId));
     });
-  }
+  });
   if (bookingMessage) bookingMessage.textContent = '';
   // Atualiza o calendário quando estiver filtrando por sala específica
   if (bookingCalendarGrid) {

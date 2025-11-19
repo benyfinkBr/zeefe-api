@@ -1471,6 +1471,14 @@ textarea {
   margin-top: 4px;
 }
 
+.booking-room-inline {
+  margin-top: 18px;
+}
+
+.booking-room-inline h4 {
+  margin: 0 0 4px;
+}
+
 .form-grid-mini {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
