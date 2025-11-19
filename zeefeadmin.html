@@ -235,6 +235,7 @@ input, select {
           <li data-section="amenities">Comodidades</li>
           <li data-section="vouchers">Vouchers</li>
           <li data-section="campaigns">Campanhas</li>
+          <li data-section="messages">Mensagens</li>
         </ul>
         <div class="logout-link" id="logoutBtn">Sair</div>
       </nav>
@@ -298,6 +299,39 @@ input, select {
       </div>
       <div class="modal-footer">
         <button type="button" class="btn-secondary" onclick="fecharCompanyModal()">Fechar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Mensagens (Admin) -->
+  <div class="modal" id="adminMessagesModal">
+    <div class="modal-content" style="max-width:1180px">
+      <div class="modal-header">
+        <h3>Mensagens</h3>
+        <button class="modal-close" onclick="fecharAdminMessagesModal()">&times;</button>
+      </div>
+      <div class="modal-body" style="display:flex; gap:16px;">
+        <aside style="width:260px; border-right:1px solid #DDD; padding-right:12px; display:flex; flex-direction:column; gap:12px;">
+          <div>
+            <h4 style="margin:0 0 4px;">Clientes</h4>
+            <div id="adminClientThreads" style="max-height:60vh; overflow:auto;"></div>
+          </div>
+          <div>
+            <h4 style="margin:12px 0 4px;">Anunciantes</h4>
+            <div id="adminAdvertiserThreads" style="max-height:60vh; overflow:auto;"></div>
+          </div>
+        </aside>
+        <section style="flex:1; display:flex; flex-direction:column; gap:8px;">
+          <div id="adminMessagesHeader" class="box-message" style="padding:8px 12px; text-align:left;">Selecione uma conversa à esquerda.</div>
+          <div id="adminMessagesList" class="chat-messages" style="flex:1; min-height:280px;"></div>
+          <form id="adminMessagesForm" class="chat-form" style="margin-top:8px; display:none;">
+            <input type="text" id="adminMessageInput" placeholder="Digite uma mensagem como admin" />
+            <button type="submit" class="btn">Enviar</button>
+          </form>
+        </section>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" onclick="fecharAdminMessagesModal()">Fechar</button>
       </div>
     </div>
   </div>
@@ -367,6 +401,15 @@ input, select {
     let cachedRooms = null;
     let cachedClients = null;
     let cachedBanks = null;
+    let adminThreadsCache = [];
+    let adminActiveThreadId = null;
+    const adminMessagesModal = document.getElementById('adminMessagesModal');
+    const adminClientThreads = document.getElementById('adminClientThreads');
+    const adminAdvertiserThreads = document.getElementById('adminAdvertiserThreads');
+    const adminMessagesHeader = document.getElementById('adminMessagesHeader');
+    const adminMessagesList = document.getElementById('adminMessagesList');
+    const adminMessagesForm = document.getElementById('adminMessagesForm');
+    const adminMessageInput = document.getElementById('adminMessageInput');
 
     function escapeHtml(value) {
       return String(value ?? '')
@@ -394,6 +437,97 @@ input, select {
           .filter(b => b.code && b.name);
       } catch (_) { cachedBanks = []; }
       return cachedBanks;
+    }
+
+    async function abrirAdminMessages() {
+      const modal = adminMessagesModal;
+      if (!modal) return;
+      adminMessagesHeader.textContent = 'Selecione uma conversa à esquerda.';
+      adminMessagesList.innerHTML = '';
+      adminMessagesForm.style.display = 'none';
+      adminActiveThreadId = null;
+      await carregarAdminThreads();
+      modal.classList.add('show');
+    }
+
+    function fecharAdminMessagesModal() {
+      if (!adminMessagesModal) return;
+      adminMessagesModal.classList.remove('show');
+    }
+
+    async function carregarAdminThreads() {
+      try {
+        const res = await fetch(API_BASE + '/messages_list_threads.php');
+        const json = await res.json();
+        if (!json.success) throw new Error(json.error || 'Falha ao carregar conversas.');
+        adminThreadsCache = json.data || [];
+      } catch (e) {
+        adminThreadsCache = [];
+      }
+      renderAdminThreads();
+    }
+
+    function renderAdminThreads() {
+      if (!adminClientThreads || !adminAdvertiserThreads) return;
+      adminClientThreads.innerHTML = '';
+      adminAdvertiserThreads.innerHTML = '';
+      const clients = adminThreadsCache.filter(t => t.client_id && !t.advertiser_id);
+      const advs = adminThreadsCache.filter(t => t.advertiser_id);
+
+      function criarItem(thread) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'chat-thread-item';
+        btn.textContent = `Thread #${thread.id} ${thread.reservation_id ? '· Reserva ' + thread.reservation_id : ''}`;
+        btn.onclick = () => abrirConversaAdmin(thread.id);
+        return btn;
+      }
+      clients.forEach(t => adminClientThreads.appendChild(criarItem(t)));
+      advs.forEach(t => adminAdvertiserThreads.appendChild(criarItem(t)));
+    }
+
+    async function abrirConversaAdmin(id) {
+      adminActiveThreadId = id;
+      adminMessagesHeader.textContent = 'Carregando mensagens...';
+      adminMessagesForm.style.display = 'none';
+      adminMessagesList.innerHTML = '';
+      try {
+        const res = await fetch(API_BASE + '/messages_list_messages.php?thread_id=' + encodeURIComponent(id));
+        const json = await res.json();
+        if (!json.success) throw new Error(json.error || 'Falha ao carregar mensagens.');
+        const list = json.data || [];
+        if (!list.length) {
+          adminMessagesList.innerHTML = '<div class=\"box-message\">Nenhuma mensagem nesta conversa.</div>';
+        } else {
+          adminMessagesList.innerHTML = list.map(m => {
+            const me = (m.sender_type || '') === 'admin';
+            return '<div class=\"chat-bubble '+(me?'me':'them')+'\"><div class=\"chat-text\">'+escapeHtml(m.body)+'</div><div class=\"chat-time\">'+escapeHtml((m.created_at||'').toString().slice(0,16).replace('T',' '))+'</div></div>';
+          }).join('');
+        }
+        adminMessagesHeader.textContent = 'Conversa #' + id;
+        adminMessagesForm.style.display = 'flex';
+      } catch (e) {
+        adminMessagesHeader.textContent = e.message || 'Erro ao carregar conversa.';
+      }
+    }
+
+    async function enviarMensagemAdmin(e) {
+      e.preventDefault();
+      const txt = (adminMessageInput.value || '').trim();
+      if (!txt || !adminActiveThreadId) return;
+      try {
+        const res = await fetch(API_BASE + '/messages_send.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ thread_id: adminActiveThreadId, sender_type: 'admin', body: txt })
+        });
+        const json = await res.json();
+        if (!json.success) throw new Error(json.error || 'Falha ao enviar.');
+        adminMessageInput.value = '';
+        await abrirConversaAdmin(adminActiveThreadId);
+      } catch (e) {
+        alert(e.message || 'Erro ao enviar mensagem.');
+      }
     }
 
     function formatDate(value) {
@@ -723,7 +857,11 @@ input, select {
         li.classList.add('active');
         sec = li.dataset.section;
         document.getElementById('content-title').textContent = li.textContent;
-        loadSection(sec);
+        if (sec === 'messages') {
+          abrirAdminMessages();
+        } else {
+          loadSection(sec);
+        }
       });
     });
 
