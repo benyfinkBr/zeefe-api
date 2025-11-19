@@ -168,8 +168,8 @@
                 <div class="booking-mode-choice">
                   <span class="booking-mode-label">Como você prefere buscar?</span>
                   <div class="booking-mode-buttons">
-                    <button type="button" class="mode-btn active" id="bookingModeDate" data-mode="date">Qualquer sala (datas primeiro)</button>
-                    <button type="button" class="mode-btn" id="bookingModeRoom" data-mode="room">Sala específica</button>
+                    <button type="button" class="mode-btn active" id="bookingModeDate" data-mode="date">Buscar por Data</button>
+                    <button type="button" class="mode-btn" id="bookingModeRoom" data-mode="room">Buscar por Local</button>
                   </div>
                 </div>
 
@@ -541,9 +541,8 @@
                 </div>
                 <p class="form-help">E-mail e CPF são definidos no cadastro inicial e não podem ser alterados pelo portal.</p>
                 <div class="form-row profile-actions">
-                  <button type="button" class="btn btn-secondary" id="editProfileBtn">Editar dados</button>
-                  <button type="submit" class="btn btn-primary" id="saveProfileBtn" hidden>Salvar alterações</button>
-                  <button type="button" class="btn btn-secondary" id="cancelProfileEditBtn" hidden>Cancelar</button>
+                  <button type="button" class="btn btn-secondary" id="editProfileBtn">Editar Perfil</button>
+                  <button type="button" class="btn btn-secondary" id="cancelProfileEditBtn">Cancelar</button>
                 </div>
                 <div class="form-row">
                   <div id="profileMessage" class="rooms-message"></div>
@@ -761,8 +760,30 @@
               </div>
             </div>
 
+            <div class="modal-actions" style="margin-top:12px; display:flex; gap:12px; justify-content:space-between; flex-wrap:wrap;">
+              <button type="button" class="btn btn-secondary" id="openPasswordModalBtn">Alterar senha</button>
+              <div>
+                <button type="button" class="btn btn-secondary" id="profileEditCancel">Cancelar</button>
+                <button type="submit" class="btn btn-primary">Salvar</button>
+              </div>
+            </div>
+            <div class="form-row"><div id="profileEditMessage" class="rooms-message"></div></div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Alterar senha -->
+  <div class="modal-overlay" id="passwordChangeModal" aria-hidden="true">
+    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="passwordChangeTitle">
+      <button class="modal-close" type="button" id="passwordChangeClose" aria-label="Fechar">&times;</button>
+      <div class="modal-body">
+        <div class="modal-info" style="padding:24px; width:100%">
+          <h2 id="passwordChangeTitle" style="margin-top:0">Alterar senha</h2>
+          <form id="passwordChangeForm" class="profile-edit-form">
             <fieldset class="password-change">
-              <legend>Alterar senha</legend>
+              <legend>Nova senha de acesso</legend>
               <div class="form-grid-mini">
                 <div>
                   <label for="currentPassword">Senha atual</label>
@@ -785,12 +806,11 @@
               </div>
               <p class="password-hint">A senha deve ter 8+ caracteres com letras, números e símbolos.</p>
             </fieldset>
-
             <div class="modal-actions" style="margin-top:12px; display:flex; gap:12px; justify-content:flex-end;">
-              <button type="button" class="btn btn-secondary" id="profileEditCancel">Cancelar</button>
-              <button type="submit" class="btn btn-primary">Salvar</button>
+              <button type="button" class="btn btn-secondary" id="passwordChangeCancel">Cancelar</button>
+              <button type="submit" class="btn btn-primary">Salvar nova senha</button>
             </div>
-            <div class="form-row"><div id="profileEditMessage" class="rooms-message"></div></div>
+            <div class="form-row"><div id="passwordChangeMessage" class="rooms-message"></div></div>
           </form>
         </div>
       </div>

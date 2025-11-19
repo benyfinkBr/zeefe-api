@@ -133,7 +133,7 @@ main {
 }
 .booking-mode-label {
   font-size: .9rem;
-  color: var(--brand-cream);
+  color: var(--brand-green);
 }
 .booking-mode-buttons {
   display: inline-flex;
@@ -2355,6 +2355,14 @@ body.client-portal-page.client-logged-out .portal-shell {
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+
+.profile-form input[readonly] {
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  padding-left: 0;
+  padding-right: 0;
 }
 
 

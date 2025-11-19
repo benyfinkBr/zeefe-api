@@ -163,6 +163,12 @@ const profileEditClose = document.getElementById('profileEditClose');
 const profileEditCancel = document.getElementById('profileEditCancel');
 const profileEditForm = document.getElementById('profileEditForm');
 const profileEditMessage = document.getElementById('profileEditMessage');
+const openPasswordModalBtn = document.getElementById('openPasswordModalBtn');
+const passwordChangeModal = document.getElementById('passwordChangeModal');
+const passwordChangeClose = document.getElementById('passwordChangeClose');
+const passwordChangeCancel = document.getElementById('passwordChangeCancel');
+const passwordChangeForm = document.getElementById('passwordChangeForm');
+const passwordChangeMessage = document.getElementById('passwordChangeMessage');
 const editName = document.getElementById('editName');
 const editLogin = document.getElementById('editLogin');
 const editEmail = document.getElementById('editEmail');
@@ -370,7 +376,7 @@ async function initialize() {
     bookingSearchMode = 'date';
     bookingModeDateBtn.classList.add('active');
     if (bookingModeRoomBtn) bookingModeRoomBtn.classList.remove('active');
-    if (bookingModeHint) bookingModeHint.textContent = 'Datas primeiro: selecione um ou mais dias no calendário e depois escolha a sala.';
+    if (bookingModeHint) bookingModeHint.textContent = 'Buscar por Data: selecione um ou mais dias no calendário e depois escolha a sala.';
     if (stepLabelData) stepLabelData.textContent = 'DATA';
     if (stepLabelRooms) stepLabelRooms.textContent = 'SALAS';
     // Datas primeiro: começa escolhendo datas (etapa 0)
@@ -384,11 +390,11 @@ async function initialize() {
     if (bookingModeDateBtn) bookingModeDateBtn.classList.remove('active');
     bookingSelectedDates = [];
     if (bookingDateInput) bookingDateInput.value = '';
-    // Sala específica: passo 1 SALAS, passo 2 DATA
+    // Buscar por Local: passo 1 SALAS, passo 2 DATA
     bookingStepIndex = 0;
     setBookingStep(bookingStepIndex);
     renderRoomOptions('');
-    if (bookingModeHint) bookingModeHint.textContent = 'Sala específica: escolha a sala primeiro, depois veja as datas disponíveis no calendário.';
+    if (bookingModeHint) bookingModeHint.textContent = 'Buscar por Local: escolha a sala primeiro, depois veja as datas disponíveis no calendário.';
     if (stepLabelData) stepLabelData.textContent = 'SALAS';
     if (stepLabelRooms) stepLabelRooms.textContent = 'DATA';
   });
@@ -432,6 +438,11 @@ async function initialize() {
   newPasswordConfirmInput?.addEventListener('input', updateModalPasswordIndicators);
   editPhone?.addEventListener('input', () => { const d = somenteDigitos(editPhone.value).slice(0,11); editPhone.value = formatPhone(d); });
   editWhatsapp?.addEventListener('input', () => { const d = somenteDigitos(editWhatsapp.value).slice(0,11); editWhatsapp.value = formatPhone(d); });
+  openPasswordModalBtn?.addEventListener('click', openPasswordChangeModal);
+  passwordChangeClose?.addEventListener('click', closePasswordChangeModal);
+  passwordChangeCancel?.addEventListener('click', closePasswordChangeModal);
+  passwordChangeModal?.addEventListener('click', (e) => { if (e.target === passwordChangeModal) closePasswordChangeModal(); });
+  passwordChangeForm?.addEventListener('submit', onPasswordChangeSubmit);
 
   // Client chat modal events
   clientChatClose?.addEventListener('click', closeClientChat);
@@ -3474,25 +3485,52 @@ async function onProfileEditSubmit(event){
     activeClient = { ...activeClient, ...json.client };
     renderProfile();
 
-    // Se senha foi informada, valida e atualiza
-    const cur = currentPasswordInput?.value || '';
-    const np = newPasswordInput?.value || '';
-    const npc = newPasswordConfirmInput?.value || '';
-    if (cur || np || npc) {
-      if (!cur || !np || !npc) throw new Error('Para trocar a senha, preencha todos os campos de senha.');
-      if (np !== npc) throw new Error('As senhas novas não conferem.');
-      if (!validarSenhaForte(np)) throw new Error('A nova senha não atende os requisitos.');
-      const r2 = await fetch(`${API_BASE}/client_change_password.php`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: activeClient.id, current_password: cur, new_password: np })
-      });
-      const j2 = await r2.json();
-      if (!j2.success) throw new Error(j2.error || 'Não foi possível alterar a senha.');
-    }
     if (profileEditMessage) profileEditMessage.textContent = 'Dados salvos com sucesso.';
     closeProfileEditModal();
   } catch (err) {
     if (profileEditMessage) profileEditMessage.textContent = err.message || 'Falha ao salvar.';
+  }
+}
+
+function openPasswordChangeModal() {
+  if (!passwordChangeModal) return;
+  if (passwordChangeMessage) passwordChangeMessage.textContent = '';
+  if (currentPasswordInput) currentPasswordInput.value = '';
+  if (newPasswordInput) newPasswordInput.value = '';
+  if (newPasswordConfirmInput) newPasswordConfirmInput.value = '';
+  updateModalPasswordIndicators();
+  passwordChangeModal.classList.add('show');
+  passwordChangeModal.setAttribute('aria-hidden', 'false');
+}
+
+function closePasswordChangeModal() {
+  if (!passwordChangeModal) return;
+  passwordChangeModal.classList.remove('show');
+  passwordChangeModal.setAttribute('aria-hidden', 'true');
+}
+
+async function onPasswordChangeSubmit(event) {
+  event.preventDefault();
+  if (!activeClient) return;
+  if (passwordChangeMessage) passwordChangeMessage.textContent = '';
+  const cur = currentPasswordInput?.value || '';
+  const np = newPasswordInput?.value || '';
+  const npc = newPasswordConfirmInput?.value || '';
+  try {
+    if (!cur || !np || !npc) throw new Error('Preencha todos os campos de senha.');
+    if (np !== npc) throw new Error('As senhas novas não conferem.');
+    if (!validarSenhaForte(np)) throw new Error('A nova senha não atende os requisitos.');
+    const r2 = await fetch(`${API_BASE}/client_change_password.php`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: activeClient.id, current_password: cur, new_password: np })
+    });
+    const j2 = await r2.json();
+    if (!j2.success) throw new Error(j2.error || 'Não foi possível alterar a senha.');
+    if (passwordChangeMessage) passwordChangeMessage.textContent = 'Senha alterada com sucesso.';
+    closePasswordChangeModal();
+  } catch (err) {
+    if (passwordChangeMessage) passwordChangeMessage.textContent = err.message || 'Falha ao alterar senha.';
   }
 }
 
