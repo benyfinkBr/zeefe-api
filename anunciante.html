@@ -255,6 +255,42 @@
         <div id="advReviewsContainer" class="responsive-table"></div>
         </div>
       </div>
+
+      <div id="panel-profile" class="portal-section" hidden>
+        <article class="form-card profile-card">
+          <h3>Dados do Anunciante</h3>
+          <form id="advProfileViewForm" class="profile-form">
+            <div class="form-grid-mini">
+              <div>
+                <label for="advProfileNameView">Nome público (anúncio)</label>
+                <input type="text" id="advProfileNameView" readonly />
+              </div>
+              <div>
+                <label for="advProfileEmailView">E-mail</label>
+                <input type="email" id="advProfileEmailView" readonly />
+              </div>
+            </div>
+            <div class="form-grid-mini">
+              <div>
+                <label for="advProfilePhoneView">Telefone</label>
+                <input type="text" id="advProfilePhoneView" readonly />
+              </div>
+              <div>
+                <label for="advProfileFeeView">% taxa</label>
+                <input type="text" id="advProfileFeeView" readonly />
+              </div>
+            </div>
+            <p class="form-help">Dados de login e taxa podem ser ajustados em conjunto com a equipe Ze.EFE.</p>
+            <div class="form-row profile-actions">
+              <button type="button" class="btn btn-secondary" id="advProfileOpenEditBtn">Editar Perfil</button>
+              <button type="button" class="btn btn-secondary" id="advProfileCancelViewBtn">Cancelar</button>
+            </div>
+            <div class="form-row">
+              <div id="advProfileViewMsg" class="rooms-message"></div>
+            </div>
+          </form>
+        </article>
+      </div>
     </div>
   </main>
 

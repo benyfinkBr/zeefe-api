@@ -44,6 +44,15 @@ const advOwner = document.getElementById('advOwner');
 const advEditProfileBtn = document.getElementById('advEditProfileBtn');
 const advEditProfileSideBtn = document.getElementById('advEditProfileSideBtn');
 
+// Perfil / painel de visualização
+const advProfileNameView = document.getElementById('advProfileNameView');
+const advProfileEmailView = document.getElementById('advProfileEmailView');
+const advProfilePhoneView = document.getElementById('advProfilePhoneView');
+const advProfileFeeView = document.getElementById('advProfileFeeView');
+const advProfileOpenEditBtn = document.getElementById('advProfileOpenEditBtn');
+const advProfileCancelViewBtn = document.getElementById('advProfileCancelViewBtn');
+const advProfileViewMsg = document.getElementById('advProfileViewMsg');
+
 // Perfil / modal de edição
 const advProfileModal = document.getElementById('advProfileModal');
 const advProfileClose = document.getElementById('advProfileClose');
@@ -155,12 +164,24 @@ async function parseJsonSafe(res) {
 }
 
 function setActivePanel(name) {
-  const panels = ['overview','rooms','reservations','finance','messages','reviews'];
+  const panels = ['overview','rooms','reservations','finance','messages','reviews','profile'];
   panels.forEach(p => {
     const el = document.getElementById('panel-' + p);
     if (el) el.hidden = (p !== name);
   });
   navButtons.forEach(b => b.classList.toggle('active', b.dataset.panel === name));
+}
+
+function renderAdvProfileView() {
+  if (!myAdvertiser) return;
+  if (advProfileNameView) advProfileNameView.value = myAdvertiser.display_name || '';
+  if (advProfileEmailView) advProfileEmailView.value = myAdvertiser.email || myAdvertiser.login_email || '';
+  if (advProfilePhoneView) advProfilePhoneView.value = myAdvertiser.contact_phone || '';
+  if (advProfileFeeView) {
+    const fee = myAdvertiser.fee_pct != null ? Number(myAdvertiser.fee_pct) : 15;
+    advProfileFeeView.value = `${fee.toFixed(2).replace('.' , ',')} %`;
+  }
+  if (advProfileViewMsg) advProfileViewMsg.textContent = '';
 }
 
 function openAdvProfileModal() {
@@ -228,8 +249,14 @@ async function afterLogin() {
   setActivePanel('overview');
 
   // Eventos de perfil (somente após login)
-  advEditProfileBtn?.addEventListener('click', openAdvProfileModal);
-  advEditProfileSideBtn?.addEventListener('click', openAdvProfileModal);
+  const goToProfile = () => {
+    renderAdvProfileView();
+    setActivePanel('profile');
+  };
+  advEditProfileBtn?.addEventListener('click', goToProfile);
+  advEditProfileSideBtn?.addEventListener('click', goToProfile);
+  advProfileOpenEditBtn?.addEventListener('click', openAdvProfileModal);
+  advProfileCancelViewBtn?.addEventListener('click', () => setActivePanel('overview'));
   advProfileClose?.addEventListener('click', closeAdvProfileModal);
   advProfileCancelBtn?.addEventListener('click', closeAdvProfileModal);
   advProfileModal?.addEventListener('click', (e)=>{ if (e.target === advProfileModal) closeAdvProfileModal(); });
