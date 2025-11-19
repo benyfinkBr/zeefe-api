@@ -2569,11 +2569,11 @@ function openReservationActions(id) {
 
   const cards = [];
 
-  // Ações principais
+  // Linha 1: ações principais (ordem fixa)
+  cards.push(mkCard('Mensagem ao Anunciante', ()=> { openClientChatForReservation(reserva.id); }));
   if (showPayment) {
     cards.push(mkCard('Pagamento', ()=> { tratarAcaoReserva(reserva.id,'payment'); closeReservationActions(); }));
   }
-  cards.push(mkCard('Mensagens', ()=> { openClientChatForReservation(reserva.id); }));
   // Se pagamento já foi confirmado, exibir informação logo abaixo do meta
   if (paid) {
     try {
