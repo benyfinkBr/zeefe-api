@@ -61,6 +61,17 @@ const advProfileCancelBtn = document.getElementById('advProfileCancelBtn');
 const advProfileDisplay = document.getElementById('advProfileDisplay');
 const advProfilePhone = document.getElementById('advProfilePhone');
 const advProfileMsg = document.getElementById('advProfileMsg');
+const advOpenPasswordModalBtn = document.getElementById('advOpenPasswordModalBtn');
+const advPasswordModal = document.getElementById('advPasswordModal');
+const advPasswordClose = document.getElementById('advPasswordClose');
+const advPasswordCancel = document.getElementById('advPasswordCancel');
+const advPasswordForm = document.getElementById('advPasswordForm');
+const advPasswordMsg = document.getElementById('advPasswordMsg');
+const advCurrentPasswordInput = document.getElementById('advCurrentPassword');
+const advNewPasswordInput = document.getElementById('advNewPassword');
+const advNewPasswordConfirmInput = document.getElementById('advNewPasswordConfirm');
+const advPwdStrengthIndicator = document.getElementById('advPwdStrengthIndicator');
+const advPwdMatchIndicator = document.getElementById('advPwdMatchIndicator');
 
 // Overview
 const ovViews = document.getElementById('ovViews');
@@ -261,6 +272,11 @@ async function afterLogin() {
   advProfileCancelBtn?.addEventListener('click', closeAdvProfileModal);
   advProfileModal?.addEventListener('click', (e)=>{ if (e.target === advProfileModal) closeAdvProfileModal(); });
   advProfileForm?.addEventListener('submit', onAdvProfileSubmit);
+  advOpenPasswordModalBtn?.addEventListener('click', openAdvPasswordModal);
+  advPasswordClose?.addEventListener('click', closeAdvPasswordModal);
+  advPasswordCancel?.addEventListener('click', closeAdvPasswordModal);
+  advPasswordModal?.addEventListener('click', (e)=>{ if (e.target === advPasswordModal) closeAdvPasswordModal(); });
+  advPasswordForm?.addEventListener('submit', onAdvPasswordSubmit);
 }
 
 async function loadAdvertiser() {
@@ -453,6 +469,82 @@ async function onAdvProfileSubmit(e) {
     closeAdvProfileModal();
   } catch (err) {
     advProfileMsg && (advProfileMsg.textContent = err.message || 'Falha ao salvar.');
+  }
+}
+
+function avaliarForcaSenhaAdvertiser(senha, confirmacao) {
+  let strengthText = 'Fraca';
+  let strengthClass = 'state-weak';
+  if (!senha) {
+    strengthText = 'Aguardando';
+    strengthClass = 'state-neutral';
+  } else if (senha.length >= 8 && /[A-Z]/.test(senha) && /[a-z]/.test(senha) && /\d/.test(senha) && /[^A-Za-z0-9]/.test(senha)) {
+    strengthText = 'Forte';
+    strengthClass = 'state-strong';
+  } else if (senha.length >= 8) {
+    strengthText = 'Média';
+    strengthClass = 'state-medium';
+  }
+  if (advPwdStrengthIndicator) {
+    advPwdStrengthIndicator.textContent = 'Força da senha: ' + strengthText;
+    advPwdStrengthIndicator.className = 'password-indicator ' + strengthClass;
+  }
+  let matchText = 'Aguardando';
+  let matchClass = 'state-neutral';
+  if (senha || confirmacao) {
+    if (senha === confirmacao && senha) {
+      matchText = 'OK';
+      matchClass = 'state-strong';
+    } else {
+      matchText = 'Não confere';
+      matchClass = 'state-weak';
+    }
+  }
+  if (advPwdMatchIndicator) {
+    advPwdMatchIndicator.textContent = 'Confirmação: ' + matchText;
+    advPwdMatchIndicator.className = 'password-indicator ' + matchClass;
+  }
+}
+
+function openAdvPasswordModal() {
+  if (!advPasswordModal) return;
+  if (advPasswordMsg) advPasswordMsg.textContent = '';
+  if (advCurrentPasswordInput) advCurrentPasswordInput.value = '';
+  if (advNewPasswordInput) advNewPasswordInput.value = '';
+  if (advNewPasswordConfirmInput) advNewPasswordConfirmInput.value = '';
+  avaliarForcaSenhaAdvertiser('', '');
+  advPasswordModal.classList.add('show');
+  advPasswordModal.setAttribute('aria-hidden', 'false');
+}
+
+function closeAdvPasswordModal() {
+  if (!advPasswordModal) return;
+  advPasswordModal.classList.remove('show');
+  advPasswordModal.setAttribute('aria-hidden', 'true');
+}
+
+async function onAdvPasswordSubmit(e) {
+  e.preventDefault();
+  if (!myAdvertiser) return;
+  if (advPasswordMsg) advPasswordMsg.textContent = '';
+  const cur = advCurrentPasswordInput?.value || '';
+  const np = advNewPasswordInput?.value || '';
+  const npc = advNewPasswordConfirmInput?.value || '';
+  try {
+    if (!cur || !np || !npc) throw new Error('Preencha todos os campos de senha.');
+    if (np !== npc) throw new Error('As senhas novas não conferem.');
+    if (np.length < 8) throw new Error('A nova senha deve ter pelo menos 8 caracteres.');
+    const res = await fetch(`${API_BASE}/advertiser_change_password.php`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: myAdvertiser.id, current_password: cur, new_password: np })
+    });
+    const json = await parseJsonSafe(res);
+    if (!json.success) throw new Error(json.error || 'Não foi possível alterar a senha.');
+    if (advPasswordMsg) advPasswordMsg.textContent = 'Senha alterada com sucesso.';
+    closeAdvPasswordModal();
+  } catch (err) {
+    if (advPasswordMsg) advPasswordMsg.textContent = err.message || 'Falha ao alterar senha.';
   }
 }
 

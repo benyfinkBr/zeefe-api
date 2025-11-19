@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Tempo de geração: 19/11/2025 às 07:06
+-- Tempo de geração: 19/11/2025 às 14:02
 -- Versão do servidor: 5.7.23-23
 -- Versão do PHP: 8.1.33
 
@@ -91,7 +91,7 @@ CREATE TABLE `advertisers` (
 --
 
 INSERT INTO `advertisers` (`id`, `owner_type`, `owner_id`, `bank_code`, `display_name`, `full_name`, `login_email`, `login_cpf`, `contact_phone`, `password_hash`, `email_verified_at`, `verification_token`, `verification_token_expires`, `last_login`, `status`, `fee_pct`, `bank_name`, `account_type`, `agency_number`, `account_number`, `pix_key`, `created_at`, `updated_at`) VALUES
-(1, 'client', 0, NULL, 'MZF', 'Mira Zlotnik', 'benyfinkelstein@gmail.com', '41836484836', NULL, '$2y$10$coY86ax3NyQXEr1DAE4Q4uX6JMCV6LAI.gAHpLTdZ2Q7MdCTO.nW6', '2025-11-16 22:46:54', NULL, NULL, '2025-11-19 07:01:04', 'ativo', NULL, NULL, NULL, NULL, NULL, NULL, '2025-11-16 22:46:39', '2025-11-16 22:46:54');
+(1, 'client', 0, NULL, 'MZF', 'Mira Zlotnik', 'benyfinkelstein@gmail.com', '41836484836', NULL, '$2y$10$coY86ax3NyQXEr1DAE4Q4uX6JMCV6LAI.gAHpLTdZ2Q7MdCTO.nW6', '2025-11-16 22:46:54', NULL, NULL, '2025-11-19 08:21:01', 'ativo', NULL, NULL, NULL, NULL, NULL, NULL, '2025-11-16 22:46:39', '2025-11-16 22:46:54');
 
 -- --------------------------------------------------------
 
@@ -107,6 +107,14 @@ CREATE TABLE `advertiser_remember_tokens` (
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `expires_at` datetime NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Despejando dados para a tabela `advertiser_remember_tokens`
+--
+
+INSERT INTO `advertiser_remember_tokens` (`id`, `advertiser_id`, `token_hash`, `user_agent`, `created_at`, `expires_at`) VALUES
+(1, 1, '1a7e21637d97c739c6b3ad9bcdd18708e8400441963d0e1ea1802bbe4b7c338d', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36 Edg/141.0.0.0', '2025-11-19 07:07:30', '2025-11-20 07:07:30'),
+(2, 1, 'a1f8fb48845c5accd70843be168222017e3f81a5dfa3fe8b5080fbada014584d', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0', '2025-11-19 08:21:01', '2025-11-20 08:21:01');
 
 -- --------------------------------------------------------
 
@@ -417,7 +425,8 @@ INSERT INTO `messages` (`id`, `thread_id`, `sender_type`, `body`, `attachment_ur
 (3, 1, 'client', 'Oi!', NULL, '2025-11-16 22:58:28', '2025-11-16 22:58:28', '2025-11-16 22:58:29'),
 (4, 1, 'advertiser', 'HUHUHUHUHUHU', NULL, '2025-11-16 22:58:35', '2025-11-16 22:58:42', '2025-11-16 22:58:35'),
 (5, 2, 'client', 'Teste123', NULL, '2025-11-16 23:14:18', '2025-11-16 23:14:18', '2025-11-16 23:14:31'),
-(6, 2, 'client', 'meu telefone é [contato oculto]', NULL, '2025-11-16 23:15:37', '2025-11-16 23:15:37', '2025-11-17 08:30:21');
+(6, 2, 'client', 'meu telefone é [contato oculto]', NULL, '2025-11-16 23:15:37', '2025-11-16 23:15:37', '2025-11-17 08:30:21'),
+(7, 5, 'client', 'Oi', NULL, '2025-11-19 08:25:45', '2025-11-19 08:25:46', NULL);
 
 -- --------------------------------------------------------
 
@@ -441,7 +450,8 @@ CREATE TABLE `message_threads` (
 
 INSERT INTO `message_threads` (`id`, `room_id`, `reservation_id`, `client_id`, `advertiser_id`, `created_at`, `last_message_at`) VALUES
 (1, 1, 19, 11, 1, '2025-11-16 22:55:51', '2025-11-16 22:58:35'),
-(2, 1, 21, 14, 1, '2025-11-16 23:14:13', '2025-11-16 23:15:37');
+(2, 1, 21, 14, 1, '2025-11-16 23:14:13', '2025-11-16 23:15:37'),
+(5, NULL, NULL, 11, NULL, '2025-11-19 07:57:24', '2025-11-19 08:25:45');
 
 -- --------------------------------------------------------
 
@@ -1138,7 +1148,7 @@ ALTER TABLE `advertisers`
 -- AUTO_INCREMENT de tabela `advertiser_remember_tokens`
 --
 ALTER TABLE `advertiser_remember_tokens`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT de tabela `amenities`
@@ -1198,13 +1208,13 @@ ALTER TABLE `ledger_entries`
 -- AUTO_INCREMENT de tabela `messages`
 --
 ALTER TABLE `messages`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
 -- AUTO_INCREMENT de tabela `message_threads`
 --
 ALTER TABLE `message_threads`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
 -- AUTO_INCREMENT de tabela `notification_logs`

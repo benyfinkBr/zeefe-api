@@ -514,7 +514,7 @@
       <div class="modal-body">
         <div class="modal-info" style="padding:24px; width:100%">
           <h2 id="advProfileTitle" style="margin-top:0">Editar perfil</h2>
-          <form id="advProfileForm" class="auth-form">
+          <form id="advProfileForm" class="profile-edit-form">
             <div class="form-grid-mini">
               <div>
                 <label for="advProfileDisplay">Nome público (anúncio)</label>
@@ -525,11 +525,57 @@
                 <input type="text" id="advProfilePhone" />
               </div>
             </div>
-            <div class="modal-actions" style="display:flex; gap:12px; justify-content:flex-end;">
-              <button type="button" class="btn btn-secondary" id="advProfileCancelBtn">Cancelar</button>
-              <button type="submit" class="btn btn-primary">Salvar</button>
+            <div class="modal-actions" style="margin-top:12px; display:flex; gap:12px; justify-content:space-between; flex-wrap:wrap;">
+              <button type="button" class="btn btn-secondary" id="advOpenPasswordModalBtn">Alterar senha</button>
+              <div>
+                <button type="button" class="btn btn-secondary" id="advProfileCancelBtn">Cancelar</button>
+                <button type="submit" class="btn btn-primary">Salvar</button>
+              </div>
             </div>
             <div id="advProfileMsg" class="rooms-message"></div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Alterar senha do Anunciante -->
+  <div class="modal-overlay" id="advPasswordModal" aria-hidden="true">
+    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="advPasswordTitle">
+      <button class="modal-close" type="button" id="advPasswordClose" aria-label="Fechar">&times;</button>
+      <div class="modal-body">
+        <div class="modal-info" style="padding:24px; width:100%">
+          <h2 id="advPasswordTitle" style="margin-top:0">Alterar senha</h2>
+          <form id="advPasswordForm" class="profile-edit-form">
+            <fieldset class="password-change">
+              <legend>Nova senha de acesso</legend>
+              <div class="form-grid-mini">
+                <div>
+                  <label for="advCurrentPassword">Senha atual</label>
+                  <input type="password" id="advCurrentPassword" autocomplete="current-password" />
+                </div>
+                <div>
+                  <label for="advNewPassword">Nova senha</label>
+                  <input type="password" id="advNewPassword" autocomplete="new-password" />
+                </div>
+              </div>
+              <div class="form-grid-mini">
+                <div>
+                  <label for="advNewPasswordConfirm">Confirmar nova senha</label>
+                  <input type="password" id="advNewPasswordConfirm" autocomplete="new-password" />
+                </div>
+                <div class="password-indicators inline">
+                  <span class="password-indicator state-neutral" id="advPwdStrengthIndicator">Força da senha: aguardando</span>
+                  <span class="password-indicator state-neutral" id="advPwdMatchIndicator">Confirmação: aguardando</span>
+                </div>
+              </div>
+              <p class="password-hint">A senha deve ter 8+ caracteres com letras, números e símbolos.</p>
+            </fieldset>
+            <div class="modal-actions" style="margin-top:12px; display:flex; gap:12px; justify-content:flex-end;">
+              <button type="button" class="btn btn-secondary" id="advPasswordCancel">Cancelar</button>
+              <button type="submit" class="btn btn-primary">Salvar nova senha</button>
+            </div>
+            <div class="form-row"><div id="advPasswordMsg" class="rooms-message"></div></div>
           </form>
         </div>
       </div>
