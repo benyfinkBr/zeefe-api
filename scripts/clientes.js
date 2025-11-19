@@ -2848,13 +2848,25 @@ function renderBookingSummary() {
     ? `Voucher ${bookingVoucherApplied.code} aplicado. Desconto: ${formatCurrency(bookingVoucherApplied.discount || 0)}. Previsto: ${formatCurrency(bookingVoucherApplied.payable || 0)}.`
     : 'Nenhum voucher aplicado.';
 
-  const modo = bookingSearchMode === 'room' ? 'Sala específica' : 'Datas primeiro';
+  // Cálculo simples de custo total previsto
+  let totalPrevisto = null;
+  const dias = dates.length || 0;
+  if (dias > 0) {
+    let valorDia = 0;
+    if (bookingVoucherApplied && typeof bookingVoucherApplied.payable === 'number') {
+      valorDia = bookingVoucherApplied.payable;
+    } else if (room && room.daily_rate) {
+      valorDia = Number(room.daily_rate) || 0;
+    }
+    if (valorDia > 0) {
+      totalPrevisto = valorDia * dias;
+    }
+  }
 
   bookingSummaryEl.innerHTML = `
     <div>
       <h5>Geral</h5>
       <ul>
-        <li><strong>Modo de busca:</strong> ${modo}</li>
         <li><strong>Datas:</strong> ${datesLabel}${dates.length > 1 ? ` (total ${dates.length} dias)` : ''}</li>
         <li><strong>Sala:</strong> ${room ? escapeHtml(room.name || `Sala #${room.id}`) : 'Não selecionada'}</li>
         <li><strong>Reserva pela empresa:</strong> ${useCompany ? (activeClient.company_name || 'Sim') : 'Não'}</li>
@@ -2862,8 +2874,9 @@ function renderBookingSummary() {
       <h5>Detalhes</h5>
       <ul>
         <li><strong>Título:</strong> ${escapeHtml(title)}</li>
-        <li><strong>Descrição:</strong> ${escapeHtml(desc)}</li>
+        <li><strong>Observações:</strong> ${escapeHtml(desc)}</li>
         <li><strong>Voucher:</strong> ${escapeHtml(voucherInfo)}</li>
+        <li><strong>Valor total previsto:</strong> ${totalPrevisto != null ? formatCurrency(totalPrevisto) : '—'}</li>
       </ul>
       <h5>Visitantes</h5>
       <ul>
