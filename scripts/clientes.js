@@ -2050,12 +2050,16 @@ async function onPortalLoginSubmit(event) {
     const res = await fetch(`${API_BASE}/client_portal_login.php`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ login: identifier, password })
+      body: JSON.stringify({ login: identifier, password, remember: lembrar })
     });
     const json = await res.json();
     if (window.DEBUG) console.debug('[Portal] Resposta login', json);
     if (!json.success) throw new Error(json.error || 'Não foi possível autenticar.');
-    registrarPreferenciaLogin(lembrar, identifier, password);
+    if (lembrar && json.remember && json.remember.token) {
+      registrarPreferenciaLogin(true, json.remember.token, identifier);
+    } else if (!lembrar) {
+      registrarPreferenciaLogin(false);
+    }
     aplicarClienteAtivo(json.client);
   } catch (err) {
     console.error('[Portal] Falha no login', err);
@@ -2305,6 +2309,26 @@ function aplicarLoginMemorizado() {
     autoLoginWithToken(token).catch(() => {});
   } catch (_) {
     rememberMeCheckbox.checked = false;
+  }
+}
+
+async function autoLoginWithToken(token) {
+  try {
+    const res = await fetch(`${API_BASE}/client_auto_login.php`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token })
+    });
+    const json = await res.json();
+    if (!json.success || !json.client) {
+      // token inválido/expirado
+      try { localStorage.removeItem('portalRememberToken'); } catch (_) {}
+      rememberMeCheckbox.checked = false;
+      return;
+    }
+    aplicarClienteAtivo(json.client);
+  } catch (e) {
+    console.error('[Portal] auto-login falhou', e);
   }
 }
 
