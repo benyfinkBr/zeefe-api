@@ -2704,6 +2704,25 @@ async function onBookingSubmit(event) {
   record.visitor_ids = bookingVisitorIds;
 
   try {
+    const visitorsCount = Array.isArray(bookingVisitorIds) ? bookingVisitorIds.length : 0;
+    const sendInvites = !!formData.get('send_invites');
+    if (visitorsCount === 0) {
+      const goAdd = window.confirm(
+        'Você não cadastrou nenhum visitante. Sem pré-cadastro, a recepção poderá levar mais tempo para validar documentos. Clique em OK para adicionar convidados agora, ou Cancelar para continuar sem visitantes.'
+      );
+      if (goAdd) {
+        // Leva o usuário para a etapa de Visitantes
+        bookingStepIndex = 3;
+        setBookingStep(bookingStepIndex);
+        return;
+      }
+    } else if (sendInvites) {
+      const ok = window.confirm(
+        'Após a confirmação da reserva, enviaremos por e-mail um convite para todos os visitantes selecionados. Deseja continuar?'
+      );
+      if (!ok) return;
+    }
+
     const isMultiDate = bookingSearchMode === 'date' && Array.isArray(bookingSelectedDates) && bookingSelectedDates.length > 1;
     const datesToCreate = isMultiDate
       ? Array.from(new Set(bookingSelectedDates)).sort()
@@ -2869,10 +2888,6 @@ function renderBookingSummary() {
     ? currentVisitors.filter(v => bookingVisitorIds.includes(String(v.id))).map(v => v.name || '').filter(Boolean)
     : [];
 
-  const visitorNote = visitorsCount === 0
-    ? 'Nenhum visitante foi pré-cadastrado. Sem pré-cadastro, a recepção poderá levar mais tempo para validar documentos.'
-    : 'Após a confirmação, enviaremos por e-mail um convite de reunião para todos os visitantes selecionados.';
-
   const voucherInfo = bookingVoucherApplied
     ? `Voucher ${bookingVoucherApplied.code} aplicado. Desconto: ${formatCurrency(bookingVoucherApplied.discount || 0)}. Previsto: ${formatCurrency(bookingVoucherApplied.payable || 0)}.`
     : 'Nenhum voucher aplicado.';
@@ -2911,7 +2926,6 @@ function renderBookingSummary() {
       <ul>
         <li><strong>Quantidade:</strong> ${visitorsCount}</li>
         <li><strong>Nomes:</strong> ${visitorNames.length ? escapeHtml(visitorNames.join(', ')) : 'Nenhum selecionado'}</li>
-        <li><strong>Observação:</strong> ${escapeHtml(visitorNote)}</li>
       </ul>
     </div>
   `;
