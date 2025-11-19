@@ -1447,6 +1447,30 @@ textarea {
   margin: 4px 0 20px;
 }
 
+.booking-date-mode {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 8px 0 6px;
+}
+.booking-date-mode-label {
+  font-size: 0.86rem;
+  color: var(--brand-cream);
+}
+.booking-date-mode-buttons {
+  display: inline-flex;
+  gap: 6px;
+}
+.mode-btn-small {
+  padding: 4px 10px;
+  font-size: 0.8rem;
+}
+
+#multiDateSummary {
+  margin-top: 4px;
+}
+
 .form-grid-mini {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));

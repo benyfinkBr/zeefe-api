@@ -100,6 +100,7 @@ const bookingVoucherApplyBtn = document.getElementById('bookingVoucherApply');
 const bookingVoucherResult = document.getElementById('bookingVoucherResult');
 let bookingVoucherApplied = null; // { code, discount, payable }
 let bookingSelectedDates = [];
+let bookingDateMulti = false;
 
 const reservationsContainer = document.getElementById('reservationsContainer');
 // Modal de ações da reserva
@@ -212,6 +213,9 @@ let bookingSearchMode = 'date'; // 'date' | 'room' (room em breve)
 const bookingModeDateBtn = document.getElementById('bookingModeDate');
 const bookingModeRoomBtn = document.getElementById('bookingModeRoom');
 const bookingModeHint = document.getElementById('bookingModeHint');
+const dateModeSingleBtn = document.getElementById('dateModeSingle');
+const dateModeMultiBtn = document.getElementById('dateModeMulti');
+const multiDateSummaryEl = document.getElementById('multiDateSummary');
 
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', initialize, { once: true });
@@ -316,6 +320,26 @@ async function initialize() {
   bookingDescriptionInput?.addEventListener('input', onBookingDetailsChange);
   bookingVoucherInput?.addEventListener('input', () => { if (bookingVoucherResult) bookingVoucherResult.textContent=''; bookingVoucherApplied = null; });
   bookingVoucherApplyBtn?.addEventListener('click', onApplyVoucherClick);
+
+  // Modo de datas: simples x múltiplas
+  dateModeSingleBtn?.addEventListener('click', () => {
+    bookingDateMulti = false;
+    dateModeSingleBtn.classList.add('active');
+    if (dateModeMultiBtn) dateModeMultiBtn.classList.remove('active');
+    // Mantém apenas a primeira data selecionada
+    if (bookingSelectedDates.length > 0) {
+      bookingSelectedDates = [bookingSelectedDates[0]];
+    }
+    if (bookingDateInput) bookingDateInput.value = bookingSelectedDates[0] || '';
+    updateMultiDateSummary();
+    renderBookingCalendar(bookingCurrentMonth);
+  });
+  dateModeMultiBtn?.addEventListener('click', () => {
+    bookingDateMulti = true;
+    dateModeMultiBtn.classList.add('active');
+    if (dateModeSingleBtn) dateModeSingleBtn.classList.remove('active');
+    updateMultiDateSummary();
+  });
 
   // Modo de busca (datas primeiro)
   bookingModeDateBtn?.addEventListener('click', () => {
@@ -1424,7 +1448,11 @@ function preencherSalasSelect() {
 
 function onBookingDateChange() {
   if (!bookingDateInput) return;
-  if (bookingRoomHiddenInput) bookingRoomHiddenInput.value = '';
+  if (bookingSearchMode === 'date') {
+    // Mantém sala já escolhida; datas podem ser múltiplas
+  } else if (bookingRoomHiddenInput) {
+    // Em modo sala, ao mexer na data não resetamos a sala
+  }
   const selected = bookingDateInput.value;
   if (selected) {
     const parsed = new Date(selected);
@@ -1434,9 +1462,6 @@ function onBookingDateChange() {
   }
   renderRoomOptions(selected);
   renderBookingCalendar(bookingCurrentMonth);
-  if (bookingStepIndex > 1) {
-    setBookingStep(1);
-  }
   updateBookingNavigation();
 }
 
@@ -1445,15 +1470,9 @@ function changeBookingStep(delta) {
 }
 
 function goToNextBookingStep() {
-  // Fluxo especial quando começamos pela sala
   if (bookingSearchMode === 'room') {
-    if (bookingStepIndex === 1) {
-      // Depois de escolher a sala, ir para a data
-      setBookingStep(0);
-      return;
-    }
     if (bookingStepIndex === 0) {
-      // Depois da data, ir para detalhes
+      // Data (com sala já escolhida) -> Detalhes
       setBookingStep(2);
       return;
     }
@@ -1463,13 +1482,8 @@ function goToNextBookingStep() {
 
 function goToPrevBookingStep() {
   if (bookingSearchMode === 'room') {
-    if (bookingStepIndex === 0) {
-      // Volta da data para a sala
-      setBookingStep(1);
-      return;
-    }
     if (bookingStepIndex === 2) {
-      // Volta de detalhes para data
+      // Detalhes -> Data
       setBookingStep(0);
       return;
     }
@@ -1525,8 +1539,14 @@ function updateBookingNavigation() {
 function isStepComplete(step) {
   switch (step) {
     case 0:
-      return Boolean(bookingDateInput?.value);
+      if (!bookingDateInput?.value) return false;
+      if (bookingSearchMode === 'room') {
+        return Boolean(bookingRoomHiddenInput?.value);
+      }
+      return true;
     case 1:
+      // No fluxo por sala, a escolha da sala ocorre no passo 0
+      if (bookingSearchMode === 'room') return true;
       return Boolean(bookingRoomHiddenInput?.value);
     case 2:
       return Boolean(bookingTitleInput && bookingTitleInput.value.trim());
@@ -1544,10 +1564,18 @@ function validateBookingStep(step) {
       bookingMessage.textContent = 'Selecione a data da reserva antes de avançar.';
       return false;
     }
+    if (bookingSearchMode === 'room') {
+      if (!bookingRoomHiddenInput || !bookingRoomHiddenInput.value) {
+        bookingMessage.textContent = 'Escolha a sala para continuar.';
+        return false;
+      }
+    }
   } else if (step === 1) {
-    if (!bookingRoomHiddenInput || !bookingRoomHiddenInput.value) {
-      bookingMessage.textContent = 'Escolha uma sala disponível para continuar.';
-      return false;
+    if (bookingSearchMode === 'date') {
+      if (!bookingRoomHiddenInput || !bookingRoomHiddenInput.value) {
+        bookingMessage.textContent = 'Escolha uma sala disponível para continuar.';
+        return false;
+      }
     }
   } else if (step === 2) {
     if (!bookingTitleInput || !bookingTitleInput.value.trim()) {
@@ -1765,8 +1793,8 @@ function renderBookingCalendar(referenceDate) {
       button.disabled = true;
     } else {
       button.addEventListener('click', () => {
-        // Datas primeiro: permite múltipla seleção; por sala: apenas um dia
-        if (bookingSearchMode === 'date') {
+        // Datas primeiro: só permite múltiplas se bookingDateMulti estiver ativo
+        if (bookingSearchMode === 'date' && bookingDateMulti) {
           const set = new Set(bookingSelectedDates || []);
           if (set.has(iso)) {
             set.delete(iso);
@@ -1784,6 +1812,7 @@ function renderBookingCalendar(referenceDate) {
         if (bookingDateInput) {
           bookingDateInput.dispatchEvent(new Event('change', { bubbles: true }));
         }
+        updateMultiDateSummary();
       });
     }
 
@@ -2735,6 +2764,11 @@ function resetBookingForm(preserveMessage = false) {
   if (endInput) endInput.value = DEFAULT_END_TIME;
   if (bookingDateInput) bookingDateInput.value = '';
   bookingSelectedDates = [];
+  bookingDateMulti = false;
+  if (dateModeSingleBtn) dateModeSingleBtn.classList.add('active');
+  if (dateModeMultiBtn) dateModeMultiBtn.classList.remove('active');
+  updateMultiDateSummary();
+  bookingSelectedDates = [];
   if (bookingRoomHiddenInput) bookingRoomHiddenInput.value = '';
   bookingStepIndex = 0;
   setBookingStep(bookingStepIndex);
@@ -2744,6 +2778,17 @@ function resetBookingForm(preserveMessage = false) {
   if (bookingMessage && !preserveMessage) bookingMessage.textContent = '';
   bookingCurrentMonth = new Date();
   if (bookingCalendarGrid) renderBookingCalendar(bookingCurrentMonth);
+}
+
+function updateMultiDateSummary() {
+  if (!multiDateSummaryEl) return;
+  const total = Array.isArray(bookingSelectedDates) ? bookingSelectedDates.length : 0;
+  if (!bookingDateMulti || total <= 1) {
+    multiDateSummaryEl.hidden = true;
+    return;
+  }
+  multiDateSummaryEl.hidden = false;
+  multiDateSummaryEl.textContent = `Você selecionou ${total} dias.`;
 }
 
 async function carregarVisitantes(clientId) {

@@ -200,10 +200,18 @@
                       <div id="bookingCalendarLabel"></div>
                       <button type="button" id="bookingNextMonth" aria-label="Próximo mês">&#10095;</button>
                     </header>
+                    <div class="booking-date-mode">
+                      <span class="booking-date-mode-label">Período</span>
+                      <div class="booking-date-mode-buttons">
+                        <button type="button" class="mode-btn mode-btn-small active" id="dateModeSingle">Apenas um dia</button>
+                        <button type="button" class="mode-btn mode-btn-small" id="dateModeMulti">Vários dias</button>
+                      </div>
+                    </div>
                     <div class="calendar-grid" id="bookingCalendarGrid" role="grid" aria-labelledby="bookingCalendarLabel"></div>
                     <input type="hidden" id="bookingDateInput" name="date" required />
                   </div>
                   <p class="form-help fixed-schedule-note">Selecione um dia disponível. Reservas são diárias entre 08:00 e 20:00.</p>
+                  <p class="form-help" id="multiDateSummary" hidden>Você selecionou 0 dias.</p>
                 </section>
 
                 <section class="booking-step" data-step-index="1" hidden>
