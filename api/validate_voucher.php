@@ -19,9 +19,12 @@ try {
 
   // Regras básicas
   if (strtolower($v['status'] ?? '') !== 'ativo') { echo json_encode(['success'=>false,'error'=>'Voucher inativo.']); exit; }
-  if (!empty($v['starts_at']) && (new DateTimeImmutable()) < new DateTimeImmutable($v['starts_at'])) { echo json_encode(['success'=>false,'error'=>'Voucher ainda não válido.']); exit; }
-  if (!empty($v['ends_at']) && (new DateTimeImmutable()) > new DateTimeImmutable($v['ends_at'])) { echo json_encode(['success'=>false,'error'=>'Voucher expirado.']); exit; }
-  if (!empty($v['max_uses']) && (int)$v['used_count'] >= (int)$v['max_uses']) { echo json_encode(['success'=>false,'error'=>'Limite de uso atingido.']); exit; }
+  $startRaw = $v['starts_at'] ?? $v['valid_from'] ?? null;
+  $endRaw   = $v['ends_at']   ?? $v['valid_to']   ?? null;
+  $maxUses  = $v['max_uses']  ?? $v['max_redemptions'] ?? null;
+  if (!empty($startRaw) && (new DateTimeImmutable()) < new DateTimeImmutable($startRaw)) { echo json_encode(['success'=>false,'error'=>'Voucher ainda não válido.']); exit; }
+  if (!empty($endRaw) && (new DateTimeImmutable()) > new DateTimeImmutable($endRaw)) { echo json_encode(['success'=>false,'error'=>'Voucher expirado.']); exit; }
+  if (!empty($maxUses) && (int)$v['used_count'] >= (int)$maxUses) { echo json_encode(['success'=>false,'error'=>'Limite de uso atingido.']); exit; }
   if (!empty($v['advertiser_id']) && $advId && (int)$v['advertiser_id'] !== (int)$advId) { echo json_encode(['success'=>false,'error'=>'Voucher não aplicável para este anunciante.']); exit; }
   if (!empty($v['room_id']) && $roomId && (int)$v['room_id'] !== (int)$roomId) { echo json_encode(['success'=>false,'error'=>'Voucher não aplicável para esta sala.']); exit; }
 
@@ -50,4 +53,3 @@ try {
   http_response_code(500);
   echo json_encode(['success'=>false,'error'=>'Erro interno: '.$e->getMessage()]);
 }
-

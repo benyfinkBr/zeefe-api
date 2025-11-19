@@ -162,8 +162,18 @@ try {
       break;
 
     case 'vouchers':
-      // Seleção simples; o painel do admin lida com campos não usados.
-      $sql = "SELECT *, valid_from AS starts_at, valid_to AS ends_at, max_redemptions AS max_uses FROM `vouchers` ORDER BY id DESC";
+      // Seleciona vouchers e já traz campos derivados para o painel
+      $sql = "
+        SELECT v.*,
+               v.valid_from AS starts_at,
+               v.valid_to   AS ends_at,
+               v.max_redemptions AS max_uses,
+               COALESCE(v.used_count,
+                        (SELECT COUNT(*) FROM reservations r WHERE r.voucher_code = v.code)
+               ) AS used_count
+        FROM vouchers v
+        ORDER BY v.id DESC
+      ";
       $stmt = $pdo->query($sql);
       $rows = $stmt->fetchAll();
       echo json_encode(['success' => true, 'data' => $rows]);
