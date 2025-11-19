@@ -11,7 +11,7 @@ try {
     exit;
   }
 
-  // Procura um thread de suporte existente (sem sala / reserva, advertiser_id = 0 ou NULL)
+  // Procura um thread de suporte existente (sem sala / reserva, advertiser_id NULL ou 0 legado)
   $stmt = $pdo->prepare(
     'SELECT id FROM message_threads 
      WHERE client_id = :cli 
@@ -28,10 +28,10 @@ try {
     exit;
   }
 
-  // Cria um novo thread de suporte
+  // Cria um novo thread de suporte (advertiser_id NULL para não quebrar FK)
   $ins = $pdo->prepare(
     'INSERT INTO message_threads (room_id, reservation_id, client_id, advertiser_id, created_at) 
-     VALUES (NULL, NULL, :cli, 0, NOW())'
+     VALUES (NULL, NULL, :cli, NULL, NOW())'
   );
   $ins->execute([':cli' => $clientId]);
   $id = (int)$pdo->lastInsertId();
@@ -41,4 +41,3 @@ try {
   http_response_code(500);
   echo json_encode(['success' => false, 'error' => 'Erro interno: ' . $e->getMessage()]);
 }
-

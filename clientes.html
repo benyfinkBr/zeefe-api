@@ -592,7 +592,15 @@
       <div class="modal-body">
         <div class="modal-info" style="padding:24px; width:100%">
           <h2 id="clientChatTitle" style="margin-top:0">Mensagens</h2>
-          <div id="clientChatHeader" class="rooms-message" style="margin-bottom:8px"></div>
+          <div class="chat-target-row" style="display:flex; flex-direction:column; gap:4px; margin-bottom:8px;">
+            <label style="font-size:0.85rem; color:#567; display:flex; align-items:center; gap:8px;">
+              <span>Conversar com</span>
+              <select id="clientChatTargetSelect" style="flex:1; padding:6px 10px; border-radius:999px; border:1px solid rgba(29,65,58,.18); background:#fff;">
+                <option value="support">Equipe Ze.EFE (suporte)</option>
+              </select>
+            </label>
+            <div id="clientChatHeader" class="rooms-message"></div>
+          </div>
           <div id="clientChatMessages" class="chat-messages"></div>
           <form id="clientChatForm" class="chat-form">
             <input type="text" id="clientChatInput" placeholder="Digite uma mensagem" style="flex:1" />

@@ -437,7 +437,7 @@ async function initialize() {
   clientChatClose?.addEventListener('click', closeClientChat);
   clientChatModal?.addEventListener('click', (e)=>{ if (e.target === clientChatModal) closeClientChat(); });
   clientChatForm?.addEventListener('submit', onClientChatSubmit);
-   // Botão de Mensagens (suporte)
+  // Botão de Mensagens (suporte)
   openSupportChatBtn?.addEventListener('click', () => {
     openClientSupportChat();
   });
@@ -2608,19 +2608,16 @@ async function openClientChatForReservation(reservationId) {
     alert('Esta sala ainda não está vinculada a um anunciante.');
     return;
   }
-  clientChatHeader.textContent = `${formatDate(reserva.date)} · ${(sala?.name || 'Sala #' + reserva.room_id)}`;
+  if (clientChatTitleEl) clientChatTitleEl.textContent = 'Mensagens';
+  if (clientChatHeader) clientChatHeader.textContent = `${formatDate(reserva.date)} · ${(sala?.name || 'Sala #' + reserva.room_id)}`;
   clientChatMessages.innerHTML = '<div class="rooms-message">Conectando…</div>';
   clientChatForm.hidden = false;
   clientChatThreadId = null;
   showClientChatModal();
   try {
     // tenta localizar thread existente
-    const res = await fetch(`${API_BASE}/messages_list_threads.php?client_id=${encodeURIComponent(activeClient.id)}`);
-    const json = await res.json();
-    let t = null;
-    if (json.success && Array.isArray(json.data)) {
-      t = json.data.find(x => String(x.advertiser_id) === String(advertiserId) && String(x.reservation_id||'') === String(reserva.id));
-    }
+    clientChatThreadsCache = await loadClientThreads();
+    let t = clientChatThreadsCache.find(x => String(x.advertiser_id) === String(advertiserId) && String(x.reservation_id||'') === String(reserva.id));
     if (!t) {
       const res2 = await fetch(`${API_BASE}/messages_create_thread.php`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ room_id: reserva.room_id, reservation_id: reserva.id, client_id: activeClient.id, advertiser_id: advertiserId }) });
       const j2 = await res2.json();
@@ -2629,6 +2626,9 @@ async function openClientChatForReservation(reservationId) {
     } else {
       clientChatThreadId = Number(t.id);
     }
+    await buildClientChatTargetOptions(clientChatThreadId);
+    if (clientChatTargetSelect) clientChatTargetSelect.value = String(clientChatThreadId);
+    clientChatTargetSelect?.addEventListener('change', onClientChatTargetChange);
     await fetchClientChatMessages();
     startClientChatPolling();
   } catch (e) {
@@ -2641,21 +2641,15 @@ async function openClientSupportChat() {
     showAuthOverlay();
     return;
   }
-  if (clientChatHeader) {
-    clientChatHeader.textContent = 'Fale com a equipe Ze.EFE';
-  }
+  if (clientChatTitleEl) clientChatTitleEl.textContent = 'Mensagens';
+  if (clientChatHeader) clientChatHeader.textContent = 'Fale com a equipe Ze.EFE';
   clientChatMessages.innerHTML = '<div class="rooms-message">Conectando…</div>';
   if (clientChatForm) clientChatForm.hidden = false;
   clientChatThreadId = null;
   showClientChatModal();
   try {
-    // Tenta localizar um thread de suporte existente (advertiser_id = 0, sem sala/reserva)
-    const res = await fetch(`${API_BASE}/messages_list_threads.php?client_id=${encodeURIComponent(activeClient.id)}`);
-    const json = await res.json();
-    let t = null;
-    if (json.success && Array.isArray(json.data)) {
-      t = json.data.find(x => String(x.advertiser_id || '0') === '0' && !x.room_id && !x.reservation_id);
-    }
+    clientChatThreadsCache = await loadClientThreads();
+    let t = clientChatThreadsCache.find(x => (!x.advertiser_id || Number(x.advertiser_id) === 0) && !x.room_id && !x.reservation_id);
     if (!t) {
       const res2 = await fetch(`${API_BASE}/messages_open_support_thread.php`, {
         method: 'POST',
@@ -2665,14 +2659,92 @@ async function openClientSupportChat() {
       const j2 = await res2.json();
       if (!j2.success) throw new Error(j2.error || 'Não foi possível iniciar a conversa com o suporte.');
       clientChatThreadId = Number(j2.id);
+      // push into cache to aparecer na lista
+      clientChatThreadsCache.push({ id: clientChatThreadId, client_id: activeClient.id, advertiser_id: null, room_id: null, reservation_id: null });
     } else {
       clientChatThreadId = Number(t.id);
     }
+    await buildClientChatTargetOptions(clientChatThreadId);
+    if (clientChatTargetSelect) clientChatTargetSelect.value = String(clientChatThreadId);
+    clientChatTargetSelect?.addEventListener('change', onClientChatTargetChange);
     await fetchClientChatMessages();
     startClientChatPolling();
   } catch (e) {
     clientChatMessages.innerHTML = `<div class="rooms-message">${e.message || 'Falha ao abrir conversa.'}</div>`;
   }
+}
+
+async function loadClientThreads() {
+  if (!activeClient) return [];
+  try {
+    const res = await fetch(`${API_BASE}/messages_list_threads.php?client_id=${encodeURIComponent(activeClient.id)}`);
+    const json = await res.json();
+    if (!json.success || !Array.isArray(json.data)) return [];
+    return json.data;
+  } catch {
+    return [];
+  }
+}
+
+async function buildClientChatTargetOptions(activeThreadId) {
+  if (!clientChatTargetSelect) return;
+  clientChatTargetSelect.innerHTML = '';
+  const threads = clientChatThreadsCache || [];
+  // suporte
+  let supportThread = threads.find(x => (!x.advertiser_id || Number(x.advertiser_id) === 0) && !x.room_id && !x.reservation_id);
+  const supportOption = document.createElement('option');
+  supportOption.value = supportThread ? String(supportThread.id) : 'support-new';
+  supportOption.textContent = 'Equipe Ze.EFE (suporte)';
+  clientChatTargetSelect.appendChild(supportOption);
+
+  // reservas
+  const reservationOptions = [];
+  threads.filter(x => x.reservation_id).forEach(t => {
+    const res = currentReservations.find(r => String(r.id) === String(t.reservation_id));
+    const sala = res ? buscarSala(res.room_id) : null;
+    const labelDate = res ? formatDate(res.date) : 'Reserva #' + t.reservation_id;
+    const labelRoom = sala?.name || (res ? 'Sala #' + res.room_id : '');
+    const opt = document.createElement('option');
+    opt.value = String(t.id);
+    opt.textContent = `${labelRoom ? labelRoom + ' · ' : ''}${labelDate}`;
+    reservationOptions.push(opt);
+  });
+  reservationOptions.sort((a,b) => a.textContent.localeCompare(b.textContent,'pt-BR'));
+  reservationOptions.forEach(opt => clientChatTargetSelect.appendChild(opt));
+
+  // Seleção inicial
+  if (activeThreadId && String(activeThreadId) !== '0') {
+    clientChatTargetSelect.value = String(activeThreadId);
+  } else if (supportThread) {
+    clientChatTargetSelect.value = String(supportThread.id);
+  } else {
+    clientChatTargetSelect.value = supportOption.value;
+  }
+}
+
+async function onClientChatTargetChange() {
+  const val = clientChatTargetSelect?.value || '';
+  if (!val) return;
+  // Se for suporte novo
+  if (val === 'support-new') {
+    await openClientSupportChat();
+    return;
+  }
+  const idNum = Number(val);
+  if (!idNum) return;
+  clientChatThreadId = idNum;
+  // atualiza header de acordo com o thread
+  const t = (clientChatThreadsCache || []).find(x => Number(x.id) === idNum);
+  if (!t) return;
+  if (!t.reservation_id) {
+    if (clientChatHeader) clientChatHeader.textContent = 'Fale com a equipe Ze.EFE';
+  } else {
+    const res = currentReservations.find(r => String(r.id) === String(t.reservation_id));
+    const sala = res ? buscarSala(res.room_id) : null;
+    if (clientChatHeader) clientChatHeader.textContent = `${res ? formatDate(res.date) : ''} · ${(sala?.name || (res ? 'Sala #' + res.room_id : 'Reserva #' + t.reservation_id))}`;
+  }
+  await fetchClientChatMessages();
+  startClientChatPolling();
 }
 
 function showClientChatModal(){
@@ -3810,3 +3882,6 @@ const clientChatInput = document.getElementById('clientChatInput');
 let clientChatThreadId = null;
 let clientChatPollTimer = null;
 const openSupportChatBtn = document.getElementById('openSupportChatBtn');
+const clientChatTargetSelect = document.getElementById('clientChatTargetSelect');
+const clientChatTitleEl = document.getElementById('clientChatTitle');
+let clientChatThreadsCache = [];
