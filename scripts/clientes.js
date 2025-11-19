@@ -349,6 +349,12 @@ async function initialize() {
   });
   bookingVisitorsContinueBtn?.addEventListener('click', () => {
     hideBookingVisitorsModal(true);
+    if (bookingPendingRecord && bookingPendingFormData) {
+      finalizeBookingSubmission(bookingPendingRecord, bookingPendingFormData).catch(err => {
+        console.error(err);
+        if (bookingMessage) bookingMessage.textContent = err.message || 'Não foi possível salvar a reserva.';
+      });
+    }
   });
 
   // Modo de datas: simples x múltiplas
@@ -2731,13 +2737,28 @@ async function onBookingSubmit(event) {
     const visitorsCount = Array.isArray(bookingVisitorIds) ? bookingVisitorIds.length : 0;
     const sendInvites = !!formData.get('send_invites');
     if (visitorsCount === 0) {
+      bookingPendingRecord = record;
+      bookingPendingFormData = formData;
+      bookingVisitorsModalMode = 'noVisitors';
       showBookingVisitorsModal('Você não cadastrou nenhum visitante. Sem pré-cadastro, a recepção poderá levar mais tempo para validar documentos. Deseja adicionar convidados agora?');
       return;
     } else if (sendInvites) {
+      bookingPendingRecord = record;
+      bookingPendingFormData = formData;
+      bookingVisitorsModalMode = 'invites';
       showBookingVisitorsModal('Após a confirmação da reserva, enviaremos por e-mail um convite para todos os visitantes selecionados. Deseja continuar?');
       return;
     }
 
+    await finalizeBookingSubmission(record, formData);
+  } catch (err) {
+    console.error(err);
+    bookingMessage.textContent = err.message || 'Não foi possível salvar a reserva.';
+  }
+}
+
+async function finalizeBookingSubmission(record, formData) {
+  try {
     const isMultiDate = bookingSearchMode === 'date' && Array.isArray(bookingSelectedDates) && bookingSelectedDates.length > 1;
     const datesToCreate = isMultiDate
       ? Array.from(new Set(bookingSelectedDates)).sort()
