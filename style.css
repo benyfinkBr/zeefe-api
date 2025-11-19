@@ -1474,6 +1474,7 @@ textarea {
 
 .booking-room-inline {
   margin-top: 18px;
+  display: none; /* bloc inline desativado, usamos a etapa Salas */
 }
 
 .booking-room-inline h4 {

@@ -75,9 +75,6 @@ const newReservationBtn = document.getElementById('newReservationBtn');
 const openVisitorsPanelBtn = document.getElementById('openVisitorsPanel');
 const bookingRoomOptions = document.getElementById('bookingRoomOptions');
 const bookingRoomFeedback = document.getElementById('bookingRoomFeedback');
-const bookingRoomOptionsInline = document.getElementById('bookingRoomOptionsInline');
-const bookingRoomFeedbackInline = document.getElementById('bookingRoomFeedbackInline');
-const roomPickerInline = document.getElementById('roomPickerInline');
 const bookingStepperItems = Array.from(document.querySelectorAll('.booking-stepper-item'));
 const bookingStepSections = Array.from(document.querySelectorAll('.booking-step'));
 const bookingPrevBtn = document.getElementById('bookingPrevBtn');
@@ -369,12 +366,11 @@ async function initialize() {
     if (bookingModeDateBtn) bookingModeDateBtn.classList.remove('active');
     bookingSelectedDates = [];
     if (bookingDateInput) bookingDateInput.value = '';
-    // Sala específica: escolhe sala dentro do passo de data
+    // Sala específica: passo 1 SALAS, passo 2 DATA
     bookingStepIndex = 0;
     setBookingStep(bookingStepIndex);
-    renderRoomOptions(bookingDateInput?.value || '');
+    renderRoomOptions('');
     if (bookingModeHint) bookingModeHint.textContent = 'Sala específica: escolha a sala primeiro, depois veja as datas disponíveis no calendário.';
-    if (roomPickerInline) roomPickerInline.hidden = false;
     if (stepLabelData) stepLabelData.textContent = 'SALAS';
     if (stepLabelRooms) stepLabelRooms.textContent = 'DATA';
   });
@@ -1449,8 +1445,7 @@ async function carregarSalas() {
 async function ensureRoomsLoaded() {
   if (Array.isArray(roomsCache) && roomsCache.length) return true;
   try {
-    const feedbackEl = bookingSearchMode === 'room' ? (bookingRoomFeedbackInline || bookingRoomFeedback) : bookingRoomFeedback;
-    if (feedbackEl) feedbackEl.textContent = 'Carregando salas disponíveis...';
+    if (bookingRoomFeedback) bookingRoomFeedback.textContent = 'Carregando salas disponíveis...';
     await carregarSalas();
     return Array.isArray(roomsCache) && roomsCache.length > 0;
   } catch (_) {
@@ -1488,7 +1483,12 @@ function changeBookingStep(delta) {
 function goToNextBookingStep() {
   if (bookingSearchMode === 'room') {
     if (bookingStepIndex === 0) {
-      // Data (com sala já escolhida) -> Detalhes
+      // Salas -> Data
+      setBookingStep(1);
+      return;
+    }
+    if (bookingStepIndex === 1) {
+      // Data -> Detalhes
       setBookingStep(2);
       return;
     }
@@ -1500,6 +1500,11 @@ function goToPrevBookingStep() {
   if (bookingSearchMode === 'room') {
     if (bookingStepIndex === 2) {
       // Detalhes -> Data
+      setBookingStep(1);
+      return;
+    }
+    if (bookingStepIndex === 1) {
+      // Data -> Salas
       setBookingStep(0);
       return;
     }
@@ -1513,9 +1518,16 @@ function setBookingStep(index) {
   if (index < 0) index = 0;
   if (index > maxIndex) index = maxIndex;
   bookingStepIndex = index;
+  const visibleIndex = (function() {
+    if (bookingSearchMode === 'room') {
+      if (bookingStepIndex === 0) return 1; // SALAS usa seção de salas
+      if (bookingStepIndex === 1) return 0; // DATA usa seção de calendário
+    }
+    return bookingStepIndex;
+  })();
   bookingStepSections.forEach((section, idx) => {
     if (!section) return;
-    section.hidden = idx !== index;
+    section.hidden = idx !== visibleIndex;
   });
   bookingStepperItems.forEach((item, idx) => {
     if (!item) return;
@@ -1558,14 +1570,18 @@ function updateBookingNavigation() {
 function isStepComplete(step) {
   switch (step) {
     case 0:
-      if (!bookingDateInput?.value) return false;
       if (bookingSearchMode === 'room') {
+        // SALAS primeiro: exige apenas sala
         return Boolean(bookingRoomHiddenInput?.value);
       }
-      return true;
+      // Datas primeiro: exige data
+      return Boolean(bookingDateInput?.value);
     case 1:
-      // No fluxo por sala, a escolha da sala ocorre no passo 0
-      if (bookingSearchMode === 'room') return true;
+      if (bookingSearchMode === 'room') {
+        // DATA no fluxo por sala: exige data
+        return Boolean(bookingDateInput?.value);
+      }
+      // Datas primeiro: aqui exige sala
       return Boolean(bookingRoomHiddenInput?.value);
     case 2:
       return Boolean(bookingTitleInput && bookingTitleInput.value.trim());
@@ -1579,18 +1595,24 @@ function validateBookingStep(step) {
   if (!bookingMessage) return true;
   bookingMessage.textContent = '';
   if (step === 0) {
-    if (!bookingDateInput || !bookingDateInput.value) {
-      bookingMessage.textContent = 'Selecione a data da reserva antes de avançar.';
-      return false;
-    }
     if (bookingSearchMode === 'room') {
       if (!bookingRoomHiddenInput || !bookingRoomHiddenInput.value) {
         bookingMessage.textContent = 'Escolha a sala para continuar.';
         return false;
       }
+    } else {
+      if (!bookingDateInput || !bookingDateInput.value) {
+        bookingMessage.textContent = 'Selecione a data da reserva antes de avançar.';
+        return false;
+      }
     }
   } else if (step === 1) {
-    if (bookingSearchMode === 'date') {
+    if (bookingSearchMode === 'room') {
+      if (!bookingDateInput || !bookingDateInput.value) {
+        bookingMessage.textContent = 'Selecione a data da reserva antes de avançar.';
+        return false;
+      }
+    } else {
       if (!bookingRoomHiddenInput || !bookingRoomHiddenInput.value) {
         bookingMessage.textContent = 'Escolha uma sala disponível para continuar.';
         return false;
@@ -1606,15 +1628,11 @@ function validateBookingStep(step) {
 }
 
 function renderRoomOptions(date) {
-  const inlineMode = bookingSearchMode === 'room';
-  const optionsEl = inlineMode ? (bookingRoomOptionsInline || bookingRoomOptions) : bookingRoomOptions;
-  const feedbackEl = inlineMode ? (bookingRoomFeedbackInline || bookingRoomFeedback) : bookingRoomFeedback;
+  const optionsEl = bookingRoomOptions;
+  const feedbackEl = bookingRoomFeedback;
   if (!optionsEl) return;
-  // Limpa ambos os containers para evitar resíduos ao alternar modos
-  if (bookingRoomOptions) bookingRoomOptions.innerHTML = '';
-  if (bookingRoomOptionsInline) bookingRoomOptionsInline.innerHTML = '';
-  if (bookingRoomFeedback) bookingRoomFeedback.textContent = '';
-  if (bookingRoomFeedbackInline) bookingRoomFeedbackInline.textContent = '';
+  optionsEl.innerHTML = '';
+  if (feedbackEl) feedbackEl.textContent = '';
   if (!date) {
     if (!roomsCache.length) {
       ensureRoomsLoaded().then(() => renderRoomOptions(''));
