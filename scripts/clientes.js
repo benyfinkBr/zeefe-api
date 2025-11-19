@@ -2567,9 +2567,11 @@ function openReservationActions(id) {
   reservationActionsButtons.classList.add('actions-grid');
   reservationActionsButtons.innerHTML = '';
 
+  // Linha 1: ações principais
   if (showPayment) {
     reservationActionsButtons.appendChild(mkCard('Pagamento', ()=> { tratarAcaoReserva(reserva.id,'payment'); closeReservationActions(); }));
   }
+  reservationActionsButtons.appendChild(mkCard('Mensagens', ()=> { openClientChatForReservation(reserva.id); }));
   // Se pagamento já foi confirmado, exibir informação logo abaixo do meta
   if (paid) {
     try {
@@ -2577,7 +2579,7 @@ function openReservationActions(id) {
       reservationActionsMeta.innerHTML = `${reservationActionsMeta.textContent}<br><span style=\"color:#8A7766\">Pagamento – realizado em ${dt || 'data não disponível'}</span>`;
     } catch (_) {}
   }
-  // Baixar convite (ICS)
+  // Linha 2: convites
   const publicCode = reserva.public_code || reserva.code || '';
   const icsHref = publicCode
     ? `api/reservation_ics.php?code=${encodeURIComponent(publicCode)}`
@@ -2585,8 +2587,6 @@ function openReservationActions(id) {
   const ics = document.createElement('a'); ics.href=icsHref; ics.className='action-card'; ics.innerHTML=`<span class=\"icon\">${getActionIconSVG('Baixar convite')}</span><span class=\"label\">Baixar convite</span>`; ics.setAttribute('download',''); reservationActionsButtons.appendChild(ics);
   // Enviar convite (e‑mail com ICS)
   reservationActionsButtons.appendChild(mkCard('Enviar convite', ()=> { tratarAcaoReserva(reserva.id,'sendCalendar'); closeReservationActions(); }));
-  // Mensagens (chat com anunciante)
-  reservationActionsButtons.appendChild(mkCard('Mensagens', ()=> { openClientChatForReservation(reserva.id); }));
 
   // Solicitar NF (apenas após pagamento)
   if (paid) {
@@ -2595,8 +2595,8 @@ function openReservationActions(id) {
 
   // Linha inferior: Cancelar (vermelho) e Editar
   const bottom = document.createElement('div'); bottom.className='actions-bottom';
-  if (showCancel) bottom.appendChild(mkCard('Cancelar', ()=> { tratarAcaoReserva(reserva.id,'cancel'); closeReservationActions(); }, 'danger'));
   bottom.appendChild(mkCard('Editar', ()=> { tratarAcaoReserva(reserva.id,'edit'); closeReservationActions(); }));
+  if (showCancel) bottom.appendChild(mkCard('Cancelar', ()=> { tratarAcaoReserva(reserva.id,'cancel'); closeReservationActions(); }, 'danger'));
   reservationActionsButtons.appendChild(bottom);
 
   reservationActionsModal.classList.add('show');
