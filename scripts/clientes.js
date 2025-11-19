@@ -75,6 +75,9 @@ const newReservationBtn = document.getElementById('newReservationBtn');
 const openVisitorsPanelBtn = document.getElementById('openVisitorsPanel');
 const bookingRoomOptions = document.getElementById('bookingRoomOptions');
 const bookingRoomFeedback = document.getElementById('bookingRoomFeedback');
+const bookingRoomsMapEl = document.getElementById('bookingRoomsMap');
+let bookingMap = null;
+let bookingMarkersLayer = null;
 const bookingStepperItems = Array.from(document.querySelectorAll('.booking-stepper-item'));
 const bookingStepSections = Array.from(document.querySelectorAll('.booking-step'));
 const bookingPrevBtn = document.getElementById('bookingPrevBtn');
@@ -1657,7 +1660,8 @@ function renderRoomOptions(date) {
     // Sem data: lista todas as salas para não travar o fluxo
     optionsEl.innerHTML = '';
     if (feedbackEl) feedbackEl.textContent = 'Selecione uma sala; a disponibilidade será validada no envio.';
-    roomsCache.slice().sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'pt-BR')).forEach(room => {
+    const roomsSorted = roomsCache.slice().sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'pt-BR'));
+    roomsSorted.forEach(room => {
       const button = document.createElement('button');
       button.type = 'button';
       button.className = 'room-option';
@@ -1674,6 +1678,7 @@ function renderRoomOptions(date) {
       button.addEventListener('click', () => selectRoomOption(room.id));
       optionsEl.appendChild(button);
     });
+    renderBookingMapMarkers(roomsSorted);
     return;
   }
   if (!roomsCache.length) {
@@ -1730,6 +1735,7 @@ function renderRoomOptions(date) {
     if (bookingRoomHiddenInput && selectedId && !hasSelected) {
       bookingRoomHiddenInput.value = '';
     }
+    renderBookingMapMarkers(fallbackRooms);
     return;
   }
   const selectedId = bookingRoomHiddenInput?.value ? String(bookingRoomHiddenInput.value) : '';
@@ -1761,7 +1767,45 @@ function renderRoomOptions(date) {
   if (bookingRoomHiddenInput && selectedId && !hasSelected) {
     bookingRoomHiddenInput.value = '';
   }
+  renderBookingMapMarkers(availableRooms);
   updateBookingNavigation();
+}
+
+function initBookingMapIfNeeded() {
+  if (!bookingRoomsMapEl || typeof L === 'undefined') return;
+  if (bookingMap) return;
+  bookingMap = L.map(bookingRoomsMapEl).setView([-23.5505, -46.6333], 11);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap',
+    maxZoom: 18
+  }).addTo(bookingMap);
+  bookingMarkersLayer = L.layerGroup().addTo(bookingMap);
+}
+
+function renderBookingMapMarkers(rooms) {
+  if (!bookingRoomsMapEl || typeof L === 'undefined') return;
+  initBookingMapIfNeeded();
+  if (!bookingMap || !bookingMarkersLayer) return;
+  bookingMarkersLayer.clearLayers();
+  const bounds = [];
+  (rooms || []).forEach(room => {
+    const lat = Number(room.lat || room.latitude || room.latitud);
+    const lon = Number(room.lon || room.lng || room.longitude);
+    if (!isFinite(lat) || !isFinite(lon)) return;
+    const marker = L.marker([lat, lon]);
+    const name = escapeHtml(room.name || `Sala #${room.id}`);
+    const city = escapeHtml(room.city || '');
+    const uf = escapeHtml(room.state || room.uf || '');
+    marker.bindPopup(`<strong>${name}</strong><br>${city}${uf ? ' - ' + uf : ''}`);
+    marker.on('click', () => {
+      selectRoomOption(room.id);
+    });
+    marker.addTo(bookingMarkersLayer);
+    bounds.push([lat, lon]);
+  });
+  if (bounds.length) {
+    bookingMap.fitBounds(bounds, { padding: [20, 20] });
+  }
 }
 
 

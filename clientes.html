@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Ze.EFE - Marca lá!</title>
   <link rel="stylesheet" href="style.css" />
+  <!-- Leaflet (mapa) -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
 </head>
 <body class="client-portal-page client-logged-out">
   <header class="header">
@@ -228,6 +230,7 @@
                 <section class="booking-step" data-step-index="1" hidden>
                   <h4>Salas disponíveis</h4>
                   <p class="form-help">Selecione uma sala disponível para a data escolhida.</p>
+                  <div id="bookingRoomsMap" class="rooms-map booking-rooms-map" role="region" aria-label="Mapa de salas disponíveis"></div>
                   <div id="bookingRoomOptions" class="booking-room-options"></div>
                   <div id="bookingRoomFeedback" class="rooms-message"></div>
                 </section>
@@ -802,6 +805,7 @@
     </div>
   </div>
 
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="" defer></script>
   <script src="scripts/clientes.js" defer></script>
 </body>
 </html>

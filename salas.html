@@ -6,6 +6,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Ze.EFE - Marca lá!</title>
   <link rel="stylesheet" href="style.css" />
+  <!-- Leaflet (mapa) -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
 </head>
 <body>
 <header class="header">
@@ -56,6 +58,15 @@
     <div class="filters-wrap" id="amenityFilters" aria-label="Comodidades"></div>
   </section>
 
+  <!-- Mapa de salas (mesma experiência do index) -->
+  <section class="landing-section">
+    <div class="section-heading">
+      <h3>Encontre no mapa</h3>
+      <p>Visualize onde estão as salas disponíveis. Clique nos marcadores para detalhes.</p>
+    </div>
+    <div id="rooms-map-salas" class="rooms-map" role="region" aria-label="Mapa de salas"></div>
+  </section>
+
   <section class="rooms-showcase landing-section">
     <div class="section-heading">
       <h3>Salas disponíveis</h3>
@@ -101,6 +112,7 @@
   <p>© 2025 Ze.EFE - Todos os direitos reservados</p>
 </footer>
 
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="" defer></script>
 <script src="scripts/components/carousel.js" defer></script>
 <script src="scripts/salas.js" defer></script>
 

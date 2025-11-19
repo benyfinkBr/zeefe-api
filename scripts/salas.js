@@ -13,6 +13,9 @@ const filterCitySalas = document.getElementById('filterCitySalas');
 const filterStateSalas = document.getElementById('filterStateSalas');
 const clearFiltersSalas = document.getElementById('clearFiltersSalas');
 const amenityFilters = document.getElementById('amenityFilters');
+const roomsMapEl = document.getElementById('rooms-map-salas');
+let salasMap = null;
+let salasMarkersLayer = null;
 let selectedAmenities = new Set();
 const modalOverlay = document.getElementById('roomModal');
 const modalCloseTop = document.getElementById('roomModalClose');
@@ -37,6 +40,9 @@ async function init() {
     renderAmenityFilters();
     hydrateUfAndCities();
     renderRooms('all');
+    initMapIfNeeded();
+    renderMapMarkersSalas(roomsData);
+    handleHashRoomOpen();
   } catch (err) {
     console.error(err);
     if (roomsMessage) roomsMessage.textContent = 'Erro ao carregar salas. Tente novamente mais tarde.';
@@ -78,6 +84,8 @@ async function init() {
     amenityFilters?.querySelectorAll('input[type="checkbox"]').forEach(i => (i.checked = false));
     renderRooms(getActiveFilter());
   });
+
+  window.addEventListener('hashchange', handleHashRoomOpen);
 }
 
 async function fetchRooms() {
@@ -139,6 +147,7 @@ function renderRooms(filter) {
   }
   if (roomsMessage) roomsMessage.textContent = '';
   filtered.forEach(room => roomsStrip.appendChild(createRoomCard(room)));
+  renderMapMarkersSalas(filtered);
   requestAnimationFrame(updateCarouselNavState);
 }
 
@@ -251,6 +260,52 @@ function createRoomCard(room) {
   return card;
 }
 
+function initMapIfNeeded() {
+  if (!roomsMapEl || typeof L === 'undefined') return;
+  if (salasMap) return;
+  salasMap = L.map(roomsMapEl).setView([-23.5505, -46.6333], 11);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap',
+    maxZoom: 18
+  }).addTo(salasMap);
+  salasMarkersLayer = L.layerGroup().addTo(salasMap);
+}
+
+function renderMapMarkersSalas(rooms) {
+  if (!salasMap || !salasMarkersLayer) return;
+  salasMarkersLayer.clearLayers();
+  const bounds = [];
+  (rooms || []).forEach(room => {
+    const lat = Number(room.lat || room.latitude || room.latitud);
+    const lon = Number(room.lon || room.lng || room.longitude);
+    if (!isFinite(lat) || !isFinite(lon)) return;
+    const marker = L.marker([lat, lon]);
+    const name = escapeHtml(room.name || `Sala #${room.id}`);
+    const city = escapeHtml(room.city || '');
+    const uf = escapeHtml(room.state || room.uf || '');
+    const popupHtml =
+      `<strong>${name}</strong><br>${city}${uf ? ' - ' + uf : ''}<br>` +
+      `<div style="margin-top:6px;display:flex;gap:8px;flex-wrap:wrap">` +
+      `<button type="button" class="btn btn-secondary btn-sm" data-room-popup="${room.id}">Ver detalhes</button>` +
+      `<a class="btn btn-primary btn-sm" href="clientes.html">Solicitar reserva</a>` +
+      `</div>`;
+    marker.bindPopup(popupHtml);
+    marker.addTo(salasMarkersLayer);
+    marker.on('popupopen', e => {
+      const popupEl = e.popup.getElement();
+      if (!popupEl) return;
+      const btn = popupEl.querySelector(`button[data-room-popup="${room.id}"]`);
+      if (btn) {
+        btn.addEventListener('click', () => openModal(room), { once: true });
+      }
+    });
+    bounds.push([lat, lon]);
+  });
+  if (bounds.length) {
+    salasMap.fitBounds(bounds, { padding: [20, 20] });
+  }
+}
+
 function openModal(room) {
   modalTitle.textContent = room.name || '';
   modalDescription.textContent = room.description || 'Sem descrição cadastrada.';
@@ -271,6 +326,18 @@ function openModal(room) {
 
   modalOverlay.classList.add('show');
   modalOverlay.setAttribute('aria-hidden', 'false');
+}
+
+function handleHashRoomOpen() {
+  if (!roomsData || !roomsData.length) return;
+  const hash = window.location.hash || '';
+  if (!hash.startsWith('#')) return;
+  const idStr = hash.slice(1);
+  const idNum = Number(idStr);
+  if (!idNum) return;
+  const room = roomsData.find(r => Number(r.id) === idNum);
+  if (!room) return;
+  openModal(room);
 }
 
 function closeModal() {
