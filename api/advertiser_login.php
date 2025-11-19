@@ -6,6 +6,7 @@ try {
   $data = json_decode(file_get_contents('php://input'), true) ?: [];
   $login = trim($data['login'] ?? '');
   $password = (string)($data['password'] ?? '');
+  $remember = !empty($data['remember']);
 
   if ($login === '' || $password === '') {
     echo json_encode(['success' => false, 'error' => 'Informe login e senha.']);
@@ -70,7 +71,31 @@ try {
     'contact_phone' => $adv['contact_phone'] ?? null
   ];
 
-  echo json_encode(['success' => true, 'advertiser' => $payload]);
+  // Remember-me opcional (24h)
+  $rememberPayload = null;
+  if ($remember) {
+    try {
+      $rawToken = bin2hex(random_bytes(32));
+      $tokenHash = hash('sha256', $rawToken);
+      $expiresAt = (new DateTimeImmutable('+24 hours'))->format('Y-m-d H:i:s');
+      $ua = $_SERVER['HTTP_USER_AGENT'] ?? null;
+      $ins = $pdo->prepare('INSERT INTO advertiser_remember_tokens (advertiser_id, token_hash, user_agent, expires_at, created_at) VALUES (:aid,:hash,:ua,:exp,NOW())');
+      $ins->execute([
+        ':aid' => $adv['id'],
+        ':hash' => $tokenHash,
+        ':ua' => $ua,
+        ':exp' => $expiresAt
+      ]);
+      $rememberPayload = [
+        'token' => $rawToken,
+        'expires_at' => $expiresAt
+      ];
+    } catch (Throwable $e) {
+      error_log('Erro ao gerar remember token para anunciante: ' . $e->getMessage());
+    }
+  }
+
+  echo json_encode(['success' => true, 'advertiser' => $payload, 'remember' => $rememberPayload]);
 } catch (Throwable $e) {
   http_response_code(500);
   echo json_encode(['success' => false, 'error' => 'Erro interno: ' . $e->getMessage()]);

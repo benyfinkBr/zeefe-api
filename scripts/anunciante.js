@@ -1,4 +1,5 @@
 const API_BASE = 'api';
+const ADV_REMEMBER_KEY = 'advRememberToken';
 
 // Estado
 let advClient = null; // dados do cliente logado
@@ -157,10 +158,20 @@ async function onLoginSubmit(e) {
   const id = (loginIdInput?.value || '').trim();
   const pw = loginPwInput?.value || '';
   if (!id || !pw) { authMsg.textContent = 'Informe login e senha.'; return; }
+  const lembrar = !!(rememberMe && rememberMe.checked);
   try {
-    const res = await fetch(`${API_BASE}/advertiser_login.php`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ login: id, password: pw }) });
+    const res = await fetch(`${API_BASE}/advertiser_login.php`, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ login: id, password: pw, remember: lembrar })
+    });
     const json = await parseJsonSafe(res);
     if (!json.success) throw new Error(json.error || 'Falha no login');
+    if (lembrar && json.remember && json.remember.token) {
+      registrarPreferenciaLoginAdv(true, json.remember.token, id);
+    } else if (!lembrar) {
+      registrarPreferenciaLoginAdv(false);
+    }
     advClient = json.advertiser; // anunciante autenticado
     await afterLogin();
   } catch (err) {
@@ -480,9 +491,74 @@ function escapeHtml(s) {
     .replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 }
 
+function registrarPreferenciaLoginAdv(lembrar, token, loginHint) {
+  try {
+    if (lembrar && token) {
+      const data = {
+        token,
+        loginHint: loginHint || '',
+        expiresAt: Date.now() + 24 * 60 * 60 * 1000 // 24h
+      };
+      localStorage.setItem(ADV_REMEMBER_KEY, JSON.stringify(data));
+    } else {
+      localStorage.removeItem(ADV_REMEMBER_KEY);
+    }
+  } catch (_) {}
+}
+
+function aplicarLoginMemorizadoAdv() {
+  if (!loginIdInput || !rememberMe) return;
+  try {
+    const raw = localStorage.getItem(ADV_REMEMBER_KEY);
+    if (!raw) { rememberMe.checked = false; return; }
+    let data;
+    try { data = JSON.parse(raw); }
+    catch { localStorage.removeItem(ADV_REMEMBER_KEY); rememberMe.checked = false; return; }
+    const { token, loginHint, expiresAt } = data || {};
+    if (!token || !expiresAt || Date.now() > Number(expiresAt)) {
+      localStorage.removeItem(ADV_REMEMBER_KEY);
+      if (loginHint) loginIdInput.value = loginHint;
+      rememberMe.checked = false;
+      return;
+    }
+    if (loginHint) loginIdInput.value = loginHint;
+    rememberMe.checked = true;
+    autoLoginWithTokenAdv(token).catch(()=>{});
+  } catch (_) {
+    rememberMe.checked = false;
+  }
+}
+
+async function autoLoginWithTokenAdv(token) {
+  try {
+    const res = await fetch(`${API_BASE}/advertiser_auto_login.php`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token })
+    });
+    const json = await parseJsonSafe(res);
+    if (!json.success || !json.advertiser) {
+      try { localStorage.removeItem(ADV_REMEMBER_KEY); } catch (_) {}
+      rememberMe && (rememberMe.checked = false);
+      return;
+    }
+    advClient = json.advertiser;
+    await afterLogin();
+  } catch (e) {
+    console.error('[Adv] auto-login falhou', e);
+  }
+}
+
 // Eventos UI
+// Inicialização de remember-me
+aplicarLoginMemorizadoAdv();
+
 loginForm?.addEventListener('submit', onLoginSubmit);
-logoutBtn?.addEventListener('click', () => { advClient = null; myAdvertiser=null; myRooms=[]; myReservations=[]; setAuthVisible(true); });
+logoutBtn?.addEventListener('click', () => {
+  advClient = null; myAdvertiser=null; myRooms=[]; myReservations=[];
+  registrarPreferenciaLoginAdv(false);
+  setAuthVisible(true);
+});
 refreshBtn?.addEventListener('click', () => { if (advClient) afterLogin(); });
 navButtons.forEach(btn => btn.addEventListener('click', () => setActivePanel(btn.dataset.panel)));
 savePayoutBtn?.addEventListener('click', async () => {

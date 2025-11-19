@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Tempo de geração: 17/11/2025 às 21:56
+-- Tempo de geração: 19/11/2025 às 07:06
 -- Versão do servidor: 5.7.23-23
 -- Versão do PHP: 8.1.33
 
@@ -21,6 +21,18 @@ SET time_zone = "+00:00";
 -- Banco de dados: `benyfi15_zeefe_db`
 --
 
+DELIMITER $$
+--
+-- Procedimentos
+--
+$$
+
+$$
+
+$$
+
+DELIMITER ;
+
 -- --------------------------------------------------------
 
 --
@@ -34,6 +46,13 @@ CREATE TABLE `admins` (
   `password` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+--
+-- Despejando dados para a tabela `admins`
+--
+
+INSERT INTO `admins` (`id`, `username`, `email`, `password`, `created_at`) VALUES
+(1, '123', 'admin@zeefe.com.br', '321', '2025-10-30 22:36:01');
 
 -- --------------------------------------------------------
 
@@ -67,6 +86,28 @@ CREATE TABLE `advertisers` (
   `updated_at` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+--
+-- Despejando dados para a tabela `advertisers`
+--
+
+INSERT INTO `advertisers` (`id`, `owner_type`, `owner_id`, `bank_code`, `display_name`, `full_name`, `login_email`, `login_cpf`, `contact_phone`, `password_hash`, `email_verified_at`, `verification_token`, `verification_token_expires`, `last_login`, `status`, `fee_pct`, `bank_name`, `account_type`, `agency_number`, `account_number`, `pix_key`, `created_at`, `updated_at`) VALUES
+(1, 'client', 0, NULL, 'MZF', 'Mira Zlotnik', 'benyfinkelstein@gmail.com', '41836484836', NULL, '$2y$10$coY86ax3NyQXEr1DAE4Q4uX6JMCV6LAI.gAHpLTdZ2Q7MdCTO.nW6', '2025-11-16 22:46:54', NULL, NULL, '2025-11-19 07:01:04', 'ativo', NULL, NULL, NULL, NULL, NULL, NULL, '2025-11-16 22:46:39', '2025-11-16 22:46:54');
+
+-- --------------------------------------------------------
+
+--
+-- Estrutura para tabela `advertiser_remember_tokens`
+--
+
+CREATE TABLE `advertiser_remember_tokens` (
+  `id` int(11) NOT NULL,
+  `advertiser_id` int(11) NOT NULL,
+  `token_hash` char(64) NOT NULL,
+  `user_agent` varchar(255) DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `expires_at` datetime NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 -- --------------------------------------------------------
 
 --
@@ -80,6 +121,16 @@ CREATE TABLE `amenities` (
   `status` enum('ativo','inativo') COLLATE utf8_unicode_ci DEFAULT 'ativo'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
+--
+-- Despejando dados para a tabela `amenities`
+--
+
+INSERT INTO `amenities` (`id`, `name`, `description`, `status`) VALUES
+(1, 'Café', 'Café e bebidas', 'ativo'),
+(2, 'Projetor', 'Projetor multimídia', 'ativo'),
+(3, 'Quadro Branco', 'Quadro para anotações', 'ativo'),
+(4, 'WiFI', '', 'ativo');
+
 -- --------------------------------------------------------
 
 --
@@ -92,6 +143,14 @@ CREATE TABLE `associates` (
   `label` varchar(60) COLLATE utf8_unicode_ci DEFAULT NULL,
   `created_at` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+--
+-- Despejando dados para a tabela `associates`
+--
+
+INSERT INTO `associates` (`client_id`, `visitor_id`, `label`, `created_at`) VALUES
+(1, 1, 'Equipe Projeto', '2025-10-23 21:58:21'),
+(2, 2, 'Fornecedora', '2025-10-23 21:58:21');
 
 -- --------------------------------------------------------
 
@@ -124,6 +183,38 @@ CREATE TABLE `clients` (
   `updated_at` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+--
+-- Despejando dados para a tabela `clients`
+--
+
+INSERT INTO `clients` (`id`, `company_id`, `company_role`, `name`, `email`, `email_verified_at`, `verification_token`, `verification_token_expires`, `password`, `login`, `password_hash`, `cpf`, `rg`, `phone`, `whatsapp`, `type`, `birth_date`, `profession`, `status`, `created_at`, `last_login`, `updated_at`) VALUES
+(1, NULL, NULL, 'João Portal', 'benyfink2@gmail.com', NULL, NULL, NULL, NULL, 't1', '$2y$10$6HhXWEyNJPmbfCF8UO9QgeJZ9R6GNbz1qANimgFln/vcZVGl6cXAu', '12345678910', 'MG1234567', '11995676554', '11995676554', 'PF', '1990-03-11', 'Engenheiro', 'ativo', NULL, '2025-10-23 21:58:21', '2025-11-16 22:53:43'),
+(2, 3, 'membro', 'Maria Silva', 'benyfink1@gmail.com', NULL, NULL, NULL, 'p1FzrF1jIPt', 'teste123', 'teste123', '32165498700', 'SP8888123', '11987654321', '11987654321', 'PF', '1991-09-21', 'Gerente', 'ativo', NULL, '2025-10-23 21:58:21', NULL),
+(11, 1, 'membro', 'Beny', 'benyfink@gmail.com', '2025-11-08 16:25:10', NULL, NULL, 'Gafin123!', 'benyfink@gmail.com', '$2y$10$eDSwPkBIKEz3UsCl/f1gauFwlsiuQVbIxFHVqvKwXROVGeC/4RE8q', '37333590895', '', '', '', 'PF', NULL, NULL, 'ativo', NULL, NULL, '2025-11-10 14:45:02'),
+(14, NULL, 'membro', 'Mira Finkelstien', 'benyfinkelstein@gmail.com', '2025-11-16 23:12:37', NULL, NULL, NULL, 'benyfinkelstein@gmail.com', '$2y$10$PyXHQGc5J64t06pWB.pg9OdwTyXWtUfnXlud2/D1XxEW46I9fwwD.', '41836484836', NULL, NULL, NULL, 'PF', NULL, NULL, 'ativo', '2025-11-16 23:12:27', NULL, '2025-11-16 23:12:37');
+
+-- --------------------------------------------------------
+
+--
+-- Estrutura para tabela `client_remember_tokens`
+--
+
+CREATE TABLE `client_remember_tokens` (
+  `id` int(11) NOT NULL,
+  `client_id` int(11) NOT NULL,
+  `token_hash` char(64) NOT NULL,
+  `user_agent` varchar(255) DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `expires_at` datetime NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Despejando dados para a tabela `client_remember_tokens`
+--
+
+INSERT INTO `client_remember_tokens` (`id`, `client_id`, `token_hash`, `user_agent`, `created_at`, `expires_at`) VALUES
+(1, 11, '29f773e870b08e3dc33f10a91f795ad1a70722b49296b174224d0973273fa5c7', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36 Edg/141.0.0.0', '2025-11-19 07:00:51', '2025-11-20 07:00:51');
+
 -- --------------------------------------------------------
 
 --
@@ -151,6 +242,14 @@ CREATE TABLE `companies` (
   `updated_at` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+--
+-- Despejando dados para a tabela `companies`
+--
+
+INSERT INTO `companies` (`id`, `razao_social`, `nome_fantasia`, `cnpj`, `inscricao_estadual`, `street`, `number`, `complement`, `zip_code`, `city`, `state`, `email`, `phone`, `whatsapp`, `master_client_id`, `status`, `created_at`, `updated_at`) VALUES
+(1, 'Empresa Exemplo LTDA', 'Exemplo', '12.345.678/0001-99', '123456', 'Rua Alfa', '100', 'Sala 501', '01234-567', 'São Paulo', 'SP', 'contato@exemplo.com', '1133224455', '', 11, 'ativo', '2025-10-23 21:58:21', '2025-11-10 14:45:02'),
+(3, 'Bla bla farma', 'bka bka', '12.311.111/1111-11', '', '', '111', '', '', '123', 'AC', '321@123.com', '(12) 31111-1111', '(12) 31111-1111', NULL, 'ativo', NULL, '0000-00-00 00:00:00');
+
 -- --------------------------------------------------------
 
 --
@@ -169,6 +268,13 @@ CREATE TABLE `company_employees` (
   `created_at` datetime DEFAULT NULL,
   `updated_at` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+--
+-- Despejando dados para a tabela `company_employees`
+--
+
+INSERT INTO `company_employees` (`id`, `company_id`, `full_name`, `rg`, `email`, `whatsapp`, `status`, `import_batch_id`, `created_at`, `updated_at`) VALUES
+(1, 1, 'Fernanda Souza', 'SP009988', 'fernanda@empresa.com', '11933332222', 'ativo', NULL, '2025-10-23 21:58:21', '2025-10-23 21:58:21');
 
 -- --------------------------------------------------------
 
@@ -226,6 +332,13 @@ CREATE TABLE `feedback_nps` (
   `collected_at` datetime NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
+--
+-- Despejando dados para a tabela `feedback_nps`
+--
+
+INSERT INTO `feedback_nps` (`reservation_id`, `score`, `comment`, `would_recommend`, `collected_at`) VALUES
+(1, 9, 'Ótima sala, café excelente.', 1, '2025-10-23 21:58:21');
+
 -- --------------------------------------------------------
 
 --
@@ -242,6 +355,13 @@ CREATE TABLE `import_batches` (
   `created_at` datetime DEFAULT NULL,
   `finished_at` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+--
+-- Despejando dados para a tabela `import_batches`
+--
+
+INSERT INTO `import_batches` (`id`, `company_id`, `file_name`, `total_rows`, `processed_rows`, `status`, `created_at`, `finished_at`) VALUES
+(1, 1, 'import1.xlsx', 4, 4, 'concluido', '2025-10-23 21:58:21', '2025-10-23 21:58:21');
 
 -- --------------------------------------------------------
 
@@ -263,6 +383,13 @@ CREATE TABLE `ledger_entries` (
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+--
+-- Despejando dados para a tabela `ledger_entries`
+--
+
+INSERT INTO `ledger_entries` (`id`, `advertiser_id`, `reservation_id`, `type`, `description`, `amount`, `status`, `available_at`, `paid_at`, `txid`, `created_at`) VALUES
+(1, 1, 21, 'credito', 'Crédito de reserva #21', 1275.00, 'pendente', '2025-12-16 23:14:00', NULL, NULL, '2025-11-16 23:14:00');
+
 -- --------------------------------------------------------
 
 --
@@ -280,6 +407,18 @@ CREATE TABLE `messages` (
   `read_by_advertiser_at` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+--
+-- Despejando dados para a tabela `messages`
+--
+
+INSERT INTO `messages` (`id`, `thread_id`, `sender_type`, `body`, `attachment_url`, `created_at`, `read_by_client_at`, `read_by_advertiser_at`) VALUES
+(1, 1, 'client', 'Oi, tudo bem?', NULL, '2025-11-16 22:56:00', '2025-11-16 22:56:01', '2025-11-16 22:57:38'),
+(2, 1, 'advertiser', 'td 4 vc', NULL, '2025-11-16 22:57:54', '2025-11-16 22:58:21', '2025-11-16 22:57:54'),
+(3, 1, 'client', 'Oi!', NULL, '2025-11-16 22:58:28', '2025-11-16 22:58:28', '2025-11-16 22:58:29'),
+(4, 1, 'advertiser', 'HUHUHUHUHUHU', NULL, '2025-11-16 22:58:35', '2025-11-16 22:58:42', '2025-11-16 22:58:35'),
+(5, 2, 'client', 'Teste123', NULL, '2025-11-16 23:14:18', '2025-11-16 23:14:18', '2025-11-16 23:14:31'),
+(6, 2, 'client', 'meu telefone é [contato oculto]', NULL, '2025-11-16 23:15:37', '2025-11-16 23:15:37', '2025-11-17 08:30:21');
+
 -- --------------------------------------------------------
 
 --
@@ -295,6 +434,14 @@ CREATE TABLE `message_threads` (
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
   `last_message_at` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Despejando dados para a tabela `message_threads`
+--
+
+INSERT INTO `message_threads` (`id`, `room_id`, `reservation_id`, `client_id`, `advertiser_id`, `created_at`, `last_message_at`) VALUES
+(1, 1, 19, 11, 1, '2025-11-16 22:55:51', '2025-11-16 22:58:35'),
+(2, 1, 21, 14, 1, '2025-11-16 23:14:13', '2025-11-16 23:15:37');
 
 -- --------------------------------------------------------
 
@@ -315,6 +462,13 @@ CREATE TABLE `notification_logs` (
   `created_at` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
+--
+-- Despejando dados para a tabela `notification_logs`
+--
+
+INSERT INTO `notification_logs` (`id`, `reservation_id`, `rule_id`, `recipient_type`, `recipient`, `channel`, `status`, `payload_json`, `sent_at`, `created_at`) VALUES
+(1, 1, 1, 'concierge', 'portaria@exemplo.com', 'email', 'sent', '{\"msg\": \"Bom dia\"}', '2025-10-23 21:58:21', '2025-10-23 21:58:21');
+
 -- --------------------------------------------------------
 
 --
@@ -331,6 +485,14 @@ CREATE TABLE `notification_rules` (
   `created_at` datetime DEFAULT NULL,
   `updated_at` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+--
+-- Despejando dados para a tabela `notification_rules`
+--
+
+INSERT INTO `notification_rules` (`id`, `type`, `active`, `schedule_cron`, `channel`, `template_id`, `created_at`, `updated_at`) VALUES
+(1, 'concierge_daily', 1, '05:00 America/Sao_Paulo', 'email', 'TEMPLATE01', '2025-10-23 21:58:21', '2025-10-23 21:58:21'),
+(2, 'visitors_reminder', 1, NULL, 'email,whatsapp', 'TEMPLATE02', '2025-10-23 21:58:21', '2025-10-23 21:58:21');
 
 -- --------------------------------------------------------
 
@@ -349,6 +511,13 @@ CREATE TABLE `panel_users` (
   `updated_at` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
+--
+-- Despejando dados para a tabela `panel_users`
+--
+
+INSERT INTO `panel_users` (`id`, `name`, `email`, `password_hash`, `role`, `status`, `created_at`, `updated_at`) VALUES
+(1, 'Admin Master', 'admin@zeefe.com', 'senhamaster', 'admin', 'ativo', '2025-10-23 21:58:21', '2025-10-23 21:58:21');
+
 -- --------------------------------------------------------
 
 --
@@ -366,6 +535,13 @@ CREATE TABLE `payments` (
   `created_at` datetime DEFAULT NULL,
   `updated_at` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+--
+-- Despejando dados para a tabela `payments`
+--
+
+INSERT INTO `payments` (`id`, `reservation_id`, `method`, `amount`, `status`, `transaction_code`, `paid_at`, `created_at`, `updated_at`) VALUES
+(1, 1, 'pix', 500.00, 'pago', 'TRXPAY9172', '2025-10-23 21:58:21', '2025-10-23 21:58:21', '2025-10-23 21:58:21');
 
 -- --------------------------------------------------------
 
@@ -407,6 +583,14 @@ CREATE TABLE `pre_reservations` (
   `updated_at` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
+--
+-- Despejando dados para a tabela `pre_reservations`
+--
+
+INSERT INTO `pre_reservations` (`id`, `room_id`, `client_id`, `company_id`, `contact_name`, `contact_email`, `contact_phone`, `date`, `notes`, `status`, `converted_reservation_id`, `created_at`, `updated_at`) VALUES
+(1, 1, 1, 1, 'Fernando', 'fernando@pre.com', '11988776655', '2025-10-28', 'Pré para semana seguinte', 'em_analise', NULL, '2025-10-23 21:58:21', '2025-10-23 21:58:21'),
+(2, NULL, NULL, 1, 'Anônimo', 'contato@anonimo.com', '11988888888', '2025-11-01', 'Sem sala', 'aberta', NULL, '2025-10-23 21:58:21', '2025-10-23 21:58:21');
+
 -- --------------------------------------------------------
 
 --
@@ -443,6 +627,21 @@ CREATE TABLE `reservations` (
   `updated_at` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+--
+-- Despejando dados para a tabela `reservations`
+--
+
+INSERT INTO `reservations` (`id`, `room_id`, `client_id`, `participants`, `price`, `company_id`, `title`, `description`, `date`, `time_start`, `time_end`, `total_price`, `amount_gross`, `voucher_code`, `voucher_amount`, `fee_pct_at_time`, `fee_amount`, `amount_net`, `attendees_count`, `requirements`, `observations`, `status`, `payment_status`, `hold_expires_at`, `notes`, `created_at`, `updated_at`) VALUES
+(1, 1, 2, 1, 0.00, 1, 'Reunião Diretoria', 'Pauta estratégica', '2025-10-30', '00:00:00', '00:00:00', 500.00, NULL, NULL, NULL, NULL, NULL, NULL, 5, 'Café, Projetor', '', 'cancelada', 'pendente', NULL, '', '2025-10-23 21:58:21', '2025-11-01 23:33:54'),
+(18, 1, 11, 1, 0.00, NULL, 'teste', '123', '2025-11-12', '08:00:00', '20:00:00', 0.00, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, 'cancelada', 'confirmado', '2025-11-10 10:58:48', NULL, NULL, '2025-11-09 16:17:01'),
+(19, 1, 11, 1, 0.00, NULL, 'teste', '', '2025-11-11', '08:00:00', '20:00:00', 0.00, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, 'confirmada', 'confirmado', '2025-11-10 20:54:36', NULL, NULL, '2025-11-09 21:08:32'),
+(20, 1, 11, 1, 0.00, 1, 'Sabc', '', '2025-11-25', '08:00:00', '20:00:00', 0.00, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, 'confirmada', 'confirmado', '2025-11-11 21:42:01', NULL, NULL, '2025-11-10 21:42:30'),
+(21, 1, 14, 1, 0.00, NULL, '123', '321', '2025-11-26', '08:00:00', '20:00:00', 0.00, 1500.00, NULL, NULL, 15.00, 225.00, 1275.00, 0, NULL, NULL, 'confirmada', 'confirmado', '2025-11-17 23:13:38', NULL, NULL, '2025-11-16 23:14:00'),
+(22, 1, 11, 1, 0.00, NULL, '123', '', '2025-11-27', '08:00:00', '20:00:00', 0.00, NULL, 'ZEF-4T5DUVYCSH', 1500.00, NULL, NULL, NULL, 0, NULL, NULL, 'pendente', 'pendente', NULL, NULL, NULL, '2025-11-17 21:11:46'),
+(23, 1, 11, 1, 0.00, NULL, '123', '', '2025-11-27', '08:00:00', '20:00:00', 0.00, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, 'pendente', 'pendente', NULL, NULL, NULL, NULL),
+(24, 1, 11, 1, 0.00, NULL, '132', '', '2025-11-19', '08:00:00', '20:00:00', 0.00, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, 'pendente', 'pendente', NULL, NULL, NULL, NULL),
+(25, 4, 11, 1, 0.00, NULL, '321', '', '2025-11-18', '08:00:00', '20:00:00', 0.00, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, 'pendente', 'pendente', NULL, NULL, NULL, NULL);
+
 -- --------------------------------------------------------
 
 --
@@ -453,6 +652,13 @@ CREATE TABLE `reservation_visitors` (
   `reservation_id` bigint(20) NOT NULL,
   `visitor_id` bigint(20) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+--
+-- Despejando dados para a tabela `reservation_visitors`
+--
+
+INSERT INTO `reservation_visitors` (`reservation_id`, `visitor_id`) VALUES
+(1, 1);
 
 -- --------------------------------------------------------
 
@@ -513,6 +719,14 @@ CREATE TABLE `rooms` (
   `advertiser_id` bigint(20) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+--
+-- Despejando dados para a tabela `rooms`
+--
+
+INSERT INTO `rooms` (`id`, `name`, `capacity`, `description`, `street`, `complement`, `cep`, `city`, `state`, `responsavel_nome`, `responsavel_telefone`, `responsavel_email`, `portaria_telefone`, `portaria_email`, `portaria_inteligente`, `dailyrate`, `daily_rate`, `location`, `lat`, `lon`, `status`, `maintenance_start`, `maintenance_end`, `deactivated_from`, `photo_path`, `facilitated_access`, `created_at`, `updated_at`, `advertiser_id`) VALUES
+(1, 'Rouxinol', 10, 'Sala ampla para reuniões', 'Avenida Rouxinol, 84', '', '04516000', 'São Paulo', 'SP', 'Beny', '', '', '', '', 'Sim', 0.00, 1500.00, 'Cj 78', -23.6012764, -46.6734966, 'ativo', NULL, NULL, NULL, 'img/rooms/1/room_1_69094e2f497e46.00067241.jpg,img/rooms/1/room_1_69094e2f4991f7.94708361.jpg,img/rooms/1/room_1_69094e2f499f78.19329601.jpg,img/rooms/1/room_1_69094e2f49ab71.36026958.jpg,img/rooms/1/room_1_69094e2f49b846.75551922.jpg', 0, '2025-10-23 21:58:21', '2025-11-17 22:07:17', NULL),
+(4, 'Teste', 0, '', 'Avenida Eucaliptos, 165', '', '04517-050', '', '', '', '', '', '', '', 'Sim', NULL, 0.00, '123', -23.6059551, -46.6736896, 'ativo', NULL, NULL, NULL, NULL, 1, NULL, '2025-11-17 22:05:36', NULL);
+
 -- --------------------------------------------------------
 
 --
@@ -523,6 +737,16 @@ CREATE TABLE `room_amenities` (
   `room_id` bigint(20) NOT NULL,
   `amenity_id` bigint(20) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+--
+-- Despejando dados para a tabela `room_amenities`
+--
+
+INSERT INTO `room_amenities` (`room_id`, `amenity_id`) VALUES
+(1, 1),
+(1, 2),
+(1, 3),
+(1, 4);
 
 -- --------------------------------------------------------
 
@@ -577,6 +801,14 @@ CREATE TABLE `visitors` (
   `updated_at` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+--
+-- Despejando dados para a tabela `visitors`
+--
+
+INSERT INTO `visitors` (`id`, `client_id`, `company_id`, `name`, `rg`, `cpf`, `email`, `invite_token`, `invite_status`, `phone`, `whatsapp`, `status`, `observations`, `created_at`, `updated_at`) VALUES
+(1, 1, 1, 'Felipe Visitante', 'SP123456', '', 'benyfinkelstein@gmail.com', NULL, 'pendente', '11911112222', '', 'ativo', '', '2025-10-23 21:58:21', '2025-10-23 21:58:21'),
+(2, 1, 1, 'Luciana Visita', '', '', 'luciana@visitante.com', NULL, 'pendente', '11912345678', '', 'inativo', 'Trazer CPF', '2025-10-23 21:58:21', '2025-10-23 21:58:21');
+
 -- --------------------------------------------------------
 
 --
@@ -598,6 +830,13 @@ CREATE TABLE `vouchers` (
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Despejando dados para a tabela `vouchers`
+--
+
+INSERT INTO `vouchers` (`id`, `code`, `type`, `value`, `valid_from`, `valid_to`, `max_redemptions`, `used_count`, `min_amount`, `room_id`, `status`, `created_at`, `updated_at`) VALUES
+(1, 'ZEF-4T5DUVYCSH', 'percent', 100.00, NULL, NULL, NULL, 0, NULL, 0, 'ativo', '2025-11-17 21:10:28', '2025-11-17 21:10:49');
 
 -- --------------------------------------------------------
 
@@ -636,6 +875,14 @@ ALTER TABLE `advertisers`
   ADD KEY `idx_adv_fee` (`fee_pct`);
 
 --
+-- Índices de tabela `advertiser_remember_tokens`
+--
+ALTER TABLE `advertiser_remember_tokens`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `uniq_adv_token_hash` (`token_hash`),
+  ADD KEY `idx_adv_expires` (`advertiser_id`,`expires_at`);
+
+--
 -- Índices de tabela `amenities`
 --
 ALTER TABLE `amenities`
@@ -659,6 +906,14 @@ ALTER TABLE `clients`
   ADD KEY `idx_clients_company_id` (`company_id`),
   ADD KEY `idx_cli_email` (`email`),
   ADD KEY `idx_cli_cpf` (`cpf`);
+
+--
+-- Índices de tabela `client_remember_tokens`
+--
+ALTER TABLE `client_remember_tokens`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `uniq_token_hash` (`token_hash`),
+  ADD KEY `idx_client_expires` (`client_id`,`expires_at`);
 
 --
 -- Índices de tabela `companies`
@@ -871,43 +1126,55 @@ ALTER TABLE `voucher_redemptions`
 -- AUTO_INCREMENT de tabela `admins`
 --
 ALTER TABLE `admins`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT de tabela `advertisers`
 --
 ALTER TABLE `advertisers`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+
+--
+-- AUTO_INCREMENT de tabela `advertiser_remember_tokens`
+--
+ALTER TABLE `advertiser_remember_tokens`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT de tabela `amenities`
 --
 ALTER TABLE `amenities`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT de tabela `clients`
 --
 ALTER TABLE `clients`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
+
+--
+-- AUTO_INCREMENT de tabela `client_remember_tokens`
+--
+ALTER TABLE `client_remember_tokens`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT de tabela `companies`
 --
 ALTER TABLE `companies`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT de tabela `company_employees`
 --
 ALTER TABLE `company_employees`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT de tabela `company_invitations`
 --
 ALTER TABLE `company_invitations`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
 -- AUTO_INCREMENT de tabela `events`
@@ -919,49 +1186,49 @@ ALTER TABLE `events`
 -- AUTO_INCREMENT de tabela `import_batches`
 --
 ALTER TABLE `import_batches`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT de tabela `ledger_entries`
 --
 ALTER TABLE `ledger_entries`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT de tabela `messages`
 --
 ALTER TABLE `messages`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- AUTO_INCREMENT de tabela `message_threads`
 --
 ALTER TABLE `message_threads`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT de tabela `notification_logs`
 --
 ALTER TABLE `notification_logs`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT de tabela `notification_rules`
 --
 ALTER TABLE `notification_rules`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT de tabela `panel_users`
 --
 ALTER TABLE `panel_users`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT de tabela `payments`
 --
 ALTER TABLE `payments`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT de tabela `payouts`
@@ -973,13 +1240,13 @@ ALTER TABLE `payouts`
 -- AUTO_INCREMENT de tabela `pre_reservations`
 --
 ALTER TABLE `pre_reservations`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT de tabela `reservations`
 --
 ALTER TABLE `reservations`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=26;
 
 --
 -- AUTO_INCREMENT de tabela `reviews`
@@ -991,7 +1258,7 @@ ALTER TABLE `reviews`
 -- AUTO_INCREMENT de tabela `rooms`
 --
 ALTER TABLE `rooms`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT de tabela `room_photos`
@@ -1003,13 +1270,13 @@ ALTER TABLE `room_photos`
 -- AUTO_INCREMENT de tabela `visitors`
 --
 ALTER TABLE `visitors`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT de tabela `vouchers`
 --
 ALTER TABLE `vouchers`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT de tabela `voucher_redemptions`
