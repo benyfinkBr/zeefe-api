@@ -1470,6 +1470,8 @@ textarea {
 
 #multiDateSummary {
   margin-top: 4px;
+  font-size: 1rem;
+  font-weight: 600;
 }
 
 .booking-room-inline {

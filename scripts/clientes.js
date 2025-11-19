@@ -2869,6 +2869,10 @@ function renderBookingSummary() {
     ? currentVisitors.filter(v => bookingVisitorIds.includes(String(v.id))).map(v => v.name || '').filter(Boolean)
     : [];
 
+  const visitorNote = visitorsCount === 0
+    ? 'Nenhum visitante foi pré-cadastrado. Sem pré-cadastro, a recepção poderá levar mais tempo para validar documentos.'
+    : 'Após a confirmação, enviaremos por e-mail um convite de reunião para todos os visitantes selecionados.';
+
   const voucherInfo = bookingVoucherApplied
     ? `Voucher ${bookingVoucherApplied.code} aplicado. Desconto: ${formatCurrency(bookingVoucherApplied.discount || 0)}. Previsto: ${formatCurrency(bookingVoucherApplied.payable || 0)}.`
     : 'Nenhum voucher aplicado.';
@@ -2907,6 +2911,7 @@ function renderBookingSummary() {
       <ul>
         <li><strong>Quantidade:</strong> ${visitorsCount}</li>
         <li><strong>Nomes:</strong> ${visitorNames.length ? escapeHtml(visitorNames.join(', ')) : 'Nenhum selecionado'}</li>
+        <li><strong>Observação:</strong> ${escapeHtml(visitorNote)}</li>
       </ul>
     </div>
   `;
