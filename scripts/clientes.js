@@ -437,6 +437,10 @@ async function initialize() {
   clientChatClose?.addEventListener('click', closeClientChat);
   clientChatModal?.addEventListener('click', (e)=>{ if (e.target === clientChatModal) closeClientChat(); });
   clientChatForm?.addEventListener('submit', onClientChatSubmit);
+   // Botão de Mensagens (suporte)
+  openSupportChatBtn?.addEventListener('click', () => {
+    openClientSupportChat();
+  });
 
   // Empresa/Membros modais
   document.getElementById('openInviteModal')?.addEventListener('click', openInviteMemberModal);
@@ -2632,6 +2636,45 @@ async function openClientChatForReservation(reservationId) {
   }
 }
 
+async function openClientSupportChat() {
+  if (!activeClient) {
+    showAuthOverlay();
+    return;
+  }
+  if (clientChatHeader) {
+    clientChatHeader.textContent = 'Fale com a equipe Ze.EFE';
+  }
+  clientChatMessages.innerHTML = '<div class="rooms-message">Conectando…</div>';
+  if (clientChatForm) clientChatForm.hidden = false;
+  clientChatThreadId = null;
+  showClientChatModal();
+  try {
+    // Tenta localizar um thread de suporte existente (advertiser_id = 0, sem sala/reserva)
+    const res = await fetch(`${API_BASE}/messages_list_threads.php?client_id=${encodeURIComponent(activeClient.id)}`);
+    const json = await res.json();
+    let t = null;
+    if (json.success && Array.isArray(json.data)) {
+      t = json.data.find(x => String(x.advertiser_id || '0') === '0' && !x.room_id && !x.reservation_id);
+    }
+    if (!t) {
+      const res2 = await fetch(`${API_BASE}/messages_open_support_thread.php`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ client_id: activeClient.id })
+      });
+      const j2 = await res2.json();
+      if (!j2.success) throw new Error(j2.error || 'Não foi possível iniciar a conversa com o suporte.');
+      clientChatThreadId = Number(j2.id);
+    } else {
+      clientChatThreadId = Number(t.id);
+    }
+    await fetchClientChatMessages();
+    startClientChatPolling();
+  } catch (e) {
+    clientChatMessages.innerHTML = `<div class="rooms-message">${e.message || 'Falha ao abrir conversa.'}</div>`;
+  }
+}
+
 function showClientChatModal(){
   clientChatModal?.classList.add('show');
   clientChatModal?.setAttribute('aria-hidden','false');
@@ -3766,3 +3809,4 @@ const clientChatForm = document.getElementById('clientChatForm');
 const clientChatInput = document.getElementById('clientChatInput');
 let clientChatThreadId = null;
 let clientChatPollTimer = null;
+const openSupportChatBtn = document.getElementById('openSupportChatBtn');
