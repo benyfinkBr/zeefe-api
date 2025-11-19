@@ -211,6 +211,7 @@ const scopeCompanyBtn = document.getElementById('scopeCompanyBtn');
 let bookingSearchMode = 'date'; // 'date' | 'room' (room em breve)
 const bookingModeDateBtn = document.getElementById('bookingModeDate');
 const bookingModeRoomBtn = document.getElementById('bookingModeRoom');
+const bookingModeHint = document.getElementById('bookingModeHint');
 
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', initialize, { once: true });
@@ -301,10 +302,10 @@ async function initialize() {
   }
   bookingDateInput?.addEventListener('change', onBookingDateChange);
   bookingDateInput?.addEventListener('input', onBookingDateChange);
-  bookingPrevBtn?.addEventListener('click', () => changeBookingStep(-1));
+  bookingPrevBtn?.addEventListener('click', () => goToPrevBookingStep());
   bookingNextBtn?.addEventListener('click', () => {
     if (validateBookingStep(bookingStepIndex)) {
-      changeBookingStep(1);
+      goToNextBookingStep();
     }
   });
   bookingPrevMonthBtn?.addEventListener('click', () => changeCalendarMonth(-1));
@@ -321,11 +322,22 @@ async function initialize() {
     bookingSearchMode = 'date';
     bookingModeDateBtn.classList.add('active');
     if (bookingModeRoomBtn) bookingModeRoomBtn.classList.remove('active');
+    if (bookingModeHint) bookingModeHint.textContent = 'Datas primeiro: selecione um ou mais dias no calendário e depois escolha a sala.';
+    // Datas primeiro: começa escolhendo datas (etapa 0)
+    bookingStepIndex = 0;
+    setBookingStep(bookingStepIndex);
   });
   bookingModeRoomBtn?.addEventListener('click', () => {
     bookingSearchMode = 'room';
     bookingModeRoomBtn.classList.add('active');
     if (bookingModeDateBtn) bookingModeDateBtn.classList.remove('active');
+    bookingSelectedDates = [];
+    if (bookingDateInput) bookingDateInput.value = '';
+    // Sala específica: começa escolhendo sala (etapa 1)
+    bookingStepIndex = 1;
+    setBookingStep(bookingStepIndex);
+    renderRoomOptions(bookingDateInput?.value || '');
+    if (bookingModeHint) bookingModeHint.textContent = 'Sala específica: escolha a sala primeiro, depois veja as datas disponíveis no calendário.';
   });
 
   cancelReservationEditBtn?.addEventListener('click', () => resetBookingForm());
@@ -1430,6 +1442,39 @@ function onBookingDateChange() {
 
 function changeBookingStep(delta) {
   setBookingStep(bookingStepIndex + delta);
+}
+
+function goToNextBookingStep() {
+  // Fluxo especial quando começamos pela sala
+  if (bookingSearchMode === 'room') {
+    if (bookingStepIndex === 1) {
+      // Depois de escolher a sala, ir para a data
+      setBookingStep(0);
+      return;
+    }
+    if (bookingStepIndex === 0) {
+      // Depois da data, ir para detalhes
+      setBookingStep(2);
+      return;
+    }
+  }
+  changeBookingStep(1);
+}
+
+function goToPrevBookingStep() {
+  if (bookingSearchMode === 'room') {
+    if (bookingStepIndex === 0) {
+      // Volta da data para a sala
+      setBookingStep(1);
+      return;
+    }
+    if (bookingStepIndex === 2) {
+      // Volta de detalhes para data
+      setBookingStep(0);
+      return;
+    }
+  }
+  changeBookingStep(-1);
 }
 
 function setBookingStep(index) {
