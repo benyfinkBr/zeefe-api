@@ -39,6 +39,22 @@ if ($table === 'rooms') {
   unset($record['visitor_ids']);
 }
 
+// Normalizações específicas de vouchers (alias de campos usados no Admin)
+if ($table === 'vouchers') {
+  // Mapear datas amigáveis e contagem máxima para as colunas reais
+  if (array_key_exists('starts_at', $rawRecord)) {
+    $record['valid_from'] = $rawRecord['starts_at'];
+  }
+  if (array_key_exists('ends_at', $rawRecord)) {
+    $record['valid_to'] = $rawRecord['ends_at'];
+  }
+  if (array_key_exists('max_uses', $rawRecord)) {
+    $record['max_redemptions'] = $rawRecord['max_uses'];
+  }
+  // Campos somente de exibição não devem ser persistidos diretamente
+  unset($record['starts_at'], $record['ends_at'], $record['max_uses'], $record['used_count']);
+}
+
 if (!in_array($table, $allowed)) {
   http_response_code(400);
   echo json_encode(['error'=>'Tabela inválida']); exit;

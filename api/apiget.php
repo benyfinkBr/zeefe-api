@@ -164,13 +164,16 @@ try {
     case 'vouchers':
       // Seleciona vouchers e já traz campos derivados para o painel
       $sql = "
-        SELECT v.*,
-               v.valid_from AS starts_at,
-               v.valid_to   AS ends_at,
-               v.max_redemptions AS max_uses,
-               COALESCE(v.used_count,
-                        (SELECT COUNT(*) FROM reservations r WHERE r.voucher_code = v.code)
-               ) AS used_count
+        SELECT
+          v.*,
+          v.valid_from       AS starts_at,
+          v.valid_to         AS ends_at,
+          v.max_redemptions  AS max_uses,
+          (
+            SELECT COUNT(*)
+            FROM reservations r
+            WHERE r.voucher_code = v.code
+          ) AS used_count
         FROM vouchers v
         ORDER BY v.id DESC
       ";
