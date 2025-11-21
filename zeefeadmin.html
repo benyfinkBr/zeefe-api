@@ -1428,9 +1428,11 @@ input, select {
         { name: 'max_discount', label: 'Teto máx. (opcional)', span: 1, cls:'sm' },
         { type: 'break' },
         { name: 'discount_owner', label: 'Quem assume o desconto?', span: 2, type: 'select', cls:'sm', includeEmpty:false, options: [
-          { value: 'both', label: 'Plataforma e Anunciante (proporcional)' },
-          { value: 'platform', label: 'Somente plataforma' },
-          { value: 'advertiser', label: 'Somente anunciante' }
+          { value: 'platform_only',   label: 'Somente plataforma' },
+          { value: 'advertiser_only', label: 'Somente anunciante' },
+          { value: 'split_equal',     label: 'Plataforma e anunciante (50/50)' },
+          { value: 'platform_first',  label: 'Consome primeiro da plataforma, depois anunciante' },
+          { value: 'advertiser_first',label: 'Consome primeiro do anunciante, depois plataforma' }
         ] },
         { type: 'break' },
         { name: 'advertiser_id', label: 'Anunciante (opcional)', span: 2, type: 'select', source: 'advertisers', includeEmpty: true },
