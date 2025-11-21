@@ -1411,6 +1411,54 @@ textarea {
     padding: 16px;
   }
 }
+
+/* Ajustes extras para telas bem pequenas (mobile) */
+@media (max-width: 560px) {
+  header.header {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 16px 16px;
+    gap: 8px;
+  }
+
+  header.header nav {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  header.header nav a {
+    margin-left: 0;
+    margin-right: 16px;
+  }
+
+  .portal-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .portal-nav {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 20px 16px;
+  }
+
+  .portal-nav-links {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .portal-nav-links button,
+  .portal-nav-links-btn {
+    flex: 0 0 auto;
+    width: 100%;
+    text-align: left;
+  }
+
+  .portal-header {
+    padding: 0 4px;
+  }
+}
 .client-dashboard {
   max-width: 1120px;
   margin: 0 auto;
