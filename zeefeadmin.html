@@ -1427,6 +1427,12 @@ input, select {
         { name: 'value', label: 'Valor', span: 1, cls:'sm' },
         { name: 'max_discount', label: 'Teto máx. (opcional)', span: 1, cls:'sm' },
         { type: 'break' },
+        { name: 'discount_owner', label: 'Quem assume o desconto?', span: 2, type: 'select', cls:'sm', includeEmpty:false, options: [
+          { value: 'both', label: 'Plataforma e Anunciante (proporcional)' },
+          { value: 'platform', label: 'Somente plataforma' },
+          { value: 'advertiser', label: 'Somente anunciante' }
+        ] },
+        { type: 'break' },
         { name: 'advertiser_id', label: 'Anunciante (opcional)', span: 2, type: 'select', source: 'advertisers', includeEmpty: true },
         { name: 'room_id', label: 'Sala (opcional)', span: 2, type: 'select', source: 'rooms', includeEmpty: true },
         { type: 'break' },

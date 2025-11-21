@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Tempo de geração: 19/11/2025 às 14:42
+-- Tempo de geração: 21/11/2025 às 19:41
 -- Versão do servidor: 5.7.23-23
 -- Versão do PHP: 8.1.33
 
@@ -427,7 +427,8 @@ INSERT INTO `messages` (`id`, `thread_id`, `sender_type`, `body`, `attachment_ur
 (4, 1, 'advertiser', 'HUHUHUHUHUHU', NULL, '2025-11-16 22:58:35', '2025-11-16 22:58:42', '2025-11-16 22:58:35'),
 (5, 2, 'client', 'Teste123', NULL, '2025-11-16 23:14:18', '2025-11-16 23:14:18', '2025-11-16 23:14:31'),
 (6, 2, 'client', 'meu telefone é [contato oculto]', NULL, '2025-11-16 23:15:37', '2025-11-16 23:15:37', '2025-11-17 08:30:21'),
-(7, 5, 'client', 'Oi', NULL, '2025-11-19 08:25:45', '2025-11-19 08:25:46', NULL);
+(7, 5, 'client', 'Oi', NULL, '2025-11-19 08:25:45', '2025-11-19 08:25:46', NULL),
+(8, 5, '', 'teste', NULL, '2025-11-19 17:49:12', '2025-11-19 17:49:17', NULL);
 
 -- --------------------------------------------------------
 
@@ -452,7 +453,7 @@ CREATE TABLE `message_threads` (
 INSERT INTO `message_threads` (`id`, `room_id`, `reservation_id`, `client_id`, `advertiser_id`, `created_at`, `last_message_at`) VALUES
 (1, 1, 19, 11, 1, '2025-11-16 22:55:51', '2025-11-16 22:58:35'),
 (2, 1, 21, 14, 1, '2025-11-16 23:14:13', '2025-11-16 23:15:37'),
-(5, NULL, NULL, 11, NULL, '2025-11-19 07:57:24', '2025-11-19 08:25:45');
+(5, NULL, NULL, 11, NULL, '2025-11-19 07:57:24', '2025-11-19 17:49:12');
 
 -- --------------------------------------------------------
 
@@ -644,15 +645,15 @@ CREATE TABLE `reservations` (
 --
 
 INSERT INTO `reservations` (`id`, `room_id`, `client_id`, `participants`, `price`, `company_id`, `title`, `description`, `date`, `time_start`, `time_end`, `total_price`, `amount_gross`, `voucher_code`, `voucher_amount`, `fee_pct_at_time`, `fee_amount`, `amount_net`, `attendees_count`, `requirements`, `observations`, `status`, `payment_status`, `hold_expires_at`, `notes`, `created_at`, `updated_at`, `public_code`) VALUES
-(1, 1, 2, 1, 0.00, 1, 'Reunião Diretoria', 'Pauta estratégica', '2025-10-30', '00:00:00', '00:00:00', 500.00, NULL, NULL, NULL, NULL, NULL, NULL, 5, 'Café, Projetor', '', 'cancelada', 'pendente', NULL, '', '2025-10-23 21:58:21', '2025-11-01 23:33:54', NULL),
-(18, 1, 11, 1, 0.00, NULL, 'teste', '123', '2025-11-12', '08:00:00', '20:00:00', 0.00, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, 'cancelada', 'confirmado', '2025-11-10 10:58:48', NULL, NULL, '2025-11-09 16:17:01', NULL),
-(19, 1, 11, 1, 0.00, NULL, 'teste', '', '2025-11-11', '08:00:00', '20:00:00', 0.00, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, 'confirmada', 'confirmado', '2025-11-10 20:54:36', NULL, NULL, '2025-11-09 21:08:32', NULL),
-(20, 1, 11, 1, 0.00, 1, 'Sabc', '', '2025-11-25', '08:00:00', '20:00:00', 0.00, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, 'confirmada', 'confirmado', '2025-11-11 21:42:01', NULL, NULL, '2025-11-10 21:42:30', NULL),
-(21, 1, 14, 1, 0.00, NULL, '123', '321', '2025-11-26', '08:00:00', '20:00:00', 0.00, 1500.00, NULL, NULL, 15.00, 225.00, 1275.00, 0, NULL, NULL, 'confirmada', 'confirmado', '2025-11-17 23:13:38', NULL, NULL, '2025-11-16 23:14:00', NULL),
-(22, 1, 11, 1, 0.00, NULL, '123', '', '2025-11-27', '08:00:00', '20:00:00', 0.00, NULL, 'ZEF-4T5DUVYCSH', 1500.00, NULL, NULL, NULL, 0, NULL, NULL, 'pendente', 'pendente', NULL, NULL, NULL, '2025-11-17 21:11:46', NULL),
-(23, 1, 11, 1, 0.00, NULL, '123', '', '2025-11-27', '08:00:00', '20:00:00', 0.00, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, 'pendente', 'pendente', NULL, NULL, NULL, NULL, NULL),
-(24, 1, 11, 1, 0.00, NULL, '132', '', '2025-11-19', '08:00:00', '20:00:00', 0.00, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, 'pendente', 'pendente', NULL, NULL, NULL, NULL, NULL),
-(25, 4, 11, 1, 0.00, NULL, '321', '', '2025-11-18', '08:00:00', '20:00:00', 0.00, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, 'pendente', 'pendente', NULL, NULL, NULL, NULL, NULL);
+(1, 1, 2, 1, 0.00, 1, 'Reunião Diretoria', 'Pauta estratégica', '2025-10-30', '00:00:00', '00:00:00', 500.00, NULL, NULL, NULL, NULL, NULL, NULL, 5, 'Café, Projetor', '', 'cancelada', 'pendente', NULL, '', '2025-10-23 21:58:21', '2025-11-01 23:33:54', 'ZF-68TK-8U89MZ'),
+(18, 1, 11, 1, 0.00, NULL, 'teste', '123', '2025-11-12', '08:00:00', '20:00:00', 0.00, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, 'cancelada', 'confirmado', '2025-11-10 10:58:48', NULL, NULL, '2025-11-09 16:17:01', 'ZF-GDER-DWQWJW'),
+(19, 1, 11, 1, 0.00, NULL, 'teste', '', '2025-11-11', '08:00:00', '20:00:00', 0.00, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, 'confirmada', 'confirmado', '2025-11-10 20:54:36', NULL, NULL, '2025-11-09 21:08:32', 'ZF-55AV-MAECDD'),
+(20, 1, 11, 1, 0.00, 1, 'Sabc', '', '2025-11-25', '08:00:00', '20:00:00', 0.00, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, 'confirmada', 'confirmado', '2025-11-11 21:42:01', NULL, NULL, '2025-11-10 21:42:30', 'ZF-KZ26-VKLULM'),
+(21, 1, 14, 1, 0.00, NULL, '123', '321', '2025-11-26', '08:00:00', '20:00:00', 0.00, 1500.00, NULL, NULL, 15.00, 225.00, 1275.00, 0, NULL, NULL, 'confirmada', 'confirmado', '2025-11-17 23:13:38', NULL, NULL, '2025-11-16 23:14:00', 'ZF-YD29-NNS5SN'),
+(22, 1, 11, 1, 0.00, NULL, '123', '', '2025-11-27', '08:00:00', '20:00:00', 0.00, NULL, 'ZEF-4T5DUVYCSH', 1500.00, NULL, NULL, NULL, 0, NULL, NULL, 'pendente', 'pendente', NULL, NULL, NULL, '2025-11-17 21:11:46', 'ZF-FPJH-68C7UR'),
+(23, 1, 11, 1, 0.00, NULL, '123', '', '2025-11-27', '08:00:00', '20:00:00', 0.00, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, 'pendente', 'pendente', NULL, NULL, NULL, NULL, 'ZF-MKY9-QK3JKE'),
+(24, 1, 11, 1, 0.00, NULL, '132', '', '2025-11-19', '08:00:00', '20:00:00', 0.00, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, 'pendente', 'pendente', NULL, NULL, NULL, NULL, 'ZF-HK7V-XJ6JTC'),
+(25, 4, 11, 1, 0.00, NULL, '321', '', '2025-11-18', '08:00:00', '20:00:00', 0.00, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, 'pendente', 'pendente', NULL, NULL, NULL, NULL, 'ZF-KBCL-RD49N4');
 
 -- --------------------------------------------------------
 
@@ -736,7 +737,7 @@ CREATE TABLE `rooms` (
 --
 
 INSERT INTO `rooms` (`id`, `name`, `capacity`, `description`, `street`, `complement`, `cep`, `city`, `state`, `responsavel_nome`, `responsavel_telefone`, `responsavel_email`, `portaria_telefone`, `portaria_email`, `portaria_inteligente`, `dailyrate`, `daily_rate`, `location`, `lat`, `lon`, `status`, `maintenance_start`, `maintenance_end`, `deactivated_from`, `photo_path`, `facilitated_access`, `created_at`, `updated_at`, `advertiser_id`) VALUES
-(1, 'Rouxinol', 10, 'Sala ampla para reuniões', 'Avenida Rouxinol, 84', '', '04516000', 'São Paulo', 'SP', 'Beny', '', '', '', '', 'Sim', 0.00, 1500.00, 'Cj 78', -23.6012764, -46.6734966, 'ativo', NULL, NULL, NULL, 'img/rooms/1/room_1_69094e2f497e46.00067241.jpg,img/rooms/1/room_1_69094e2f4991f7.94708361.jpg,img/rooms/1/room_1_69094e2f499f78.19329601.jpg,img/rooms/1/room_1_69094e2f49ab71.36026958.jpg,img/rooms/1/room_1_69094e2f49b846.75551922.jpg', 0, '2025-10-23 21:58:21', '2025-11-17 22:07:17', NULL),
+(1, 'Rouxinol', 10, 'Sala ampla para reuniões', 'Avenida Rouxinol, 84', '', '04516000', 'São Paulo', 'SP', 'Beny', '', '', '', '', 'Sim', 0.00, 1500.00, 'Cj 78', -23.6012764, -46.6734966, 'ativo', NULL, NULL, NULL, 'img/rooms/1/room_1_69094e2f497e46.00067241.jpg,img/rooms/1/room_1_69094e2f4991f7.94708361.jpg,img/rooms/1/room_1_69094e2f499f78.19329601.jpg,img/rooms/1/room_1_69094e2f49ab71.36026958.jpg,img/rooms/1/room_1_69094e2f49b846.75551922.jpg', 0, '2025-10-23 21:58:21', '2025-11-17 22:07:17', 1),
 (4, 'Teste', 0, '', 'Avenida Eucaliptos, 165', '', '04517-050', '', '', '', '', '', '', '', 'Sim', NULL, 0.00, '123', -23.6059551, -46.6736896, 'ativo', NULL, NULL, NULL, NULL, 1, NULL, '2025-11-17 22:05:36', NULL);
 
 -- --------------------------------------------------------
@@ -840,15 +841,17 @@ CREATE TABLE `vouchers` (
   `room_id` int(11) DEFAULT NULL,
   `status` enum('ativo','inativo') NOT NULL DEFAULT 'ativo',
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP
+  `updated_at` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  `discount_owner` enum('both','platform','advertiser') NOT NULL DEFAULT 'both'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
 -- Despejando dados para a tabela `vouchers`
 --
 
-INSERT INTO `vouchers` (`id`, `code`, `type`, `value`, `valid_from`, `valid_to`, `max_redemptions`, `used_count`, `min_amount`, `room_id`, `status`, `created_at`, `updated_at`) VALUES
-(1, 'ZEF-4T5DUVYCSH', 'percent', 100.00, NULL, NULL, NULL, 0, NULL, 0, 'ativo', '2025-11-17 21:10:28', '2025-11-17 21:10:49');
+INSERT INTO `vouchers` (`id`, `code`, `type`, `value`, `valid_from`, `valid_to`, `max_redemptions`, `used_count`, `min_amount`, `room_id`, `status`, `created_at`, `updated_at`, `discount_owner`) VALUES
+(1, 'ZEF-4T5DUVYCSH', 'percent', 100.00, '2025-11-18 00:00:00', '2025-11-20 00:00:00', 0, 0, NULL, 0, 'ativo', '2025-11-17 21:10:28', '2025-11-19 21:03:54', 'both'),
+(2, 'ZEF-GHGGCPCSHP', 'percent', 5.00, NULL, NULL, NULL, 0, NULL, 0, 'ativo', '2025-11-19 17:48:31', NULL, 'both');
 
 -- --------------------------------------------------------
 
@@ -1211,7 +1214,7 @@ ALTER TABLE `ledger_entries`
 -- AUTO_INCREMENT de tabela `messages`
 --
 ALTER TABLE `messages`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
 -- AUTO_INCREMENT de tabela `message_threads`
@@ -1289,7 +1292,7 @@ ALTER TABLE `visitors`
 -- AUTO_INCREMENT de tabela `vouchers`
 --
 ALTER TABLE `vouchers`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT de tabela `voucher_redemptions`
