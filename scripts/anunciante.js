@@ -87,7 +87,8 @@ const advWorkshopEndDateInput = document.getElementById('advWorkshopEndDate');
 const advWorkshopTimeStartInput = document.getElementById('advWorkshopTimeStart');
 const advWorkshopTimeEndInput = document.getElementById('advWorkshopTimeEnd');
 const advWorkshopTitleInput = document.getElementById('advWorkshopTitleInput');
-const advWorkshopCategoryInput = document.getElementById('advWorkshopCategory');
+const advWorkshopCategorySelect = document.getElementById('advWorkshopCategory');
+const advWorkshopCategoryOtherInput = document.getElementById('advWorkshopCategoryOther');
 const advWorkshopPriceInput = document.getElementById('advWorkshopPrice');
 const advWorkshopMinSeatsInput = document.getElementById('advWorkshopMinSeats');
 const advWorkshopMaxSeatsInput = document.getElementById('advWorkshopMaxSeats');
@@ -96,6 +97,9 @@ const advWorkshopStatusSelect = document.getElementById('advWorkshopStatus');
 const advWorkshopSubtitleInput = document.getElementById('advWorkshopSubtitle');
 const advWorkshopDescriptionInput = document.getElementById('advWorkshopDescription');
 const advWorkshopBannerInput = document.getElementById('advWorkshopBanner');
+const advWorkshopDateSingle = document.getElementById('advWorkshopDateSingle');
+const advWorkshopDateMulti = document.getElementById('advWorkshopDateMulti');
+const advWorkshopSameTimeCheckbox = document.getElementById('advWorkshopSameTime');
 
 // Overview
 const ovViews = document.getElementById('ovViews');
@@ -794,7 +798,20 @@ function openWorkshopModal(id) {
     advWorkshopTimeStartInput.value = (ws.time_start || '').slice(0,5);
     advWorkshopTimeEndInput.value = (ws.time_end || '').slice(0,5);
     advWorkshopTitleInput.value = ws.title || '';
-    advWorkshopCategoryInput.value = ws.category || '';
+    // Categoria: se for uma das opções do select, seleciona; senão, usa "Outros"
+    if (advWorkshopCategorySelect) {
+      const knownValues = Array.from(advWorkshopCategorySelect.options).map(o => o.value).filter(Boolean);
+      if (ws.category && knownValues.includes(ws.category)) {
+        advWorkshopCategorySelect.value = ws.category;
+        if (advWorkshopCategoryOtherInput) advWorkshopCategoryOtherInput.value = '';
+      } else if (ws.category) {
+        advWorkshopCategorySelect.value = 'Outros';
+        if (advWorkshopCategoryOtherInput) advWorkshopCategoryOtherInput.value = ws.category;
+      } else {
+        advWorkshopCategorySelect.value = '';
+        if (advWorkshopCategoryOtherInput) advWorkshopCategoryOtherInput.value = '';
+      }
+    }
     advWorkshopPriceInput.value = ws.price_per_seat || '';
     advWorkshopMinSeatsInput.value = ws.min_seats || '';
     advWorkshopMaxSeatsInput.value = ws.max_seats || '';
@@ -802,6 +819,16 @@ function openWorkshopModal(id) {
     advWorkshopStatusSelect.value = ws.status || 'rascunho';
     advWorkshopSubtitleInput.value = ws.subtitle || '';
     advWorkshopDescriptionInput.value = ws.description || '';
+    // Modo de data (dia único x vários dias)
+    if (advWorkshopDateSingle && advWorkshopDateMulti) {
+      if (ws.end_date && ws.end_date !== ws.date) {
+        advWorkshopDateMulti.checked = true;
+        advWorkshopDateSingle.checked = false;
+      } else {
+        advWorkshopDateSingle.checked = true;
+        advWorkshopDateMulti.checked = false;
+      }
+    }
     const titleEl = document.getElementById('advWorkshopTitle');
     if (titleEl) titleEl.textContent = 'Editar Workshop';
   } else {
@@ -811,7 +838,8 @@ function openWorkshopModal(id) {
     advWorkshopTimeStartInput.value = '';
     advWorkshopTimeEndInput.value = '';
     advWorkshopTitleInput.value = '';
-    advWorkshopCategoryInput.value = '';
+    if (advWorkshopCategorySelect) advWorkshopCategorySelect.value = '';
+    if (advWorkshopCategoryOtherInput) advWorkshopCategoryOtherInput.value = '';
     advWorkshopPriceInput.value = '';
     advWorkshopMinSeatsInput.value = '';
     advWorkshopMaxSeatsInput.value = '';
@@ -819,6 +847,10 @@ function openWorkshopModal(id) {
     advWorkshopStatusSelect.value = 'rascunho';
     advWorkshopSubtitleInput.value = '';
     advWorkshopDescriptionInput.value = '';
+    if (advWorkshopDateSingle && advWorkshopDateMulti) {
+      advWorkshopDateSingle.checked = true;
+      advWorkshopDateMulti.checked = false;
+    }
     const titleEl = document.getElementById('advWorkshopTitle');
     if (titleEl) titleEl.textContent = 'Novo Workshop';
   }
@@ -837,6 +869,16 @@ async function onWorkshopSubmit(e) {
   if (!myAdvertiser) return;
   if (advWorkshopMsg) advWorkshopMsg.textContent = '';
   const id = advWorkshopIdInput.value ? Number(advWorkshopIdInput.value) : null;
+  // Categoria: usa select; se "Outros", pega o texto
+  let category = '';
+  if (advWorkshopCategorySelect) {
+    const sel = advWorkshopCategorySelect.value || '';
+    if (sel === 'Outros' && advWorkshopCategoryOtherInput) {
+      category = (advWorkshopCategoryOtherInput.value || '').trim();
+    } else {
+      category = sel;
+    }
+  }
   const payload = {
     id,
     advertiser_id: myAdvertiser.id,
@@ -844,7 +886,7 @@ async function onWorkshopSubmit(e) {
     title: advWorkshopTitleInput.value.trim(),
     subtitle: advWorkshopSubtitleInput.value.trim() || null,
     description: advWorkshopDescriptionInput.value.trim() || null,
-    category: advWorkshopCategoryInput.value.trim() || null,
+    category: category || null,
     date: advWorkshopDateInput.value,
     end_date: advWorkshopEndDateInput.value || null,
     time_start: advWorkshopTimeStartInput.value,
@@ -1319,3 +1361,26 @@ advWorkshopClose?.addEventListener('click', closeWorkshopModal);
 advWorkshopCancelBtn?.addEventListener('click', closeWorkshopModal);
 advWorkshopModal?.addEventListener('click', (e) => { if (e.target === advWorkshopModal) closeWorkshopModal(); });
 advWorkshopForm?.addEventListener('submit', onWorkshopSubmit);
+
+// Atualiza visibilidade do campo "Categoria (outros)"
+function updateWorkshopCategoryUI() {
+  if (!advWorkshopCategorySelect || !advWorkshopCategoryOtherInput) return;
+  const val = advWorkshopCategorySelect.value || '';
+  advWorkshopCategoryOtherInput.disabled = val !== 'Outros';
+  advWorkshopCategoryOtherInput.style.opacity = val === 'Outros' ? '1' : '0.4';
+}
+
+advWorkshopCategorySelect?.addEventListener('change', updateWorkshopCategoryUI);
+updateWorkshopCategoryUI();
+
+// Atualiza UI de datas (dia único x vários dias)
+function updateWorkshopDateModeUI() {
+  if (!advWorkshopDateSingle || !advWorkshopDateMulti || !advWorkshopEndDateInput) return;
+  const isMulti = advWorkshopDateMulti.checked;
+  advWorkshopEndDateInput.disabled = !isMulti;
+  advWorkshopEndDateInput.style.opacity = isMulti ? '1' : '0.4';
+}
+
+advWorkshopDateSingle?.addEventListener('change', updateWorkshopDateModeUI);
+advWorkshopDateMulti?.addEventListener('change', updateWorkshopDateModeUI);
+updateWorkshopDateModeUI();

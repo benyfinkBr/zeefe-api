@@ -3302,6 +3302,28 @@ body.anunciante-page #advChatMessages.chat-messages {
   gap: 6px;
 }
 
+/* Ajustes específicos do modal de Workshop (anunciante) */
+.auth-form.workshop-form {
+  gap: 12px;
+}
+
+.auth-form.workshop-form .form-grid-mini {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px 12px;
+}
+
+.auth-form.workshop-form .form-row {
+  margin-top: 4px;
+}
+
+.modal-section-title {
+  margin: 12px 0 4px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--brand-green);
+}
+
 .login-card .auth-form button {
   width: 100%;
   justify-content: center;

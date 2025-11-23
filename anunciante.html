@@ -320,36 +320,41 @@
       <div class="modal-body">
         <div class="modal-info" style="padding:20px; width:100%">
           <h2 id="advWorkshopTitle" style="margin:0 0 10px">Workshop</h2>
-          <form id="advWorkshopForm" class="auth-form">
+          <form id="advWorkshopForm" class="auth-form workshop-form">
             <input type="hidden" id="advWorkshopId" />
+            <!-- Bloco 1: Configurações do evento -->
+            <h3 class="modal-section-title">Configurações do evento</h3>
             <div class="form-grid-mini">
               <div>
                 <label for="advWorkshopRoom">Sala</label>
                 <select id="advWorkshopRoom" required></select>
               </div>
               <div>
-                <label for="advWorkshopDate">Data</label>
-                <input type="date" id="advWorkshopDate" required />
-              </div>
-              <div>
-                <label for="advWorkshopTimeStart">Início</label>
-                <input type="time" id="advWorkshopTimeStart" required />
-              </div>
-              <div>
-                <label for="advWorkshopTimeEnd">Fim</label>
-                <input type="time" id="advWorkshopTimeEnd" required />
-              </div>
-            </div>
-            <div class="form-grid-mini">
-              <div>
                 <label for="advWorkshopTitleInput">Título</label>
                 <input type="text" id="advWorkshopTitleInput" required />
               </div>
               <div>
-                <label for="advWorkshopCategory">Categoria (opcional)</label>
-                <input type="text" id="advWorkshopCategory" />
+                <label for="advWorkshopCategory">Categoria</label>
+                <select id="advWorkshopCategory">
+                  <option value="">Selecione...</option>
+                  <option value="Desenvolvimento pessoal">Desenvolvimento pessoal</option>
+                  <option value="Saúde e bem-estar">Saúde e bem-estar</option>
+                  <option value="Psicologia / Terapia">Psicologia / Terapia</option>
+                  <option value="Negócios e carreira">Negócios e carreira</option>
+                  <option value="Tecnologia e inovação">Tecnologia e inovação</option>
+                  <option value="Finanças e investimentos">Finanças e investimentos</option>
+                  <option value="Arte e criatividade">Arte e criatividade</option>
+                  <option value="Outros">Outros</option>
+                </select>
+              </div>
+              <div>
+                <label for="advWorkshopCategoryOther">Categoria (outros)</label>
+                <input type="text" id="advWorkshopCategoryOther" placeholder="Descreva a categoria" />
               </div>
             </div>
+
+            <!-- Bloco 2: Informações de participantes -->
+            <h3 class="modal-section-title">Informações de participantes</h3>
             <div class="form-grid-mini">
               <div>
                 <label for="advWorkshopPrice">Preço por vaga (R$)</label>
@@ -380,18 +385,59 @@
                 </select>
               </div>
             </div>
+
+            <!-- Bloco 3: Datas -->
+            <h3 class="modal-section-title">Datas</h3>
+            <div class="form-grid-mini">
+              <div>
+                <label for="advWorkshopDate">Data inicial</label>
+                <input type="date" id="advWorkshopDate" required />
+              </div>
+              <div>
+                <label>Modo</label>
+                <div style="display:flex; flex-direction:column; gap:4px;">
+                  <label style="display:inline-flex; align-items:center; gap:6px;">
+                    <input type="radio" name="advWorkshopDateMode" id="advWorkshopDateSingle" value="single" checked />
+                    <span>Dia único</span>
+                  </label>
+                  <label style="display:inline-flex; align-items:center; gap:6px;">
+                    <input type="radio" name="advWorkshopDateMode" id="advWorkshopDateMulti" value="multi" />
+                    <span>Vários dias</span>
+                  </label>
+                </div>
+              </div>
+              <div>
+                <label for="advWorkshopTimeStart">Início</label>
+                <input type="time" id="advWorkshopTimeStart" required />
+              </div>
+              <div>
+                <label for="advWorkshopTimeEnd">Fim</label>
+                <input type="time" id="advWorkshopTimeEnd" required />
+              </div>
+            </div>
+            <div class="form-grid-mini">
+              <div>
+                <label for="advWorkshopEndDate">Data final</label>
+                <input type="date" id="advWorkshopEndDate" />
+              </div>
+              <div style="align-self:end;">
+                <label style="display:inline-flex; align-items:center; gap:6px;">
+                  <input type="checkbox" id="advWorkshopSameTime" checked />
+                  <span>Manter o mesmo horário em todos os dias</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- Bloco 4: Informações gerais -->
+            <h3 class="modal-section-title">Informações gerais</h3>
             <div class="form-row">
               <label for="advWorkshopSubtitle">Subtítulo (opcional)</label>
               <input type="text" id="advWorkshopSubtitle" />
             </div>
             <div class="form-row">
-              <label for="advWorkshopEndDate">Data final (opcional)</label>
-              <input type="date" id="advWorkshopEndDate" />
-            </div>
-            <div class="form-row">
-              <label for="advWorkshopBanner">Imagem do voucher/curso (opcional)</label>
+              <label for="advWorkshopBanner">Imagem do curso (opcional)</label>
               <input type="file" id="advWorkshopBanner" accept="image/*" />
-              <small class="input-hint">Use uma imagem promocional para o voucher (JPG/PNG/WEBP, até 5MB).</small>
+              <small class="input-hint">Use uma imagem promocional do curso (JPG/PNG/WEBP, até 5MB).</small>
             </div>
             <div class="form-row">
               <label for="advWorkshopDescription">Descrição</label>
