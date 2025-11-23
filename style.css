@@ -3324,6 +3324,12 @@ body.anunciante-page #advChatMessages.chat-messages {
   color: var(--brand-green);
 }
 
+.modal-intro {
+  margin: 4px 0 14px;
+  font-size: 0.85rem;
+  color: var(--brand-muted);
+}
+
 .login-card .auth-form button {
   width: 100%;
   justify-content: center;
