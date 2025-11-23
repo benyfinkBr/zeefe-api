@@ -770,9 +770,15 @@ function openWorkshopModal(id) {
   advWorkshopMsg && (advWorkshopMsg.textContent = '');
   // Preenche combo de salas
   if (advWorkshopRoomSelect) {
-    advWorkshopRoomSelect.innerHTML = (myRooms || []).map(r =>
-      `<option value="${String(r.id)}">${escapeHtml(r.name || 'Sala')} — ${escapeHtml(r.city || '')}</option>`
-    ).join('');
+    if (!myRooms || !myRooms.length) {
+      advWorkshopRoomSelect.innerHTML = '<option value="">Nenhuma sala vinculada. Cadastre uma sala primeiro.</option>';
+      advWorkshopRoomSelect.disabled = true;
+    } else {
+      advWorkshopRoomSelect.disabled = false;
+      advWorkshopRoomSelect.innerHTML = (myRooms || []).map(r =>
+        `<option value="${String(r.id)}">${escapeHtml(r.name || 'Sala')} — ${escapeHtml(r.city || '')}</option>`
+      ).join('');
+    }
   }
   let ws = null;
   if (id) {
