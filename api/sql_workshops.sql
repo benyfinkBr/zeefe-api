@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS workshops (
   description     TEXT,
   category        VARCHAR(80) DEFAULT NULL,
   date            DATE NOT NULL,
+  end_date        DATE DEFAULT NULL,
   time_start      TIME NOT NULL,
   time_end        TIME NOT NULL,
   price_per_seat  DECIMAL(10,2) NOT NULL DEFAULT 0.00,

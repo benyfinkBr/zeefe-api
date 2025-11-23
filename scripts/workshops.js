@@ -134,12 +134,16 @@ document.addEventListener('DOMContentLoaded', () => {
         const meta = document.createElement('p');
         meta.className = 'workshop-meta';
         const dateStr = w.date || '';
+        const endDateStr = w.end_date || '';
+        const rangeStr = endDateStr && endDateStr !== dateStr
+          ? `${dateStr} até ${endDateStr}`
+          : dateStr;
         const timeStart = (w.time_start || '').slice(0, 5);
         const locationParts = [];
         if (w.room_city) locationParts.push(w.room_city);
         if (w.room_state) locationParts.push(w.room_state);
         const locStr = locationParts.join(' - ');
-        meta.textContent = [dateStr, timeStart, locStr].filter(Boolean).join(' • ');
+        meta.textContent = [rangeStr, timeStart, locStr].filter(Boolean).join(' • ');
         card.appendChild(meta);
 
         if (w.subtitle) {

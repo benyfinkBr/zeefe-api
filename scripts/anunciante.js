@@ -83,6 +83,7 @@ const advWorkshopMsg = document.getElementById('advWorkshopMsg');
 const advWorkshopIdInput = document.getElementById('advWorkshopId');
 const advWorkshopRoomSelect = document.getElementById('advWorkshopRoom');
 const advWorkshopDateInput = document.getElementById('advWorkshopDate');
+const advWorkshopEndDateInput = document.getElementById('advWorkshopEndDate');
 const advWorkshopTimeStartInput = document.getElementById('advWorkshopTimeStart');
 const advWorkshopTimeEndInput = document.getElementById('advWorkshopTimeEnd');
 const advWorkshopTitleInput = document.getElementById('advWorkshopTitleInput');
@@ -94,6 +95,7 @@ const advWorkshopShowBarSelect = document.getElementById('advWorkshopShowBar');
 const advWorkshopStatusSelect = document.getElementById('advWorkshopStatus');
 const advWorkshopSubtitleInput = document.getElementById('advWorkshopSubtitle');
 const advWorkshopDescriptionInput = document.getElementById('advWorkshopDescription');
+const advWorkshopBannerInput = document.getElementById('advWorkshopBanner');
 
 // Overview
 const ovViews = document.getElementById('ovViews');
@@ -788,6 +790,7 @@ function openWorkshopModal(id) {
     advWorkshopIdInput.value = ws.id;
     advWorkshopRoomSelect.value = String(ws.room_id);
     advWorkshopDateInput.value = ws.date || '';
+    advWorkshopEndDateInput.value = ws.end_date || '';
     advWorkshopTimeStartInput.value = (ws.time_start || '').slice(0,5);
     advWorkshopTimeEndInput.value = (ws.time_end || '').slice(0,5);
     advWorkshopTitleInput.value = ws.title || '';
@@ -804,6 +807,7 @@ function openWorkshopModal(id) {
   } else {
     advWorkshopIdInput.value = '';
     advWorkshopDateInput.value = '';
+    advWorkshopEndDateInput.value = '';
     advWorkshopTimeStartInput.value = '';
     advWorkshopTimeEndInput.value = '';
     advWorkshopTitleInput.value = '';
@@ -842,6 +846,7 @@ async function onWorkshopSubmit(e) {
     description: advWorkshopDescriptionInput.value.trim() || null,
     category: advWorkshopCategoryInput.value.trim() || null,
     date: advWorkshopDateInput.value,
+    end_date: advWorkshopEndDateInput.value || null,
     time_start: advWorkshopTimeStartInput.value,
     time_end: advWorkshopTimeEndInput.value,
     price_per_seat: advWorkshopPriceInput.value ? Number(advWorkshopPriceInput.value) : 0,
@@ -854,14 +859,39 @@ async function onWorkshopSubmit(e) {
     if (!payload.room_id || !payload.date || !payload.time_start || !payload.time_end || !payload.title) {
       throw new Error('Preencha sala, data, horários e título.');
     }
+    // Validação simples de linguagem inapropriada em título/descrição
+    const badWords = ['porn', 'porno', 'put@', 'puta', 'foda-se', 'foder', 'fuck', 'shit'];
+    const textToCheck = ((payload.title || '') + ' ' + (payload.description || '')).toLowerCase();
+    if (badWords.some(w => textToCheck.includes(w))) {
+      throw new Error('O título/descrição contém termos não permitidos. Ajuste o texto antes de salvar.');
+    }
     const res = await fetch(`${API_BASE}/apisave.php`, {
       method: 'POST',
       headers: { 'Content-Type':'application/json' },
-      body: JSON.stringify({ table: 'workshops', data: payload })
+      body: JSON.stringify({ table: 'workshops', record: payload })
     });
     const json = await parseJsonSafe(res);
     if (!json.success) throw new Error(json.error || 'Não foi possível salvar o workshop.');
     advWorkshopMsg && (advWorkshopMsg.textContent = 'Workshop salvo com sucesso.');
+
+    // Upload de banner, se selecionado
+    const wsId = payload.id || json.insertId;
+    const fileInput = advWorkshopBannerInput;
+    if (wsId && fileInput && fileInput.files && fileInput.files[0]) {
+      const fd = new FormData();
+      fd.append('id', String(wsId));
+      fd.append('file', fileInput.files[0]);
+      try {
+        const upRes = await fetch(`${API_BASE}/upload_workshop_banner.php`, { method: 'POST', body: fd });
+        const upJson = await parseJsonSafe(upRes);
+        if (!upJson.success) {
+          console.warn('Falha ao enviar banner do workshop:', upJson.error || 'erro');
+        }
+      } catch (_) {
+        console.warn('Erro inesperado ao enviar banner do workshop');
+      }
+    }
+
     await loadWorkshops();
     setTimeout(closeWorkshopModal, 600);
   } catch (err) {
@@ -1022,7 +1052,7 @@ savePayoutBtn?.addEventListener('click', async () => {
 setAuthVisible(true);
 
 // Modal Nova sala
-newRoomBtn?.addEventListener('click', () => { openRoomModal(); });
+newRoomBtn?.addEventListener('click', () => { openRoomModal(null); });
 document.getElementById('advQuickRegisterBtn')?.addEventListener('click', ()=>{
   // manda para a tela de registro direto
   document.getElementById('authLogin').hidden = true;
@@ -1035,10 +1065,62 @@ roomGeocodeBtn?.addEventListener('click', onRoomGeocode);
 roomModal?.addEventListener('click', (e)=> { if (e.target === roomModal) closeRoomModal(); });
 roomForm?.addEventListener('submit', onRoomFormSubmit);
 
-function openRoomModal(){
+function openRoomModal(roomData){
   if (!roomModal) return;
   roomMsg.textContent = '';
-  [roomName, roomCap, roomCity, roomState, roomPrice, roomStatus, roomDesc].forEach(el => { if (el) el.value = el.tagName==='SELECT' ? el.value : el.value; });
+
+  const isEdit = !!roomData;
+  if (isEdit) {
+    if (roomIdHidden) roomIdHidden.value = roomData.id;
+    if (roomName) roomName.value = roomData.name || '';
+    if (roomDesc) roomDesc.value = roomData.description || '';
+    if (roomCap) roomCap.value = roomData.capacity != null ? String(roomData.capacity) : '';
+    if (dailyRate) dailyRate.value = roomData.daily_rate != null ? String(roomData.daily_rate) : '';
+    if (facilitatedAccess) facilitatedAccess.value = roomData.facilitated_access != null ? String(roomData.facilitated_access) : '0';
+    if (portariaInteligente) portariaInteligente.value = roomData.portaria_inteligente || '';
+    if (streetInput) streetInput.value = roomData.street || '';
+    if (complementInput) complementInput.value = roomData.complement || '';
+    if (cepInput) cepInput.value = roomData.cep || '';
+    if (roomState) roomState.value = roomData.state || '';
+    if (roomCity) roomCity.value = roomData.city || '';
+    if (respNome) respNome.value = roomData.responsavel_nome || '';
+    if (respFone) respFone.value = roomData.responsavel_telefone || '';
+    if (respEmail) respEmail.value = roomData.responsavel_email || '';
+    if (portariaFone) portariaFone.value = roomData.portaria_telefone || '';
+    if (portariaEmail) portariaEmail.value = roomData.portaria_email || '';
+    if (locationInternal) locationInternal.value = roomData.location || '';
+    if (roomStatus) roomStatus.value = roomData.status || 'ativo';
+    if (maintenanceStart) maintenanceStart.value = roomData.maintenance_start || '';
+    if (maintenanceEnd) maintenanceEnd.value = roomData.maintenance_end || '';
+    if (deactivatedFrom) deactivatedFrom.value = roomData.deactivated_from || '';
+  } else {
+    if (roomIdHidden) roomIdHidden.value = '';
+    if (roomName) roomName.value = '';
+    if (roomDesc) roomDesc.value = '';
+    if (roomCap) roomCap.value = '';
+    if (dailyRate) dailyRate.value = '';
+    if (facilitatedAccess) facilitatedAccess.value = '0';
+    if (portariaInteligente) portariaInteligente.value = 'Não';
+    if (streetInput) streetInput.value = '';
+    if (complementInput) complementInput.value = '';
+    if (cepInput) cepInput.value = '';
+    if (roomState) roomState.value = '';
+    if (roomCity) roomCity.value = '';
+    if (respNome) respNome.value = '';
+    if (respFone) respFone.value = '';
+    if (respEmail) respEmail.value = '';
+    if (portariaFone) portariaFone.value = '';
+    if (portariaEmail) portariaEmail.value = '';
+    if (locationInternal) locationInternal.value = '';
+    if (roomStatus) roomStatus.value = 'ativo';
+    if (maintenanceStart) maintenanceStart.value = '';
+    if (maintenanceEnd) maintenanceEnd.value = '';
+    if (deactivatedFrom) deactivatedFrom.value = '';
+  }
+
+  const photosInput = document.getElementById('roomPhotos');
+  if (photosInput) photosInput.value = '';
+
   roomModal.classList.add('show');
   roomModal.setAttribute('aria-hidden','false');
 }
@@ -1047,40 +1129,44 @@ function closeRoomModal(){ roomModal?.classList.remove('show'); roomModal?.setAt
 async function onRoomFormSubmit(e){
   e.preventDefault(); roomMsg.textContent = '';
   if (!myAdvertiser?.id) { roomMsg.textContent = 'Sem anunciante vinculado.'; return; }
-  const payload = {
-    table: 'rooms',
-    data: {
-      name: (roomName?.value||'').trim(),
-      description: (roomDesc?.value||'').trim(),
-      capacity: roomCap?.value ? parseInt(roomCap.value,10) : null,
-      daily_rate: dailyRate?.value ? Number(dailyRate.value) : null,
-      facilitated_access: facilitatedAccess?.value || null,
-      portaria_inteligente: portariaInteligente?.value || null,
-      street: (streetInput?.value||'').trim(),
-      complement: (complementInput?.value||'').trim(),
-      cep: (cepInput?.value||'').trim(),
-      state: (roomState?.value||'').trim(),
-      city: (roomCity?.value||'').trim(),
-      responsavel_nome: (respNome?.value||'').trim(),
-      responsavel_telefone: (respFone?.value||'').trim(),
-      responsavel_email: (respEmail?.value||'').trim(),
-      portaria_telefone: (portariaFone?.value||'').trim(),
-      portaria_email: (portariaEmail?.value||'').trim(),
-      location: (locationInternal?.value||'').trim(),
-      status: (roomStatus?.value||'ativo').trim(),
-      maintenance_start: (maintenanceStart?.value||'') || null,
-      maintenance_end: (maintenanceEnd?.value||'') || null,
-      deactivated_from: (deactivatedFrom?.value||'') || null,
-      advertiser_id: myAdvertiser.id,
-      created_at: new Date().toISOString().slice(0,19).replace('T',' ')
-    }
+  const isEdit = !!(roomIdHidden && roomIdHidden.value);
+  const record = {
+    name: (roomName?.value||'').trim(),
+    description: (roomDesc?.value||'').trim(),
+    capacity: roomCap?.value ? parseInt(roomCap.value,10) : null,
+    daily_rate: dailyRate?.value ? Number(dailyRate.value) : null,
+    facilitated_access: facilitatedAccess?.value || null,
+    portaria_inteligente: portariaInteligente?.value || null,
+    street: (streetInput?.value||'').trim(),
+    complement: (complementInput?.value||'').trim(),
+    cep: (cepInput?.value||'').trim(),
+    state: (roomState?.value||'').trim(),
+    city: (roomCity?.value||'').trim(),
+    responsavel_nome: (respNome?.value||'').trim(),
+    responsavel_telefone: (respFone?.value||'').trim(),
+    responsavel_email: (respEmail?.value||'').trim(),
+    portaria_telefone: (portariaFone?.value||'').trim(),
+    portaria_email: (portariaEmail?.value||'').trim(),
+    location: (locationInternal?.value||'').trim(),
+    status: (roomStatus?.value||'ativo').trim(),
+    maintenance_start: (maintenanceStart?.value||'') || null,
+    maintenance_end: (maintenanceEnd?.value||'') || null,
+    deactivated_from: (deactivatedFrom?.value||'') || null,
+    advertiser_id: myAdvertiser.id
   };
-  if (!payload.data.name) { roomMsg.textContent = 'Informe o nome da sala.'; return; }
+  if (!record.name) { roomMsg.textContent = 'Informe o nome da sala.'; return; }
+  if (!isEdit) {
+    record.created_at = new Date().toISOString().slice(0,19).replace('T',' ');
+  } else {
+    record.id = Number(roomIdHidden.value);
+  }
+  const payload = { table: 'rooms', data: record };
   try {
-    const res = await fetch(`${API_BASE}/apiadd.php`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+    const url = isEdit ? `${API_BASE}/apiupdate.php` : `${API_BASE}/apiadd.php`;
+    const res = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
     const json = await parseJsonSafe(res);
-    if (!json.success) throw new Error(json.error || 'Falha ao criar sala.');
-    roomMsg.textContent = 'Sala criada com sucesso!';
+    if (!json.success) throw new Error(json.error || (isEdit ? 'Falha ao salvar sala.' : 'Falha ao criar sala.'));
+    roomMsg.textContent = isEdit ? 'Sala atualizada com sucesso!' : 'Sala criada com sucesso!';
     await loadRooms();
     closeRoomModal();
     setActivePanel('rooms');
@@ -1191,35 +1277,14 @@ async function updateReservationStatus(action){
 function openRoomDetailsModal(roomId){
   const r = (myRooms||[]).find(x => String(x.id)===String(roomId));
   if (!r) return;
-  advRoomDetId.value = r.id;
-  advRoomDetName.value = r.name || '';
-  advRoomDetRate.value = r.daily_rate || '';
-  advRoomDetStatus.value = (r.status||'ativo');
-  advRoomDetCityUf.value = `${r.city||''}${r.state? ' - '+r.state:''}`;
-  advRoomDetMsg.textContent = '';
-  advRoomDetModal?.classList.add('show'); advRoomDetModal?.setAttribute('aria-hidden','false');
+  // Reutiliza o modal completo de sala para edição, com todos os campos
+  openRoomModal(r);
 }
 function closeRoomDetailsModal(){ advRoomDetModal?.classList.remove('show'); advRoomDetModal?.setAttribute('aria-hidden','true'); }
 advRoomDetClose?.addEventListener('click', closeRoomDetailsModal);
 advRoomDetCancel?.addEventListener('click', closeRoomDetailsModal);
 advRoomDetModal?.addEventListener('click', (e)=> { if (e.target === advRoomDetModal) closeRoomDetailsModal(); });
 advResModal?.addEventListener('click', (e)=> { if (e.target === advResModal) closeReservationModal(); });
-
-advRoomDetForm?.addEventListener('submit', async (e) => {
-  e.preventDefault(); advRoomDetMsg.textContent='';
-  const id = Number(advRoomDetId.value||0);
-  const data = { id, name: advRoomDetName.value.trim(), daily_rate: advRoomDetRate.value ? Number(advRoomDetRate.value) : null, status: advRoomDetStatus.value };
-  try {
-    const res = await fetch(`${API_BASE}/apiupdate.php`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ table:'rooms', data }) });
-    const json = await parseJsonSafe(res);
-    if (!json.success) throw new Error(json.error || 'Falha ao salvar.');
-    advRoomDetMsg.textContent = 'Sala atualizada.';
-    await loadRooms();
-    setTimeout(closeRoomDetailsModal, 600);
-  } catch (err) {
-    advRoomDetMsg.textContent = err.message || 'Erro ao salvar.';
-  }
-});
 
 // Geocodificação no modal de sala (edição)
 async function onRoomGeocode(){
