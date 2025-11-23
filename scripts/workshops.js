@@ -4,104 +4,79 @@ document.addEventListener('DOMContentLoaded', () => {
   const listEl = document.getElementById('workshopsList');
   const msgEl = document.getElementById('workshopsMessage');
 
-  const modal = document.getElementById('workshopEnrollModal');
-  const modalClose = document.getElementById('workshopEnrollClose');
-  const modalCancel = document.getElementById('workshopEnrollCancelBtn');
-  const form = document.getElementById('workshopEnrollForm');
-  const inputId = document.getElementById('workshopEnrollId');
-  const inputName = document.getElementById('workshopEnrollName');
-  const inputEmail = document.getElementById('workshopEnrollEmail');
-  const inputCpf = document.getElementById('workshopEnrollCpf');
-  const inputPhone = document.getElementById('workshopEnrollPhone');
-  const inputVoucher = document.getElementById('workshopEnrollVoucher');
-  const summaryEl = document.getElementById('workshopEnrollSummary');
-  const msgEnroll = document.getElementById('workshopEnrollMsg');
-  const codeBox = document.getElementById('workshopEnrollCodeBox');
+  const detailsModal = document.getElementById('workshopDetailsModal');
+  const detailsClose = document.getElementById('workshopDetailsClose');
+  const detailsTitle = document.getElementById('workshopDetailsTitle');
+  const detailsMeta = document.getElementById('workshopDetailsMeta');
+  const detailsCoverWrapper = document.getElementById('workshopDetailsCoverWrapper');
+  const detailsCover = document.getElementById('workshopDetailsCover');
+  const detailsDescription = document.getElementById('workshopDetailsDescription');
+  const detailsWhen = document.getElementById('workshopDetailsWhen');
+  const detailsWhere = document.getElementById('workshopDetailsWhere');
+  const detailsPrice = document.getElementById('workshopDetailsPrice');
+  const detailsSeats = document.getElementById('workshopDetailsSeats');
 
   if (!listEl || !msgEl) return;
 
-  function openEnrollModal(workshopId) {
+  function openDetailsModal(workshopId) {
     const ws = (workshopsCache || []).find(w => String(w.id) === String(workshopId));
-    if (!ws || !modal) return;
-    inputId.value = ws.id;
-    inputName.value = '';
-    inputEmail.value = '';
-    inputCpf.value = '';
-    inputPhone.value = '';
-    inputVoucher.value = '';
-    msgEnroll.textContent = '';
-    codeBox.style.display = 'none';
-    codeBox.innerHTML = '';
+    if (!ws || !detailsModal) return;
+
     const dateStr = ws.date || '';
+    const endDateStr = ws.end_date || '';
+    const rangeStr = endDateStr && endDateStr !== dateStr
+      ? `${dateStr} até ${endDateStr}`
+      : dateStr;
     const timeStart = (ws.time_start || '').slice(0,5);
+    const timeEnd = (ws.time_end || '').slice(0,5);
     const locationParts = [];
     if (ws.room_city) locationParts.push(ws.room_city);
     if (ws.room_state) locationParts.push(ws.room_state);
     const locStr = locationParts.join(' - ');
-    summaryEl.textContent = [
-      ws.title || 'Workshop',
-      [dateStr, timeStart].filter(Boolean).join(' • '),
-      locStr
-    ].filter(Boolean).join(' | ');
-    modal.classList.add('show');
-    modal.setAttribute('aria-hidden','false');
-  }
 
-  function closeEnrollModal() {
-    if (!modal) return;
-    modal.classList.remove('show');
-    modal.setAttribute('aria-hidden','true');
-  }
+    if (detailsTitle) detailsTitle.textContent = ws.title || 'Workshop';
+    if (detailsMeta) detailsMeta.textContent = [rangeStr, [timeStart, timeEnd].filter(Boolean).join(' às '), locStr].filter(Boolean).join(' • ');
 
-  modalClose?.addEventListener('click', closeEnrollModal);
-  modalCancel?.addEventListener('click', closeEnrollModal);
-  modal?.addEventListener('click', (e) => { if (e.target === modal) closeEnrollModal(); });
-
-  form?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    if (!inputId.value) return;
-    msgEnroll.textContent = '';
-    codeBox.style.display = 'none';
-    codeBox.innerHTML = '';
-    const payload = {
-      workshop_id: Number(inputId.value),
-      name: inputName.value.trim(),
-      email: inputEmail.value.trim(),
-      cpf: inputCpf.value.trim(),
-      phone: inputPhone.value.trim(),
-      voucher_code: inputVoucher.value.trim()
-    };
-    try {
-      const res = await fetch('api/workshop_enroll.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      const json = await res.json();
-      if (!json.success) {
-        throw new Error(json.error || 'Não foi possível registrar sua inscrição.');
-      }
-      const status = json.payment_status || 'pendente';
-      const thresholdReached = !!json.threshold_reached;
-      if (status === 'pago') {
-        msgEnroll.textContent = 'Inscrição confirmada! Enviaremos as instruções para o seu e-mail.';
-      } else {
-        msgEnroll.textContent = 'Sua pré-reserva foi registrada. Assim que o número mínimo de participantes for atingido, sua inscrição será confirmada por e-mail.';
-      }
-      if (json.public_code && json.checkin_url) {
-        const url = json.checkin_url;
-        const qrSrc = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(url);
-        codeBox.style.display = 'block';
-        codeBox.innerHTML = `
-          <strong>Seu código de acesso:</strong> ${json.public_code}<br>
-          <small>Guarde este código. Ele será usado para validar sua entrada caso o curso seja confirmado.</small><br>
-          <img src="${qrSrc}" alt="QR code do ingresso" style="margin-top:8px;"/>
-        `;
-      }
-    } catch (err) {
-      msgEnroll.textContent = err.message || 'Falha ao registrar inscrição.';
+    if (ws.banner_path && detailsCover && detailsCoverWrapper) {
+      detailsCover.src = ws.banner_path;
+      detailsCoverWrapper.style.display = 'block';
+    } else if (detailsCoverWrapper) {
+      detailsCoverWrapper.style.display = 'none';
     }
-  });
+
+    if (detailsDescription) {
+      detailsDescription.textContent = ws.description || 'O organizador ainda não adicionou uma descrição detalhada para este evento.';
+    }
+
+    if (detailsWhen) detailsWhen.textContent = rangeStr ? `Quando: ${rangeStr} (${[timeStart, timeEnd].filter(Boolean).join(' às ')})` : '';
+    if (detailsWhere) detailsWhere.textContent = locStr ? `Onde: ${locStr}` : '';
+    if (detailsPrice) {
+      const raw = parseFloat(ws.price_per_seat || 0);
+      detailsPrice.textContent = raw > 0
+        ? `Investimento: ${raw.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} por participante`
+        : 'Investimento: evento gratuito';
+    }
+    if (detailsSeats) {
+      const min = Number(ws.min_seats || 0);
+      const max = Number(ws.max_seats || 0);
+      const parts = [];
+      if (min > 0) parts.push(`Mínimo de ${min} participantes`);
+      if (max > 0) parts.push(`Máximo de ${max} participantes`);
+      detailsSeats.textContent = parts.length ? parts.join(' • ') : '';
+    }
+
+    detailsModal.classList.add('show');
+    detailsModal.setAttribute('aria-hidden','false');
+  }
+
+  function closeDetailsModal() {
+    if (!detailsModal) return;
+    detailsModal.classList.remove('show');
+    detailsModal.setAttribute('aria-hidden','true');
+  }
+
+  detailsClose?.addEventListener('click', closeDetailsModal);
+  detailsModal?.addEventListener('click', (e) => { if (e.target === detailsModal) closeDetailsModal(); });
 
   msgEl.textContent = 'Carregando workshops...';
 
@@ -126,6 +101,16 @@ document.addEventListener('DOMContentLoaded', () => {
       items.forEach(w => {
         const card = document.createElement('article');
         card.className = 'card workshop-card';
+
+        if (w.banner_path) {
+          const cover = document.createElement('div');
+          cover.className = 'workshop-card-cover';
+          const img = document.createElement('img');
+          img.src = w.banner_path;
+          img.alt = `Imagem do workshop ${w.title || ''}`.trim();
+          cover.appendChild(img);
+          card.appendChild(cover);
+        }
 
         const title = document.createElement('h4');
         title.textContent = w.title || 'Workshop';
@@ -180,15 +165,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const actions = document.createElement('div');
         actions.className = 'workshop-actions';
+
+        const detailsBtn = document.createElement('a');
+        detailsBtn.href = '#';
+        detailsBtn.className = 'btn btn-secondary btn-sm';
+        detailsBtn.textContent = 'Ver detalhes';
+        detailsBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          openDetailsModal(w.id);
+        });
+        actions.appendChild(detailsBtn);
+
         const btn = document.createElement('a');
         btn.href = '#';
         btn.className = 'btn btn-primary btn-sm';
         btn.textContent = 'Quero participar';
         btn.addEventListener('click', (e) => {
           e.preventDefault();
-          openEnrollModal(w.id);
+          openDetailsModal(w.id);
         });
         actions.appendChild(btn);
+
         card.appendChild(actions);
 
         listEl.appendChild(card);
