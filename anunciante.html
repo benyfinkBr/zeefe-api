@@ -191,6 +191,10 @@
           <button type="button" class="btn btn-primary btn-sm" id="advNewWorkshopBtn">Criar workshop</button>
         </article>
         <div id="advWorkshopsContainer" class="responsive-table"></div>
+        <article class="form-card" style="margin-top:16px">
+          <h4 id="advEnrollmentsTitle" style="margin-top:0; display:none">Inscritos</h4>
+          <div id="advEnrollmentsContainer" class="responsive-table"></div>
+        </article>
       </div>
 
       <div id="panel-reservations" class="portal-section" hidden>
@@ -350,6 +354,10 @@
               <div>
                 <label for="advWorkshopPrice">Preço por vaga (R$)</label>
                 <input type="number" id="advWorkshopPrice" min="0" step="0.01" />
+              </div>
+              <div>
+                <label for="advWorkshopMinSeats">Mínimo de participantes</label>
+                <input type="number" id="advWorkshopMinSeats" min="0" step="1" />
               </div>
               <div>
                 <label for="advWorkshopMaxSeats">Total de vagas</label>

@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS workshops (
   time_start      TIME NOT NULL,
   time_end        TIME NOT NULL,
   price_per_seat  DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+  min_seats       INT(11) NOT NULL DEFAULT 0,
   max_seats       INT(11) NOT NULL DEFAULT 0,
   show_sold_bar   TINYINT(1) NOT NULL DEFAULT 0,
   status          ENUM('rascunho','publicado','cancelado','concluido') NOT NULL DEFAULT 'rascunho',
@@ -73,4 +74,3 @@ CREATE TABLE IF NOT EXISTS workshop_media (
   PRIMARY KEY (id),
   KEY idx_workshop_media_workshop (workshop_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-

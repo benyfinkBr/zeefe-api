@@ -41,6 +41,50 @@
     </section>
   </main>
 
+  <!-- Modal: Inscrição em workshop -->
+  <div class="modal-overlay" id="workshopEnrollModal" aria-hidden="true">
+    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="workshopEnrollTitle" style="max-width:520px;">
+      <button class="modal-close" type="button" id="workshopEnrollClose" aria-label="Fechar">&times;</button>
+      <div class="modal-body">
+        <div class="modal-info" style="padding:20px; width:100%">
+          <h2 id="workshopEnrollTitle" style="margin:0 0 10px">Inscrever-se</h2>
+          <p id="workshopEnrollSummary" class="rooms-message" style="margin-bottom:12px"></p>
+          <form id="workshopEnrollForm" class="auth-form">
+            <input type="hidden" id="workshopEnrollId" />
+            <div class="form-row">
+              <label for="workshopEnrollName">Nome completo</label>
+              <input type="text" id="workshopEnrollName" required />
+            </div>
+            <div class="form-row">
+              <label for="workshopEnrollEmail">E-mail</label>
+              <input type="email" id="workshopEnrollEmail" required />
+            </div>
+            <div class="form-grid-mini">
+              <div>
+                <label for="workshopEnrollCpf">CPF (opcional)</label>
+                <input type="text" id="workshopEnrollCpf" maxlength="14" />
+              </div>
+              <div>
+                <label for="workshopEnrollPhone">Telefone (opcional)</label>
+                <input type="text" id="workshopEnrollPhone" maxlength="15" />
+              </div>
+            </div>
+            <div class="form-row">
+              <label for="workshopEnrollVoucher">Voucher (opcional)</label>
+              <input type="text" id="workshopEnrollVoucher" />
+            </div>
+            <div class="form-row" style="display:flex; gap:10px; justify-content:flex-end; margin-top:10px;">
+              <button type="button" class="btn btn-secondary" id="workshopEnrollCancelBtn">Cancelar</button>
+              <button type="submit" class="btn btn-primary">Confirmar inscrição</button>
+            </div>
+            <div id="workshopEnrollMsg" class="rooms-message" style="margin-top:8px"></div>
+            <div id="workshopEnrollCodeBox" class="rooms-message" style="margin-top:8px; display:none"></div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <footer>
     <p>Contato: contato@zeefe.com | (11) 9.6714-7377</p>
     <p>Endereço: Moema, São Paulo - SP</p>

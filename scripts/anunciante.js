@@ -88,6 +88,7 @@ const advWorkshopTimeEndInput = document.getElementById('advWorkshopTimeEnd');
 const advWorkshopTitleInput = document.getElementById('advWorkshopTitleInput');
 const advWorkshopCategoryInput = document.getElementById('advWorkshopCategory');
 const advWorkshopPriceInput = document.getElementById('advWorkshopPrice');
+const advWorkshopMinSeatsInput = document.getElementById('advWorkshopMinSeats');
 const advWorkshopMaxSeatsInput = document.getElementById('advWorkshopMaxSeats');
 const advWorkshopShowBarSelect = document.getElementById('advWorkshopShowBar');
 const advWorkshopStatusSelect = document.getElementById('advWorkshopStatus');
@@ -107,6 +108,8 @@ const finContainer = document.getElementById('advFinanceContainer');
 const threadsContainer = document.getElementById('advThreadsContainer');
 const reviewsContainer = document.getElementById('advReviewsContainer');
 const workshopsContainer = document.getElementById('advWorkshopsContainer');
+const enrollmentsContainer = document.getElementById('advEnrollmentsContainer');
+const enrollmentsTitle = document.getElementById('advEnrollmentsTitle');
 const chatArea = document.getElementById('advChatArea');
 const chatHeader = document.getElementById('advChatHeader');
 const chatMessages = document.getElementById('advChatMessages');
@@ -679,7 +682,10 @@ async function loadWorkshops() {
           <td>${escapeHtml(w.room_name || '')}</td>
           <td>${escapeHtml(w.status || '')}</td>
           <td>${max ? `${sold}/${max} (${pct}%)` : '—'}</td>
-          <td><button class="btn btn-secondary btn-sm" data-ws="${w.id}" data-act="edit">Editar</button></td>
+          <td>
+            <button class="btn btn-secondary btn-sm" data-ws="${w.id}" data-act="edit">Editar</button>
+            <button class="btn btn-secondary btn-sm" data-ws="${w.id}" data-act="enrollments">Ver inscritos</button>
+          </td>
         </tr>
       `;
     }).join('');
@@ -699,11 +705,63 @@ async function loadWorkshops() {
         <tbody>${rows}</tbody>
       </table>
     `;
-    workshopsContainer.querySelectorAll('button[data-ws][data-act="edit"]').forEach(btn => {
-      btn.addEventListener('click', () => openWorkshopModal(btn.getAttribute('data-ws')));
+    workshopsContainer.querySelectorAll('button[data-ws]').forEach(btn => {
+      const id = btn.getAttribute('data-ws');
+      const act = btn.getAttribute('data-act');
+      if (act === 'edit') {
+        btn.addEventListener('click', () => openWorkshopModal(id));
+      } else if (act === 'enrollments') {
+        btn.addEventListener('click', () => loadWorkshopEnrollments(id));
+      }
     });
   } catch (e) {
     workshopsContainer.innerHTML = '<div class="rooms-message">Falha ao carregar workshops.</div>';
+  }
+}
+
+async function loadWorkshopEnrollments(workshopId) {
+  if (!enrollmentsContainer) return;
+  if (!myAdvertiser) return;
+  enrollmentsContainer.innerHTML = '<div class="rooms-message">Carregando inscritos…</div>';
+  if (enrollmentsTitle) {
+    enrollmentsTitle.style.display = 'block';
+  }
+  try {
+    const advId = myAdvertiser.id;
+    const res = await fetch(`${API_BASE}/workshop_enrollments_list.php?advertiser_id=${encodeURIComponent(advId)}&workshop_id=${encodeURIComponent(workshopId)}`);
+    const json = await parseJsonSafe(res);
+    const list = json.success ? (json.data || []) : [];
+    if (!list.length) {
+      enrollmentsContainer.innerHTML = '<div class="rooms-message">Nenhum inscrito neste workshop.</div>';
+      return;
+    }
+    const rows = list.map(e => `
+      <tr>
+        <td>${escapeHtml(e.participant_name || '')}</td>
+        <td>${escapeHtml(e.participant_email || '')}</td>
+        <td>${escapeHtml(e.participant_cpf || '')}</td>
+        <td>${escapeHtml(e.payment_status || '')}</td>
+        <td>${escapeHtml(e.checkin_status || '')}</td>
+        <td>${escapeHtml(e.public_code || '')}</td>
+      </tr>
+    `).join('');
+    enrollmentsContainer.innerHTML = `
+      <table>
+        <thead>
+          <tr>
+            <th>Participante</th>
+            <th>E-mail</th>
+            <th>CPF</th>
+            <th>Pagamento</th>
+            <th>Check-in</th>
+            <th>Código</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    `;
+  } catch (e) {
+    enrollmentsContainer.innerHTML = '<div class="rooms-message">Falha ao carregar inscritos.</div>';
   }
 }
 
@@ -729,6 +787,7 @@ function openWorkshopModal(id) {
     advWorkshopTitleInput.value = ws.title || '';
     advWorkshopCategoryInput.value = ws.category || '';
     advWorkshopPriceInput.value = ws.price_per_seat || '';
+    advWorkshopMinSeatsInput.value = ws.min_seats || '';
     advWorkshopMaxSeatsInput.value = ws.max_seats || '';
     advWorkshopShowBarSelect.value = String(ws.show_sold_bar || 0);
     advWorkshopStatusSelect.value = ws.status || 'rascunho';
@@ -744,6 +803,7 @@ function openWorkshopModal(id) {
     advWorkshopTitleInput.value = '';
     advWorkshopCategoryInput.value = '';
     advWorkshopPriceInput.value = '';
+    advWorkshopMinSeatsInput.value = '';
     advWorkshopMaxSeatsInput.value = '';
     advWorkshopShowBarSelect.value = '0';
     advWorkshopStatusSelect.value = 'rascunho';
@@ -779,6 +839,7 @@ async function onWorkshopSubmit(e) {
     time_start: advWorkshopTimeStartInput.value,
     time_end: advWorkshopTimeEndInput.value,
     price_per_seat: advWorkshopPriceInput.value ? Number(advWorkshopPriceInput.value) : 0,
+    min_seats: advWorkshopMinSeatsInput.value ? Number(advWorkshopMinSeatsInput.value) : 0,
     max_seats: advWorkshopMaxSeatsInput.value ? Number(advWorkshopMaxSeatsInput.value) : 0,
     show_sold_bar: Number(advWorkshopShowBarSelect.value || 0),
     status: advWorkshopStatusSelect.value || 'rascunho'
