@@ -226,14 +226,21 @@ input, select {
       <nav class="sidebar">
         <img src="img/logo.jpg" alt="Ze.EFE">
         <ul id="menu">
+          <li class="menu-group">Portal de Salas</li>
           <li data-section="companies" class="active">Empresas</li>
           <li data-section="clients">Clientes</li>
-          <li data-section="advertisers">Anunciantes</li>
           <li data-section="rooms">Salas</li>
           <li data-section="reservations">Reservas</li>
           <li data-section="visitors">Visitantes</li>
-          <li data-section="amenities">Comodidades</li>
           <li data-section="vouchers">Vouchers</li>
+          <li class="menu-group">Anunciantes & Ofertas</li>
+          <li data-section="advertisers">Anunciantes</li>
+          <li data-section="workshops">Workshops</li>
+          <li class="menu-group">Participantes de Workshops</li>
+          <li data-section="workshop_participants">Participantes</li>
+          <li data-section="workshop_enrollments">Inscrições</li>
+          <li class="menu-group">Configurações</li>
+          <li data-section="amenities">Comodidades</li>
           <li data-section="campaigns">Campanhas</li>
           <li data-section="messages">Mensagens</li>
         </ul>
@@ -387,7 +394,10 @@ input, select {
       visitors: 'Visitante',
       amenities: 'Comodidade',
       vouchers: 'Voucher',
-      campaigns: 'Campanha'
+      campaigns: 'Campanha',
+      workshops: 'Workshop',
+      workshop_participants: 'Participante de Workshop',
+      workshop_enrollments: 'Inscrição de Workshop'
     };
 
     const reservationFilters = {
@@ -803,6 +813,39 @@ input, select {
           { key: 'used_count', label: 'Usos' },
           { key: 'starts_at', label: 'Início', formatter: dateFormatter },
           { key: 'ends_at', label: 'Fim', formatter: dateFormatter }
+        ]
+      },
+      workshops: {
+        columns: [
+          { key: 'id', label: 'ID' },
+          { key: 'title', label: 'Título' },
+          { key: 'advertiser_id', label: 'Anunciante (ID)' },
+          { key: 'room_id', label: 'Sala (ID)' },
+          { key: 'date', label: 'Data inicial', formatter: dateFormatter },
+          { key: 'end_date', label: 'Data final', formatter: dateFormatter },
+          { key: 'status', label: 'Status', formatter: statusFormatter }
+        ]
+      },
+      workshop_participants: {
+        columns: [
+          { key: 'id', label: 'ID' },
+          { key: 'name', label: 'Nome' },
+          { key: 'email', label: 'E-mail' },
+          { key: 'cpf', label: 'CPF' },
+          { key: 'phone', label: 'Telefone' },
+          { key: 'status', label: 'Status', formatter: statusFormatter },
+          { key: 'created_at', label: 'Criado em', formatter: dateFormatter }
+        ]
+      },
+      workshop_enrollments: {
+        columns: [
+          { key: 'id', label: 'ID' },
+          { key: 'workshop_id', label: 'Workshop (ID)' },
+          { key: 'participant_id', label: 'Participante (ID)' },
+          { key: 'payment_status', label: 'Pagamento', formatter: statusFormatter },
+          { key: 'checkin_status', label: 'Check-in', formatter: statusFormatter },
+          { key: 'public_code', label: 'Código público' },
+          { key: 'created_at', label: 'Criado em', formatter: dateFormatter }
         ]
       }
     };
