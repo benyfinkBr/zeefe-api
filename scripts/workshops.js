@@ -94,4 +94,3 @@ document.addEventListener('DOMContentLoaded', () => {
       msgEl.textContent = 'Não foi possível carregar os workshops no momento.';
     });
 });
-

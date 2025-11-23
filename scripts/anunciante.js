@@ -6,6 +6,7 @@ let advClient = null; // dados do cliente logado
 let myAdvertiser = null; // registro de advertisers do dono
 let myRooms = [];
 let myReservations = [];
+let myWorkshops = [];
 let currentThreadId = null;
 let chatPollTimer = null;
 
@@ -73,18 +74,39 @@ const advNewPasswordConfirmInput = document.getElementById('advNewPasswordConfir
 const advPwdStrengthIndicator = document.getElementById('advPwdStrengthIndicator');
 const advPwdMatchIndicator = document.getElementById('advPwdMatchIndicator');
 
+// Workshops
+const advWorkshopModal = document.getElementById('advWorkshopModal');
+const advWorkshopClose = document.getElementById('advWorkshopClose');
+const advWorkshopForm = document.getElementById('advWorkshopForm');
+const advWorkshopCancelBtn = document.getElementById('advWorkshopCancelBtn');
+const advWorkshopMsg = document.getElementById('advWorkshopMsg');
+const advWorkshopIdInput = document.getElementById('advWorkshopId');
+const advWorkshopRoomSelect = document.getElementById('advWorkshopRoom');
+const advWorkshopDateInput = document.getElementById('advWorkshopDate');
+const advWorkshopTimeStartInput = document.getElementById('advWorkshopTimeStart');
+const advWorkshopTimeEndInput = document.getElementById('advWorkshopTimeEnd');
+const advWorkshopTitleInput = document.getElementById('advWorkshopTitleInput');
+const advWorkshopCategoryInput = document.getElementById('advWorkshopCategory');
+const advWorkshopPriceInput = document.getElementById('advWorkshopPrice');
+const advWorkshopMaxSeatsInput = document.getElementById('advWorkshopMaxSeats');
+const advWorkshopShowBarSelect = document.getElementById('advWorkshopShowBar');
+const advWorkshopStatusSelect = document.getElementById('advWorkshopStatus');
+const advWorkshopSubtitleInput = document.getElementById('advWorkshopSubtitle');
+const advWorkshopDescriptionInput = document.getElementById('advWorkshopDescription');
+
 // Overview
 const ovViews = document.getElementById('ovViews');
 const ovUpcoming = document.getElementById('ovUpcoming');
 const ovBalance = document.getElementById('ovBalance');
 const ovNext = document.getElementById('ovNextReservations');
 
-// Salas / Reservas / Financeiro / Mensagens / Reviews
+// Salas / Reservas / Financeiro / Mensagens / Reviews / Workshops
 const roomsContainer = document.getElementById('advRoomsContainer');
 const resContainer = document.getElementById('advReservationsContainer');
 const finContainer = document.getElementById('advFinanceContainer');
 const threadsContainer = document.getElementById('advThreadsContainer');
 const reviewsContainer = document.getElementById('advReviewsContainer');
+const workshopsContainer = document.getElementById('advWorkshopsContainer');
 const chatArea = document.getElementById('advChatArea');
 const chatHeader = document.getElementById('advChatHeader');
 const chatMessages = document.getElementById('advChatMessages');
@@ -175,7 +197,7 @@ async function parseJsonSafe(res) {
 }
 
 function setActivePanel(name) {
-  const panels = ['overview','rooms','reservations','finance','messages','reviews','profile'];
+  const panels = ['overview','rooms','workshops','reservations','finance','messages','reviews','profile'];
   panels.forEach(p => {
     const el = document.getElementById('panel-' + p);
     if (el) el.hidden = (p !== name);
@@ -256,7 +278,7 @@ async function afterLogin() {
   accountNumberInput && (accountNumberInput.value = myAdvertiser?.account_number || '');
   pixKeyInput && (pixKeyInput.value = myAdvertiser?.pix_key || '');
 
-  await Promise.all([loadRooms(), loadReservations(), loadFinance(), loadOverview(), loadReviews(), loadThreads()]);
+  await Promise.all([loadRooms(), loadReservations(), loadFinance(), loadOverview(), loadReviews(), loadThreads(), loadWorkshops()]);
   setActivePanel('overview');
 
   // Eventos de perfil (somente após login)
@@ -624,7 +646,159 @@ async function loadReviews() {
         <tbody>${rows || '<tr><td colspan="4" style="text-align:center;padding:16px">Sem avaliações.</td></tr>'}</tbody>
       </table>`;
   } catch (e) {
-  reviewsContainer.innerHTML = '<div class="rooms-message">Falha ao carregar avaliações.</div>';
+    reviewsContainer.innerHTML = '<div class="rooms-message">Falha ao carregar avaliações.</div>';
+  }
+}
+
+// ===== Workshops (lista + modal) =====
+async function loadWorkshops() {
+  if (!workshopsContainer) return;
+  workshopsContainer.innerHTML = '<div class="rooms-message">Carregando…</div>';
+  try {
+    const advId = myAdvertiser?.id;
+    if (!advId) {
+      workshopsContainer.innerHTML = '<div class="rooms-message">Sem anunciante vinculado.</div>';
+      return;
+    }
+    const res = await fetch(`${API_BASE}/workshops_list.php?advertiser_id=${encodeURIComponent(advId)}&status=&upcoming=0`);
+    const json = await parseJsonSafe(res);
+    myWorkshops = json.success ? (json.data || []) : [];
+    if (!myWorkshops.length) {
+      workshopsContainer.innerHTML = '<div class="rooms-message">Nenhum workshop cadastrado. Clique em "Criar workshop".</div>';
+      return;
+    }
+    const rows = myWorkshops.map(w => {
+      const sold = Number(w.sold_seats || 0);
+      const max = Number(w.max_seats || 0);
+      const pct = max > 0 ? Math.round((sold / max) * 100) : 0;
+      return `
+        <tr>
+          <td>${escapeHtml(w.title || 'Workshop')}</td>
+          <td>${escapeHtml(w.date || '')}</td>
+          <td>${escapeHtml((w.time_start || '').slice(0,5))}</td>
+          <td>${escapeHtml(w.room_name || '')}</td>
+          <td>${escapeHtml(w.status || '')}</td>
+          <td>${max ? `${sold}/${max} (${pct}%)` : '—'}</td>
+          <td><button class="btn btn-secondary btn-sm" data-ws="${w.id}" data-act="edit">Editar</button></td>
+        </tr>
+      `;
+    }).join('');
+    workshopsContainer.innerHTML = `
+      <table>
+        <thead>
+          <tr>
+            <th>Título</th>
+            <th>Data</th>
+            <th>Início</th>
+            <th>Sala</th>
+            <th>Status</th>
+            <th>Vagas</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    `;
+    workshopsContainer.querySelectorAll('button[data-ws][data-act="edit"]').forEach(btn => {
+      btn.addEventListener('click', () => openWorkshopModal(btn.getAttribute('data-ws')));
+    });
+  } catch (e) {
+    workshopsContainer.innerHTML = '<div class="rooms-message">Falha ao carregar workshops.</div>';
+  }
+}
+
+function openWorkshopModal(id) {
+  if (!advWorkshopModal) return;
+  advWorkshopMsg && (advWorkshopMsg.textContent = '');
+  // Preenche combo de salas
+  if (advWorkshopRoomSelect) {
+    advWorkshopRoomSelect.innerHTML = (myRooms || []).map(r =>
+      `<option value="${String(r.id)}">${escapeHtml(r.name || 'Sala')} — ${escapeHtml(r.city || '')}</option>`
+    ).join('');
+  }
+  let ws = null;
+  if (id) {
+    ws = (myWorkshops || []).find(w => String(w.id) === String(id));
+  }
+  if (ws) {
+    advWorkshopIdInput.value = ws.id;
+    advWorkshopRoomSelect.value = String(ws.room_id);
+    advWorkshopDateInput.value = ws.date || '';
+    advWorkshopTimeStartInput.value = (ws.time_start || '').slice(0,5);
+    advWorkshopTimeEndInput.value = (ws.time_end || '').slice(0,5);
+    advWorkshopTitleInput.value = ws.title || '';
+    advWorkshopCategoryInput.value = ws.category || '';
+    advWorkshopPriceInput.value = ws.price_per_seat || '';
+    advWorkshopMaxSeatsInput.value = ws.max_seats || '';
+    advWorkshopShowBarSelect.value = String(ws.show_sold_bar || 0);
+    advWorkshopStatusSelect.value = ws.status || 'rascunho';
+    advWorkshopSubtitleInput.value = ws.subtitle || '';
+    advWorkshopDescriptionInput.value = ws.description || '';
+    const titleEl = document.getElementById('advWorkshopTitle');
+    if (titleEl) titleEl.textContent = 'Editar Workshop';
+  } else {
+    advWorkshopIdInput.value = '';
+    advWorkshopDateInput.value = '';
+    advWorkshopTimeStartInput.value = '';
+    advWorkshopTimeEndInput.value = '';
+    advWorkshopTitleInput.value = '';
+    advWorkshopCategoryInput.value = '';
+    advWorkshopPriceInput.value = '';
+    advWorkshopMaxSeatsInput.value = '';
+    advWorkshopShowBarSelect.value = '0';
+    advWorkshopStatusSelect.value = 'rascunho';
+    advWorkshopSubtitleInput.value = '';
+    advWorkshopDescriptionInput.value = '';
+    const titleEl = document.getElementById('advWorkshopTitle');
+    if (titleEl) titleEl.textContent = 'Novo Workshop';
+  }
+  advWorkshopModal.classList.add('show');
+  advWorkshopModal.setAttribute('aria-hidden','false');
+}
+
+function closeWorkshopModal() {
+  if (!advWorkshopModal) return;
+  advWorkshopModal.classList.remove('show');
+  advWorkshopModal.setAttribute('aria-hidden','true');
+}
+
+async function onWorkshopSubmit(e) {
+  e.preventDefault();
+  if (!myAdvertiser) return;
+  if (advWorkshopMsg) advWorkshopMsg.textContent = '';
+  const id = advWorkshopIdInput.value ? Number(advWorkshopIdInput.value) : null;
+  const payload = {
+    id,
+    advertiser_id: myAdvertiser.id,
+    room_id: advWorkshopRoomSelect.value ? Number(advWorkshopRoomSelect.value) : null,
+    title: advWorkshopTitleInput.value.trim(),
+    subtitle: advWorkshopSubtitleInput.value.trim() || null,
+    description: advWorkshopDescriptionInput.value.trim() || null,
+    category: advWorkshopCategoryInput.value.trim() || null,
+    date: advWorkshopDateInput.value,
+    time_start: advWorkshopTimeStartInput.value,
+    time_end: advWorkshopTimeEndInput.value,
+    price_per_seat: advWorkshopPriceInput.value ? Number(advWorkshopPriceInput.value) : 0,
+    max_seats: advWorkshopMaxSeatsInput.value ? Number(advWorkshopMaxSeatsInput.value) : 0,
+    show_sold_bar: Number(advWorkshopShowBarSelect.value || 0),
+    status: advWorkshopStatusSelect.value || 'rascunho'
+  };
+  try {
+    if (!payload.room_id || !payload.date || !payload.time_start || !payload.time_end || !payload.title) {
+      throw new Error('Preencha sala, data, horários e título.');
+    }
+    const res = await fetch(`${API_BASE}/apisave.php`, {
+      method: 'POST',
+      headers: { 'Content-Type':'application/json' },
+      body: JSON.stringify({ table: 'workshops', data: payload })
+    });
+    const json = await parseJsonSafe(res);
+    if (!json.success) throw new Error(json.error || 'Não foi possível salvar o workshop.');
+    advWorkshopMsg && (advWorkshopMsg.textContent = 'Workshop salvo com sucesso.');
+    await loadWorkshops();
+    setTimeout(closeWorkshopModal, 600);
+  } catch (err) {
+    advWorkshopMsg && (advWorkshopMsg.textContent = err.message || 'Erro ao salvar workshop.');
   }
 }
 
@@ -1005,3 +1179,11 @@ advRecoveryForm?.addEventListener('submit', async (e) => {
     advRecoveryMessage.textContent = json.message || 'Enviamos um e‑mail com instruções.';
   } catch (err) { advRecoveryMessage.textContent = err.message || 'Erro ao enviar.'; }
 });
+
+// Eventos de workshops (botões e modal)
+const advNewWorkshopBtn = document.getElementById('advNewWorkshopBtn');
+advNewWorkshopBtn?.addEventListener('click', () => openWorkshopModal(null));
+advWorkshopClose?.addEventListener('click', closeWorkshopModal);
+advWorkshopCancelBtn?.addEventListener('click', closeWorkshopModal);
+advWorkshopModal?.addEventListener('click', (e) => { if (e.target === advWorkshopModal) closeWorkshopModal(); });
+advWorkshopForm?.addEventListener('submit', onWorkshopSubmit);

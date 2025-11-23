@@ -123,6 +123,7 @@
         <nav class="portal-nav-links">
           <button class="active" data-panel="overview">Visão Geral</button>
           <button data-panel="rooms">Minhas Salas</button>
+          <button data-panel="workshops">Workshops</button>
           <button data-panel="reservations">Reservas</button>
           <button data-panel="finance">Financeiro</button>
           <button data-panel="messages">Mensagens</button>
@@ -181,6 +182,15 @@
       <div id="panel-rooms" class="portal-section" hidden>
         <h3>Minhas Salas</h3>
         <div id="advRoomsContainer" class="rooms-grid"></div>
+      </div>
+
+      <div id="panel-workshops" class="portal-section" hidden>
+        <h3>Meus Workshops</h3>
+        <article class="form-card" style="margin-bottom:16px">
+          <p class="rooms-message">Crie workshops usando as salas já cadastradas e acompanhe as vagas vendidas.</p>
+          <button type="button" class="btn btn-primary btn-sm" id="advNewWorkshopBtn">Criar workshop</button>
+        </article>
+        <div id="advWorkshopsContainer" class="responsive-table"></div>
       </div>
 
       <div id="panel-reservations" class="portal-section" hidden>
@@ -298,6 +308,88 @@
   <footer>
     <p>© 2025 Ze.EFE</p>
   </footer>
+
+  <!-- Modal: Criar/editar Workshop -->
+  <div class="modal-overlay" id="advWorkshopModal" aria-hidden="true">
+    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="advWorkshopTitle" style="width:780px; max-width:96vw;">
+      <button class="modal-close" type="button" id="advWorkshopClose" aria-label="Fechar">&times;</button>
+      <div class="modal-body">
+        <div class="modal-info" style="padding:20px; width:100%">
+          <h2 id="advWorkshopTitle" style="margin:0 0 10px">Workshop</h2>
+          <form id="advWorkshopForm" class="auth-form">
+            <input type="hidden" id="advWorkshopId" />
+            <div class="form-grid-mini">
+              <div>
+                <label for="advWorkshopRoom">Sala</label>
+                <select id="advWorkshopRoom" required></select>
+              </div>
+              <div>
+                <label for="advWorkshopDate">Data</label>
+                <input type="date" id="advWorkshopDate" required />
+              </div>
+              <div>
+                <label for="advWorkshopTimeStart">Início</label>
+                <input type="time" id="advWorkshopTimeStart" required />
+              </div>
+              <div>
+                <label for="advWorkshopTimeEnd">Fim</label>
+                <input type="time" id="advWorkshopTimeEnd" required />
+              </div>
+            </div>
+            <div class="form-grid-mini">
+              <div>
+                <label for="advWorkshopTitleInput">Título</label>
+                <input type="text" id="advWorkshopTitleInput" required />
+              </div>
+              <div>
+                <label for="advWorkshopCategory">Categoria (opcional)</label>
+                <input type="text" id="advWorkshopCategory" />
+              </div>
+            </div>
+            <div class="form-grid-mini">
+              <div>
+                <label for="advWorkshopPrice">Preço por vaga (R$)</label>
+                <input type="number" id="advWorkshopPrice" min="0" step="0.01" />
+              </div>
+              <div>
+                <label for="advWorkshopMaxSeats">Total de vagas</label>
+                <input type="number" id="advWorkshopMaxSeats" min="0" step="1" />
+              </div>
+              <div>
+                <label for="advWorkshopShowBar">Exibir barra de vagas?</label>
+                <select id="advWorkshopShowBar">
+                  <option value="0">Não</option>
+                  <option value="1">Sim</option>
+                </select>
+              </div>
+              <div>
+                <label for="advWorkshopStatus">Status</label>
+                <select id="advWorkshopStatus">
+                  <option value="rascunho">Rascunho</option>
+                  <option value="publicado">Publicado</option>
+                  <option value="cancelado">Cancelado</option>
+                  <option value="concluido">Concluído</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-row">
+              <label for="advWorkshopSubtitle">Subtítulo (opcional)</label>
+              <input type="text" id="advWorkshopSubtitle" />
+            </div>
+            <div class="form-row">
+              <label for="advWorkshopDescription">Descrição</label>
+              <textarea id="advWorkshopDescription" rows="4"></textarea>
+            </div>
+            <div class="form-row" style="display:flex; gap:10px; justify-content:flex-end; margin-top:10px;">
+              <button type="button" class="btn btn-secondary" id="advWorkshopCancelBtn">Cancelar</button>
+              <button type="submit" class="btn btn-primary">Salvar workshop</button>
+            </div>
+            <div id="advWorkshopMsg" class="rooms-message" style="margin-top:8px"></div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- Drawer: Chat do anunciante -->
   <div class="modal-overlay chat-drawer" id="advChatModal" aria-hidden="true">
