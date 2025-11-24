@@ -100,6 +100,7 @@ const advWorkshopBannerInput = document.getElementById('advWorkshopBanner');
 const advWorkshopDateSingle = document.getElementById('advWorkshopDateSingle');
 const advWorkshopDateMulti = document.getElementById('advWorkshopDateMulti');
 const advWorkshopSameTimeCheckbox = document.getElementById('advWorkshopSameTime');
+const advWorkshopDescToolbar = document.getElementById('advWorkshopDescToolbar');
 
 // Overview
 const ovViews = document.getElementById('ovViews');
@@ -1384,3 +1385,48 @@ function updateWorkshopDateModeUI() {
 advWorkshopDateSingle?.addEventListener('change', updateWorkshopDateModeUI);
 advWorkshopDateMulti?.addEventListener('change', updateWorkshopDateModeUI);
 updateWorkshopDateModeUI();
+
+// Toolbar de edição simples para descrição do workshop (B, I, U, quebra de linha)
+function wrapSelectionWithTag(textarea, tag) {
+  if (!textarea) return;
+  textarea.focus();
+  const start = textarea.selectionStart ?? 0;
+  const end = textarea.selectionEnd ?? 0;
+  const value = textarea.value || '';
+
+  if (tag === 'br') {
+    const before = value.slice(0, end);
+    const after = value.slice(end);
+    textarea.value = before + '<br>' + after;
+    const caret = end + 4;
+    textarea.setSelectionRange(caret, caret);
+    return;
+  }
+
+  const open = `<${tag}>`;
+  const close = `</${tag}>`;
+
+  if (start === end) {
+    const before = value.slice(0, start);
+    const after = value.slice(start);
+    textarea.value = before + open + close + after;
+    const caret = start + open.length;
+    textarea.setSelectionRange(caret, caret);
+  } else {
+    const before = value.slice(0, start);
+    const selected = value.slice(start, end);
+    const after = value.slice(end);
+    textarea.value = before + open + selected + close + after;
+    const newEnd = start + open.length + selected.length + close.length;
+    textarea.setSelectionRange(start, newEnd);
+  }
+}
+
+advWorkshopDescToolbar?.addEventListener('click', (e) => {
+  const btn = e.target.closest('[data-tag]');
+  if (!btn || !advWorkshopDescriptionInput) return;
+  const tag = btn.getAttribute('data-tag');
+  if (!tag) return;
+  e.preventDefault();
+  wrapSelectionWithTag(advWorkshopDescriptionInput, tag);
+});

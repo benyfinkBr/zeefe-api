@@ -3387,6 +3387,37 @@ body.anunciante-page #advChatMessages.chat-messages {
   font-size: 0.8rem;
 }
 
+/* Editor simples (B I U A) para descrição de workshop */
+.editor-toolbar {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 6px;
+  margin-bottom: 6px;
+  border-radius: 8px;
+  background: #F5F7FA;
+  border: 1px solid rgba(29,65,58,.12);
+}
+
+.editor-btn {
+  border: none;
+  background: transparent;
+  padding: 2px 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #555;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.editor-btn:hover {
+  background: rgba(29,65,58,.08);
+}
+
+.editor-btn span {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
 .login-card .auth-form button {
   width: 100%;
   justify-content: center;
