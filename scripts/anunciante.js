@@ -95,6 +95,7 @@ const advWorkshopMaxSeatsInput = document.getElementById('advWorkshopMaxSeats');
 const advWorkshopShowBarSelect = document.getElementById('advWorkshopShowBar');
 const advWorkshopStatusSelect = document.getElementById('advWorkshopStatus');
 const advWorkshopSubtitleInput = document.getElementById('advWorkshopSubtitle');
+const advWorkshopDescriptionEditor = document.getElementById('advWorkshopDescriptionEditor');
 const advWorkshopDescriptionInput = document.getElementById('advWorkshopDescription');
 const advWorkshopBannerInput = document.getElementById('advWorkshopBanner');
 const advWorkshopDateSingle = document.getElementById('advWorkshopDateSingle');
@@ -819,7 +820,8 @@ function openWorkshopModal(id) {
     advWorkshopShowBarSelect.value = String(ws.show_sold_bar || 0);
     advWorkshopStatusSelect.value = ws.status || 'rascunho';
     advWorkshopSubtitleInput.value = ws.subtitle || '';
-    advWorkshopDescriptionInput.value = ws.description || '';
+    if (advWorkshopDescriptionEditor) advWorkshopDescriptionEditor.innerHTML = ws.description || '';
+    if (advWorkshopDescriptionInput) advWorkshopDescriptionInput.value = ws.description || '';
     // Modo de data (dia único x vários dias)
     if (advWorkshopDateSingle && advWorkshopDateMulti) {
       if (ws.end_date && ws.end_date !== ws.date) {
@@ -847,7 +849,8 @@ function openWorkshopModal(id) {
     advWorkshopShowBarSelect.value = '0';
     advWorkshopStatusSelect.value = 'rascunho';
     advWorkshopSubtitleInput.value = '';
-    advWorkshopDescriptionInput.value = '';
+    if (advWorkshopDescriptionEditor) advWorkshopDescriptionEditor.innerHTML = '';
+    if (advWorkshopDescriptionInput) advWorkshopDescriptionInput.value = '';
     if (advWorkshopDateSingle && advWorkshopDateMulti) {
       advWorkshopDateSingle.checked = true;
       advWorkshopDateMulti.checked = false;
@@ -880,13 +883,21 @@ async function onWorkshopSubmit(e) {
       category = sel;
     }
   }
+  // Garantir que o HTML do editor esteja sincronizado com o campo oculto
+  const descHtml = advWorkshopDescriptionEditor
+    ? (advWorkshopDescriptionEditor.innerHTML || '').trim()
+    : (advWorkshopDescriptionInput?.value || '').trim();
+  if (advWorkshopDescriptionInput) {
+    advWorkshopDescriptionInput.value = descHtml;
+  }
+
   const payload = {
     id,
     advertiser_id: myAdvertiser.id,
     room_id: advWorkshopRoomSelect.value ? Number(advWorkshopRoomSelect.value) : null,
     title: advWorkshopTitleInput.value.trim(),
     subtitle: advWorkshopSubtitleInput.value.trim() || null,
-    description: advWorkshopDescriptionInput.value.trim() || null,
+    description: descHtml || null,
     category: category || null,
     date: advWorkshopDateInput.value,
     end_date: advWorkshopEndDateInput.value || null,
@@ -1387,46 +1398,46 @@ advWorkshopDateMulti?.addEventListener('change', updateWorkshopDateModeUI);
 updateWorkshopDateModeUI();
 
 // Toolbar de edição simples para descrição do workshop (B, I, U, quebra de linha)
-function wrapSelectionWithTag(textarea, tag) {
-  if (!textarea) return;
-  const start = textarea.selectionStart ?? 0;
-  const end = textarea.selectionEnd ?? 0;
-  const value = textarea.value || '';
-
-  if (tag === 'br') {
-    const before = value.slice(0, end);
-    const after = value.slice(end);
-    textarea.value = before + '<br>' + after;
-    const caret = end + 4;
-    textarea.setSelectionRange(caret, caret);
-    return;
-  }
-
-  const open = `<${tag}>`;
-  const close = `</${tag}>`;
-
-  if (start === end) {
-    const before = value.slice(0, start);
-    const after = value.slice(start);
-    textarea.value = before + open + close + after;
-    const caret = start + open.length;
-    textarea.setSelectionRange(caret, caret);
-  } else {
-    const before = value.slice(0, start);
-    const selected = value.slice(start, end);
-    const after = value.slice(end);
-    textarea.value = before + open + selected + close + after;
-    const newEnd = start + open.length + selected.length + close.length;
-    textarea.setSelectionRange(start, newEnd);
-  }
-}
-
-// Usamos mousedown para não perder a seleção do textarea ao clicar na toolbar
+// Usamos mousedown para manter a seleção ativa dentro do editor rich-text
 advWorkshopDescToolbar?.addEventListener('mousedown', (e) => {
   const btn = e.target.closest('[data-tag]');
-  if (!btn || !advWorkshopDescriptionInput) return;
+  if (!btn || !advWorkshopDescriptionEditor) return;
   const tag = btn.getAttribute('data-tag');
   if (!tag) return;
   e.preventDefault();
-  wrapSelectionWithTag(advWorkshopDescriptionInput, tag);
+  advWorkshopDescriptionEditor.focus();
+
+  // Garante que o comando seja aplicado somente se a seleção estiver dentro do editor
+  const sel = window.getSelection();
+  if (!sel || !sel.rangeCount) return;
+  const range = sel.getRangeAt(0);
+  if (!advWorkshopDescriptionEditor.contains(range.commonAncestorContainer)) {
+    // Se a seleção não estiver dentro do editor, posiciona o cursor no final
+    const node = advWorkshopDescriptionEditor;
+    const lastChild = node.lastChild;
+    const newRange = document.createRange();
+    if (lastChild && lastChild.nodeType === Node.TEXT_NODE) {
+      newRange.setStart(lastChild, lastChild.textContent.length);
+    } else {
+      newRange.selectNodeContents(node);
+      newRange.collapse(false);
+    }
+    sel.removeAllRanges();
+    sel.addRange(newRange);
+  }
+
+  if (tag === 'b') {
+    document.execCommand('bold', false, null);
+  } else if (tag === 'i') {
+    document.execCommand('italic', false, null);
+  } else if (tag === 'u') {
+    document.execCommand('underline', false, null);
+  } else if (tag === 'br') {
+    document.execCommand('insertLineBreak', false, null);
+  }
+
+  // Sincroniza o HTML com o campo oculto
+  if (advWorkshopDescriptionInput) {
+    advWorkshopDescriptionInput.value = advWorkshopDescriptionEditor.innerHTML || '';
+  }
 });

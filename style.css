@@ -3418,6 +3418,23 @@ body.anunciante-page #advChatMessages.chat-messages {
   font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
+.rich-editor {
+  min-height: 120px;
+  border-radius: 10px;
+  border: 1px solid rgba(29,65,58,.35);
+  padding: 10px 12px;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  background: #fff;
+  outline: none;
+  white-space: pre-wrap;
+}
+
+.rich-editor:focus {
+  border-color: var(--brand-green);
+  box-shadow: 0 0 0 1px rgba(29,65,58,.15);
+}
+
 .login-card .auth-form button {
   width: 100%;
   justify-content: center;
