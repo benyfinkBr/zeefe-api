@@ -1833,6 +1833,12 @@ function renderBookingMapMarkers(rooms) {
   if (bounds.length) {
     bookingMap.fitBounds(bounds, { padding: [20, 20] });
   }
+  // Ajusta o tamanho após atualizar marcadores (caso o container tenha sido redimensionado)
+  if (typeof L !== 'undefined' && bookingMap) {
+    setTimeout(() => {
+      try { bookingMap.invalidateSize(); } catch (_) {}
+    }, 0);
+  }
 }
 
 
