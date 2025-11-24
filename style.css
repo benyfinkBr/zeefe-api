@@ -3435,6 +3435,25 @@ body.anunciante-page #advChatMessages.chat-messages {
   box-shadow: 0 0 0 1px rgba(29,65,58,.15);
 }
 
+/* Espaçamento entre parágrafos/linhas no editor e na visualização de workshops */
+.rich-editor p,
+.rich-editor div {
+  margin: 0 0 0.75rem;
+}
+.rich-editor p:last-child,
+.rich-editor div:last-child {
+  margin-bottom: 0;
+}
+
+#workshopDetailsDescription p,
+#workshopDetailsDescription div {
+  margin: 0 0 0.75rem;
+}
+#workshopDetailsDescription p:last-child,
+#workshopDetailsDescription div:last-child {
+  margin-bottom: 0;
+}
+
 .login-card .auth-form button {
   width: 100%;
   justify-content: center;
