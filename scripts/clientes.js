@@ -1575,6 +1575,12 @@ function setBookingStep(index) {
   updateBookingNavigation();
   if (bookingStepIndex === 1) {
     renderRoomOptions(bookingDateInput?.value || '');
+    // Garante que o mapa do Leaflet recalcula o tamanho ao ficar visível
+    if (typeof L !== 'undefined' && bookingMap) {
+      setTimeout(() => {
+        try { bookingMap.invalidateSize(); } catch (_) {}
+      }, 0);
+    }
   }
   if (bookingStepIndex === 4) {
     renderBookingSummary();
