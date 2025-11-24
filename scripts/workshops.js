@@ -18,6 +18,40 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (!listEl || !msgEl) return;
 
+  function sanitizeWorkshopHtml(html) {
+    if (!html) return '';
+    const allowed = new Set(['B','STRONG','I','EM','U','BR','P','UL','OL','LI']);
+    const container = document.createElement('div');
+    container.innerHTML = html;
+
+    const walk = (node) => {
+      const childNodes = Array.from(node.childNodes);
+      for (const child of childNodes) {
+        if (child.nodeType === Node.TEXT_NODE) continue;
+        if (child.nodeType === Node.ELEMENT_NODE) {
+          if (!allowed.has(child.tagName)) {
+            // substitui o elemento por seus filhos (mantém o texto)
+            while (child.firstChild) {
+              node.insertBefore(child.firstChild, child);
+            }
+            node.removeChild(child);
+            continue;
+          }
+          // remove todos os atributos de tags permitidas
+          while (child.attributes.length > 0) {
+            child.removeAttribute(child.attributes[0].name);
+          }
+          walk(child);
+        } else {
+          node.removeChild(child);
+        }
+      }
+    };
+
+    walk(container);
+    return container.innerHTML;
+  }
+
   function openDetailsModal(workshopId) {
     const ws = (workshopsCache || []).find(w => String(w.id) === String(workshopId));
     if (!ws || !detailsModal) return;
@@ -45,7 +79,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (detailsDescription) {
-      detailsDescription.textContent = ws.description || 'O organizador ainda não adicionou uma descrição detalhada para este evento.';
+      const desc = ws.description || 'O organizador ainda não adicionou uma descrição detalhada para este evento.';
+      detailsDescription.innerHTML = sanitizeWorkshopHtml(desc);
     }
 
     if (detailsWhen) detailsWhen.textContent = rangeStr ? `Quando: ${rangeStr} (${[timeStart, timeEnd].filter(Boolean).join(' às ')})` : '';
@@ -109,6 +144,10 @@ document.addEventListener('DOMContentLoaded', () => {
           img.src = w.banner_path;
           img.alt = `Imagem do workshop ${w.title || ''}`.trim();
           cover.appendChild(img);
+          cover.addEventListener('click', (e) => {
+            e.preventDefault();
+            openDetailsModal(w.id);
+          });
           card.appendChild(cover);
         }
 
