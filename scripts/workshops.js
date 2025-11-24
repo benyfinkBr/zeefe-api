@@ -20,7 +20,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function sanitizeWorkshopHtml(html) {
     if (!html) return '';
-    const allowed = new Set(['B','STRONG','I','EM','U','BR','P','UL','OL','LI']);
+    // Permite algumas tags básicas de formatação e blocos (inclui DIV para preservar quebras de linha do editor)
+    const allowed = new Set(['B','STRONG','I','EM','U','BR','P','UL','OL','LI','DIV']);
     const container = document.createElement('div');
     container.innerHTML = html;
 
