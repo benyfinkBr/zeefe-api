@@ -1575,12 +1575,12 @@ function setBookingStep(index) {
   updateBookingNavigation();
   if (bookingStepIndex === 1) {
     renderRoomOptions(bookingDateInput?.value || '');
-    // Garante que o mapa do Leaflet recalcula o tamanho ao ficar visível
-    if (typeof L !== 'undefined' && bookingMap) {
-      setTimeout(() => {
-        try { bookingMap.invalidateSize(); } catch (_) {}
-      }, 0);
-    }
+  }
+  // Se a seção visível é a de salas (índice 1 no DOM), força o Leaflet a recalcular o tamanho
+  if (visibleIndex === 1 && bookingRoomsMapEl && typeof L !== 'undefined' && bookingMap) {
+    setTimeout(() => {
+      try { bookingMap.invalidateSize(); } catch (_) {}
+    }, 200);
   }
   if (bookingStepIndex === 4) {
     renderBookingSummary();
@@ -1834,10 +1834,10 @@ function renderBookingMapMarkers(rooms) {
     bookingMap.fitBounds(bounds, { padding: [20, 20] });
   }
   // Ajusta o tamanho após atualizar marcadores (caso o container tenha sido redimensionado)
-  if (typeof L !== 'undefined' && bookingMap) {
+  if (bookingRoomsMapEl && typeof L !== 'undefined' && bookingMap) {
     setTimeout(() => {
       try { bookingMap.invalidateSize(); } catch (_) {}
-    }, 0);
+    }, 200);
   }
 }
 
