@@ -3360,6 +3360,33 @@ body.anunciante-page #advChatMessages.chat-messages {
   gap: 8px;
 }
 
+.workshop-details-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.workshop-cta-box {
+  background: var(--brand-sand);
+  border-radius: 14px;
+  padding: 10px 14px;
+  max-width: 260px;
+  box-shadow: 0 10px 24px rgba(29,65,58,0.12);
+  font-size: 0.85rem;
+}
+
+.workshop-cta-box h3 {
+  margin: 0 0 6px;
+  font-size: 0.9rem;
+}
+
+.workshop-cta-box p {
+  margin: 0 0 8px;
+  font-size: 0.8rem;
+}
+
 .login-card .auth-form button {
   width: 100%;
   justify-content: center;
