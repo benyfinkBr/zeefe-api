@@ -1389,7 +1389,6 @@ updateWorkshopDateModeUI();
 // Toolbar de edição simples para descrição do workshop (B, I, U, quebra de linha)
 function wrapSelectionWithTag(textarea, tag) {
   if (!textarea) return;
-  textarea.focus();
   const start = textarea.selectionStart ?? 0;
   const end = textarea.selectionEnd ?? 0;
   const value = textarea.value || '';
@@ -1422,7 +1421,8 @@ function wrapSelectionWithTag(textarea, tag) {
   }
 }
 
-advWorkshopDescToolbar?.addEventListener('click', (e) => {
+// Usamos mousedown para não perder a seleção do textarea ao clicar na toolbar
+advWorkshopDescToolbar?.addEventListener('mousedown', (e) => {
   const btn = e.target.closest('[data-tag]');
   if (!btn || !advWorkshopDescriptionInput) return;
   const tag = btn.getAttribute('data-tag');
