@@ -3194,7 +3194,7 @@ body.client-portal-page.client-authenticated .auth-container {
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.55);
+  background: rgba(0, 0, 0, 0.7);
   display: none;
   align-items: center;
   justify-content: center;
@@ -3312,6 +3312,10 @@ body.anunciante-page #advChatMessages.chat-messages {
   flex-direction: column;
   box-shadow: 0 24px 48px rgba(29, 65, 58, 0.22);
   border: 1px solid rgba(29, 65, 58, 0.08);
+}
+
+.modal-dialog.modal-small {
+  max-width: 420px;
 }
 
 .modal-close {
