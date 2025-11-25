@@ -59,7 +59,7 @@ a:hover {
   align-items: center;
   gap: 40px;
 }
-.site-logo img { height: 56px; width: auto; display: block; }
+.site-logo img { height: 72px; width: auto; display: block; }
 .site-nav {
   display: flex;
   gap: 22px;
