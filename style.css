@@ -54,6 +54,11 @@ a:hover {
   justify-content: space-between;
   gap: 32px;
 }
+.site-header-left {
+  display: flex;
+  align-items: center;
+  gap: 40px;
+}
 .site-logo img { height: 34px; width: auto; display: block; }
 .site-nav {
   display: flex;
