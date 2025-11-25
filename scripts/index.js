@@ -15,6 +15,15 @@ document.addEventListener('DOMContentLoaded', () => {
   const clearFiltersBtn = document.getElementById('clearFilters');
   const workshopsStrip = document.getElementById('featured-workshops');
   const workshopsMessage = document.getElementById('workshops-message');
+  const heroTabs = document.querySelectorAll('.hero-tab');
+  const heroForm = document.getElementById('heroSearchForm');
+  const heroLocation = document.getElementById('heroLocation');
+  const heroDate = document.getElementById('heroDate');
+  const heroCapacity = document.getElementById('heroCapacity');
+  const heroCourseTopic = document.getElementById('heroCourseTopic');
+  const heroCourseCity = document.getElementById('heroCourseCity');
+  const heroSubmit = document.querySelector('.hero-submit');
+  let heroMode = 'salas';
 
   const benefits = [
     { icon: '☕', title: 'Café, água e internet', description: 'Café premium, água e Wi-Fi ultra rápida inclusos' },
@@ -252,10 +261,15 @@ document.addEventListener('DOMContentLoaded', () => {
       const name = escapeHtml(r.name || `Sala #${r.id}`);
       const city = escapeHtml(r.city || '');
       const uf = escapeHtml(r.state || r.uf || '');
+      const hasWorkshops = workshopsByRoom.has(Number(r.id));
+      const coursesInfo = hasWorkshops
+        ? 'Há cursos presenciais nesta sala.'
+        : 'Sem cursos futuros nesta sala.';
       const detailsLink = `salas.html#${r.id}`;
       const workshopsLink = `workshops.html?room_id=${r.id}`;
       m.bindPopup(
         `<strong>${name}</strong><br>${city}${uf ? ' - '+uf : ''}<br>`+
+        `<small>${coursesInfo}</small><br>`+
         `<div style="margin-top:6px;display:flex;gap:8px;flex-wrap:wrap">`+
         `<a class="btn btn-secondary btn-sm" href="${detailsLink}">Ver detalhes</a>`+
         `<a class="btn btn-primary btn-sm" href="${workshopsLink}">Próximos cursos</a>`+
@@ -418,6 +432,34 @@ document.addEventListener('DOMContentLoaded', () => {
     if (filterQuery) filterQuery.value = '';
     if (filterType) filterType.value = 'all';
     renderRooms();
+  });
+
+  heroTabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      heroMode = tab.dataset.target === 'cursos' ? 'cursos' : 'salas';
+      heroTabs.forEach(t => t.classList.toggle('active', t === tab));
+      document.querySelectorAll('.tab-salas').forEach(el => el.classList.toggle('hidden', heroMode !== 'salas'));
+      document.querySelectorAll('.tab-cursos').forEach(el => el.classList.toggle('hidden', heroMode !== 'cursos'));
+      if (heroSubmit) heroSubmit.textContent = heroMode === 'salas' ? 'Buscar salas' : 'Ver cursos presenciais';
+    });
+  });
+
+  heroForm?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    if (heroMode === 'salas') {
+      if (filterType) filterType.value = 'rooms';
+      if (filterQuery && heroLocation) filterQuery.value = heroLocation.value || '';
+      renderRooms();
+      document.getElementById('rooms-map')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } else {
+      const params = new URLSearchParams();
+      const topic = (heroCourseTopic?.value || '').trim();
+      const city = (heroCourseCity?.value || heroLocation?.value || '').trim();
+      if (topic) params.set('q', topic);
+      if (city) params.set('city', city);
+      const url = params.toString() ? `workshops.html?${params.toString()}` : 'workshops.html';
+      window.location.href = url;
+    }
   });
 
   function renderFeaturedWorkshops() {

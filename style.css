@@ -37,6 +37,62 @@ a:hover {
   text-decoration: underline;
 }
 
+/* Novo header inspirado em layout corporativo limpo */
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: #fff;
+  border-bottom: 1px solid #e5e7eb;
+}
+.site-header-inner {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 32px;
+}
+.site-logo img { height: 34px; width: auto; display: block; }
+.site-nav {
+  display: flex;
+  gap: 22px;
+  font-weight: 600;
+  color: #1f2937;
+}
+.site-nav a {
+  text-decoration: none;
+  color: #1f2937;
+}
+.site-nav a:hover,
+.site-nav a:focus {
+  color: #1d4ed8;
+}
+.site-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.site-link {
+  color: #1d4ed8;
+  font-weight: 600;
+  text-decoration: none;
+}
+.btn.btn-outline {
+  padding: 10px 18px;
+  border-radius: 999px;
+  border: 1px solid #1d4ed8;
+  color: #1d4ed8;
+  background: #fff;
+  font-weight: 700;
+  cursor: pointer;
+}
+.btn.btn-outline:hover {
+  background: #1d4ed8;
+  color: #fff;
+}
+
 header.header {
   position: sticky;
   top: 0;
@@ -238,6 +294,159 @@ main {
   border-color: rgba(29,65,58,.08);
 }
 .cards-grid.pills .card h4 { margin-bottom: 6px; }
+
+/* Novo hero dividido em card de busca + bloco visual */
+.hero-split {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 28px;
+  align-items: stretch;
+  margin: 32px 0 48px;
+}
+.hero-card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 20px;
+  padding: 22px 20px;
+  box-shadow: 0 18px 36px rgba(0,0,0,0.08);
+}
+.hero-tabs {
+  display: inline-flex;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.hero-tab {
+  border: 1px solid #d1d5db;
+  background: #f3f4f6;
+  color: #111827;
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.hero-tab.active {
+  background: #1d4ed8;
+  color: #fff;
+  border-color: #1d4ed8;
+}
+.hero-copy h1 {
+  margin: 6px 0 6px;
+  font-size: 1.8rem;
+  line-height: 1.3;
+  color: #0f172a;
+}
+.hero-copy p {
+  margin: 0 0 12px;
+  color: #475569;
+}
+.hero-form {
+  display: grid;
+  gap: 12px;
+}
+.hero-form .form-row {
+  display: grid;
+  gap: 6px;
+}
+.hero-form label {
+  font-weight: 600;
+  color: #0f172a;
+  font-size: 0.95rem;
+}
+.hero-form input, .hero-form select {
+  padding: 12px 12px;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  font-size: 1rem;
+}
+.hero-submit {
+  margin-top: 4px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #1d4ed8;
+  color: #fff;
+  border: none;
+  font-weight: 700;
+  cursor: pointer;
+}
+.hero-submit:hover { background: #1e40af; }
+.hero-hint {
+  margin: 4px 0 0;
+  color: #475569;
+  font-size: 0.9rem;
+}
+.hero-visual {
+  position: relative;
+  min-height: 320px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.hero-visual-block {
+  width: 100%;
+  height: 100%;
+  border-radius: 22px;
+  background: linear-gradient(135deg, #1d4ed8, #1d72b8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.hero-visual-text {
+  color: #fff;
+  display: grid;
+  gap: 6px;
+  max-width: 280px;
+  text-align: center;
+}
+.hero-visual-text strong { font-size: 1.2rem; }
+.hidden { display: none !important; }
+
+@media (max-width: 900px) {
+  .hero-split { grid-template-columns: 1fr; }
+  .site-header-inner { gap: 16px; }
+  .site-nav { display: none; }
+}
+
+/* Conteúdos / Novidades */
+.news-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+}
+.news-card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 18px;
+  display: grid;
+  gap: 10px;
+  box-shadow: 0 12px 24px rgba(0,0,0,0.06);
+}
+.news-tag {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #eef2ff;
+  color: #4338ca;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+.news-card h4 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #0f172a;
+}
+.news-card p {
+  margin: 0;
+  color: #475569;
+  font-size: 0.95rem;
+}
+.btn.btn-link {
+  color: #1d4ed8;
+  font-weight: 700;
+  text-decoration: none;
+}
+.btn.btn-link:hover { text-decoration: underline; }
 .cards-grid.pills .card p { color: var(--brand-green); opacity: .9; }
 
 .section-heading {

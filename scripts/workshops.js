@@ -18,6 +18,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (!listEl || !msgEl) return;
 
+  const searchParams = new URLSearchParams(window.location.search || '');
+  const roomIdFilter = searchParams.get('room_id');
+
   function sanitizeWorkshopHtml(html) {
     if (!html) return '';
     // Permite algumas tags básicas de formatação e blocos (inclui DIV para preservar quebras de linha do editor)
@@ -124,10 +127,20 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      const items = json.data || [];
+      let items = json.data || [];
       workshopsCache = items;
+
+      if (roomIdFilter) {
+        const roomIdNum = Number(roomIdFilter);
+        if (roomIdNum) {
+          items = items.filter(w => Number(w.room_id) === roomIdNum);
+        }
+      }
+
       if (!items.length) {
-        msgEl.textContent = 'Nenhum workshop disponível no momento.';
+        msgEl.textContent = roomIdFilter
+          ? 'Nenhum workshop disponível neste local no momento.'
+          : 'Nenhum workshop disponível no momento.';
         return;
       }
 
