@@ -70,28 +70,30 @@
       <div id="rooms-map" class="rooms-map" role="region" aria-label="Mapa de salas"></div>
     </section>
 
-    <!-- Salas em destaque -->
-    <section class="rooms-showcase landing-section">
-      <div class="section-heading">
-        <h3>Salas em destaque</h3>
-        <p>Alguns dos espaços mais usados para reuniões, atendimentos e treinamentos.</p>
-      </div>
-      <div id="rooms-message" class="rooms-message"></div>
-      <div class="rooms-carousel">
-        <button class="rooms-nav rooms-nav-prev" type="button" aria-label="Ver salas anteriores"><span aria-hidden="true">&lsaquo;</span></button>
-        <div id="rooms-strip" class="rooms-strip" aria-live="polite"></div>
-        <button class="rooms-nav rooms-nav-next" type="button" aria-label="Ver mais salas"><span aria-hidden="true">&rsaquo;</span></button>
-      </div>
-    </section>
-
-    <!-- Cursos / workshops em destaque -->
+    <!-- Destaques: Salas e Cursos em duas colunas -->
     <section class="landing-section">
       <div class="section-heading">
-        <h3>Cursos e workshops em destaque</h3>
-        <p>Encontros presenciais para desenvolvimento de pessoas, times e lideranças.</p>
+        <h3>Em destaque</h3>
+        <p>Salas prontas para uso e cursos presenciais pensados para empresas e profissionais.</p>
       </div>
-      <div id="workshops-message" class="rooms-message"></div>
-      <div id="featured-workshops" class="rooms-strip"></div>
+      <div class="featured-grid">
+        <div class="featured-column">
+          <h4>Salas em destaque</h4>
+          <p class="featured-subtitle">Ambientes mais usados para reuniões, atendimentos e treinamentos.</p>
+          <div id="rooms-message" class="rooms-message"></div>
+          <div class="rooms-carousel">
+            <button class="rooms-nav rooms-nav-prev" type="button" aria-label="Ver salas anteriores"><span aria-hidden="true">&lsaquo;</span></button>
+            <div id="rooms-strip" class="rooms-strip" aria-live="polite"></div>
+            <button class="rooms-nav rooms-nav-next" type="button" aria-label="Ver mais salas"><span aria-hidden="true">&rsaquo;</span></button>
+          </div>
+        </div>
+        <div class="featured-column">
+          <h4>Cursos e workshops</h4>
+          <p class="featured-subtitle">Alguns dos próximos encontros presenciais na agenda Ze.EFE.</p>
+          <div id="workshops-message" class="rooms-message"></div>
+          <div id="featured-workshops" class="rooms-strip"></div>
+        </div>
+      </div>
     </section>
 
     <!-- Mapa do site -->
