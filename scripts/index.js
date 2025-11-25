@@ -112,7 +112,6 @@ document.addEventListener('DOMContentLoaded', () => {
       if (type === 'workshops') {
         okType = workshopsByRoom.has(Number(room.id));
       }
-      // type === 'rooms' ou 'all' não restringem adicionalmente
       return okQuery && okType;
     });
     if (!filtered.length) {
