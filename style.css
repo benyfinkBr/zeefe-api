@@ -470,26 +470,63 @@ main {
   color: var(--brand-muted);
 }
 
-.site-map-section .site-map-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 16px;
+/* Rodapé unificado em fundo branco */
+.site-footer {
+  background: #fff;
+  border-top: 1px solid #e5e7eb;
+  margin-top: 32px;
 }
-
-.site-map-section h4 {
-  margin: 0 0 6px;
+.site-footer-inner {
+  max-width: 1360px;
+  margin: 0 auto;
+  padding: 24px 32px 16px;
+  display: flex;
+  gap: 40px;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+.footer-column h3 {
+  margin: 0 0 10px;
+  font-size: 1rem;
+  color: var(--brand-green);
+}
+.footer-links-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px 32px;
+}
+.footer-links-grid h4 {
+  margin: 0 0 4px;
   font-size: 0.95rem;
 }
-
-.site-map-section ul {
-  list-style: none;
-  padding: 0;
-  margin: 0;
+.footer-links-grid a {
+  font-size: 0.9rem;
+  text-decoration: none;
+}
+.footer-links-grid a:hover {
+  text-decoration: underline;
+}
+.footer-contact p {
+  margin: 0 0 6px;
+  font-size: 0.9rem;
+}
+.site-footer-bottom {
+  border-top: 1px solid #f3f4f6;
+  margin-top: 8px;
+  padding: 8px 32px 16px;
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--brand-muted);
 }
 
-.site-map-section li {
-  margin-bottom: 4px;
-  font-size: 0.9rem;
+@media (max-width: 900px) {
+  .site-footer-inner {
+    flex-direction: column;
+    padding: 20px 16px 12px;
+  }
+  .site-footer-bottom {
+    padding: 8px 16px 16px;
+  }
 }
 
 /* Linha de passos compacta */
