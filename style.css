@@ -474,12 +474,12 @@ main {
 .site-footer {
   background: #fff;
   border-top: 1px solid #e5e7eb;
-  margin-top: 32px;
+  margin-top: 20px;
 }
 .site-footer-inner {
   max-width: 1360px;
   margin: 0 auto;
-  padding: 24px 32px 16px;
+  padding: 12px 32px 8px;
   display: flex;
   gap: 40px;
   justify-content: space-between;
@@ -512,8 +512,8 @@ main {
 }
 .site-footer-bottom {
   border-top: 1px solid #f3f4f6;
-  margin-top: 8px;
-  padding: 8px 32px 16px;
+  margin-top: 6px;
+  padding: 6px 32px 10px;
   text-align: center;
   font-size: 0.85rem;
   color: var(--brand-muted);
