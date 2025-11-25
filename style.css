@@ -306,7 +306,7 @@ main {
   grid-template-columns: 1.2fr 0.8fr;
   gap: 20px;
   align-items: stretch;
-  margin: 20px 0 36px 96px;
+  margin: 20px 0 36px;
 }
 .hero-card {
   background: #fff;
@@ -407,7 +407,7 @@ main {
 .hidden { display: none !important; }
 
 @media (max-width: 900px) {
-  .hero-split { grid-template-columns: 1fr; margin: 20px 0 36px; }
+  .hero-split { grid-template-columns: 1fr; }
   .site-header-inner { gap: 16px; }
   .site-nav { display: none; }
 }
