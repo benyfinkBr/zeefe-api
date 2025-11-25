@@ -48,16 +48,14 @@
 
     
 
-    <!-- Filtro rápido -->
-    <section class="rooms-filters" aria-label="Filtros de salas">
+    <!-- Filtros rápidos -->
+    <section class="rooms-filters" aria-label="Filtros de salas e cursos">
       <div class="filters-wrap">
         <input id="filterQuery" type="text" placeholder="Buscar por nome ou local" aria-label="Buscar por nome ou local" />
-        <select id="filterCapacity" aria-label="Capacidade">
-          <option value="">Capacidade (todas)</option>
-          <option value="10">Até 10</option>
-          <option value="20">Até 20</option>
-          <option value="50">Até 50</option>
-          <option value="51">Mais de 50</option>
+        <select id="filterType" aria-label="Tipo de resultado">
+          <option value="all">Salas e cursos</option>
+          <option value="rooms">Somente salas</option>
+          <option value="workshops">Somente cursos</option>
         </select>
         <button id="clearFilters" class="btn btn-secondary btn-sm" type="button">Limpar filtros</button>
       </div>
@@ -67,16 +65,16 @@
     <section class="landing-section">
       <div class="section-heading">
         <h3>Encontre no mapa</h3>
-        <p>Visualize onde estão as salas disponíveis. Clique nos marcadores para detalhes.</p>
+        <p>Visualize onde estão as salas e saiba em quais delas também acontecem cursos presenciais.</p>
       </div>
       <div id="rooms-map" class="rooms-map" role="region" aria-label="Mapa de salas"></div>
     </section>
 
-    <!-- Vitrine de salas -->
+    <!-- Salas em destaque -->
     <section class="rooms-showcase landing-section">
       <div class="section-heading">
-        <h3>Salas disponíveis</h3>
-        <p>Atualização em tempo real considerando manutenções e bloqueios programados.</p>
+        <h3>Salas em destaque</h3>
+        <p>Alguns dos espaços mais usados para reuniões, atendimentos e treinamentos.</p>
       </div>
       <div id="rooms-message" class="rooms-message"></div>
       <div class="rooms-carousel">
@@ -85,7 +83,49 @@
         <button class="rooms-nav rooms-nav-next" type="button" aria-label="Ver mais salas"><span aria-hidden="true">&rsaquo;</span></button>
       </div>
     </section>
-    
+
+    <!-- Cursos / workshops em destaque -->
+    <section class="landing-section">
+      <div class="section-heading">
+        <h3>Cursos e workshops em destaque</h3>
+        <p>Encontros presenciais para desenvolvimento de pessoas, times e lideranças.</p>
+      </div>
+      <div id="workshops-message" class="rooms-message"></div>
+      <div id="featured-workshops" class="rooms-strip"></div>
+    </section>
+
+    <!-- Mapa do site -->
+    <section class="landing-section site-map-section">
+      <div class="section-heading">
+        <h3>Mapa do site</h3>
+      </div>
+      <div class="site-map-grid">
+        <div>
+          <h4>Salas</h4>
+          <ul>
+            <li><a href="salas.html">Ver todas as salas</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Cursos</h4>
+          <ul>
+            <li><a href="workshops.html">Agenda de cursos e workshops</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Área do Cliente</h4>
+          <ul>
+            <li><a href="clientes.html">Reservas e visitantes</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Anunciante</h4>
+          <ul>
+            <li><a href="anunciante.html">Cadastrar salas e cursos</a></li>
+          </ul>
+        </div>
+      </div>
+    </section>
 
   </main>
 

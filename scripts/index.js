@@ -8,9 +8,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const navNext = document.querySelector('.rooms-nav-next');
   let amenitiesMap = {};
   let allRooms = [];
+  let allWorkshops = [];
+  let workshopsByRoom = new Map();
   const filterQuery = document.getElementById('filterQuery');
-  const filterCapacity = document.getElementById('filterCapacity');
+  const filterType = document.getElementById('filterType');
   const clearFiltersBtn = document.getElementById('clearFilters');
+  const workshopsStrip = document.getElementById('featured-workshops');
+  const workshopsMessage = document.getElementById('workshops-message');
 
   const benefits = [
     { icon: '☕', title: 'Café, água e internet', description: 'Café premium, água e Wi-Fi ultra rápida inclusos' },
@@ -58,6 +62,26 @@ document.addEventListener('DOMContentLoaded', () => {
         amenitiesMap = {};
       }
 
+      // Carrega workshops futuros publicados
+      try {
+        const workshopsResponse = await fetch('api/workshops_list.php?status=publicado&upcoming=1');
+        const workshopsJson = await workshopsResponse.json();
+        if (workshopsJson.success) {
+          allWorkshops = workshopsJson.data || [];
+          workshopsByRoom = new Map();
+          allWorkshops.forEach(w => {
+            const roomId = Number(w.room_id);
+            if (!roomId) return;
+            if (!workshopsByRoom.has(roomId)) workshopsByRoom.set(roomId, []);
+            workshopsByRoom.get(roomId).push(w);
+          });
+        }
+      } catch (workErr) {
+        console.warn('Falha ao carregar workshops', workErr);
+        allWorkshops = [];
+        workshopsByRoom = new Map();
+      }
+
       if (!allRooms.length) {
         roomsMessage.textContent = 'Nenhuma sala cadastrada no momento.';
         return;
@@ -66,6 +90,7 @@ document.addEventListener('DOMContentLoaded', () => {
       renderRooms();
       initMapIfNeeded();
       renderMapMarkers(allRooms);
+      renderFeaturedWorkshops();
       requestAnimationFrame(() => updateCarouselNavState());
     } catch (err) {
       console.error(err);
@@ -78,13 +103,17 @@ document.addEventListener('DOMContentLoaded', () => {
     roomsStrip.innerHTML = '';
     const today = formatDateISO(new Date());
     const query = (filterQuery?.value || '').toLowerCase().trim();
-    const cap = Number(filterCapacity?.value || 0);
+    const type = (filterType?.value || 'all');
     const filtered = (allRooms || []).filter(room => {
       const okQuery = !query ||
         String(room.name || '').toLowerCase().includes(query) ||
         String(room.location || '').toLowerCase().includes(query);
-      const okCap = !cap || (cap === 51 ? Number(room.capacity || 0) > 50 : Number(room.capacity || 0) <= cap);
-      return okQuery && okCap;
+      let okType = true;
+      if (type === 'workshops') {
+        okType = workshopsByRoom.has(Number(room.id));
+      }
+      // type === 'rooms' ou 'all' não restringem adicionalmente
+      return okQuery && okType;
     });
     if (!filtered.length) {
       roomsMessage.textContent = 'Nenhuma sala encontrada com os filtros atuais.';
@@ -219,17 +248,20 @@ document.addEventListener('DOMContentLoaded', () => {
       const lat = Number(r.lat || r.latitude || r.latitud);
       const lon = Number(r.lon || r.lng || r.longitude);
       if (!isFinite(lat) || !isFinite(lon)) return;
-      const m = L.marker([lat, lon]);
+      const hasWorkshops = workshopsByRoom.has(Number(r.id));
+      const m = L.marker([lat, lon], { opacity: hasWorkshops ? 1 : 0.4 });
       const name = escapeHtml(r.name || `Sala #${r.id}`);
       const city = escapeHtml(r.city || '');
       const uf = escapeHtml(r.state || r.uf || '');
       const detailsLink = `salas.html#${r.id}`;
-      const reserveLink = `clientes.html`;
-      m.bindPopup(`<strong>${name}</strong><br>${city}${uf ? ' - '+uf : ''}<br>`+
-                  `<div style="margin-top:6px;display:flex;gap:8px">`+
-                  `<a class=\"btn btn-secondary btn-sm\" href=\"${detailsLink}\">Ver detalhes</a>`+
-                  `<a class=\"btn btn-primary btn-sm\" href=\"${reserveLink}\">Solicitar reserva</a>`+
-                  `</div>`);
+      const workshopsLink = `workshops.html?room_id=${r.id}`;
+      m.bindPopup(
+        `<strong>${name}</strong><br>${city}${uf ? ' - '+uf : ''}<br>`+
+        `<div style="margin-top:6px;display:flex;gap:8px;flex-wrap:wrap">`+
+        `<a class="btn btn-secondary btn-sm" href="${detailsLink}">Ver detalhes</a>`+
+        `<a class="btn btn-primary btn-sm" href="${workshopsLink}">Próximos cursos</a>`+
+        `</div>`
+      );
       m.addTo(markersLayer);
       bounds.push([lat, lon]);
     });
@@ -382,10 +414,68 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Filtros
   filterQuery?.addEventListener('input', () => renderRooms());
-  filterCapacity?.addEventListener('change', () => renderRooms());
+  filterType?.addEventListener('change', () => renderRooms());
   clearFiltersBtn?.addEventListener('click', () => {
     if (filterQuery) filterQuery.value = '';
-    if (filterCapacity) filterCapacity.value = '';
+    if (filterType) filterType.value = 'all';
     renderRooms();
   });
+
+  function renderFeaturedWorkshops() {
+    if (!workshopsStrip || !workshopsMessage) return;
+    workshopsStrip.innerHTML = '';
+    if (!allWorkshops.length) {
+      workshopsMessage.textContent = 'Nenhum curso disponível no momento.';
+      return;
+    }
+    workshopsMessage.textContent = '';
+    const items = allWorkshops.slice(0, 4);
+    items.forEach(w => {
+      const card = document.createElement('article');
+      card.className = 'card workshop-card';
+
+      const title = document.createElement('h4');
+      title.textContent = w.title || 'Workshop';
+      card.appendChild(title);
+
+      const meta = document.createElement('p');
+      meta.className = 'workshop-meta';
+      const dateStr = w.date || '';
+      const endDateStr = w.end_date || '';
+      const rangeStr = endDateStr && endDateStr !== dateStr
+        ? `${dateStr} até ${endDateStr}`
+        : dateStr;
+      const timeStart = (w.time_start || '').slice(0, 5);
+      const locationParts = [];
+      if (w.room_city) locationParts.push(w.room_city);
+      if (w.room_state) locationParts.push(w.room_state);
+      const locStr = locationParts.join(' - ');
+      meta.textContent = [rangeStr, timeStart, locStr].filter(Boolean).join(' • ');
+      card.appendChild(meta);
+
+      const price = document.createElement('p');
+      price.className = 'workshop-price';
+      const raw = parseFloat(w.price_per_seat || 0);
+      price.textContent = raw > 0
+        ? `Ingresso a partir de ${raw.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`
+        : 'Ingresso gratuito';
+      card.appendChild(price);
+
+      const actions = document.createElement('div');
+      actions.className = 'workshop-actions';
+      const btnDetails = document.createElement('a');
+      btnDetails.href = 'workshops.html';
+      btnDetails.className = 'btn btn-secondary btn-sm';
+      btnDetails.textContent = 'Ver detalhes';
+      actions.appendChild(btnDetails);
+      const btnParticipar = document.createElement('a');
+      btnParticipar.href = 'workshops.html';
+      btnParticipar.className = 'btn btn-primary btn-sm';
+      btnParticipar.textContent = 'Quero participar';
+      actions.appendChild(btnParticipar);
+      card.appendChild(actions);
+
+      workshopsStrip.appendChild(card);
+    });
+  }
 });
