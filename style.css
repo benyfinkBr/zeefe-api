@@ -491,12 +491,12 @@ main {
   color: var(--brand-green);
 }
 .footer-links-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  gap: 12px 32px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 40px;
 }
 .footer-links-grid h4 {
-  margin: 0 0 4px;
+  margin: 0 0 2px;
   font-size: 0.95rem;
 }
 .footer-links-grid a {
