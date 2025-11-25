@@ -260,16 +260,15 @@ document.addEventListener('DOMContentLoaded', () => {
       const lon = Number(r.lon || r.lng || r.longitude);
       if (!isFinite(lat) || !isFinite(lon)) return;
       const hasWorkshops = workshopsByRoom.has(Number(r.id));
-      const m = L.marker([lat, lon], { opacity: hasWorkshops ? 1 : 0.4 });
       const name = escapeHtml(r.name || `Sala #${r.id}`);
       const city = escapeHtml(r.city || '');
       const uf = escapeHtml(r.state || r.uf || '');
-      const hasWorkshops = workshopsByRoom.has(Number(r.id));
       const coursesInfo = hasWorkshops
         ? 'Há cursos presenciais nesta sala.'
         : 'Sem cursos futuros nesta sala.';
       const detailsLink = `salas.html#${r.id}`;
       const workshopsLink = `workshops.html?room_id=${r.id}`;
+      const m = L.marker([lat, lon], { opacity: hasWorkshops ? 1 : 0.4 });
       m.bindPopup(
         `<strong>${name}</strong><br>${city}${uf ? ' - '+uf : ''}<br>`+
         `<small>${coursesInfo}</small><br>`+
