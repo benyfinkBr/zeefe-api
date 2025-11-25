@@ -46,9 +46,9 @@ a:hover {
   border-bottom: 1px solid #e5e7eb;
 }
 .site-header-inner {
-  max-width: 1180px;
+  max-width: 1360px;
   margin: 0 auto;
-  padding: 16px 24px;
+  padding: 16px 32px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -59,7 +59,7 @@ a:hover {
   align-items: center;
   gap: 40px;
 }
-.site-logo img { height: 34px; width: auto; display: block; }
+.site-logo img { height: 44px; width: auto; display: block; }
 .site-nav {
   display: flex;
   gap: 22px;
