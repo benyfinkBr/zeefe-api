@@ -3334,6 +3334,16 @@ body.anunciante-page #advChatMessages.chat-messages {
   overflow-y: auto;
 }
 
+.entry-choice-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 16px;
+}
+.entry-choice-btn {
+  min-width: 160px;
+}
+
 .modal-gallery {
   flex: 1 1 360px;
   display: flex;

@@ -24,7 +24,7 @@
       </div>
       <div class="site-header-actions">
         <a href="#contato" class="site-link">Contato</a>
-        <button class="btn btn-outline" type="button" onclick="window.location='clientes.html'">Entrar</button>
+        <button class="btn btn-outline" type="button" id="openLoginChoice">Entrar</button>
       </div>
     </div>
   </header>
@@ -204,6 +204,27 @@
       <p>© 2025 Ze.EFE - Todos os direitos reservados</p>
     </div>
   </footer>
+
+  <!-- Modal: escolher tipo de acesso -->
+  <div class="modal-overlay" id="entryChoiceModal" aria-hidden="true">
+    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="entryChoiceTitle">
+      <button class="modal-close" type="button" id="entryChoiceClose" aria-label="Fechar">&times;</button>
+      <div class="modal-body">
+        <div class="modal-info">
+          <h2 id="entryChoiceTitle">Como você prefere entrar?</h2>
+          <p class="modal-intro">Escolha se você quer acessar como cliente (para gerenciar reservas) ou como anunciante (para cadastrar salas e cursos).</p>
+          <div class="entry-choice-grid">
+            <button type="button" class="btn btn-primary entry-choice-btn" data-destino="clientes.html">
+              Sou cliente
+            </button>
+            <button type="button" class="btn btn-secondary entry-choice-btn" data-destino="anunciante.html">
+              Sou anunciante
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="" defer></script>
   <script src="scripts/components/carousel.js" defer></script>

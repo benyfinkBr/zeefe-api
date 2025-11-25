@@ -24,6 +24,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const heroCourseCity = document.getElementById('heroCourseCity');
   const heroSubmit = document.querySelector('.hero-submit');
   let heroMode = 'salas';
+  const openLoginChoiceBtn = document.getElementById('openLoginChoice');
+  const entryChoiceModal = document.getElementById('entryChoiceModal');
+  const entryChoiceClose = document.getElementById('entryChoiceClose');
 
   const benefits = [
     { icon: '☕', title: 'Café, água e internet', description: 'Café premium, água e Wi-Fi ultra rápida inclusos' },
@@ -460,6 +463,33 @@ document.addEventListener('DOMContentLoaded', () => {
       const url = params.toString() ? `workshops.html?${params.toString()}` : 'workshops.html';
       window.location.href = url;
     }
+  });
+
+  // Modal de escolha de entrada (cliente ou anunciante)
+  openLoginChoiceBtn?.addEventListener('click', () => {
+    if (!entryChoiceModal) return;
+    entryChoiceModal.classList.add('show');
+    entryChoiceModal.setAttribute('aria-hidden', 'false');
+  });
+
+  entryChoiceClose?.addEventListener('click', () => {
+    if (!entryChoiceModal) return;
+    entryChoiceModal.classList.remove('show');
+    entryChoiceModal.setAttribute('aria-hidden', 'true');
+  });
+
+  entryChoiceModal?.addEventListener('click', (e) => {
+    if (e.target === entryChoiceModal) {
+      entryChoiceModal.classList.remove('show');
+      entryChoiceModal.setAttribute('aria-hidden', 'true');
+    }
+  });
+
+  document.querySelectorAll('.entry-choice-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const destino = btn.getAttribute('data-destino');
+      if (destino) window.location.href = destino;
+    });
   });
 
   function renderFeaturedWorkshops() {
