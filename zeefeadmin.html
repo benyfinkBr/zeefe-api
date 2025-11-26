@@ -23,7 +23,7 @@
 
     /* APP */
     #app{display:none;height:100vh;width:100vw;overflow:hidden}
-    .sidebar{width:240px;background:#1D413A;color:#F5F0E9;display:flex;flex-direction:column;padding:24px 0}
+    .sidebar{width:240px;background:#1D413A;color:#F5F0E9;display:flex;flex-direction:column;padding:24px 0;overflow-y:auto}
     .sidebar img{width:130px;margin:0 auto 20px}
     .sidebar ul{list-style:none;padding:0;margin:0;flex-grow:1}
     .sidebar ul li{padding:12px 28px;cursor:pointer;font-size:15px}
@@ -918,9 +918,11 @@ input, select {
 
     document.querySelectorAll('#menu li').forEach(li => {
       li.addEventListener('click', () => {
+        const section = li.dataset.section;
+        if (!section) return; // ignora itens de grupo
         document.querySelectorAll('#menu li').forEach(x => x.classList.remove('active'));
         li.classList.add('active');
-        sec = li.dataset.section;
+        sec = section;
         document.getElementById('content-title').textContent = li.textContent;
         if (sec === 'messages') {
           abrirAdminMessages();
