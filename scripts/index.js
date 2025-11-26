@@ -470,8 +470,6 @@ document.addEventListener('DOMContentLoaded', () => {
       heroNewsStrip.innerHTML = '';
 
       if (main) {
-        const mainWrap = document.createElement('div');
-        mainWrap.className = 'hero-news-main';
         const mainCard = document.createElement('article');
         mainCard.className = 'hero-news-card hero-news-card-main';
         if (main.cover_path) {
@@ -501,13 +499,10 @@ document.addEventListener('DOMContentLoaded', () => {
         mainCard.appendChild(meta);
         mainCard.appendChild(title);
         mainCard.appendChild(summary);
-        mainWrap.appendChild(mainCard);
-        heroNewsStrip.appendChild(mainWrap);
+        heroNewsStrip.appendChild(mainCard);
       }
 
       if (secondary) {
-        const secWrap = document.createElement('div');
-        secWrap.className = 'hero-news-secondary';
         const secCard = document.createElement('article');
         secCard.className = 'hero-news-card hero-news-card-secondary';
         if (secondary.cover_path) {
@@ -539,8 +534,7 @@ document.addEventListener('DOMContentLoaded', () => {
         textWrap.appendChild(title2);
         textWrap.appendChild(summary2);
         secCard.appendChild(textWrap);
-        secWrap.appendChild(secCard);
-        heroNewsStrip.appendChild(secWrap);
+        heroNewsStrip.appendChild(secCard);
       }
     } catch (e) {
       console.error('Erro ao carregar conteúdos para o hero', e);
