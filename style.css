@@ -384,7 +384,7 @@ main {
   min-height: 220px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 .hero-visual-block {
   width: 100%;
@@ -394,6 +394,9 @@ main {
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+.hero-visual-block-secondary {
+  min-height: 90px;
 }
 .hero-news-title {
   margin: 0;
