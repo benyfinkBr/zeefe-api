@@ -473,7 +473,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const mainWrap = document.createElement('div');
         mainWrap.className = 'hero-news-main';
         const mainCard = document.createElement('article');
-        mainCard.className = 'hero-news-card';
+        mainCard.className = 'hero-news-card hero-news-card-main';
+        if (main.cover_path) {
+          const img = document.createElement('img');
+          img.src = main.cover_path;
+          img.alt = main.title || 'Imagem do conteúdo';
+          mainCard.appendChild(img);
+        }
         const meta = document.createElement('p');
         meta.className = 'hero-news-meta';
         const parts = [];
@@ -503,7 +509,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const secWrap = document.createElement('div');
         secWrap.className = 'hero-news-secondary';
         const secCard = document.createElement('article');
-        secCard.className = 'hero-news-card';
+        secCard.className = 'hero-news-card hero-news-card-secondary';
+        if (secondary.cover_path) {
+          const img2 = document.createElement('img');
+          img2.src = secondary.cover_path;
+          img2.alt = secondary.title || 'Imagem do conteúdo';
+          secCard.appendChild(img2);
+        }
+        const textWrap = document.createElement('div');
         const meta2 = document.createElement('p');
         meta2.className = 'hero-news-meta';
         const parts2 = [];
@@ -522,9 +535,10 @@ document.addEventListener('DOMContentLoaded', () => {
         title2.appendChild(link2);
         const summary2 = document.createElement('p');
         summary2.textContent = (secondary.summary || '').slice(0, 120) || 'Leia mais sobre este conteúdo.';
-        secCard.appendChild(meta2);
-        secCard.appendChild(title2);
-        secCard.appendChild(summary2);
+        textWrap.appendChild(meta2);
+        textWrap.appendChild(title2);
+        textWrap.appendChild(summary2);
+        secCard.appendChild(textWrap);
         secWrap.appendChild(secCard);
         heroNewsStrip.appendChild(secWrap);
       }

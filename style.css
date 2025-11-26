@@ -453,6 +453,28 @@ main {
   flex-direction: column;
   gap: 6px;
 }
+
+.hero-news-card-main img {
+  width: 100%;
+  border-radius: 10px;
+  display: block;
+  object-fit: cover;
+  max-height: 140px;
+  margin-bottom: 6px;
+}
+
+.hero-news-card-secondary {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+.hero-news-card-secondary img {
+  width: 70px;
+  height: 70px;
+  border-radius: 8px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
 .hidden { display: none !important; }
 
 @media (max-width: 900px) {
