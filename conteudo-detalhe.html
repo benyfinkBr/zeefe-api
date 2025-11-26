@@ -97,6 +97,18 @@
           metaEl.textContent = parts.join(' • ');
         }
         if (bodyEl) bodyEl.innerHTML = post.content || '';
+
+        // Incrementa contador de visualizações (somente se encontrar o post)
+        try {
+          await fetch('api/post_increment_view.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: post.id })
+          });
+        } catch (e) {
+          // Falha silenciosa: não bloqueia a visualização
+          console.error('Falha ao registrar visualização', e);
+        }
       } catch (e) {
         console.error(e);
       }
@@ -104,4 +116,3 @@
   </script>
 </body>
 </html>
-
