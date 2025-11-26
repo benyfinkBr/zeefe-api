@@ -26,8 +26,22 @@
     .sidebar{width:240px;background:#1D413A;color:#F5F0E9;display:flex;flex-direction:column;padding:24px 0;overflow-y:auto}
     .sidebar img{width:130px;margin:0 auto 20px}
     .sidebar ul{list-style:none;padding:0;margin:0;flex-grow:1}
-    .sidebar ul li{padding:12px 28px;cursor:pointer;font-size:15px}
+    .sidebar ul li{padding:10px 28px;cursor:pointer;font-size:15px}
     .sidebar ul li:hover,.sidebar ul li.active{background:#16332E}
+    .sidebar ul li.menu-group{
+      cursor:default;
+      font-size:11px;
+      text-transform:uppercase;
+      letter-spacing:.06em;
+      opacity:.8;
+      padding-top:18px;
+      padding-bottom:4px;
+      border-top:1px solid rgba(245,240,233,.12);
+    }
+    .sidebar ul li.menu-group:first-of-type{
+      border-top:none;
+      padding-top:4px;
+    }
     .logout-link{padding:12px 28px;border-top:1px solid rgba(255,255,255,.1);cursor:pointer}
 
     main.content{flex:1;display:flex;flex-direction:column;background:#F5F0E9;overflow-y:auto}
