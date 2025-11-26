@@ -464,16 +464,22 @@ document.addEventListener('DOMContentLoaded', () => {
         if (db !== da) return db - da;
         return (b.id || 0) - (a.id || 0);
       });
-      const top = posts.slice(0, 3);
-      top.forEach(p => {
-        const card = document.createElement('article');
-        card.className = 'hero-news-card';
+      const main = posts[0];
+      const secondary = posts[1];
+
+      heroNewsStrip.innerHTML = '';
+
+      if (main) {
+        const mainWrap = document.createElement('div');
+        mainWrap.className = 'hero-news-main';
+        const mainCard = document.createElement('article');
+        mainCard.className = 'hero-news-card';
         const meta = document.createElement('p');
         meta.className = 'hero-news-meta';
         const parts = [];
-        if (p.category) parts.push(p.category);
-        if (p.published_at) {
-          const d = new Date(p.published_at);
+        if (main.category) parts.push(main.category);
+        if (main.published_at) {
+          const d = new Date(main.published_at);
           if (!Number.isNaN(d.getTime())) {
             parts.push(d.toLocaleDateString('pt-BR'));
           }
@@ -481,16 +487,47 @@ document.addEventListener('DOMContentLoaded', () => {
         meta.textContent = parts.join(' • ');
         const title = document.createElement('h4');
         const link = document.createElement('a');
-        link.href = `conteudo-detalhe.html?id=${p.id}`;
-        link.textContent = p.title || 'Conteúdo';
+        link.href = `conteudo-detalhe.html?id=${main.id}`;
+        link.textContent = main.title || 'Conteúdo';
         title.appendChild(link);
         const summary = document.createElement('p');
-        summary.textContent = (p.summary || '').slice(0, 140) || 'Leia mais sobre este conteúdo.';
-        card.appendChild(meta);
-        card.appendChild(title);
-        card.appendChild(summary);
-        heroNewsStrip.appendChild(card);
-      });
+        summary.textContent = (main.summary || '').slice(0, 160) || 'Leia mais sobre este conteúdo.';
+        mainCard.appendChild(meta);
+        mainCard.appendChild(title);
+        mainCard.appendChild(summary);
+        mainWrap.appendChild(mainCard);
+        heroNewsStrip.appendChild(mainWrap);
+      }
+
+      if (secondary) {
+        const secWrap = document.createElement('div');
+        secWrap.className = 'hero-news-secondary';
+        const secCard = document.createElement('article');
+        secCard.className = 'hero-news-card';
+        const meta2 = document.createElement('p');
+        meta2.className = 'hero-news-meta';
+        const parts2 = [];
+        if (secondary.category) parts2.push(secondary.category);
+        if (secondary.published_at) {
+          const d2 = new Date(secondary.published_at);
+          if (!Number.isNaN(d2.getTime())) {
+            parts2.push(d2.toLocaleDateString('pt-BR'));
+          }
+        }
+        meta2.textContent = parts2.join(' • ');
+        const title2 = document.createElement('h4');
+        const link2 = document.createElement('a');
+        link2.href = `conteudo-detalhe.html?id=${secondary.id}`;
+        link2.textContent = secondary.title || 'Conteúdo';
+        title2.appendChild(link2);
+        const summary2 = document.createElement('p');
+        summary2.textContent = (secondary.summary || '').slice(0, 120) || 'Leia mais sobre este conteúdo.';
+        secCard.appendChild(meta2);
+        secCard.appendChild(title2);
+        secCard.appendChild(summary2);
+        secWrap.appendChild(secCard);
+        heroNewsStrip.appendChild(secWrap);
+      }
     } catch (e) {
       console.error('Erro ao carregar conteúdos para o hero', e);
     }

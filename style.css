@@ -391,9 +391,9 @@ main {
   border-radius: 22px;
   background: linear-gradient(135deg, var(--brand-green), var(--brand-dark));
   padding: 16px 18px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+  display: grid;
+  grid-template-columns: 1.3fr 1fr;
+  gap: 10px;
 }
 .hero-news-title {
   margin: 0;
@@ -440,6 +440,18 @@ main {
   margin: 0 0 2px;
   font-size: 0.78rem;
   color: rgba(226,232,240,0.85);
+}
+
+.hero-news-main {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding-right: 8px;
+}
+.hero-news-secondary {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 .hidden { display: none !important; }
 
