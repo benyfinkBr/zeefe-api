@@ -4,6 +4,7 @@ CREATE TABLE IF NOT EXISTS posts (
   slug          VARCHAR(160) NOT NULL UNIQUE,
   title         VARCHAR(200) NOT NULL,
   summary       VARCHAR(300) DEFAULT NULL,
+  views_count   INT(11) NOT NULL DEFAULT 0,
   content       MEDIUMTEXT,
   category      VARCHAR(80) DEFAULT NULL,
   status        ENUM('rascunho','publicado','arquivado') NOT NULL DEFAULT 'rascunho',

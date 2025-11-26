@@ -861,7 +861,9 @@ input, select {
         columns: [
           { key: 'id', label: 'ID' },
           { key: 'title', label: 'Título' },
+          { key: 'summary', label: 'Resumo' },
           { key: 'category', label: 'Categoria' },
+          { key: 'views_count', label: 'Visualizações' },
           { key: 'status', label: 'Status', formatter: statusFormatter },
           { key: 'published_at', label: 'Publicado em', formatter: dateTimeFormatter }
         ]
@@ -1509,6 +1511,28 @@ input, select {
         { name: 'ends_at', label: 'Válido até', span: 1, cls:'sm', type: 'date' },
         { name: 'status', label: 'Status', span: 1, type: 'select', options: [ {value:'ativo',label:'Ativo'}, {value:'inativo',label:'Inativo'} ], cls:'sm', includeEmpty:false },
         { name: 'notes', label: 'Observações', span: 4, type: 'textarea' }
+      ],
+      posts: [
+        { type: 'break', label: 'Metadados' },
+        { name: 'title', label: 'Título da matéria', span: 4, required: true },
+        { type: 'break' },
+        { name: 'slug', label: 'Slug (URL amigável)', span: 2, cls:'sm' },
+        { name: 'category', label: 'Categoria', span: 1, cls:'sm' },
+        { name: 'author_name', label: 'Autor (opcional)', span: 1, cls:'sm' },
+        { type: 'break' },
+        { name: 'status', label: 'Status', span: 2, type: 'select', cls:'sm', includeEmpty:false, options: [
+          { value: 'rascunho', label: 'Rascunho' },
+          { value: 'publicado', label: 'Publicado' },
+          { value: 'arquivado', label: 'Arquivado' }
+        ]},
+        { name: 'published_at', label: 'Publicado em', span: 2, cls:'sm', type: 'datetime-local' },
+        { type: 'break', label: 'Resumo' },
+        { name: 'summary', label: 'Resumo curto (aparece nos cards)', span: 4, type: 'textarea' },
+        { type: 'break', label: 'Conteúdo' },
+        { name: 'content', label: 'Texto da matéria (HTML simples permitido)', span: 4, type: 'textarea', rows: 10 },
+        { type: 'break' },
+        { name: 'cover_path', label: 'Imagem de capa (URL ou caminho)', span: 3 },
+        { name: 'views_count', label: 'Visualizações', span: 1, cls:'sm', readonly: true }
       ]
     };
 
@@ -1708,6 +1732,23 @@ input, select {
           }
 
           wrap.appendChild(grid);
+        } else if (field.type === 'datetime-local') {
+          const input = document.createElement('input');
+          input.type = 'datetime-local';
+          input.name = field.name;
+          if (currentValue) {
+            const d = new Date(currentValue);
+            if (!Number.isNaN(d.getTime())) {
+              const iso = d.toISOString().slice(0,16);
+              input.value = iso;
+            }
+          }
+          if (field.required) input.required = true;
+          if (field.readonly) {
+            input.readOnly = true;
+            input.classList.add('input-readonly');
+          }
+          wrap.appendChild(input);
         } else {
           const input = document.createElement('input');
           input.type = field.type || 'text';
