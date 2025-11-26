@@ -24,6 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const heroCourseCity = document.getElementById('heroCourseCity');
   const heroSubmit = document.querySelector('.hero-submit');
   let heroMode = 'salas';
+  const heroNewsStrip = document.getElementById('heroNewsStrip');
   const openLoginChoiceBtn = document.getElementById('openLoginChoice');
   const entryChoiceModal = document.getElementById('entryChoiceModal');
   const entryChoiceClose = document.getElementById('entryChoiceClose');
@@ -104,6 +105,7 @@ document.addEventListener('DOMContentLoaded', () => {
       renderMapMarkers(allRooms);
       renderFeaturedWorkshops();
       requestAnimationFrame(() => updateCarouselNavState());
+      carregarPostsHero();
     } catch (err) {
       console.error(err);
       roomsMessage.textContent = 'Erro ao carregar salas. Tente novamente mais tarde.';
@@ -435,6 +437,64 @@ document.addEventListener('DOMContentLoaded', () => {
     if (filterType) filterType.value = 'all';
     renderRooms();
   });
+
+  async function carregarPostsHero() {
+    if (!heroNewsStrip) return;
+    heroNewsStrip.innerHTML = '';
+    try {
+      const res = await fetch('api/apiget.php?table=posts', { credentials: 'include' });
+      const json = await res.json();
+      if (!json.success) {
+        return;
+      }
+      let posts = json.data || [];
+      // apenas publicados
+      posts = posts.filter(p => (p.status || '').toLowerCase() === 'publicado');
+      if (!posts.length) {
+        const fallback = document.createElement('p');
+        fallback.className = 'hero-news-subtitle';
+        fallback.textContent = 'Nenhum conteúdo publicado ainda.';
+        heroNewsStrip.appendChild(fallback);
+        return;
+      }
+      // ordena por published_at desc (ou id desc se published_at vazio)
+      posts.sort((a, b) => {
+        const da = a.published_at ? new Date(a.published_at).getTime() : 0;
+        const db = b.published_at ? new Date(b.published_at).getTime() : 0;
+        if (db !== da) return db - da;
+        return (b.id || 0) - (a.id || 0);
+      });
+      const top = posts.slice(0, 3);
+      top.forEach(p => {
+        const card = document.createElement('article');
+        card.className = 'hero-news-card';
+        const meta = document.createElement('p');
+        meta.className = 'hero-news-meta';
+        const parts = [];
+        if (p.category) parts.push(p.category);
+        if (p.published_at) {
+          const d = new Date(p.published_at);
+          if (!Number.isNaN(d.getTime())) {
+            parts.push(d.toLocaleDateString('pt-BR'));
+          }
+        }
+        meta.textContent = parts.join(' • ');
+        const title = document.createElement('h4');
+        const link = document.createElement('a');
+        link.href = `conteudo-detalhe.html?id=${p.id}`;
+        link.textContent = p.title || 'Conteúdo';
+        title.appendChild(link);
+        const summary = document.createElement('p');
+        summary.textContent = (p.summary || '').slice(0, 140) || 'Leia mais sobre este conteúdo.';
+        card.appendChild(meta);
+        card.appendChild(title);
+        card.appendChild(summary);
+        heroNewsStrip.appendChild(card);
+      });
+    } catch (e) {
+      console.error('Erro ao carregar conteúdos para o hero', e);
+    }
+  }
 
   heroTabs.forEach(tab => {
     tab.addEventListener('click', () => {
