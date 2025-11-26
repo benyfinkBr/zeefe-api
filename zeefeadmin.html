@@ -1543,9 +1543,10 @@ input, select {
         { type: 'break', label: 'Resumo' },
         { name: 'summary', label: 'Resumo curto (aparece nos cards)', span: 4, type: 'textarea' },
         { type: 'break', label: 'Conteúdo' },
-        { name: 'content', label: 'Texto da matéria (HTML simples permitido)', span: 4, type: 'textarea', rows: 10 },
-        { type: 'break' },
-        { name: 'cover_path', label: 'Imagem de capa (URL ou caminho)', span: 3 },
+        { name: 'content', label: 'Texto da matéria', span: 4, type: 'richtext', rows: 10 },
+        { type: 'break', label: 'Imagem de capa' },
+        { name: 'cover_file', label: 'Upload de capa (JPG/PNG/WEBP)', span: 2, type: 'file' },
+        { name: 'cover_path', label: 'Caminho da capa (preenchido automaticamente)', span: 2, readonly: true },
         { name: 'views_count', label: 'Visualizações', span: 1, cls:'sm', readonly: true }
       ]
     };
@@ -1763,6 +1764,61 @@ input, select {
             input.classList.add('input-readonly');
           }
           wrap.appendChild(input);
+        } else if (field.type === 'richtext') {
+          const toolbar = document.createElement('div');
+          toolbar.className = 'editor-toolbar';
+          toolbar.innerHTML = `
+            <button type="button" class="editor-btn" data-tag="b"><span>B</span></button>
+            <button type="button" class="editor-btn" data-tag="i"><span>I</span></button>
+            <button type="button" class="editor-btn" data-tag="u"><span>U</span></button>
+            <button type="button" class="editor-btn" data-tag="br"><span>A▾</span></button>
+          `;
+          const editor = document.createElement('div');
+          editor.className = 'rich-editor';
+          editor.contentEditable = 'true';
+          editor.innerHTML = currentValue || '';
+          const hidden = document.createElement('textarea');
+          hidden.name = field.name;
+          hidden.hidden = true;
+          hidden.value = currentValue || '';
+
+          toolbar.addEventListener('mousedown', (e) => {
+            const btn = e.target.closest('[data-tag]');
+            if (!btn) return;
+            const tag = btn.getAttribute('data-tag');
+            if (!tag) return;
+            e.preventDefault();
+            editor.focus();
+            const sel = window.getSelection();
+            if (!sel || !sel.rangeCount) return;
+            const range = sel.getRangeAt(0);
+            if (!editor.contains(range.commonAncestorContainer)) {
+              const node = editor;
+              const lastChild = node.lastChild;
+              const newRange = document.createRange();
+              if (lastChild && lastChild.nodeType === Node.TEXT_NODE) {
+                newRange.setStart(lastChild, lastChild.textContent.length);
+              } else {
+                newRange.selectNodeContents(node);
+                newRange.collapse(false);
+              }
+              sel.removeAllRanges();
+              sel.addRange(newRange);
+            }
+            if (tag === 'b') document.execCommand('bold', false, null);
+            else if (tag === 'i') document.execCommand('italic', false, null);
+            else if (tag === 'u') document.execCommand('underline', false, null);
+            else if (tag === 'br') document.execCommand('insertLineBreak', false, null);
+            hidden.value = editor.innerHTML || '';
+          });
+
+          editor.addEventListener('input', () => {
+            hidden.value = editor.innerHTML || '';
+          });
+
+          wrap.appendChild(toolbar);
+          wrap.appendChild(editor);
+          wrap.appendChild(hidden);
         } else {
           const input = document.createElement('input');
           input.type = field.type || 'text';
@@ -1921,6 +1977,14 @@ input, select {
         }
       });
 
+      let postCoverFile = null;
+      if (sec === 'posts') {
+        postCoverFile = form.querySelector('input[name="cover_file"]') || null;
+        if (postCoverFile) {
+          delete record.cover_file;
+        }
+      }
+
       try {
         const res = await fetch(`${API_BASE}/apisave.php`, {
           method: 'POST',
@@ -1933,6 +1997,8 @@ input, select {
           const recordId = resp.insertId || record.id;
           if (sec === 'rooms') {
             await uploadFotosSala(recordId);
+          } else if (sec === 'posts' && postCoverFile && postCoverFile.files && postCoverFile.files[0]) {
+            await uploadPostCover(recordId, postCoverFile.files[0]);
           }
           fecharModal();
           loadSection(sec);
@@ -1994,6 +2060,26 @@ input, select {
         }
       } catch (err) {
         console.error('Erro ao enviar fotos:', err);
+      }
+    }
+
+    async function uploadPostCover(id, file) {
+      if (!id || !file) return;
+      const formData = new FormData();
+      formData.append('id', id);
+      formData.append('file', file);
+      try {
+        const res = await fetch(`${API_BASE}/upload_post_cover.php`, {
+          method: 'POST',
+          body: formData,
+          credentials: 'include'
+        });
+        const json = await res.json();
+        if (!json.success) {
+          console.error('Falha ao enviar capa do post:', json.error || json.message);
+        }
+      } catch (e) {
+        console.error('Erro ao enviar capa do post', e);
       }
     }
 
