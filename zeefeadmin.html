@@ -239,6 +239,8 @@ input, select {
           <li class="menu-group">Participantes de Workshops</li>
           <li data-section="workshop_participants">Participantes</li>
           <li data-section="workshop_enrollments">Inscrições</li>
+          <li class="menu-group">Conteúdo</li>
+          <li data-section="posts">Matérias</li>
           <li class="menu-group">Configurações</li>
           <li data-section="amenities">Comodidades</li>
           <li data-section="campaigns">Campanhas</li>
@@ -725,6 +727,13 @@ input, select {
       return key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
     }
 
+    function dateTimeFormatter(value) {
+      if (!value) return '';
+      const d = new Date(value);
+      if (Number.isNaN(d.getTime())) return escapeHtml(String(value));
+      return d.toLocaleString('pt-BR');
+    }
+
     const sectionConfigs = {
       companies: {
         columns: [
@@ -846,6 +855,15 @@ input, select {
           { key: 'checkin_status', label: 'Check-in', formatter: statusFormatter },
           { key: 'public_code', label: 'Código público' },
           { key: 'created_at', label: 'Criado em', formatter: dateFormatter }
+        ]
+      },
+      posts: {
+        columns: [
+          { key: 'id', label: 'ID' },
+          { key: 'title', label: 'Título' },
+          { key: 'category', label: 'Categoria' },
+          { key: 'status', label: 'Status', formatter: statusFormatter },
+          { key: 'published_at', label: 'Publicado em', formatter: dateTimeFormatter }
         ]
       }
     };

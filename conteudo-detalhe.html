@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Conteúdos — Ze.EFE</title>
+  <title>Conteúdo — Ze.EFE</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -28,29 +28,15 @@
   </header>
 
   <main>
-    <section class="landing-section">
-      <div class="section-heading">
-        <h3>Conteúdos para encontros presenciais</h3>
-        <p>Ideias, boas práticas e novidades para quem organiza reuniões, treinamentos e workshops.</p>
+    <article class="landing-section">
+      <header class="section-heading">
+        <h3 id="postTitle">Conteúdo</h3>
+        <p id="postMeta"></p>
+      </header>
+      <div id="postBody" class="post-body">
+        <p>Carregando conteúdo...</p>
       </div>
-      <div class="news-grid">
-        <article class="news-card">
-          <span class="news-tag">Boas práticas</span>
-          <h4><a href="conteudo-detalhe.html?id=1">Como escolher a sala certa para o seu treinamento</a></h4>
-          <p>Checklist para avaliar conforto, localização e tecnologia antes de reservar.</p>
-        </article>
-        <article class="news-card">
-          <span class="news-tag">Workshops</span>
-          <h4><a href="conteudo-detalhe.html?id=2">3 formatos de workshop que funcionam bem em grupos pequenos</a></h4>
-          <p>Dinâmicas rápidas para aproveitar melhor o tempo em sala e engajar participantes.</p>
-        </article>
-        <article class="news-card">
-          <span class="news-tag">Novidades Ze.EFE</span>
-          <h4><a href="conteudo-detalhe.html?id=3">Novos recursos para gestão de reservas e indicadores</a></h4>
-          <p>Veja o que mudou na plataforma para facilitar o dia a dia das equipes.</p>
-        </article>
-      </div>
-    </section>
+    </article>
   </main>
 
   <footer class="site-footer">
@@ -87,5 +73,35 @@
       <p>© 2025 Ze.EFE - Todos os direitos reservados</p>
     </div>
   </footer>
+
+  <script>
+    (async () => {
+      const params = new URLSearchParams(window.location.search || '');
+      const id = params.get('id');
+      if (!id) return;
+      try {
+        const res = await fetch('api/apiget.php?table=posts');
+        const json = await res.json();
+        if (!json.success) return;
+        const posts = json.data || [];
+        const post = posts.find(p => String(p.id) === String(id));
+        if (!post) return;
+        const titleEl = document.getElementById('postTitle');
+        const metaEl = document.getElementById('postMeta');
+        const bodyEl = document.getElementById('postBody');
+        if (titleEl) titleEl.textContent = post.title || 'Conteúdo';
+        if (metaEl) {
+          const parts = [];
+          if (post.category) parts.push(post.category);
+          if (post.published_at) parts.push(new Date(post.published_at).toLocaleString('pt-BR'));
+          metaEl.textContent = parts.join(' • ');
+        }
+        if (bodyEl) bodyEl.innerHTML = post.content || '';
+      } catch (e) {
+        console.error(e);
+      }
+    })();
+  </script>
 </body>
 </html>
+
