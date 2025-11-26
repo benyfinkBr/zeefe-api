@@ -383,8 +383,8 @@ main {
   position: relative;
   min-height: 220px;
   display: flex;
-  align-items: stretch;
-  justify-content: center;
+  flex-direction: column;
+  gap: 10px;
 }
 .hero-visual-block {
   width: 100%;
@@ -404,13 +404,6 @@ main {
   margin: 0 0 6px;
   font-size: 0.87rem;
   color: rgba(255,255,255,0.8);
-}
-.hero-news-strip {
-  display: grid;
-  grid-template-columns: minmax(0,1.3fr) minmax(0,1fr);
-  gap: 8px;
-  max-height: 190px;
-  overflow: hidden;
 }
 .hero-news-card {
   border-radius: 12px;
