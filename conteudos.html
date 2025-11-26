@@ -33,23 +33,7 @@
         <h3>Conteúdos para encontros presenciais</h3>
         <p>Ideias, boas práticas e novidades para quem organiza reuniões, treinamentos e workshops.</p>
       </div>
-      <div class="news-grid">
-        <article class="news-card">
-          <span class="news-tag">Boas práticas</span>
-          <h4><a href="conteudo-detalhe.html?id=1">Como escolher a sala certa para o seu treinamento</a></h4>
-          <p>Checklist para avaliar conforto, localização e tecnologia antes de reservar.</p>
-        </article>
-        <article class="news-card">
-          <span class="news-tag">Workshops</span>
-          <h4><a href="conteudo-detalhe.html?id=2">3 formatos de workshop que funcionam bem em grupos pequenos</a></h4>
-          <p>Dinâmicas rápidas para aproveitar melhor o tempo em sala e engajar participantes.</p>
-        </article>
-        <article class="news-card">
-          <span class="news-tag">Novidades Ze.EFE</span>
-          <h4><a href="conteudo-detalhe.html?id=3">Novos recursos para gestão de reservas e indicadores</a></h4>
-          <p>Veja o que mudou na plataforma para facilitar o dia a dia das equipes.</p>
-        </article>
-      </div>
+      <div id="conteudosGrid" class="news-grid"></div>
     </section>
   </main>
 
@@ -87,5 +71,63 @@
       <p>© 2025 Ze.EFE - Todos os direitos reservados</p>
     </div>
   </footer>
+  <script>
+    (async () => {
+      const grid = document.getElementById('conteudosGrid');
+      if (!grid) return;
+      grid.innerHTML = '<p class="rooms-message">Carregando conteúdos...</p>';
+      try {
+        const res = await fetch('api/apiget.php?table=posts');
+        const json = await res.json();
+        if (!json.success) {
+          grid.innerHTML = '<p class="rooms-message">Não foi possível carregar os conteúdos.</p>';
+          return;
+        }
+        let posts = json.data || [];
+        posts = posts.filter(p => (p.status || '').toLowerCase() === 'publicado');
+        if (!posts.length) {
+          grid.innerHTML = '<p class="rooms-message">Nenhum conteúdo publicado no momento.</p>';
+          return;
+        }
+        posts.sort((a, b) => {
+          const da = a.published_at ? new Date(a.published_at).getTime() : 0;
+          const db = b.published_at ? new Date(b.published_at).getTime() : 0;
+          if (db !== da) return db - da;
+          return (b.id || 0) - (a.id || 0);
+        });
+        grid.innerHTML = '';
+        posts.forEach(p => {
+          const card = document.createElement('article');
+          card.className = 'news-card';
+          if (p.cover_path) {
+            const coverWrap = document.createElement('div');
+            coverWrap.className = 'news-card-cover';
+            const img = document.createElement('img');
+            img.src = p.cover_path;
+            img.alt = p.title || 'Imagem do conteúdo';
+            coverWrap.appendChild(img);
+            card.appendChild(coverWrap);
+          }
+          const tag = document.createElement('span');
+          tag.className = 'news-tag';
+          tag.textContent = p.category || 'Conteúdo';
+          card.appendChild(tag);
+          const title = document.createElement('h4');
+          const link = document.createElement('a');
+          link.href = `conteudo-detalhe.html?id=${p.id}`;
+          link.textContent = p.title || 'Conteúdo';
+          title.appendChild(link);
+          card.appendChild(title);
+          const summary = document.createElement('p');
+          summary.textContent = p.summary || '';
+          card.appendChild(summary);
+          grid.appendChild(card);
+        });
+      } catch (e) {
+        console.error(e);
+        grid.innerHTML = '<p class="rooms-message">Não foi possível carregar os conteúdos.</p>';
+      }
+    })();
+  </script>
 </body>
 </html>

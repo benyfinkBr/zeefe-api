@@ -464,6 +464,13 @@ main {
   gap: 10px;
   box-shadow: 0 12px 24px rgba(0,0,0,0.06);
 }
+.news-card-cover img {
+  width: 100%;
+  border-radius: 12px;
+  display: block;
+  object-fit: cover;
+  max-height: 180px;
+}
 .news-tag {
   display: inline-block;
   padding: 4px 10px;

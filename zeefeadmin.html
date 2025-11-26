@@ -121,6 +121,31 @@ input, select {
   max-width: 120px !important;
 }
 
+/* Editor rich-text (matérias / workshops) */
+.rich-editor {
+  min-height: 150px;
+  border-radius: 6px;
+  border: 1px solid #d3d3d3;
+  background: #fff;
+  padding: 8px 10px;
+  font-size: 14px;
+  line-height: 1.4;
+  box-sizing: border-box;
+}
+.rich-editor:focus {
+  outline: none;
+  border-color: #ABA198;
+  box-shadow: 0 0 0 2px #ABA19833, inset 0 1px 2px rgba(0,0,0,0.08);
+}
+.rich-editor p,
+.rich-editor div {
+  margin: 0 0 0.75rem;
+}
+.rich-editor p:last-child,
+.rich-editor div:last-child {
+  margin-bottom: 0;
+}
+
 /* ajusta área interna do modal */
 .modal-body {
   flex: 1 !important;
