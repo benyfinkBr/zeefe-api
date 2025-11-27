@@ -61,6 +61,25 @@ if (!in_array($table, $allowed)) {
 }
 
 try {
+  // Normalizações específicas de posts (slug amigável e único)
+  if ($table === 'posts') {
+    $currentId = isset($rawRecord['id']) && $rawRecord['id'] !== '' ? (int)$rawRecord['id'] : null;
+    $incomingSlug = isset($rawRecord['slug']) ? trim((string)$rawRecord['slug']) : '';
+    $titleForSlug = isset($rawRecord['title']) ? trim((string)$rawRecord['title']) : '';
+
+    $base = $incomingSlug !== '' ? $incomingSlug : $titleForSlug;
+    $base = $base !== '' ? $base : 'post';
+
+    $normalized = gerar_slug_basico($base);
+    if ($normalized === '') {
+      $normalized = 'post';
+    }
+
+    $slugUnico = garantir_slug_unico($pdo, $normalized, $currentId);
+    $record['slug'] = $slugUnico;
+    $rawRecord['slug'] = $slugUnico;
+  }
+
   // Colunas válidas da tabela
   $colsStmt  = $pdo->query("DESCRIBE `$table`");
   $validCols = array_column($colsStmt->fetchAll(PDO::FETCH_ASSOC), 'Field');
@@ -319,4 +338,53 @@ function enviarEmailReservaSolicitada(PDO $pdo, int $reservationId): void {
     'link_portal' => 'https://zeefe.com.br/clientes.html'
   ]);
   mailer_send($dados['client_email'], 'Ze.EFE - recebemos sua solicitação', $html);
+}
+
+/**
+ * Gera um slug básico a partir de um texto qualquer, removendo acentos
+ * e caracteres especiais. Resultado em minúsculas, com hífens.
+ */
+function gerar_slug_basico(string $texto): string {
+  $texto = trim($texto);
+  if ($texto === '') return '';
+
+  // Remove acentos quando possível
+  $slug = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $texto);
+  if ($slug === false) {
+    $slug = $texto;
+  }
+
+  $slug = strtolower($slug);
+  // Substitui qualquer coisa que não seja letra/número por hífen
+  $slug = preg_replace('/[^a-z0-9]+/', '-', $slug);
+  // Remove hífens duplicados ou nas pontas
+  $slug = trim($slug ?? '', '-');
+
+  return $slug;
+}
+
+/**
+ * Garante que o slug seja único na tabela posts.
+ * Se já existir, acrescenta sufixos -2, -3, ... conforme necessário.
+ */
+function garantir_slug_unico(PDO $pdo, string $slugBase, ?int $currentId = null): string {
+  $slug = $slugBase;
+  $i = 2;
+
+  while (true) {
+    $sql = 'SELECT id FROM posts WHERE slug = ?';
+    $params = [$slug];
+    if ($currentId) {
+      $sql .= ' AND id <> ?';
+      $params[] = $currentId;
+    }
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute($params);
+    $row = $stmt->fetch(PDO::FETCH_ASSOC);
+    if (!$row) {
+      return $slug;
+    }
+    $slug = $slugBase . '-' . $i;
+    $i++;
+  }
 }
