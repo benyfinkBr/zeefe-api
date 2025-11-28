@@ -117,8 +117,10 @@ try {
 
       $sql = "
         SELECT r.*,
-               rooms.name  AS room_name,
+               rooms.name   AS room_name,
                clients.name AS client_name,
+               clients.email AS client_email,
+               clients.phone AS client_phone,
                GROUP_CONCAT(DISTINCT rv.visitor_id) AS visitor_ids,
                GROUP_CONCAT(DISTINCT CONCAT(rv.visitor_id, '::', COALESCE(vis.name,'')) SEPARATOR '||') AS visitor_info
         FROM reservations r

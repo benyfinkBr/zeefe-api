@@ -7,6 +7,7 @@ header('Content-Type: application/json');
 
 $data = json_decode(file_get_contents('php://input'), true);
 $id = isset($data['reservation_id']) ? (int) $data['reservation_id'] : 0;
+$mode = isset($data['mode']) && $data['mode'] === 'client' ? 'client' : 'all'; // client|all
 if ($id <= 0) {
   http_response_code(400);
   echo json_encode(['success' => false, 'error' => 'Reserva inválida.']);
@@ -23,9 +24,12 @@ if (!$res || empty($res['client_email'])) {
   exit;
 }
 
-$visitorsStmt = $pdo->prepare('SELECT v.email, v.name FROM reservation_visitors rv JOIN visitors v ON v.id = rv.visitor_id WHERE rv.reservation_id = ? AND (v.email IS NOT NULL AND v.email <> "")');
-$visitorsStmt->execute([$id]);
-$visitors = $visitorsStmt->fetchAll(PDO::FETCH_ASSOC);
+$visitors = [];
+if ($mode === 'all') {
+  $visitorsStmt = $pdo->prepare('SELECT v.email, v.name FROM reservation_visitors rv JOIN visitors v ON v.id = rv.visitor_id WHERE rv.reservation_id = ? AND (v.email IS NOT NULL AND v.email <> "")');
+  $visitorsStmt->execute([$id]);
+  $visitors = $visitorsStmt->fetchAll(PDO::FETCH_ASSOC);
+}
 
 $date = $res['date'] ?? date('Y-m-d');
 $start = trim($res['time_start'] ?? '08:00');
@@ -61,6 +65,9 @@ $ics = ics_generate([
   'tz' => 'America/Sao_Paulo'
 ]);
 
+$bloco = '<p style="margin:0 0 12px;">Anexamos um convite de calendário (.ics) para adicionar à sua agenda.</p>'
+       . '<p style="margin:0 0 12px;">Se quiser reenviar o convite, acesse o Portal do Cliente em <strong>Minhas Reservas &rarr; Ações &rarr; Enviar convite</strong>.</p>';
+
 $html = mailer_render('reservation_confirmed.php', [
   'cliente_nome' => $res['client_name'] ?? 'Cliente Ze.EFE',
   'sala_nome' => $res['room_name'] ?? 'Sala Ze.EFE',
@@ -69,12 +76,14 @@ $html = mailer_render('reservation_confirmed.php', [
   'hora_fim' => $end,
   'visitantes' => ($visitors ? implode(', ', array_filter(array_map(fn($v) => $v['name'] ?? '', $visitors))) : 'Sem visitantes cadastrados'),
   'link_portal' => 'https://zeefe.com.br/clientes.html',
-  'bloco_informacoes' => '<p style="margin:0 0 12px;">Anexamos um convite de calendário (.ics) para adicionar à sua agenda.</p>'
+  'bloco_informacoes' => $bloco
 ]);
 
 $recipients = [['email' => $res['client_email'], 'name' => $res['client_name'] ?? '']];
-foreach ($visitors as $v) {
-  $recipients[] = ['email' => $v['email'], 'name' => $v['name'] ?? ''];
+if ($mode === 'all') {
+  foreach ($visitors as $v) {
+    $recipients[] = ['email' => $v['email'], 'name' => $v['name'] ?? ''];
+  }
 }
 
 $ok = mailer_send($recipients, 'Ze.EFE - Detalhes da sua reserva (convite de calendário)', $html, '', [

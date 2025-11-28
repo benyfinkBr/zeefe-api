@@ -2540,6 +2540,14 @@ body.client-portal-page.client-logged-out .portal-shell {
   margin-top: 12px;
 }
 
+.booking-success-actions {
+  margin-top: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
 .visitor-multiselect {
   display: flex;
   flex-direction: column;
@@ -2572,6 +2580,28 @@ body.client-portal-page.client-logged-out .portal-shell {
   max-height: 220px;
   overflow-y: auto;
   padding-right: 6px;
+}
+
+.res-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-end;
+  margin-bottom: 12px;
+}
+
+.res-filters label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.9rem;
+}
+
+.res-filters select {
+  padding: 6px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(29, 65, 58, 0.22);
+  font-size: 0.9rem;
 }
 
 .visitor-multiselect-item {

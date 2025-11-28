@@ -362,25 +362,99 @@ async function loadReservations() {
       all = [];
     }
     myReservations = all;
-    const rows = all.slice().sort((a,b)=> new Date(a.date) - new Date(b.date)).map(r => `
+    renderAdvReservations();
+  } catch (e) {
+    resContainer.innerHTML = '<div class="rooms-message">Falha ao carregar reservas.</div>';
+  }
+}
+
+function getReservationFilters() {
+  const statusEl = document.getElementById('advResStatusFilter');
+  const payEl = document.getElementById('advResPaymentFilter');
+  const orderEl = document.getElementById('advResOrder');
+  return {
+    status: statusEl?.value || '',
+    payment: payEl?.value || '',
+    order: orderEl?.value || 'date_asc'
+  };
+}
+
+function renderAdvReservations() {
+  if (!resContainer) return;
+  const all = myReservations || [];
+  if (!all.length) {
+    resContainer.innerHTML = '<div class="rooms-message">Nenhuma reserva.</div>';
+    return;
+  }
+  const { status, payment, order } = getReservationFilters();
+  let list = all.slice();
+  if (status) {
+    list = list.filter(r => String(r.status || '').toLowerCase() === status.toLowerCase());
+  }
+  if (payment) {
+    list = list.filter(r => String(r.payment_status || '').toLowerCase() === payment.toLowerCase());
+  }
+  list.sort((a,b) => {
+    const da = new Date(a.date || '1970-01-01');
+    const db = new Date(b.date || '1970-01-01');
+    if (order === 'date_desc') return db - da;
+    return da - db;
+  });
+
+  const rows = list.map(r => {
+    const room = (myRooms||[]).find(rr => String(rr.id)===String(r.room_id));
+    const roomName = r.room_name || room?.name || `Sala ${r.room_id}`;
+    const clientName = r.client_name || '';
+    const when = r.date ? escapeHtml(r.date) : '';
+    return `
       <tr>
-        <td>${escapeHtml(r.id)}</td>
-        <td>${escapeHtml(r.date || '')}</td>
-        <td>${escapeHtml(String(r.room_id))}</td>
+        <td>${when}</td>
+        <td>${escapeHtml(roomName)}</td>
+        <td>${escapeHtml(clientName)}</td>
         <td>${escapeHtml(r.status || '')}</td>
         <td>${escapeHtml(r.payment_status || '')}</td>
         <td><button class="btn btn-secondary btn-sm" data-res="${r.id}" data-act="open">Ações</button></td>
       </tr>
-    `).join('');
-    resContainer.innerHTML = `
+    `;
+  }).join('');
+
+  resContainer.innerHTML = `
+      <div class="res-filters">
+        <label>Status
+          <select id="advResStatusFilter">
+            <option value="">Todos</option>
+            <option value="pendente">Pendente</option>
+            <option value="confirmada">Confirmada</option>
+            <option value="cancelada">Cancelada</option>
+            <option value="concluida">Concluída</option>
+          </select>
+        </label>
+        <label>Pagamento
+          <select id="advResPaymentFilter">
+            <option value="">Todos</option>
+            <option value="pendente">Pendente</option>
+            <option value="confirmado">Confirmado</option>
+            <option value="expirado">Expirado</option>
+          </select>
+        </label>
+        <label>Ordenar por
+          <select id="advResOrder">
+            <option value="date_asc">Data (mais antiga primeiro)</option>
+            <option value="date_desc">Data (mais recente primeiro)</option>
+          </select>
+        </label>
+      </div>
       <table>
-        <thead><tr><th>#</th><th>Data</th><th>Sala</th><th>Status</th><th>Pagamento</th><th></th></tr></thead>
-        <tbody>${rows || '<tr><td colspan="5" style="text-align:center;padding:16px">Nenhuma reserva.</td></tr>'}</tbody>
+        <thead><tr><th>Data</th><th>Sala</th><th>Cliente</th><th>Status</th><th>Pagamento</th><th></th></tr></thead>
+        <tbody>${rows || '<tr><td colspan="6" style="text-align:center;padding:16px">Nenhuma reserva.</td></tr>'}</tbody>
       </table>`;
-    resContainer.querySelectorAll('button[data-res][data-act="open"]').forEach(btn => btn.addEventListener('click', () => openReservationModal(btn.getAttribute('data-res'))));
-  } catch (e) {
-    resContainer.innerHTML = '<div class="rooms-message">Falha ao carregar reservas.</div>';
-  }
+
+  resContainer.querySelectorAll('#advResStatusFilter,#advResPaymentFilter,#advResOrder').forEach(el => {
+    el.addEventListener('change', renderAdvReservations);
+  });
+  resContainer.querySelectorAll('button[data-res][data-act="open"]').forEach(btn =>
+    btn.addEventListener('click', () => openReservationModal(btn.getAttribute('data-res')))
+  );
 }
 
 // Finance helpers
@@ -1293,12 +1367,16 @@ function openReservationModal(id){
   if (!r){ advResContent.innerHTML = '<div class="rooms-message">Reserva não encontrada.</div>'; }
   else {
     const room = (myRooms||[]).find(rr => String(rr.id)===String(r.room_id));
+    const clientName = r.client_name || '';
+    const clientEmail = r.client_email || '';
+    const clientPhone = r.client_phone || '';
     advResContent.innerHTML = `
       <table>
         <tbody>
-          <tr><th style="text-align:left;width:160px">Reserva</th><td>#${escapeHtml(r.id)}</td></tr>
           <tr><th style="text-align:left">Data</th><td>${escapeHtml(r.date || '')}</td></tr>
           <tr><th style="text-align:left">Sala</th><td>${escapeHtml(room?.name || ('Sala #'+r.room_id))}</td></tr>
+          <tr><th style="text-align:left">Cliente</th><td>${escapeHtml(clientName || '—')}</td></tr>
+          <tr><th style="text-align:left">Contato</th><td>${escapeHtml(clientEmail || '—')}${clientPhone ? ' · '+escapeHtml(clientPhone) : ''}</td></tr>
           <tr><th style="text-align:left">Status</th><td>${escapeHtml(r.status||'')}</td></tr>
           <tr><th style="text-align:left">Pagamento</th><td>${escapeHtml(r.payment_status||'')}</td></tr>
           <tr><th style="text-align:left">Título</th><td>${escapeHtml(r.title||'')}</td></tr>

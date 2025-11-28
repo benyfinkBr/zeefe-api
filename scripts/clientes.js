@@ -2605,7 +2605,8 @@ function openReservationActions(id) {
   cards.push(ics);
 
   // Enviar convite (e‑mail com ICS)
-  cards.push(mkCard('Enviar convite', ()=> { tratarAcaoReserva(reserva.id,'sendCalendar'); closeReservationActions(); }));
+  cards.push(mkCard('Enviar convite (só para mim)', ()=> { tratarAcaoReserva(reserva.id,'sendCalendarSelf'); closeReservationActions(); }));
+  cards.push(mkCard('Enviar convite (todos)', ()=> { tratarAcaoReserva(reserva.id,'sendCalendarAll'); closeReservationActions(); }));
 
   // Solicitar NF (apenas após pagamento)
   if (paid) {
@@ -2910,17 +2911,19 @@ async function tratarAcaoReserva(id, action) {
     }
     return;
   }
-  if (action === 'sendCalendar') {
+  if (action === 'sendCalendarSelf' || action === 'sendCalendarAll') {
     try {
       const res = await fetch(`${API_BASE}/send_calendar_invite.php`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ reservation_id: id })
+        body: JSON.stringify({ reservation_id: id, mode: action === 'sendCalendarSelf' ? 'client' : 'all' })
       });
       const json = await res.json();
       if (!json.success) throw new Error(json.error || 'Falha ao enviar convite de calendário.');
-      alert('Convite de calendário enviado para você e seus visitantes.');
+      alert(action === 'sendCalendarSelf'
+        ? 'Convite de calendário enviado para o seu e‑mail.'
+        : 'Convite de calendário enviado para você e para todos os visitantes com e‑mail cadastrado.');
     } catch (err) {
       console.error(err);
       alert(err.message || 'Não foi possível enviar o convite de calendário.');
@@ -3099,12 +3102,52 @@ async function finalizeBookingSubmission(record, formData) {
     }
     if (voucherWarn) baseMessage += ' Observação: uma ou mais reservas não aceitaram o voucher.';
     resetBookingForm(true);
-    bookingMessage.textContent = inviteWarn ? `${baseMessage} Porém, não foi possível enviar todos os convites.` : baseMessage;
+    const finalMessage = inviteWarn
+      ? `${baseMessage} Porém, não foi possível enviar todos os convites.`
+      : baseMessage;
+    mostrarAcoesPosReserva(finalMessage);
     atualizarPainel();
   } catch (err) {
     console.error(err);
     bookingMessage.textContent = err.message || 'Não foi possível salvar a reserva.';
   }
+}
+
+function mostrarAcoesPosReserva(message) {
+  if (!bookingMessage) return;
+  bookingMessage.innerHTML = '';
+  const p = document.createElement('p');
+  p.textContent = message || 'Reserva concluída.';
+  bookingMessage.appendChild(p);
+
+  const actionsWrap = document.createElement('div');
+  actionsWrap.className = 'booking-success-actions';
+
+  const btnReservations = document.createElement('button');
+  btnReservations.type = 'button';
+  btnReservations.className = 'btn btn-secondary btn-sm';
+  btnReservations.textContent = 'Ver minhas reservas';
+  btnReservations.addEventListener('click', () => {
+    setActivePanel('reservations');
+    document.getElementById('panel-reservations')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+
+  const btnLogout = document.createElement('button');
+  btnLogout.type = 'button';
+  btnLogout.className = 'btn btn-secondary btn-sm';
+  btnLogout.textContent = 'Sair';
+  btnLogout.addEventListener('click', () => {
+    const logoutBtnEl = document.getElementById('logoutBtn');
+    if (logoutBtnEl) {
+      logoutBtnEl.click();
+    } else {
+      window.location.href = 'index.html';
+    }
+  });
+
+  actionsWrap.appendChild(btnReservations);
+  actionsWrap.appendChild(btnLogout);
+  bookingMessage.appendChild(actionsWrap);
 }
 
 async function onApplyVoucherClick() {
