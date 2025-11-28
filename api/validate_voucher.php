@@ -17,6 +17,19 @@ try {
   $v = $stmt->fetch(PDO::FETCH_ASSOC);
   if (!$v) { echo json_encode(['success'=>false,'error'=>'Voucher não encontrado.']); exit; }
 
+  // Calcula quantas vezes já foi usado (reservations.voucher_code)
+  $usedCount = 0;
+  try {
+    $usedStmt = $pdo->prepare('SELECT COUNT(*) AS total FROM reservations WHERE voucher_code = :c');
+    $usedStmt->execute([':c' => $code]);
+    $rowUsed = $usedStmt->fetch(PDO::FETCH_ASSOC);
+    if ($rowUsed && isset($rowUsed['total'])) {
+      $usedCount = (int)$rowUsed['total'];
+    }
+  } catch (Throwable $ignore) {
+    $usedCount = 0;
+  }
+
   // Regras básicas
   if (strtolower($v['status'] ?? '') !== 'ativo') { echo json_encode(['success'=>false,'error'=>'Voucher inativo.']); exit; }
   $startRaw = $v['starts_at'] ?? $v['valid_from'] ?? null;
@@ -24,7 +37,7 @@ try {
   $maxUses  = $v['max_uses']  ?? $v['max_redemptions'] ?? null;
   if (!empty($startRaw) && (new DateTimeImmutable()) < new DateTimeImmutable($startRaw)) { echo json_encode(['success'=>false,'error'=>'Voucher ainda não válido.']); exit; }
   if (!empty($endRaw) && (new DateTimeImmutable()) > new DateTimeImmutable($endRaw)) { echo json_encode(['success'=>false,'error'=>'Voucher expirado.']); exit; }
-  if (!empty($maxUses) && (int)$v['used_count'] >= (int)$maxUses) { echo json_encode(['success'=>false,'error'=>'Limite de uso atingido.']); exit; }
+  if (!empty($maxUses) && $usedCount >= (int)$maxUses) { echo json_encode(['success'=>false,'error'=>'Limite de uso atingido.']); exit; }
   if (!empty($v['advertiser_id']) && $advId && (int)$v['advertiser_id'] !== (int)$advId) { echo json_encode(['success'=>false,'error'=>'Voucher não aplicável para este anunciante.']); exit; }
   if (!empty($v['room_id']) && $roomId && (int)$v['room_id'] !== (int)$roomId) { echo json_encode(['success'=>false,'error'=>'Voucher não aplicável para esta sala.']); exit; }
 
@@ -43,7 +56,7 @@ try {
       'type' => $type,
       'value' => $val,
       'max_uses' => $v['max_uses'] ?? null,
-      'used_count' => $v['used_count'] ?? 0,
+      'used_count' => $usedCount,
       'advertiser_id' => $v['advertiser_id'] ?? null,
       'room_id' => $v['room_id'] ?? null,
       'discount' => $discount
