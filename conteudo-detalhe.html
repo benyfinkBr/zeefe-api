@@ -96,7 +96,25 @@
           if (post.published_at) parts.push(new Date(post.published_at).toLocaleString('pt-BR'));
           metaEl.textContent = parts.join(' • ');
         }
-        if (bodyEl) bodyEl.innerHTML = post.content || '';
+        if (bodyEl) {
+          bodyEl.innerHTML = '';
+
+          // Imagem de capa, quando houver
+          if (post.cover_path) {
+            const coverWrap = document.createElement('div');
+            coverWrap.className = 'post-cover';
+            const img = document.createElement('img');
+            img.src = post.cover_path;
+            img.alt = post.title || 'Imagem deste conteúdo';
+            coverWrap.appendChild(img);
+            bodyEl.appendChild(coverWrap);
+          }
+
+          const contentWrap = document.createElement('div');
+          contentWrap.className = 'post-content';
+          contentWrap.innerHTML = post.content || '';
+          bodyEl.appendChild(contentWrap);
+        }
 
         // Incrementa contador de visualizações (somente se encontrar o post)
         try {

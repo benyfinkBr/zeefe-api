@@ -138,7 +138,6 @@
           <button type="button" data-panel="visitors">Visitantes</button>
           <button type="button" data-panel="company" id="companyTab" hidden>Empresa</button>
           <button type="button" data-panel="payments">Formas de Pagamento</button>
-          <button type="button" id="openSupportChatBtn">Mensagens</button>
           <button type="button" data-panel="profile">Meu Perfil</button>
         </nav>
         <button type="button" id="logoutBtn" class="nav-logout">Sair</button>
@@ -157,7 +156,10 @@
             </div>
           </div>
           <div class="portal-actions">
-            
+            <button class="btn btn-secondary btn-with-badge" type="button" id="openSupportChatBtn">
+              <span>Mensagens</span>
+              <span id="clientMessagesBadge" class="badge-dot" hidden></span>
+            </button>
             <button class="btn btn-secondary" type="button" id="refreshBtn">Atualizar</button>
           </div>
         </header>

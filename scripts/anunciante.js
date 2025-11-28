@@ -188,6 +188,7 @@ const accountNumberInput = document.getElementById('accountNumber');
 const pixKeyInput = document.getElementById('pixKey');
 const savePayoutBtn = document.getElementById('savePayoutBtn');
 const payoutMessage = document.getElementById('payoutMessage');
+const advMessagesBadge = document.getElementById('advMessagesBadge');
 
 function setAuthVisible(show) {
   if (!authContainer) return;
@@ -613,7 +614,7 @@ async function loadThreads() {
   try {
     const advId = myAdvertiser?.id;
     if (!advId) { threadsContainer.innerHTML = '<div class="rooms-message">Sem anunciante vinculado.</div>'; return; }
-    const res = await fetch(`${API_BASE}/messages_list_threads.php`);
+    const res = await fetch(`${API_BASE}/messages_list_threads.php?advertiser_id=${encodeURIComponent(advId)}`);
     const json = await parseJsonSafe(res);
     let list = json.success ? (json.data || []) : [];
     const roomIds = new Set((myRooms || []).map(r => String(r.id)));
@@ -622,6 +623,8 @@ async function loadThreads() {
       String(t.advertiser_id || '') === String(advId) ||
       (t.room_id && roomIds.has(String(t.room_id)))
     );
+    const hasUnread = list.some(t => Number(t.unread_for_advertiser || 0) > 0);
+    if (advMessagesBadge) advMessagesBadge.hidden = !hasUnread;
     if (!list.length) { threadsContainer.innerHTML = '<div class="rooms-message">Nenhuma conversa ainda.</div>'; return; }
     threadsContainer.innerHTML = list.map(t => `
       <button type="button" class="thread-item" data-thread-id="${t.id}">

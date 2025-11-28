@@ -146,6 +146,10 @@
             <div class="portal-subtitle">Gerencie suas salas, reservas e repasses</div>
           </div>
           <div class="portal-actions">
+            <button class="btn btn-secondary btn-sm btn-with-badge" type="button" id="openAdvChatBtn">
+              <span>Mensagens</span>
+              <span id="advMessagesBadge" class="badge-dot" hidden></span>
+            </button>
             <button class="btn btn-secondary btn-sm" id="advEditProfileBtn">Editar perfil</button>
             <button class="btn btn-secondary btn-sm" id="advRefreshBtn">Atualizar</button>
           </div>
@@ -267,8 +271,7 @@
 
       <div id="panel-messages" class="portal-section" hidden>
         <h3>Mensagens</h3>
-        <p class="rooms-message">Clique no botão abaixo para abrir as conversas em um painel lateral.</p>
-        <button class="btn btn-secondary" type="button" id="openAdvChatBtn">Abrir conversas</button>
+        <p class="rooms-message">Use o botão “Mensagens” no topo da página para abrir as conversas em um painel lateral.</p>
       </div>
 
       <div id="panel-reviews" class="portal-section" hidden>

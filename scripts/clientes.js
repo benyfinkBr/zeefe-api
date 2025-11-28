@@ -2719,7 +2719,14 @@ async function loadClientThreads() {
     const res = await fetch(`${API_BASE}/messages_list_threads.php?client_id=${encodeURIComponent(activeClient.id)}`);
     const json = await res.json();
     if (!json.success || !Array.isArray(json.data)) return [];
-    return json.data;
+    const threads = json.data;
+    // Atualiza indicador de novas mensagens no header
+    const badge = document.getElementById('clientMessagesBadge');
+    if (badge) {
+      const hasUnread = threads.some(t => Number(t.unread_for_client || 0) > 0);
+      badge.hidden = !hasUnread;
+    }
+    return threads;
   } catch {
     return [];
   }
