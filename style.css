@@ -306,7 +306,7 @@ main {
   grid-template-columns: 1.2fr 0.8fr;
   gap: 16px;
   align-items: stretch;
-  margin: 8px 0 20px;
+  margin: 8px 0 8px;
 }
 .hero-card {
   background: #fff;
