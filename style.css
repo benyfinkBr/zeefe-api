@@ -3870,6 +3870,9 @@ body.anunciante-page #advChatMessages.chat-messages {
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 10px 12px;
 }
+.auth-form.workshop-form .field-span-2 {
+  grid-column: span 2;
+}
 
 .auth-form.workshop-form .form-row {
   margin-top: 4px;

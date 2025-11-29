@@ -334,14 +334,14 @@
             <input type="hidden" id="advWorkshopId" />
             <!-- Bloco 1: Configurações do evento -->
             <h3 class="modal-section-title">Configurações do evento</h3>
+            <div class="form-row">
+              <label for="advWorkshopTitleInput">Título</label>
+              <input type="text" id="advWorkshopTitleInput" required />
+            </div>
             <div class="form-grid-mini">
-              <div>
+              <div class="field-span-2">
                 <label for="advWorkshopRoom">Sala</label>
                 <select id="advWorkshopRoom" required></select>
-              </div>
-              <div>
-                <label for="advWorkshopTitleInput">Título</label>
-                <input type="text" id="advWorkshopTitleInput" required />
               </div>
               <div>
                 <label for="advWorkshopCategory">Categoria</label>
@@ -367,16 +367,12 @@
             <h3 class="modal-section-title">Informações de participantes</h3>
             <div class="form-grid-mini">
               <div>
-                <label for="advWorkshopPrice">Preço por vaga (R$)</label>
-                <input type="number" id="advWorkshopPrice" min="0" step="0.01" />
-              </div>
-              <div>
-                <label for="advWorkshopMinSeats">Mínimo de participantes</label>
-                <input type="number" id="advWorkshopMinSeats" min="0" step="1" />
-              </div>
-              <div>
                 <label for="advWorkshopMaxSeats">Máximo de participantes</label>
                 <input type="number" id="advWorkshopMaxSeats" min="0" step="1" />
+              </div>
+              <div>
+                <label for="advWorkshopMinSeats">Mínimo esperado de participantes</label>
+                <input type="number" id="advWorkshopMinSeats" min="0" step="1" />
               </div>
               <div>
                 <label for="advWorkshopShowBar">Exibir barra de vagas?</label>
@@ -394,6 +390,10 @@
                   <option value="concluido">Concluído</option>
                 </select>
               </div>
+            </div>
+            <div class="form-row">
+              <label for="advWorkshopPrice">Preço por vaga no curso (R$)</label>
+              <input type="number" id="advWorkshopPrice" min="0" step="0.01" />
             </div>
 
             <!-- Bloco 3: Datas -->

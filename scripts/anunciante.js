@@ -1597,8 +1597,14 @@ advWorkshopForm?.addEventListener('submit', onWorkshopSubmit);
 function updateWorkshopCategoryUI() {
   if (!advWorkshopCategorySelect || !advWorkshopCategoryOtherInput) return;
   const val = advWorkshopCategorySelect.value || '';
-  advWorkshopCategoryOtherInput.disabled = val !== 'Outros';
-  advWorkshopCategoryOtherInput.style.opacity = val === 'Outros' ? '1' : '0.4';
+  const isOther = val === 'Outros';
+  advWorkshopCategoryOtherInput.disabled = !isOther;
+  advWorkshopCategoryOtherInput.style.opacity = isOther ? '1' : '0.4';
+  // mostra/esconde o campo "Categoria (outros)" conforme seleção
+  const wrap = advWorkshopCategoryOtherInput.closest('div');
+  if (wrap) {
+    wrap.style.display = isOther ? 'block' : 'none';
+  }
 }
 
 advWorkshopCategorySelect?.addEventListener('change', updateWorkshopCategoryUI);
