@@ -459,12 +459,13 @@ main {
 
 .hero-news-title-bar {
   position: absolute;
-  left: 10%;
-  right: 10%;
-  bottom: 18px;
-  background: linear-gradient(to top, rgba(255,255,255,0.92), rgba(255,255,255,0.0));
-  padding: 10px 12px 6px;
+  left: 8%;
+  right: 8%;
+  bottom: 12px;
+  background: rgba(255,255,255,0.9);
+  padding: 6px 10px;
   border-radius: 10px;
+  text-align: center;
 }
 
 .hero-news-title-bar h4 {
