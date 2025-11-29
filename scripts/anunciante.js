@@ -1416,12 +1416,39 @@ async function updateReservationStatus(action){
     const json = await parseJsonSafe(res);
     if (!json.success) throw new Error(json.error || 'Falha ao atualizar.');
     await loadReservations();
-    // Modal resumindo a atualização e oferecendo atalho
+    // Aviso inline semelhante ao fluxo do cliente
     const msg = json.message || (action === 'confirm'
       ? 'A reserva foi confirmada. O cliente será notificado.'
       : 'Reserva atualizada.');
-    closeReservationModal();
-    openAdvStatusNotice(msg);
+    if (advResMessage) {
+      advResMessage.innerHTML = '';
+      const p = document.createElement('p');
+      p.textContent = msg;
+      advResMessage.appendChild(p);
+      const actions = document.createElement('div');
+      actions.className = 'booking-success-actions';
+      const btnRes = document.createElement('button');
+      btnRes.type = 'button';
+      btnRes.className = 'btn btn-secondary btn-sm';
+      btnRes.textContent = 'Ver reservas';
+      btnRes.addEventListener('click', () => {
+        closeReservationModal();
+        setActivePanel('reservations');
+      });
+      const btnClose = document.createElement('button');
+      btnClose.type = 'button';
+      btnClose.className = 'btn btn-secondary btn-sm';
+      btnClose.textContent = 'Fechar';
+      btnClose.addEventListener('click', () => {
+        closeReservationModal();
+      });
+      actions.appendChild(btnRes);
+      actions.appendChild(btnClose);
+      advResMessage.appendChild(actions);
+    } else {
+      // fallback simples
+      closeReservationModal();
+    }
   } catch (e) {
     advResMessage.textContent = e.message || 'Erro ao atualizar.';
   }
