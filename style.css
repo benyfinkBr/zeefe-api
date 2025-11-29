@@ -383,6 +383,21 @@ main {
   border: 1px solid #e5e7eb;
   font-size: 0.95rem;
 }
+
+.time-select-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.time-select-group select {
+  padding: 4px 8px;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  font-size: 0.9rem;
+}
+.time-select-sep {
+  font-weight: 700;
+}
 .hero-submit {
   margin-top: 2px;
   padding: 3px 12px;

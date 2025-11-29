@@ -86,6 +86,10 @@ const advWorkshopDateInput = document.getElementById('advWorkshopDate');
 const advWorkshopEndDateInput = document.getElementById('advWorkshopEndDate');
 const advWorkshopTimeStartInput = document.getElementById('advWorkshopTimeStart');
 const advWorkshopTimeEndInput = document.getElementById('advWorkshopTimeEnd');
+const advWorkshopStartHourSelect = document.getElementById('advWorkshopStartHour');
+const advWorkshopStartMinuteSelect = document.getElementById('advWorkshopStartMinute');
+const advWorkshopEndHourSelect = document.getElementById('advWorkshopEndHour');
+const advWorkshopEndMinuteSelect = document.getElementById('advWorkshopEndMinute');
 const advWorkshopTitleInput = document.getElementById('advWorkshopTitleInput');
 const advWorkshopCategorySelect = document.getElementById('advWorkshopCategory');
 const advWorkshopCategoryOtherInput = document.getElementById('advWorkshopCategoryOther');
@@ -879,8 +883,20 @@ function openWorkshopModal(id) {
     advWorkshopRoomSelect.value = String(ws.room_id);
     advWorkshopDateInput.value = ws.date || '';
     advWorkshopEndDateInput.value = ws.end_date || '';
-    advWorkshopTimeStartInput.value = (ws.time_start || '').slice(0,5);
-    advWorkshopTimeEndInput.value = (ws.time_end || '').slice(0,5);
+    const start = (ws.time_start || '').slice(0,5);
+    const end = (ws.time_end || '').slice(0,5);
+    advWorkshopTimeStartInput.value = start;
+    advWorkshopTimeEndInput.value = end;
+    if (start && advWorkshopStartHourSelect && advWorkshopStartMinuteSelect) {
+      const [sh, sm] = start.split(':');
+      advWorkshopStartHourSelect.value = sh || '';
+      advWorkshopStartMinuteSelect.value = sm || '';
+    }
+    if (end && advWorkshopEndHourSelect && advWorkshopEndMinuteSelect) {
+      const [eh, em] = end.split(':');
+      advWorkshopEndHourSelect.value = eh || '';
+      advWorkshopEndMinuteSelect.value = em || '';
+    }
     advWorkshopTitleInput.value = ws.title || '';
     // Categoria: se for uma das opções do select, seleciona; senão, usa "Outros"
     if (advWorkshopCategorySelect) {
@@ -922,6 +938,10 @@ function openWorkshopModal(id) {
     advWorkshopEndDateInput.value = '';
     advWorkshopTimeStartInput.value = '';
     advWorkshopTimeEndInput.value = '';
+    if (advWorkshopStartHourSelect) advWorkshopStartHourSelect.value = '';
+    if (advWorkshopStartMinuteSelect) advWorkshopStartMinuteSelect.value = '';
+    if (advWorkshopEndHourSelect) advWorkshopEndHourSelect.value = '';
+    if (advWorkshopEndMinuteSelect) advWorkshopEndMinuteSelect.value = '';
     advWorkshopTitleInput.value = '';
     if (advWorkshopCategorySelect) advWorkshopCategorySelect.value = '';
     if (advWorkshopCategoryOtherInput) advWorkshopCategoryOtherInput.value = '';
@@ -955,6 +975,15 @@ async function onWorkshopSubmit(e) {
   if (!myAdvertiser) return;
   if (advWorkshopMsg) advWorkshopMsg.textContent = '';
   const id = advWorkshopIdInput.value ? Number(advWorkshopIdInput.value) : null;
+  // Monta horários a partir dos selects de hora/minuto
+  const startHour = advWorkshopStartHourSelect?.value || '';
+  const startMinute = advWorkshopStartMinuteSelect?.value || '';
+  const endHour = advWorkshopEndHourSelect?.value || '';
+  const endMinute = advWorkshopEndMinuteSelect?.value || '';
+  const startTime = (startHour && startMinute) ? `${startHour}:${startMinute}` : '';
+  const endTime = (endHour && endMinute) ? `${endHour}:${endMinute}` : '';
+  if (advWorkshopTimeStartInput) advWorkshopTimeStartInput.value = startTime;
+  if (advWorkshopTimeEndInput) advWorkshopTimeEndInput.value = endTime;
   // Categoria: usa select; se "Outros", pega o texto
   let category = '';
   if (advWorkshopCategorySelect) {
@@ -983,8 +1012,8 @@ async function onWorkshopSubmit(e) {
     category: category || null,
     date: advWorkshopDateInput.value,
     end_date: advWorkshopEndDateInput.value || null,
-    time_start: advWorkshopTimeStartInput.value,
-    time_end: advWorkshopTimeEndInput.value,
+    time_start: startTime,
+    time_end: endTime,
     price_per_seat: advWorkshopPriceInput.value ? Number(advWorkshopPriceInput.value) : 0,
     min_seats: advWorkshopMinSeatsInput.value ? Number(advWorkshopMinSeatsInput.value) : 0,
     max_seats: advWorkshopMaxSeatsInput.value ? Number(advWorkshopMaxSeatsInput.value) : 0,
