@@ -42,25 +42,37 @@
           <p>Espaços prontos para reuniões, treinamentos e workshops, com gestão de reservas em um só lugar.</p>
         </div>
         <form class="hero-form" id="heroSearchForm">
-          <div class="form-row">
+          <div class="form-row tab-salas">
             <label for="heroLocation">Onde você precisa?</label>
             <input id="heroLocation" type="text" placeholder="Cidade, bairro ou região" />
           </div>
-          <div class="form-row tab-salas">
-            <label for="heroDate">Data da reserva</label>
-            <input id="heroDate" type="date" />
-          </div>
-          <div class="form-row tab-salas">
-            <label for="heroCapacity">Quantidade de pessoas (opcional)</label>
-            <input id="heroCapacity" type="number" min="1" placeholder="Ex: 12" />
-          </div>
-          <div class="form-row tab-cursos hidden">
-            <label for="heroCourseTopic">Tema ou área</label>
-            <input id="heroCourseTopic" type="text" placeholder="Ex: Comunicação, Liderança" />
+          <div class="form-row form-row-inline tab-salas">
+            <div class="field">
+              <label for="heroDate">Data da reserva</label>
+              <input id="heroDate" type="date" />
+            </div>
+            <div class="field">
+              <label for="heroCapacity">Quantidade de pessoas (opcional)</label>
+              <input id="heroCapacity" type="number" min="1" placeholder="Ex: 12" />
+            </div>
           </div>
           <div class="form-row tab-cursos hidden">
             <label for="heroCourseCity">Cidade do curso</label>
             <input id="heroCourseCity" type="text" placeholder="Ex: São Paulo" />
+          </div>
+          <div class="form-row tab-cursos hidden">
+            <label for="heroCourseTopic">Tema ou área</label>
+            <select id="heroCourseTopic">
+              <option value="">Todos os temas</option>
+              <option value="Desenvolvimento pessoal">Desenvolvimento pessoal</option>
+              <option value="Saúde e bem-estar">Saúde e bem-estar</option>
+              <option value="Psicologia / Terapia">Psicologia / Terapia</option>
+              <option value="Negócios e carreira">Negócios e carreira</option>
+              <option value="Tecnologia e inovação">Tecnologia e inovação</option>
+              <option value="Finanças e investimentos">Finanças e investimentos</option>
+              <option value="Arte e criatividade">Arte e criatividade</option>
+              <option value="Outros">Outros</option>
+            </select>
           </div>
           <button class="btn btn-primary hero-submit" type="submit">Buscar salas</button>
           <p class="hero-hint">Sem cadastro inicial. Você só cria conta ao avançar com uma reserva ou inscrição.</p>
