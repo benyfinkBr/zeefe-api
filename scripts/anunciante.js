@@ -1403,6 +1403,10 @@ async function updateReservationStatus(action){
     if (!json.success) throw new Error(json.error || 'Falha ao atualizar.');
     advResMessage.textContent = json.message || 'Atualizado.';
     await loadReservations();
+    // Ao confirmar, encerramos o fluxo e fechamos o modal
+    if (action === 'confirm') {
+      closeReservationModal();
+    }
   } catch (e) {
     advResMessage.textContent = e.message || 'Erro ao atualizar.';
   }
