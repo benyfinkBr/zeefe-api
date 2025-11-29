@@ -473,15 +473,16 @@ document.addEventListener('DOMContentLoaded', () => {
         heroNewsMain.innerHTML = '';
         const card = document.createElement('article');
         card.className = 'hero-news-card hero-news-card-main';
+
+        const imgWrap = document.createElement('div');
+        imgWrap.className = 'hero-news-image-wrap';
+
         if (post.cover_path) {
           const img = document.createElement('img');
           img.src = post.cover_path;
           img.alt = post.title || 'Imagem do conteúdo';
-          card.appendChild(img);
+          imgWrap.appendChild(img);
         }
-
-        const overlay = document.createElement('div');
-        overlay.className = 'hero-news-overlay';
 
         const titleBar = document.createElement('div');
         titleBar.className = 'hero-news-title-bar';
@@ -492,7 +493,12 @@ document.addEventListener('DOMContentLoaded', () => {
         link.textContent = post.title || 'Conteúdo';
         titleEl.appendChild(link);
         titleBar.appendChild(titleEl);
-        overlay.appendChild(titleBar);
+        imgWrap.appendChild(titleBar);
+
+        card.appendChild(imgWrap);
+
+        const textWrap = document.createElement('div');
+        textWrap.className = 'hero-news-overlay';
 
         const meta = document.createElement('p');
         meta.className = 'hero-news-meta';
@@ -505,11 +511,11 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         }
         meta.textContent = parts.join(' • ');
-        overlay.appendChild(meta);
+        textWrap.appendChild(meta);
 
         const summary = document.createElement('p');
         summary.textContent = (post.summary || '').slice(0, 160) || 'Leia mais sobre este conteúdo.';
-        overlay.appendChild(summary);
+        textWrap.appendChild(summary);
 
         const dotsWrap = document.createElement('div');
         dotsWrap.className = 'hero-news-dots';
@@ -518,9 +524,9 @@ document.addEventListener('DOMContentLoaded', () => {
           dot.className = 'hero-news-dot' + (i === idx ? ' active' : '');
           dotsWrap.appendChild(dot);
         });
-        overlay.appendChild(dotsWrap);
+        textWrap.appendChild(dotsWrap);
 
-        card.appendChild(overlay);
+        card.appendChild(textWrap);
         heroNewsMain.appendChild(card);
       };
 

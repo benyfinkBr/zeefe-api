@@ -441,16 +441,20 @@ main {
 }
 .hero-news-card img {
   width: 100%;
-  border-radius: 10px;
   display: block;
   object-fit: cover;
   max-height: 140px;
 }
 
-.hero-news-overlay {
+.hero-news-image-wrap {
   position: relative;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.hero-news-overlay {
   margin-top: 8px;
-  padding: 10px 12px 12px;
+  padding: 0 2px 8px;
 }
 
 .hero-news-title-bar {
