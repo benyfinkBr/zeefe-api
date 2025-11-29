@@ -134,7 +134,7 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
     roomsMessage.textContent = '';
-    filtered.forEach(room => {
+    filtered.slice(0, 2).forEach(room => {
       const available = isRoomAvailable(room, today);
         const photos = getRoomPhotos(room.photo_path);
         const statusMeta = getStatusMeta(room, available);
@@ -611,7 +611,7 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
     workshopsMessage.textContent = '';
-    const items = allWorkshops.slice(0, 4);
+    const items = allWorkshops.slice(0, 2);
     items.forEach(w => {
       const card = document.createElement('article');
       card.className = 'card workshop-card';
