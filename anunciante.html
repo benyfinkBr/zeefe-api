@@ -560,6 +560,23 @@
     </div>
   </div>
 
+  <!-- Modal: Aviso após atualizar reserva -->
+  <div class="modal-overlay" id="advStatusNoticeModal" aria-hidden="true">
+    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="advStatusNoticeTitle" style="width:420px; max-width:96vw;">
+      <button class="modal-close" type="button" id="advStatusNoticeClose" aria-label="Fechar">&times;</button>
+      <div class="modal-body">
+        <div class="modal-info" style="padding:24px; width:100%;">
+          <h2 id="advStatusNoticeTitle" style="margin:0 0 10px;">Reserva atualizada</h2>
+          <p id="advStatusNoticeText" class="rooms-message" style="margin-top:0;">A reserva foi atualizada com sucesso.</p>
+          <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:16px;">
+            <button type="button" class="btn btn-secondary btn-sm" id="advStatusNoticeReservations">Ir para reservas</button>
+            <button type="button" class="btn btn-secondary btn-sm" id="advStatusNoticeOk">Fechar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Modal: Nova sala -->
   <div class="modal-overlay" id="advRoomModal" aria-hidden="true">
     <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="advRoomTitle">

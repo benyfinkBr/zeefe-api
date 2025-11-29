@@ -189,6 +189,11 @@ const pixKeyInput = document.getElementById('pixKey');
 const savePayoutBtn = document.getElementById('savePayoutBtn');
 const payoutMessage = document.getElementById('payoutMessage');
 const advMessagesBadge = document.getElementById('advMessagesBadge');
+const advStatusNoticeModal = document.getElementById('advStatusNoticeModal');
+const advStatusNoticeText = document.getElementById('advStatusNoticeText');
+const advStatusNoticeClose = document.getElementById('advStatusNoticeClose');
+const advStatusNoticeOk = document.getElementById('advStatusNoticeOk');
+const advStatusNoticeReservations = document.getElementById('advStatusNoticeReservations');
 
 function setAuthVisible(show) {
   if (!authContainer) return;
@@ -1311,6 +1316,15 @@ document.querySelector('.portal-nav-links button[data-panel="messages"]')?.addEv
 advChatClose?.addEventListener('click', closeAdvChatDrawer);
 advChatModal?.addEventListener('click', (e)=> { if (e.target === advChatModal) closeAdvChatDrawer(); });
 
+// Aviso pós-atualização de reserva
+advStatusNoticeClose?.addEventListener('click', closeAdvStatusNotice);
+advStatusNoticeOk?.addEventListener('click', closeAdvStatusNotice);
+advStatusNoticeModal?.addEventListener('click', (e)=>{ if (e.target === advStatusNoticeModal) closeAdvStatusNotice(); });
+advStatusNoticeReservations?.addEventListener('click', () => {
+  setActivePanel('reservations');
+  closeAdvStatusNotice();
+});
+
 function openAdvChatDrawer(){
   advChatModal?.classList.add('show');
   advChatModal?.setAttribute('aria-hidden','false');
@@ -1401,15 +1415,29 @@ async function updateReservationStatus(action){
     const res = await fetch(`${API_BASE}/update_reservation_status.php`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ id: advResCurrentId, action }) });
     const json = await parseJsonSafe(res);
     if (!json.success) throw new Error(json.error || 'Falha ao atualizar.');
-    advResMessage.textContent = json.message || 'Atualizado.';
     await loadReservations();
-    // Ao confirmar, encerramos o fluxo e fechamos o modal
-    if (action === 'confirm') {
-      closeReservationModal();
-    }
+    // Modal resumindo a atualização e oferecendo atalho
+    const msg = json.message || (action === 'confirm'
+      ? 'A reserva foi confirmada. O cliente será notificado.'
+      : 'Reserva atualizada.');
+    closeReservationModal();
+    openAdvStatusNotice(msg);
   } catch (e) {
     advResMessage.textContent = e.message || 'Erro ao atualizar.';
   }
+}
+
+function openAdvStatusNotice(message){
+  if (!advStatusNoticeModal) return;
+  if (advStatusNoticeText) advStatusNoticeText.textContent = message || 'Reserva atualizada com sucesso.';
+  advStatusNoticeModal.classList.add('show');
+  advStatusNoticeModal.setAttribute('aria-hidden','false');
+}
+
+function closeAdvStatusNotice(){
+  if (!advStatusNoticeModal) return;
+  advStatusNoticeModal.classList.remove('show');
+  advStatusNoticeModal.setAttribute('aria-hidden','true');
 }
 
 // ===== Room Details Modal =====
