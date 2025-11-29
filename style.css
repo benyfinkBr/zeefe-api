@@ -437,7 +437,9 @@ main {
   background: rgba(15,23,42,0.08);
   display: flex;
   flex-direction: column;
-  min-height: 280px;
+  height: 320px;
+  max-height: 320px;
+  overflow: hidden;
 }
 .hero-news-main {
   flex: 1;
@@ -447,15 +449,16 @@ main {
 }
 .hero-news-card img {
   width: 100%;
+  height: 100%;
   display: block;
   object-fit: cover;
-  max-height: 180px;
 }
 
 .hero-news-image-wrap {
   position: relative;
   border-radius: 10px;
   overflow: hidden;
+  height: 190px;
 }
 
 .hero-news-overlay {
@@ -464,6 +467,7 @@ main {
   flex: 1;
   display: flex;
   flex-direction: column;
+  justify-content: space-between;
 }
 
 .hero-news-title-bar {
@@ -471,7 +475,7 @@ main {
   left: 8%;
   right: 8%;
   bottom: 12px;
-  background: rgba(255,255,255,0.82);
+  background: rgba(255,255,255,0.78);
   padding: 6px 10px;
   border-radius: 10px;
   text-align: center;
