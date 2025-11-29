@@ -91,6 +91,8 @@ const advWorkshopStartHourSelect = document.getElementById('advWorkshopStartHour
 const advWorkshopStartMinuteSelect = document.getElementById('advWorkshopStartMinute');
 const advWorkshopEndHourSelect = document.getElementById('advWorkshopEndHour');
 const advWorkshopEndMinuteSelect = document.getElementById('advWorkshopEndMinute');
+const advWorkshopTimeStartWrap = document.getElementById('advWorkshopTimeStartWrap');
+const advWorkshopTimeEndWrap = document.getElementById('advWorkshopTimeEndWrap');
 const advWorkshopTitleInput = document.getElementById('advWorkshopTitleInput');
 const advWorkshopCategorySelect = document.getElementById('advWorkshopCategory');
 const advWorkshopCategoryOtherInput = document.getElementById('advWorkshopCategoryOther');
@@ -1617,6 +1619,12 @@ function updateWorkshopDateModeUI() {
     if (advWorkshopDatesJsonInput) advWorkshopDatesJsonInput.value = '';
     if (advWorkshopPerDayTimes) advWorkshopPerDayTimes.hidden = true;
   }
+  // Controle de visibilidade dos horários globais
+  if (advWorkshopTimeStartWrap && advWorkshopTimeEndWrap) {
+    const showGlobalTimes = !isMulti || (advWorkshopSameTimeCheckbox?.checked ?? true);
+    advWorkshopTimeStartWrap.style.display = showGlobalTimes ? 'block' : 'none';
+    advWorkshopTimeEndWrap.style.display = showGlobalTimes ? 'block' : 'none';
+  }
 }
 
 function addWorkshopDate() {
@@ -1759,6 +1767,12 @@ advWorkshopSameTimeCheckbox?.addEventListener('change', () => {
     renderPerDayTimesTable();
   } else if (advWorkshopPerDayTimes) {
     advWorkshopPerDayTimes.hidden = true;
+  }
+  // Atualiza visibilidade dos horários globais quando alterna "manter o mesmo horário"
+  if (advWorkshopTimeStartWrap && advWorkshopTimeEndWrap) {
+    const showGlobalTimes = !advWorkshopDateMulti?.checked || (advWorkshopSameTimeCheckbox.checked);
+    advWorkshopTimeStartWrap.style.display = showGlobalTimes ? 'block' : 'none';
+    advWorkshopTimeEndWrap.style.display = showGlobalTimes ? 'block' : 'none';
   }
 });
 advWorkshopDateSingle?.addEventListener('change', updateWorkshopDateModeUI);

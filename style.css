@@ -406,18 +406,18 @@ main {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  margin-bottom: 4px;
+  margin: 4px 0 6px;
 }
 .multi-date-chip {
   border-radius: 999px;
-  border: 1px solid #e5e7eb;
-  background: #f3f4f6;
+  border: 1px solid var(--brand-green);
+  background: var(--brand-sand);
   padding: 2px 10px;
   font-size: 0.8rem;
   cursor: pointer;
 }
 .multi-date-chip:hover {
-  background: #e5e7eb;
+  background: #dbcdbf;
 }
 .per-day-times {
   margin-top: 10px;
