@@ -1035,38 +1035,6 @@ async function onWorkshopSubmit(e) {
   }
 }
 
-// ===== Utilitário: força horários em blocos de 15 minutos (xx:00, xx:15, xx:30, xx:45) =====
-function normalizeToQuarterHour(value) {
-  if (!value) return value;
-  const parts = value.split(':');
-  if (parts.length < 2) return value;
-  const h = Number(parts[0]);
-  const m = Number(parts[1]);
-  if (!Number.isFinite(h) || !Number.isFinite(m)) return value;
-  let total = h * 60 + m;
-  if (total < 0) total = 0;
-  const max = 23 * 60 + 45;
-  if (total > max) total = max;
-  const rounded = Math.round(total / 15) * 15;
-  const hh = String(Math.floor(rounded / 60)).padStart(2, '0');
-  const mm = String(rounded % 60).padStart(2, '0');
-  return `${hh}:${mm}`;
-}
-
-function enforceQuarterHourOnInput(input) {
-  if (!input) return;
-  try { input.step = 900; } catch (_) {}
-  const handler = () => {
-    const normalized = normalizeToQuarterHour(input.value);
-    if (normalized) input.value = normalized;
-  };
-  input.addEventListener('change', handler);
-  input.addEventListener('blur', handler);
-}
-
-enforceQuarterHourOnInput(advWorkshopTimeStartInput);
-enforceQuarterHourOnInput(advWorkshopTimeEndInput);
-
 async function openThread(threadId) {
   currentThreadId = Number(threadId);
   if (!currentThreadId) return;
