@@ -435,7 +435,10 @@ main {
   border: 1px solid rgba(255,255,255,0.22);
   padding: 0;
   background: rgba(15,23,42,0.08);
-  }
+  display: flex;
+  flex-direction: column;
+  min-height: 260px;
+}
 .hero-news-main {
   flex: 1;
   display: flex;
@@ -458,6 +461,10 @@ main {
 .hero-news-overlay {
   margin-top: 8px;
   padding: 0 2px 8px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
 }
 
 .hero-news-title-bar {
@@ -496,6 +503,12 @@ main {
   margin: 0;
   font-size: 0.85rem;
   color: rgba(241,245,249,0.9);
+  line-height: 1.4;
+  /* limita o texto para evitar crescer demais o card */
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .hero-news-dots {
