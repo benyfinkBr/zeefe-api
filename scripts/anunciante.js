@@ -9,6 +9,7 @@ let myReservations = [];
 let myWorkshops = [];
 let currentThreadId = null;
 let chatPollTimer = null;
+let workshopSelectedDates = [];
 
 // Seletores
 const authContainer = document.getElementById('authContainer');
@@ -106,6 +107,13 @@ const advWorkshopDateSingle = document.getElementById('advWorkshopDateSingle');
 const advWorkshopDateMulti = document.getElementById('advWorkshopDateMulti');
 const advWorkshopSameTimeCheckbox = document.getElementById('advWorkshopSameTime');
 const advWorkshopDescToolbar = document.getElementById('advWorkshopDescToolbar');
+const advWorkshopAddDateWrap = document.getElementById('advWorkshopAddDateWrap');
+const advWorkshopAddDateBtn = document.getElementById('advWorkshopAddDateBtn');
+const advWorkshopDatesMultiWrap = document.getElementById('advWorkshopDatesMultiWrap');
+const advWorkshopDatesList = document.getElementById('advWorkshopDatesList');
+const advWorkshopDatesSummary = document.getElementById('advWorkshopDatesSummary');
+const advWorkshopDatesJsonInput = document.getElementById('advWorkshopDatesJson');
+const advWorkshopPerDayTimes = document.getElementById('advWorkshopPerDayTimes');
 
 // Overview
 const ovViews = document.getElementById('ovViews');
@@ -975,6 +983,7 @@ async function onWorkshopSubmit(e) {
   if (!myAdvertiser) return;
   if (advWorkshopMsg) advWorkshopMsg.textContent = '';
   const id = advWorkshopIdInput.value ? Number(advWorkshopIdInput.value) : null;
+  const isMulti = advWorkshopDateMulti?.checked || false;
   // Monta horários a partir dos selects de hora/minuto
   const startHour = advWorkshopStartHourSelect?.value || '';
   const startMinute = advWorkshopStartMinuteSelect?.value || '';
@@ -1000,6 +1009,45 @@ async function onWorkshopSubmit(e) {
     : (advWorkshopDescriptionInput?.value || '').trim();
   if (advWorkshopDescriptionInput) {
     advWorkshopDescriptionInput.value = descHtml;
+  }
+
+  // Se modo vários dias, monta lista ordenada e JSON de agenda
+  let scheduleJson = null;
+  if (isMulti) {
+    // garante que a data atual também está na lista, se preenchida
+    const baseDate = advWorkshopDateInput?.value || '';
+    if (baseDate) {
+      if (!workshopSelectedDates.includes(baseDate)) {
+        workshopSelectedDates.push(baseDate);
+      }
+    }
+    workshopSelectedDates = Array.from(new Set(workshopSelectedDates)).sort();
+    if (advWorkshopDatesJsonInput) {
+      const schedule = {};
+      if (workshopSelectedDates.length) {
+        if (advWorkshopSameTimeCheckbox?.checked) {
+          workshopSelectedDates.forEach(d => {
+            schedule[d] = { start: startTime, end: endTime };
+          });
+        } else if (advWorkshopPerDayTimes && advWorkshopPerDayTimes.querySelectorAll('tr[data-date]').length) {
+          advWorkshopPerDayTimes.querySelectorAll('tr[data-date]').forEach(tr => {
+            const d = tr.getAttribute('data-date');
+            const sh = tr.querySelector('select[data-role="start-hour"]')?.value || '';
+            const sm = tr.querySelector('select[data-role="start-minute"]')?.value || '';
+            const eh = tr.querySelector('select[data-role="end-hour"]')?.value || '';
+            const em = tr.querySelector('select[data-role="end-minute"]')?.value || '';
+            if (d && sh && sm && eh && em) {
+              schedule[d] = { start: `${sh}:${sm}`, end: `${eh}:${em}` };
+            }
+          });
+        }
+      }
+      scheduleJson = JSON.stringify(schedule);
+      advWorkshopDatesJsonInput.value = scheduleJson;
+    }
+  } else {
+    workshopSelectedDates = [];
+    if (advWorkshopDatesJsonInput) advWorkshopDatesJsonInput.value = '';
   }
 
   const payload = {
@@ -1560,8 +1608,159 @@ function updateWorkshopDateModeUI() {
   const isMulti = advWorkshopDateMulti.checked;
   advWorkshopEndDateInput.disabled = !isMulti;
   advWorkshopEndDateInput.style.opacity = isMulti ? '1' : '0.4';
+  if (advWorkshopAddDateWrap) advWorkshopAddDateWrap.style.display = isMulti ? 'block' : 'none';
+  if (advWorkshopDatesMultiWrap) advWorkshopDatesMultiWrap.hidden = !isMulti;
+  if (!isMulti) {
+    workshopSelectedDates = [];
+    if (advWorkshopDatesList) advWorkshopDatesList.innerHTML = '';
+    if (advWorkshopDatesSummary) advWorkshopDatesSummary.textContent = '';
+    if (advWorkshopDatesJsonInput) advWorkshopDatesJsonInput.value = '';
+    if (advWorkshopPerDayTimes) advWorkshopPerDayTimes.hidden = true;
+  }
 }
 
+function addWorkshopDate() {
+  if (!advWorkshopDateInput) return;
+  const val = advWorkshopDateInput.value;
+  if (!val) return;
+  if (!workshopSelectedDates.includes(val)) {
+    workshopSelectedDates.push(val);
+    workshopSelectedDates.sort();
+  }
+  renderWorkshopDatesUI();
+}
+
+function removeWorkshopDate(dateStr) {
+  workshopSelectedDates = workshopSelectedDates.filter(d => d !== dateStr);
+  renderWorkshopDatesUI();
+}
+
+function renderWorkshopDatesUI() {
+  if (!advWorkshopDatesList || !advWorkshopDatesSummary) return;
+  advWorkshopDatesList.innerHTML = '';
+  if (!workshopSelectedDates.length) {
+    advWorkshopDatesSummary.textContent = 'Nenhum dia adicional selecionado.';
+    if (advWorkshopEndDateInput) advWorkshopEndDateInput.value = '';
+    if (advWorkshopPerDayTimes) advWorkshopPerDayTimes.hidden = true;
+    return;
+  }
+  workshopSelectedDates.forEach(d => {
+    const chip = document.createElement('button');
+    chip.type = 'button';
+    chip.className = 'multi-date-chip';
+    chip.textContent = d.split('-').reverse().join('/');
+    chip.addEventListener('click', () => removeWorkshopDate(d));
+    advWorkshopDatesList.appendChild(chip);
+  });
+  const total = workshopSelectedDates.length;
+  advWorkshopDatesSummary.textContent = `${total} dia${total>1?'s':''} selecionado${total>1?'s':''}. Clique em um dia para remover.`;
+  if (advWorkshopEndDateInput) {
+    const last = workshopSelectedDates[workshopSelectedDates.length - 1];
+    advWorkshopEndDateInput.value = last;
+  }
+  if (advWorkshopDateMulti?.checked && !advWorkshopSameTimeCheckbox?.checked) {
+    renderPerDayTimesTable();
+  } else if (advWorkshopPerDayTimes) {
+    advWorkshopPerDayTimes.hidden = true;
+  }
+}
+
+function renderPerDayTimesTable() {
+  if (!advWorkshopPerDayTimes) return;
+  if (!workshopSelectedDates.length) {
+    advWorkshopPerDayTimes.hidden = true;
+    advWorkshopPerDayTimes.innerHTML = '';
+    return;
+  }
+  const rowsHtml = workshopSelectedDates.map(d => {
+    const label = d.split('-').reverse().join('/');
+    return `
+      <tr data-date="${d}">
+        <td>${label}</td>
+        <td>
+          <div class="time-select-group">
+            <select data-role="start-hour">
+              <option value="">--</option>
+              <option value="06">06</option>
+              <option value="07">07</option>
+              <option value="08">08</option>
+              <option value="09">09</option>
+              <option value="10">10</option>
+              <option value="11">11</option>
+              <option value="12">12</option>
+              <option value="13">13</option>
+              <option value="14">14</option>
+              <option value="15">15</option>
+              <option value="16">16</option>
+              <option value="17">17</option>
+              <option value="18">18</option>
+              <option value="19">19</option>
+              <option value="20">20</option>
+              <option value="21">21</option>
+              <option value="22">22</option>
+            </select>
+            <span class="time-select-sep">:</span>
+            <select data-role="start-minute">
+              <option value="">--</option>
+              <option value="00">00</option>
+              <option value="15">15</option>
+              <option value="30">30</option>
+              <option value="45">45</option>
+            </select>
+          </div>
+        </td>
+        <td>
+          <div class="time-select-group">
+            <select data-role="end-hour">
+              <option value="">--</option>
+              <option value="06">06</option>
+              <option value="07">07</option>
+              <option value="08">08</option>
+              <option value="09">09</option>
+              <option value="10">10</option>
+              <option value="11">11</option>
+              <option value="12">12</option>
+              <option value="13">13</option>
+              <option value="14">14</option>
+              <option value="15">15</option>
+              <option value="16">16</option>
+              <option value="17">17</option>
+              <option value="18">18</option>
+              <option value="19">19</option>
+              <option value="20">20</option>
+              <option value="21">21</option>
+              <option value="22">22</option>
+            </select>
+            <span class="time-select-sep">:</span>
+            <select data-role="end-minute">
+              <option value="">--</option>
+              <option value="00">00</option>
+              <option value="15">15</option>
+              <option value="30">30</option>
+              <option value="45">45</option>
+            </select>
+          </div>
+        </td>
+      </tr>`;
+  }).join('');
+  advWorkshopPerDayTimes.innerHTML = `
+    <table class="per-day-table">
+      <thead>
+        <tr><th>Dia</th><th>Início</th><th>Fim</th></tr>
+      </thead>
+      <tbody>${rowsHtml}</tbody>
+    </table>`;
+  advWorkshopPerDayTimes.hidden = false;
+}
+
+advWorkshopAddDateBtn?.addEventListener('click', addWorkshopDate);
+advWorkshopSameTimeCheckbox?.addEventListener('change', () => {
+  if (advWorkshopDateMulti?.checked && !advWorkshopSameTimeCheckbox.checked) {
+    renderPerDayTimesTable();
+  } else if (advWorkshopPerDayTimes) {
+    advWorkshopPerDayTimes.hidden = true;
+  }
+});
 advWorkshopDateSingle?.addEventListener('change', updateWorkshopDateModeUI);
 advWorkshopDateMulti?.addEventListener('change', updateWorkshopDateModeUI);
 updateWorkshopDateModeUI();

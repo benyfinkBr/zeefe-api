@@ -402,6 +402,9 @@
               <div>
                 <label for="advWorkshopDate">Data inicial</label>
                 <input type="date" id="advWorkshopDate" required />
+                <div id="advWorkshopAddDateWrap" class="multi-dates-actions" style="display:none; margin-top:4px;">
+                  <button type="button" class="btn btn-secondary btn-sm" id="advWorkshopAddDateBtn">Adicionar dia</button>
+                </div>
               </div>
               <div>
                 <label>Modo</label>
@@ -485,6 +488,12 @@
                 <input type="hidden" id="advWorkshopTimeEnd" />
               </div>
             </div>
+            <div id="advWorkshopDatesMultiWrap" class="multi-dates-wrap" hidden>
+              <div id="advWorkshopDatesList" class="multi-dates-list"></div>
+              <small class="input-hint" id="advWorkshopDatesSummary"></small>
+              <input type="hidden" id="advWorkshopDatesJson" />
+            </div>
+            <div id="advWorkshopPerDayTimes" class="per-day-times" hidden></div>
             <div class="form-grid-mini">
               <div>
                 <label for="advWorkshopEndDate">Data final</label>
