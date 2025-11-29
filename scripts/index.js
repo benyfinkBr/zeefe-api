@@ -520,8 +520,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const dotsWrap = document.createElement('div');
         dotsWrap.className = 'hero-news-dots';
         items.forEach((_, i) => {
-          const dot = document.createElement('span');
+          const dot = document.createElement('button');
+          dot.type = 'button';
           dot.className = 'hero-news-dot' + (i === idx ? ' active' : '');
+          dot.addEventListener('click', () => {
+            currentIndex = i;
+            renderSlide(currentIndex);
+          });
           dotsWrap.appendChild(dot);
         });
         textWrap.appendChild(dotsWrap);
