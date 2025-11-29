@@ -3873,6 +3873,11 @@ body.anunciante-page #advChatMessages.chat-messages {
 .auth-form.workshop-form .field-span-2 {
   grid-column: span 2;
 }
+.auth-form.workshop-form .participants-grid > div {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
 
 .auth-form.workshop-form .form-row {
   margin-top: 4px;
