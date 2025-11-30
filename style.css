@@ -1024,8 +1024,8 @@ section h3 {
 
 .rooms-carousel {
   position: relative;
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  display: flex;
+  align-items: center;
   gap: 18px;
 }
 
@@ -3927,6 +3927,12 @@ body.anunciante-page #advChatMessages.chat-messages {
   display: flex;
   gap: 8px;
   margin-top: auto;
+}
+
+.workshops-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 18px;
 }
 
 .workshop-details-header {
