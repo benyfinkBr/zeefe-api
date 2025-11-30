@@ -104,6 +104,8 @@ const bookingVoucherResult = document.getElementById('bookingVoucherResult');
 let bookingVoucherApplied = null; // { code, discount, payable }
 let bookingSelectedDates = [];
 let bookingDateMulti = false;
+let availableCoursesCache = [];
+let clientCoursesCache = [];
 
 const reservationsContainer = document.getElementById('reservationsContainer');
 // Modal de ações da reserva
@@ -141,6 +143,12 @@ const cancelVisitorEditBtn = document.getElementById('cancelVisitorEdit');
 const newVisitorBtn = document.getElementById('newVisitorBtn');
 const visitorsContainer = document.getElementById('visitorsContainer');
 const visitorFormWrapper = document.getElementById('visitorFormWrapper');
+const coursesPanel = document.getElementById('panel-courses');
+const clientCoursesList = document.getElementById('clientCoursesList');
+const clientCoursesMessage = document.getElementById('clientCoursesMessage');
+const availableCoursesGrid = document.getElementById('availableCoursesGrid');
+const availableCoursesMessage = document.getElementById('availableCoursesMessage');
+const coursesFeedback = document.getElementById('coursesFeedback');
 
 const profileForm = document.getElementById('profileForm');
 const profileMessageEl = document.getElementById('profileMessage');
@@ -186,6 +194,7 @@ const portalSections = {
   book: document.getElementById('panel-book'),
   reservations: document.getElementById('panel-reservations'),
   visitors: document.getElementById('panel-visitors'),
+  courses: document.getElementById('panel-courses'),
   profile: document.getElementById('panel-profile'),
   company: document.getElementById('panel-company')
 };
@@ -630,6 +639,9 @@ function setActivePanel(panelName = 'book') {
     carregarReservasGlobais().finally(() => carregarReservas(activeClient.id));
   } else if (target === 'visitors' && activeClient) {
     carregarVisitantes(activeClient.id);
+  } else if (target === 'courses' && activeClient) {
+    if (coursesFeedback) coursesFeedback.textContent = '';
+    carregarCursosCliente();
   } else if (target === 'profile') {
     renderProfile();
   } else if (target === 'company' && activeClient) {
@@ -3355,6 +3367,218 @@ function renderVisitantes(visitantes) {
   });
 }
 
+async function carregarCursosCliente() {
+  if (!activeClient) return;
+  let availableError = '';
+  let myError = '';
+  try {
+    const [availableRes, myRes] = await Promise.all([
+      fetch('api/workshops_list.php?status=publicado&upcoming=1', { credentials: 'include' }).then(r => r.json()),
+      fetch(`${API_BASE}/client_workshop_enrollments.php?client_id=${encodeURIComponent(activeClient.id)}`, { credentials: 'include' }).then(r => r.json())
+    ]);
+    if (availableRes.success) {
+      availableCoursesCache = availableRes.data || [];
+    } else {
+      availableCoursesCache = [];
+      availableError = availableRes.error || 'Não foi possível carregar os cursos.';
+    }
+    if (myRes.success) {
+      clientCoursesCache = myRes.data || [];
+    } else {
+      clientCoursesCache = [];
+      myError = myRes.error || 'Não foi possível carregar suas inscrições.';
+    }
+  } catch (err) {
+    console.error(err);
+    availableCoursesCache = [];
+    clientCoursesCache = [];
+    availableError = 'Não foi possível carregar os cursos.';
+    myError = 'Não foi possível carregar suas inscrições.';
+  }
+  renderAvailableCourses(availableError);
+  renderClientCourses(myError);
+}
+
+function renderAvailableCourses(errorText = '') {
+  if (!availableCoursesGrid || !availableCoursesMessage) return;
+  availableCoursesGrid.innerHTML = '';
+  if (errorText) {
+    availableCoursesMessage.textContent = errorText;
+    return;
+  }
+  if (!availableCoursesCache.length) {
+    availableCoursesMessage.textContent = 'Nenhum curso publicado no momento.';
+    return;
+  }
+  availableCoursesMessage.textContent = '';
+  availableCoursesGrid.innerHTML = availableCoursesCache.map(course => {
+    const dateLabel = formatDateRangeLabel(course.date, course.end_date);
+    const timeLabel = formatTimeRange(course.time_start, course.time_end);
+    const location = [course.room_city, course.room_state].filter(Boolean).join(' - ');
+    const price = Number(course.price_per_seat || 0);
+    const priceLabel = price > 0
+      ? `Ingresso a partir de ${formatCurrency(price)}`
+      : 'Ingresso gratuito';
+    const maxSeats = Number(course.max_seats || 0);
+    const soldSeats = Number(course.sold_seats || 0);
+    const seatsLine = maxSeats > 0 ? `${soldSeats} de ${maxSeats} vagas confirmadas` : '';
+    const minSeats = Number(course.min_seats || 0);
+    const minNote = minSeats > 0
+      ? `Pagamento confirmado ao chegar a ${minSeats} participante${minSeats > 1 ? 's' : ''}.`
+      : 'Pagamento confirmado imediatamente após a liberação do curso.';
+    const alreadyEnrolled = clientCoursesCache.some(item => Number(item.workshop_id) === Number(course.id));
+    const imgHtml = course.banner_path
+      ? `<div class="workshop-card-cover"><img src="${escapeHtml(course.banner_path)}" alt="Imagem do curso ${escapeHtml(course.title || '')}"></div>`
+      : '';
+    const disabled = alreadyEnrolled || !activeClient?.email;
+    const enrollLabel = alreadyEnrolled ? 'Inscrito' : 'Inscrever-se';
+    const enrollBtn = `<button type="button" class="btn btn-primary btn-sm" data-course-enroll="${course.id}"${disabled ? ' disabled' : ''}>${enrollLabel}</button>`;
+    const secondaryBtn = `<a class="btn btn-secondary btn-sm" href="workshops.html" target="_blank" rel="noopener">Ver detalhes</a>`;
+    const actions = disabled ? `<div class="workshop-actions">${alreadyEnrolled ? '<span class="chip pending">Inscrição registrada</span>' : ''}${secondaryBtn}</div>`
+      : `<div class="workshop-actions">${enrollBtn}${secondaryBtn}</div>`;
+    return `
+      <article class="card workshop-card">
+        ${imgHtml}
+        <h4>${escapeHtml(course.title || 'Curso')}</h4>
+        <p class="workshop-meta">${escapeHtml([dateLabel, timeLabel, location].filter(Boolean).join(' • '))}</p>
+        ${course.subtitle ? `<p class="workshop-subtitle">${escapeHtml(course.subtitle)}</p>` : ''}
+        <p class="workshop-price">${escapeHtml(priceLabel)}</p>
+        ${seatsLine ? `<p class="workshop-meta">${escapeHtml(seatsLine)}</p>` : ''}
+        <p class="workshop-meta">${escapeHtml(minNote)}</p>
+        ${actions}
+      </article>
+    `;
+  }).join('');
+
+  availableCoursesGrid.querySelectorAll('[data-course-enroll]').forEach(btn => {
+    btn.addEventListener('click', () => inscreverCurso(Number(btn.getAttribute('data-course-enroll')), btn));
+  });
+}
+
+function renderClientCourses(errorText = '') {
+  if (!clientCoursesList || !clientCoursesMessage) return;
+  clientCoursesList.innerHTML = '';
+  if (errorText) {
+    clientCoursesMessage.textContent = errorText;
+    return;
+  }
+  if (!clientCoursesCache.length) {
+    clientCoursesMessage.textContent = 'Você ainda não se inscreveu em cursos.';
+    return;
+  }
+  clientCoursesMessage.textContent = '';
+  clientCoursesList.innerHTML = clientCoursesCache.map(enrollment => {
+    const dateLabel = formatDateRangeLabel(enrollment.workshop_date, enrollment.workshop_end_date);
+    const timeLabel = formatTimeRange(enrollment.workshop_time_start, enrollment.workshop_time_end);
+    const location = [enrollment.room_city, enrollment.room_state].filter(Boolean).join(' - ');
+    const price = Number(enrollment.price_per_seat || 0);
+    const priceLabel = price > 0
+      ? `Ingresso: ${formatCurrency(price)}`
+      : 'Ingresso gratuito';
+    const maxSeats = Number(enrollment.max_seats || 0);
+    const paidSeats = Number(enrollment.paid_seats || 0);
+    const seatsLine = maxSeats > 0 ? `${paidSeats} de ${maxSeats} vagas confirmadas` : '';
+    const statusInfo = mapCourseStatus(enrollment.payment_status, Number(enrollment.min_seats || 0));
+    const imgHtml = enrollment.banner_path
+      ? `<div class="workshop-card-cover"><img src="${escapeHtml(enrollment.banner_path)}" alt="Imagem do curso ${escapeHtml(enrollment.workshop_title || '')}"></div>`
+      : '';
+    const codeLine = enrollment.public_code
+      ? `<p class="workshop-meta">Ingresso: ${escapeHtml(enrollment.public_code)}</p>`
+      : '';
+    return `
+      <article class="card workshop-card">
+        ${imgHtml}
+        <h4>${escapeHtml(enrollment.workshop_title || 'Curso')}</h4>
+        <p class="workshop-meta">${escapeHtml([dateLabel, timeLabel, location].filter(Boolean).join(' • '))}</p>
+        ${enrollment.workshop_subtitle ? `<p class="workshop-subtitle">${escapeHtml(enrollment.workshop_subtitle)}</p>` : ''}
+        <p class="workshop-price">${escapeHtml(priceLabel)}</p>
+        ${seatsLine ? `<p class="workshop-meta">${escapeHtml(seatsLine)}</p>` : ''}
+        ${codeLine}
+        <div class="course-status">
+          <strong>Status</strong>
+          <span class="${statusInfo.className}">${escapeHtml(statusInfo.label)}</span>
+        </div>
+        ${statusInfo.note ? `<p class="workshop-meta">${escapeHtml(statusInfo.note)}</p>` : ''}
+        <div class="workshop-actions">
+          <a class="btn btn-secondary btn-sm" href="workshops.html" target="_blank" rel="noopener">Ver detalhes</a>
+        </div>
+      </article>
+    `;
+  }).join('');
+}
+
+function mapCourseStatus(paymentStatus, minSeats) {
+  const normalized = String(paymentStatus || '').toLowerCase();
+  if (normalized === 'pago') {
+    return {
+      label: 'Pagamento confirmado',
+      className: 'chip success',
+      note: 'Sua vaga está garantida.'
+    };
+  }
+  if (minSeats > 0) {
+    return {
+      label: 'Aguardando mínimo',
+      className: 'chip pending',
+      note: `O pagamento será processado quando o curso atingir ${minSeats} participante${minSeats > 1 ? 's' : ''}.`
+    };
+  }
+  return {
+    label: 'Pagamento pendente',
+    className: 'chip pending',
+    note: 'Confirmaremos o pagamento em breve.'
+  };
+}
+
+async function inscreverCurso(workshopId, triggerBtn) {
+  if (!activeClient || !workshopId) return;
+  const workshop = availableCoursesCache.find(w => Number(w.id) === Number(workshopId));
+  if (!workshop) return;
+  if (!activeClient.email) {
+    alert('Atualize seu e-mail no perfil para se inscrever em cursos.');
+    return;
+  }
+  const minSeats = Number(workshop.min_seats || 0);
+  const confirmMsg = minSeats > 0
+    ? `O pagamento será confirmado somente quando o curso atingir ${minSeats} participante${minSeats > 1 ? 's' : ''}. Deseja prosseguir?`
+    : 'Confirma a inscrição neste curso?';
+  if (!window.confirm(confirmMsg)) return;
+  const payload = {
+    workshop_id: workshopId,
+    name: activeClient.name || activeClient.login || 'Cliente Ze.EFE',
+    email: activeClient.email,
+    cpf: activeClient.cpf || '',
+    phone: activeClient.phone || activeClient.whatsapp || ''
+  };
+  try {
+    if (triggerBtn) {
+      triggerBtn.disabled = true;
+      triggerBtn.textContent = 'Inscrevendo...';
+    }
+    const res = await fetch(`${API_BASE}/workshop_enroll.php`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const json = await res.json();
+    if (!json.success) throw new Error(json.error || 'Não foi possível concluir a inscrição.');
+    if (coursesFeedback) {
+      coursesFeedback.textContent = json.payment_status === 'pago'
+        ? 'Inscrição confirmada! O pagamento foi processado e sua vaga está garantida.'
+        : 'Inscrição registrada! Avisaremos assim que o pagamento for confirmado.';
+    }
+    await carregarCursosCliente();
+  } catch (err) {
+    console.error(err);
+    alert(err.message || 'Erro ao realizar a inscrição.');
+  } finally {
+    if (triggerBtn) {
+      triggerBtn.disabled = false;
+      triggerBtn.textContent = 'Inscrever-se';
+    }
+  }
+}
+
 function renderVisitorChecklist(selectedIds = bookingVisitorIds) {
   if (!bookingVisitorSelector) return;
   const selectedSet = new Set((selectedIds || []).map(String));
@@ -3793,6 +4017,15 @@ function formatDate(value) {
   if (!value) return '--';
   const [y, m, d] = value.split('-');
   return `${d}/${m}/${y}`;
+}
+
+function formatDateRangeLabel(start, end) {
+  if (!start) return '--';
+  const inicio = formatDate(start);
+  if (end && end !== start) {
+    return `${inicio} até ${formatDate(end)}`;
+  }
+  return inicio;
 }
 
 function formatTimeRange(start, end) {

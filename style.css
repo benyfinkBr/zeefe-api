@@ -3929,10 +3929,24 @@ body.anunciante-page #advChatMessages.chat-messages {
   margin-top: auto;
 }
 
-.workshops-grid {
+.workshops-grid,
+.courses-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: 18px;
+}
+
+.course-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.88rem;
+  margin-top: 6px;
+}
+
+.course-status strong {
+  font-weight: 600;
+  color: var(--brand-green);
 }
 
 .workshop-details-header {

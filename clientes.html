@@ -137,7 +137,7 @@
           <button type="button" data-panel="reservations">Minhas Reservas</button>
           <button type="button" data-panel="visitors">Visitantes</button>
           <button type="button" data-panel="company" id="companyTab" hidden>Empresa</button>
-          <button type="button" data-panel="payments">Formas de Pagamento</button>
+          <button type="button" data-panel="courses">Cursos</button>
           <button type="button" data-panel="profile">Meu Perfil</button>
         </nav>
         <button type="button" id="logoutBtn" class="nav-logout">Sair</button>
@@ -560,11 +560,19 @@
             </article>
           </div>
 
-          <div id="panel-payments" class="portal-section" hidden>
-            <article class="form-card payments-card">
-              <div class="icon-placeholder">💳</div>
-              <h3>Formas de Pagamento</h3>
-              <p class="rooms-message">Página em construção. Em breve você poderá cadastrar cartões de crédito e outros métodos de pagamento neste portal.</p>
+          <div id="panel-courses" class="portal-section" hidden>
+            <article class="form-card">
+              <h3>Meus cursos</h3>
+              <p class="form-help">Pagamentos são confirmados somente quando o curso atinge o mínimo de participantes definido pelo anunciante.</p>
+              <div id="clientCoursesMessage" class="rooms-message"></div>
+              <div id="clientCoursesList" class="workshops-grid courses-grid"></div>
+            </article>
+            <article class="form-card">
+              <h3>Cursos disponíveis</h3>
+              <p class="form-help">Escolha um curso para se inscrever. Você receberá a confirmação assim que o pagamento for processado.</p>
+              <div id="coursesFeedback" class="rooms-message"></div>
+              <div id="availableCoursesMessage" class="rooms-message"></div>
+              <div id="availableCoursesGrid" class="workshops-grid courses-grid"></div>
             </article>
           </div>
         </div>
