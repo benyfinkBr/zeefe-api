@@ -22,8 +22,21 @@
         </nav>
       </div>
       <div class="site-header-actions">
-        <a href="index.html#contato" class="site-link">Contato</a>
-        <button class="btn btn-outline" type="button" onclick="window.location='clientes.html'">Entrar</button>
+        <div class="site-header-guest">
+          <a href="index.html#contato" class="site-link">Contato</a>
+          <button class="btn btn-outline" type="button" onclick="window.location='clientes.html'">Entrar</button>
+        </div>
+        <div class="site-header-user" id="advHeaderAccount">
+          <button class="user-menu-trigger" type="button" id="advHeaderAccountBtn" aria-haspopup="true" aria-expanded="false">
+            Minha Conta
+          </button>
+          <div class="user-menu-dropdown" id="advHeaderAccountMenu" role="menu">
+            <button type="button" class="user-menu-item" id="advHeaderReservations">Minhas Reservas</button>
+            <button type="button" class="user-menu-item" id="advHeaderProfile">Meu Perfil</button>
+            <button type="button" class="user-menu-item" id="advHeaderMessages">Mensagens</button>
+            <button type="button" class="user-menu-item user-menu-danger" id="advHeaderLogout">Sair</button>
+          </div>
+        </div>
       </div>
     </div>
   </header>

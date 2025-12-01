@@ -10,6 +10,7 @@ let myWorkshops = [];
 let currentThreadId = null;
 let chatPollTimer = null;
 let workshopSelectedDates = [];
+let advHeaderMenuOpen = false;
 
 // Seletores
 const authContainer = document.getElementById('authContainer');
@@ -40,6 +41,12 @@ const panelsWrap = document.getElementById('advPanels');
 const navButtons = Array.from(document.querySelectorAll('.portal-nav-links button, .quick-actions button[data-panel]'));
 const logoutBtn = document.getElementById('advLogoutBtn');
 const refreshBtn = document.getElementById('advRefreshBtn');
+const advHeaderAccountWrap = document.getElementById('advHeaderAccount');
+const advHeaderAccountBtn = document.getElementById('advHeaderAccountBtn');
+const advHeaderReservationsBtn = document.getElementById('advHeaderReservations');
+const advHeaderProfileBtn = document.getElementById('advHeaderProfile');
+const advHeaderMessagesBtn = document.getElementById('advHeaderMessages');
+const advHeaderLogoutBtn = document.getElementById('advHeaderLogout');
 
 const advDisplay = document.getElementById('advDisplay');
 const advOwner = document.getElementById('advOwner');
@@ -220,6 +227,49 @@ function setAuthVisible(show) {
     document.body.classList.remove('client-logged-out');
     authContainer.hidden = true;
   }
+}
+
+function setupAdvHeaderMenu() {
+  if (!advHeaderAccountWrap || !advHeaderAccountBtn) return;
+  advHeaderAccountBtn.addEventListener('click', (event) => {
+    event.preventDefault();
+    setAdvHeaderMenuState(!advHeaderMenuOpen);
+  });
+  advHeaderReservationsBtn?.addEventListener('click', () => {
+    setActivePanel('reservations');
+    closeAdvHeaderMenu();
+  });
+  advHeaderProfileBtn?.addEventListener('click', () => {
+    setActivePanel('profile');
+    closeAdvHeaderMenu();
+  });
+  advHeaderMessagesBtn?.addEventListener('click', () => {
+    closeAdvHeaderMenu();
+    openAdvChatBtn?.click();
+  });
+  advHeaderLogoutBtn?.addEventListener('click', () => {
+    closeAdvHeaderMenu();
+    logoutBtn?.click();
+  });
+  document.addEventListener('click', (event) => {
+    if (!advHeaderMenuOpen || !advHeaderAccountWrap) return;
+    if (!advHeaderAccountWrap.contains(event.target)) {
+      setAdvHeaderMenuState(false);
+    }
+  });
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') setAdvHeaderMenuState(false);
+  });
+}
+
+function setAdvHeaderMenuState(open) {
+  advHeaderMenuOpen = Boolean(open);
+  advHeaderAccountWrap?.classList.toggle('open', advHeaderMenuOpen);
+  advHeaderAccountBtn?.setAttribute('aria-expanded', advHeaderMenuOpen ? 'true' : 'false');
+}
+
+function closeAdvHeaderMenu() {
+  setAdvHeaderMenuState(false);
 }
 
 async function parseJsonSafe(res) {
@@ -1230,9 +1280,11 @@ async function autoLoginWithTokenAdv(token) {
 // Eventos UI
 // Inicialização de remember-me
 aplicarLoginMemorizadoAdv();
+setupAdvHeaderMenu();
 
 loginForm?.addEventListener('submit', onLoginSubmit);
 logoutBtn?.addEventListener('click', () => {
+  closeAdvHeaderMenu();
   advClient = null; myAdvertiser=null; myRooms=[]; myReservations=[];
   registrarPreferenciaLoginAdv(false);
   setAuthVisible(true);

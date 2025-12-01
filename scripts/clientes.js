@@ -62,6 +62,14 @@ const clientNameEl = document.getElementById('clientName');
 const clientCompanyEl = document.getElementById('clientCompany');
 const logoutBtn = document.getElementById('logoutBtn');
 const refreshBtn = document.getElementById('refreshBtn');
+const headerAccountWrap = document.getElementById('clientHeaderAccount');
+const headerAccountBtn = document.getElementById('clientHeaderAccountBtn');
+const headerScopePFHeaderBtn = document.getElementById('clientHeaderScopePF');
+const headerScopeCompanyBtn = document.getElementById('clientHeaderScopeCompany');
+const headerReservationsBtn = document.getElementById('clientHeaderReservations');
+const headerProfileBtn = document.getElementById('clientHeaderProfile');
+const headerMessagesBtn = document.getElementById('clientHeaderMessages');
+const headerLogoutBtn = document.getElementById('clientHeaderLogout');
 
 const bookingForm = document.getElementById('reservationBookForm');
 const bookingFormTitle = document.getElementById('bookingFormTitle');
@@ -106,6 +114,7 @@ let bookingSelectedDates = [];
 let bookingDateMulti = false;
 let availableCoursesCache = [];
 let clientCoursesCache = [];
+let headerMenuOpen = false;
 
 const reservationsContainer = document.getElementById('reservationsContainer');
 // Modal de ações da reserva
@@ -526,6 +535,7 @@ async function initialize() {
   portalNavButtons.forEach(btn => {
     btn.addEventListener('click', () => setActivePanel(btn.dataset.panel));
   });
+  setupHeaderMenu();
 
   bookingCurrentMonth = new Date(bookingToday.getFullYear(), bookingToday.getMonth(), 1);
   renderBookingCalendar(bookingCurrentMonth);
@@ -556,6 +566,71 @@ function setBodyAuthState(isAuthenticated) {
   if (!bodyEl) return;
   bodyEl.classList.toggle('client-authenticated', Boolean(isAuthenticated));
   bodyEl.classList.toggle('client-logged-out', !isAuthenticated);
+}
+
+function setupHeaderMenu() {
+  if (!headerAccountWrap || !headerAccountBtn) return;
+  headerAccountBtn.addEventListener('click', (event) => {
+    event.preventDefault();
+    setHeaderMenuState(!headerMenuOpen);
+  });
+  headerReservationsBtn?.addEventListener('click', () => {
+    setActivePanel('reservations');
+    closeHeaderMenu();
+  });
+  headerProfileBtn?.addEventListener('click', () => {
+    setActivePanel('profile');
+    closeHeaderMenu();
+  });
+  headerMessagesBtn?.addEventListener('click', () => {
+    closeHeaderMenu();
+    openSupportChatBtn?.click();
+  });
+  headerLogoutBtn?.addEventListener('click', () => {
+    closeHeaderMenu();
+    fazerLogout();
+  });
+  headerScopePFHeaderBtn?.addEventListener('click', () => {
+    setPortalScope('pf');
+    closeHeaderMenu();
+  });
+  headerScopeCompanyBtn?.addEventListener('click', () => {
+    if (!activeClient?.company_id) return;
+    setPortalScope('company');
+    closeHeaderMenu();
+  });
+  document.addEventListener('click', (event) => {
+    if (!headerMenuOpen || !headerAccountWrap) return;
+    if (!headerAccountWrap.contains(event.target)) {
+      setHeaderMenuState(false);
+    }
+  });
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') setHeaderMenuState(false);
+  });
+  syncHeaderScopeButtons();
+}
+
+function setHeaderMenuState(open) {
+  headerMenuOpen = Boolean(open);
+  headerAccountWrap?.classList.toggle('open', headerMenuOpen);
+  headerAccountBtn?.setAttribute('aria-expanded', headerMenuOpen ? 'true' : 'false');
+}
+
+function closeHeaderMenu() {
+  setHeaderMenuState(false);
+}
+
+function syncHeaderScopeButtons() {
+  if (headerScopePFHeaderBtn) {
+    headerScopePFHeaderBtn.classList.toggle('active', currentScope === 'pf');
+  }
+  if (headerScopeCompanyBtn) {
+    const canUseCompany = Boolean(activeClient?.company_id);
+    headerScopeCompanyBtn.hidden = !canUseCompany;
+    headerScopeCompanyBtn.disabled = !canUseCompany;
+    headerScopeCompanyBtn.classList.toggle('active', canUseCompany && currentScope === 'company');
+  }
 }
 
 function setAuthScope(scope) {
@@ -666,6 +741,7 @@ function setPortalScope(scope) {
     // return to the main PF flow (keep current selection if not company)
     setActivePanel('book');
   }
+  syncHeaderScopeButtons();
 }
 
 async function carregarEmpresaOverview() {
@@ -2292,6 +2368,7 @@ function aplicarClienteAtivo(cliente) {
   if (!cliente) return;
   activeClient = cliente;
   setBodyAuthState(true);
+  syncHeaderScopeButtons();
   hideAuthOverlay();
   if (clientPanels) {
     clientPanels.hidden = false;
@@ -2334,6 +2411,8 @@ function fazerLogout() {
   currentReservations = [];
   currentVisitors = [];
   bookingVisitorIds = [];
+  closeHeaderMenu();
+  setPortalScope('pf');
   if (clientPanels) {
     clientPanels.hidden = true;
   }

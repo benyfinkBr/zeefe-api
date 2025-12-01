@@ -23,8 +23,28 @@
         </nav>
       </div>
       <div class="site-header-actions">
-        <a href="index.html#contato" class="site-link">Contato</a>
-        <button class="btn btn-outline" type="button" onclick="window.location='clientes.html'">Entrar</button>
+        <div class="site-header-guest">
+          <a href="index.html#contato" class="site-link">Contato</a>
+          <button class="btn btn-outline" type="button" onclick="window.location='clientes.html'">Entrar</button>
+        </div>
+        <div class="site-header-user" id="clientHeaderAccount">
+          <button class="user-menu-trigger" type="button" id="clientHeaderAccountBtn" aria-haspopup="true" aria-expanded="false">
+            Minha Conta
+          </button>
+          <div class="user-menu-dropdown" id="clientHeaderAccountMenu" role="menu">
+            <div class="user-menu-section" id="clientHeaderLoginType">
+              <p class="user-menu-label">Tipo de login</p>
+              <div class="user-menu-pills">
+                <button type="button" class="user-menu-pill active" id="clientHeaderScopePF" data-scope="pf">Pessoa Física</button>
+                <button type="button" class="user-menu-pill" id="clientHeaderScopeCompany" data-scope="company" hidden>Empresa</button>
+              </div>
+            </div>
+            <button type="button" class="user-menu-item" id="clientHeaderReservations">Minhas Reservas</button>
+            <button type="button" class="user-menu-item" id="clientHeaderProfile">Meu Perfil</button>
+            <button type="button" class="user-menu-item" id="clientHeaderMessages">Mensagens</button>
+            <button type="button" class="user-menu-item user-menu-danger" id="clientHeaderLogout">Sair</button>
+          </div>
+        </div>
       </div>
     </div>
   </header>
