@@ -257,6 +257,8 @@ function setupAdvHeaderMenu() {
       setAdvHeaderMenuState(false);
     }
   });
+  advHeaderAccountWrap?.addEventListener('mouseenter', () => setAdvHeaderMenuState(true));
+  advHeaderAccountWrap?.addEventListener('mouseleave', () => setAdvHeaderMenuState(false));
   document.addEventListener('keydown', (event) => {
     if (event.key === 'Escape') setAdvHeaderMenuState(false);
   });

@@ -605,6 +605,8 @@ function setupHeaderMenu() {
       setHeaderMenuState(false);
     }
   });
+  headerAccountWrap?.addEventListener('mouseenter', () => setHeaderMenuState(true));
+  headerAccountWrap?.addEventListener('mouseleave', () => setHeaderMenuState(false));
   document.addEventListener('keydown', (event) => {
     if (event.key === 'Escape') setHeaderMenuState(false);
   });
