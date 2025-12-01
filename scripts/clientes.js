@@ -114,6 +114,8 @@ let bookingSelectedDates = [];
 let bookingDateMulti = false;
 let availableCoursesCache = [];
 let clientCoursesCache = [];
+const workshopDetailsCache = new Map();
+let courseModalContext = { courseId: null, course: null, enrollment: null, voucher: null, voucherData: null, focusEnroll: false };
 let headerMenuOpen = false;
 
 const reservationsContainer = document.getElementById('reservationsContainer');
@@ -158,6 +160,28 @@ const clientCoursesMessage = document.getElementById('clientCoursesMessage');
 const availableCoursesGrid = document.getElementById('availableCoursesGrid');
 const availableCoursesMessage = document.getElementById('availableCoursesMessage');
 const coursesFeedback = document.getElementById('coursesFeedback');
+const courseModal = document.getElementById('courseDetailsModal');
+const courseModalClose = document.getElementById('courseDetailsClose');
+const courseModalTitle = document.getElementById('courseDetailsTitle');
+const courseModalMeta = document.getElementById('courseDetailsMeta');
+const courseModalActions = document.getElementById('courseDetailsActions');
+const courseModalCoverWrapper = document.getElementById('courseDetailsCoverWrapper');
+const courseModalCover = document.getElementById('courseDetailsCover');
+const courseModalDescription = document.getElementById('courseDetailsDescription');
+const courseModalWhen = document.getElementById('courseDetailsWhen');
+const courseModalWhere = document.getElementById('courseDetailsWhere');
+const courseModalPrice = document.getElementById('courseDetailsPrice');
+const courseModalSeats = document.getElementById('courseDetailsSeats');
+const courseModalStatus = document.getElementById('courseDetailsStatus');
+const courseEnrollArea = document.getElementById('courseEnrollArea');
+const courseModalVoucherInput = document.getElementById('courseDetailsVoucher');
+const courseModalVoucherApply = document.getElementById('courseDetailsVoucherApply');
+const courseModalVoucherResult = document.getElementById('courseDetailsVoucherResult');
+const courseModalConfirmBtn = document.getElementById('courseDetailsConfirm');
+const courseTicketSection = document.getElementById('courseTicketSection');
+const courseTicketCode = document.getElementById('courseTicketCode');
+const courseTicketQr = document.getElementById('courseTicketQr');
+const courseTicketInfo = document.getElementById('courseTicketInfo');
 
 const profileForm = document.getElementById('profileForm');
 const profileMessageEl = document.getElementById('profileMessage');
@@ -294,6 +318,11 @@ async function initialize() {
   // Auth scope buttons
   authScopePFBtn?.addEventListener('click', () => setAuthScope('pf'));
   authScopeCompanyBtn?.addEventListener('click', () => setAuthScope('company'));
+
+  courseModalClose?.addEventListener('click', closeCourseModal);
+  courseModal?.addEventListener('click', (event) => { if (event.target === courseModal) closeCourseModal(); });
+  courseModalVoucherApply?.addEventListener('click', () => applyCourseVoucher());
+  courseModalConfirmBtn?.addEventListener('click', () => submitCourseEnrollment());
 
   // Debounce helper para evitar gravações frequentes
   function debounce(fn, delay = 600) {
@@ -632,6 +661,274 @@ function syncHeaderScopeButtons() {
     headerScopeCompanyBtn.hidden = !canUseCompany;
     headerScopeCompanyBtn.disabled = !canUseCompany;
     headerScopeCompanyBtn.classList.toggle('active', canUseCompany && currentScope === 'company');
+  }
+}
+
+function sanitizeCourseHtml(html) {
+  if (!html) return '';
+  const allowed = new Set(['B', 'STRONG', 'I', 'EM', 'U', 'BR', 'P', 'UL', 'OL', 'LI', 'DIV']);
+  const container = document.createElement('div');
+  container.innerHTML = html;
+  const walk = (node) => {
+    const childNodes = Array.from(node.childNodes);
+    for (const child of childNodes) {
+      if (child.nodeType === Node.TEXT_NODE) continue;
+      if (child.nodeType === Node.ELEMENT_NODE) {
+        if (!allowed.has(child.tagName)) {
+          while (child.firstChild) {
+            node.insertBefore(child.firstChild, child);
+          }
+          node.removeChild(child);
+          continue;
+        }
+        while (child.attributes.length > 0) {
+          child.removeAttribute(child.attributes[0].name);
+        }
+        walk(child);
+      } else {
+        node.removeChild(child);
+      }
+    }
+  };
+  walk(container);
+  return container.innerHTML;
+}
+
+function getCourseFromCaches(workshopId) {
+  const id = Number(workshopId);
+  return availableCoursesCache.find(item => Number(item.id) === id)
+    || workshopDetailsCache.get(id)
+    || null;
+}
+
+async function fetchWorkshopDetails(workshopId) {
+  try {
+    const res = await fetch(`api/workshops_list.php?id=${encodeURIComponent(workshopId)}&upcoming=0&include_past=1`, { credentials: 'include' });
+    const json = await res.json();
+    if (!json.success || !Array.isArray(json.data) || !json.data.length) return null;
+    const workshop = json.data[0];
+    workshopDetailsCache.set(Number(workshopId), workshop);
+    return workshop;
+  } catch (err) {
+    console.error('Erro ao buscar detalhes do curso', err);
+    return null;
+  }
+}
+
+async function openCourseModal(workshopId, options = {}) {
+  if (!workshopId) return;
+  let course = getCourseFromCaches(workshopId);
+  if (!course) {
+    course = await fetchWorkshopDetails(workshopId);
+  }
+  if (!course) {
+    alert('Não foi possível carregar os detalhes do curso.');
+    return;
+  }
+  const enrollment = options.enrollment
+    || clientCoursesCache.find(item => Number(item.workshop_id) === Number(workshopId))
+    || null;
+  courseModalContext = {
+    courseId: Number(workshopId),
+    course,
+    enrollment,
+    voucher: null,
+    voucherData: null,
+    focusEnroll: Boolean(options.focusEnroll)
+  };
+  if (courseModalVoucherInput) courseModalVoucherInput.value = '';
+  if (courseModalVoucherResult) courseModalVoucherResult.textContent = '';
+  updateCourseModalView();
+  if (!courseModal) return;
+  courseModal.classList.add('show');
+  courseModal.setAttribute('aria-hidden', 'false');
+  setTimeout(() => {
+    if (courseModalContext.focusEnroll && courseEnrollArea && courseEnrollArea.style.display !== 'none') {
+      courseModalVoucherInput?.focus();
+    }
+    courseModalContext.focusEnroll = false;
+  }, 250);
+}
+
+function closeCourseModal() {
+  if (!courseModal) return;
+  courseModal.classList.remove('show');
+  courseModal.setAttribute('aria-hidden', 'true');
+  courseModalContext.focusEnroll = false;
+}
+
+function updateCourseModalView() {
+  const { course, enrollment, voucherData } = courseModalContext;
+  if (!course) return;
+  const title = course.title || enrollment?.workshop_title || 'Curso';
+  const dateLabel = formatDateRangeLabel(course.date || enrollment?.workshop_date, course.end_date || course.workshop_end_date || enrollment?.workshop_end_date);
+  const timeLabel = formatTimeRange(course.time_start || enrollment?.workshop_time_start, course.time_end || enrollment?.workshop_time_end);
+  const location = [course.room_city || enrollment?.room_city, course.room_state || enrollment?.room_state].filter(Boolean).join(' - ');
+  const price = Number(course.price_per_seat || enrollment?.price_per_seat || 0);
+  const maxSeats = Number(course.max_seats || enrollment?.max_seats || 0);
+  const sold = Number(course.sold_seats || enrollment?.paid_seats || 0);
+  const minSeats = Number(course.min_seats || enrollment?.min_seats || 0);
+  const alreadyEnrolled = Boolean(enrollment);
+  const paid = alreadyEnrolled && String(enrollment.payment_status || '').toLowerCase() === 'pago';
+
+  if (courseModalActions) {
+    courseModalActions.innerHTML = alreadyEnrolled
+      ? '<span class="chip success">Inscrição ativa</span>'
+      : '';
+  }
+  if (courseModalTitle) courseModalTitle.textContent = title;
+  if (courseModalMeta) courseModalMeta.textContent = [dateLabel, timeLabel, location].filter(Boolean).join(' • ');
+  if (courseModalDescription) {
+    const desc = course.description || '';
+    courseModalDescription.innerHTML = desc
+      ? sanitizeCourseHtml(desc)
+      : '<p class="rooms-message">O organizador ainda não adicionou a descrição completa.</p>';
+  }
+  if (courseModalCoverWrapper && courseModalCover) {
+    if (course.banner_path) {
+      courseModalCover.src = course.banner_path;
+      courseModalCoverWrapper.hidden = false;
+    } else {
+      courseModalCoverWrapper.hidden = true;
+    }
+  }
+  if (courseModalWhen) courseModalWhen.textContent = dateLabel ? `Datas: ${dateLabel}${timeLabel ? ` (${timeLabel})` : ''}` : '';
+  if (courseModalWhere) courseModalWhere.textContent = location ? `Local: ${location}` : '';
+  let priceLine = price > 0 ? `Ingresso: ${formatCurrency(price)}` : 'Ingresso gratuito';
+  if (price > 0 && voucherData?.discount) {
+    const payable = Math.max(0, price - voucherData.discount);
+    priceLine += ` • Após voucher: ${formatCurrency(payable)}`;
+  }
+  if (courseModalPrice) courseModalPrice.textContent = priceLine;
+  const seatParts = [];
+  if (maxSeats > 0) seatParts.push(`${sold} de ${maxSeats} vagas confirmadas`);
+  if (minSeats > 0) seatParts.push(`Pagamento confirma com ${minSeats} participante${minSeats > 1 ? 's' : ''}`);
+  if (courseModalSeats) courseModalSeats.textContent = seatParts.join(' • ');
+
+  if (courseModalStatus) {
+    if (alreadyEnrolled) {
+      if (paid) {
+        courseModalStatus.textContent = 'Pagamento confirmado! Seu ingresso está disponível abaixo.';
+      } else {
+        courseModalStatus.textContent = minSeats > 0
+          ? `Inscrição registrada. Confirmaremos o pagamento ao atingir ${minSeats} participante${minSeats > 1 ? 's' : ''}.`
+          : 'Inscrição registrada. Aguardando confirmação do pagamento.';
+      }
+    } else {
+      courseModalStatus.textContent = 'Vagas disponíveis. Confirme sua participação para receber o ingresso.';
+    }
+  }
+
+  if (courseEnrollArea) {
+    courseEnrollArea.style.display = alreadyEnrolled ? 'none' : 'block';
+  }
+
+  if (courseTicketSection) {
+    if (paid && enrollment?.public_code) {
+      courseTicketSection.hidden = false;
+      renderCourseTicket(enrollment, course);
+    } else {
+      courseTicketSection.hidden = true;
+    }
+  }
+}
+
+function renderCourseTicket(enrollment, course) {
+  if (!enrollment || !enrollment.public_code) return;
+  if (courseTicketCode) {
+    courseTicketCode.textContent = `Código do ingresso: ${enrollment.public_code}`;
+  }
+  if (courseTicketInfo) {
+    courseTicketInfo.textContent = `Apresente o QR Code para validar sua participação em "${course?.title || enrollment.workshop_title || 'Curso'}".`;
+  }
+  if (courseTicketQr) {
+    const origin = (window.location && window.location.origin) || '';
+    const base = origin ? origin.replace(/\/$/, '') : '';
+    const checkinUrl = `${base}/api/workshop_checkin.php?code=${encodeURIComponent(enrollment.public_code)}`;
+    const safe = encodeURIComponent(checkinUrl);
+    courseTicketQr.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${safe}" alt="QR Code do ingresso">`;
+  }
+}
+
+async function applyCourseVoucher() {
+  const { course } = courseModalContext;
+  if (!course || !courseModalVoucherInput || !courseModalVoucherResult) return;
+  const code = courseModalVoucherInput.value.trim().toUpperCase();
+  if (!code) {
+    courseModalVoucherResult.textContent = 'Informe o código do voucher.';
+    return;
+  }
+  courseModalVoucherResult.textContent = 'Validando voucher...';
+  try {
+    const payload = {
+      code,
+      room_id: course.room_id || null,
+      advertiser_id: course.advertiser_id || null,
+      amount: Number(course.price_per_seat || 0)
+    };
+    const res = await fetch(`${API_BASE}/validate_voucher.php`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const json = await res.json();
+    if (!json.success) throw new Error(json.error || 'Voucher inválido.');
+    const discount = Number(json.voucher?.discount || 0);
+    courseModalContext.voucherData = { code: json.voucher.code, discount };
+    const payable = Math.max(0, (Number(course.price_per_seat || 0)) - discount);
+    courseModalVoucherResult.textContent = discount > 0
+      ? `Voucher ${json.voucher.code} aplicado. Desconto de ${formatCurrency(discount)}. Valor previsto: ${formatCurrency(payable)}.`
+      : `Voucher ${json.voucher.code} válido.`;
+    updateCourseModalView();
+  } catch (err) {
+    courseModalContext.voucherData = null;
+    courseModalVoucherResult.textContent = err.message || 'Não foi possível aplicar o voucher.';
+  }
+}
+
+async function submitCourseEnrollment() {
+  if (!activeClient || !courseModalContext.course) return;
+  const course = courseModalContext.course;
+  const voucherCode = courseModalContext.voucherData?.code || (courseModalVoucherInput?.value.trim() || '');
+  const payload = {
+    workshop_id: course.id || courseModalContext.courseId,
+    name: activeClient.name || activeClient.login || 'Cliente Ze.EFE',
+    email: activeClient.email,
+    cpf: activeClient.cpf || '',
+    phone: activeClient.phone || activeClient.whatsapp || '',
+    voucher_code: voucherCode || undefined
+  };
+  if (!payload.email) {
+    courseModalStatus.textContent = 'Atualize seu e-mail no perfil antes de se inscrever.';
+    return;
+  }
+  try {
+    if (courseModalConfirmBtn) {
+      courseModalConfirmBtn.disabled = true;
+      courseModalConfirmBtn.textContent = 'Processando...';
+    }
+    const res = await fetch(`${API_BASE}/workshop_enroll.php`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const json = await res.json();
+    if (!json.success) throw new Error(json.error || 'Não foi possível concluir a inscrição.');
+    if (coursesFeedback) {
+      coursesFeedback.textContent = json.payment_status === 'pago'
+        ? 'Inscrição confirmada! Seu ingresso está disponível.'
+        : 'Inscrição registrada! Enviaremos o ingresso assim que o pagamento for confirmado.';
+    }
+    await carregarCursosCliente();
+    courseModalContext.enrollment = clientCoursesCache.find(item => Number(item.workshop_id) === Number(course.id));
+    updateCourseModalView();
+  } catch (err) {
+    courseModalStatus.textContent = err.message || 'Erro ao realizar a inscrição.';
+  } finally {
+    if (courseModalConfirmBtn) {
+      courseModalConfirmBtn.disabled = false;
+      courseModalConfirmBtn.textContent = 'Confirmar inscrição';
+    }
   }
 }
 
@@ -3514,9 +3811,15 @@ function renderAvailableCourses(errorText = '') {
     const disabled = alreadyEnrolled || !activeClient?.email;
     const enrollLabel = alreadyEnrolled ? 'Inscrito' : 'Quero<br>participar';
     const enrollBtn = `<button type="button" class="btn btn-primary btn-sm" data-course-enroll="${course.id}"${disabled ? ' disabled' : ''}>${enrollLabel}</button>`;
-    const secondaryBtn = `<a class="btn btn-secondary btn-sm" href="workshops.html" target="_blank" rel="noopener">Ver detalhes</a>`;
-    const actions = disabled ? `<div class="workshop-actions">${alreadyEnrolled ? '<span class="chip pending">Inscrição registrada</span>' : ''}${secondaryBtn}</div>`
-      : `<div class="workshop-actions">${enrollBtn}${secondaryBtn}</div>`;
+    const viewBtn = `<button type="button" class="btn btn-secondary btn-sm" data-course-view="${course.id}">Ver detalhes</button>`;
+    let actions = '<div class="workshop-actions">';
+    if (disabled) {
+      if (alreadyEnrolled) actions += '<span class="chip pending">Inscrição registrada</span>';
+      actions += viewBtn;
+    } else {
+      actions += enrollBtn + viewBtn;
+    }
+    actions += '</div>';
     return `
       <article class="card workshop-card">
         ${imgHtml}
@@ -3532,7 +3835,10 @@ function renderAvailableCourses(errorText = '') {
   }).join('');
 
   availableCoursesGrid.querySelectorAll('[data-course-enroll]').forEach(btn => {
-    btn.addEventListener('click', () => inscreverCurso(Number(btn.getAttribute('data-course-enroll')), btn));
+    btn.addEventListener('click', () => openCourseModal(Number(btn.getAttribute('data-course-enroll')), { focusEnroll: true }));
+  });
+  availableCoursesGrid.querySelectorAll('[data-course-view]').forEach(btn => {
+    btn.addEventListener('click', () => openCourseModal(Number(btn.getAttribute('data-course-view'))));
   });
 }
 
@@ -3581,11 +3887,21 @@ function renderClientCourses(errorText = '') {
         </div>
         ${statusInfo.note ? `<p class="workshop-meta">${escapeHtml(statusInfo.note)}</p>` : ''}
         <div class="workshop-actions">
-          <a class="btn btn-secondary btn-sm" href="workshops.html" target="_blank" rel="noopener">Ver detalhes</a>
+          <button type="button" class="btn btn-secondary btn-sm" data-course-view="${enrollment.workshop_id}" data-enrollment-id="${enrollment.id}">Ver detalhes</button>
         </div>
       </article>
     `;
   }).join('');
+
+  clientCoursesList.querySelectorAll('[data-course-view]').forEach(btn => {
+    const workshopId = Number(btn.getAttribute('data-course-view'));
+    const enrollmentId = Number(btn.getAttribute('data-enrollment-id'));
+    btn.addEventListener('click', () => {
+      const enrollment = clientCoursesCache.find(item => Number(item.id) === enrollmentId)
+        || clientCoursesCache.find(item => Number(item.workshop_id) === workshopId);
+      openCourseModal(workshopId, { enrollment });
+    });
+  });
 }
 
 function mapCourseStatus(paymentStatus, minSeats) {
@@ -3609,55 +3925,6 @@ function mapCourseStatus(paymentStatus, minSeats) {
     className: 'chip pending',
     note: 'Confirmaremos o pagamento em breve.'
   };
-}
-
-async function inscreverCurso(workshopId, triggerBtn) {
-  if (!activeClient || !workshopId) return;
-  const workshop = availableCoursesCache.find(w => Number(w.id) === Number(workshopId));
-  if (!workshop) return;
-  if (!activeClient.email) {
-    alert('Atualize seu e-mail no perfil para se inscrever em cursos.');
-    return;
-  }
-  const minSeats = Number(workshop.min_seats || 0);
-  const confirmMsg = minSeats > 0
-    ? `O pagamento será confirmado somente quando o curso atingir ${minSeats} participante${minSeats > 1 ? 's' : ''}. Deseja prosseguir?`
-    : 'Confirma a inscrição neste curso?';
-  if (!window.confirm(confirmMsg)) return;
-  const payload = {
-    workshop_id: workshopId,
-    name: activeClient.name || activeClient.login || 'Cliente Ze.EFE',
-    email: activeClient.email,
-    cpf: activeClient.cpf || '',
-    phone: activeClient.phone || activeClient.whatsapp || ''
-  };
-  try {
-    if (triggerBtn) {
-      triggerBtn.disabled = true;
-      triggerBtn.textContent = 'Processando...';
-    }
-    const res = await fetch(`${API_BASE}/workshop_enroll.php`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-    const json = await res.json();
-    if (!json.success) throw new Error(json.error || 'Não foi possível concluir a inscrição.');
-    if (coursesFeedback) {
-      coursesFeedback.textContent = json.payment_status === 'pago'
-        ? 'Inscrição confirmada! O pagamento foi processado e sua vaga está garantida.'
-        : 'Inscrição registrada! Avisaremos assim que o pagamento for confirmado.';
-    }
-    await carregarCursosCliente();
-  } catch (err) {
-    console.error(err);
-    alert(err.message || 'Erro ao realizar a inscrição.');
-  } finally {
-    if (triggerBtn) {
-      triggerBtn.disabled = false;
-      triggerBtn.innerHTML = 'Quero<br>participar';
-    }
-  }
 }
 
 function renderVisitorChecklist(selectedIds = bookingVisitorIds) {

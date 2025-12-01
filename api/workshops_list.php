@@ -7,6 +7,8 @@ try {
   $status = $_GET['status'] ?? 'publicado';
   $advertiserId = isset($_GET['advertiser_id']) ? (int) $_GET['advertiser_id'] : null;
   $upcoming = isset($_GET['upcoming']) ? (int) $_GET['upcoming'] : 1;
+  $workshopId = isset($_GET['id']) ? (int) $_GET['id'] : null;
+  $includePast = isset($_GET['include_past']) ? (int) $_GET['include_past'] : 0;
 
   $conditions = [];
   $params = [];
@@ -21,7 +23,13 @@ try {
     $params[':advertiser_id'] = $advertiserId;
   }
 
-  if ($upcoming) {
+  if ($workshopId) {
+    $conditions[] = 'w.id = :workshop_id';
+    $params[':workshop_id'] = $workshopId;
+    $upcoming = 0; // garante busca mesmo se o evento já passou
+  }
+
+  if ($upcoming && !$includePast) {
     $today = (new DateTimeImmutable('today'))->format('Y-m-d');
     $conditions[] = 'w.date >= :today';
     $params[':today'] = $today;

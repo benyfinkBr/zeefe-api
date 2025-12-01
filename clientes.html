@@ -912,6 +912,58 @@
     </div>
   </div>
 
+  <!-- Modal: Detalhes do curso -->
+  <div class="modal-overlay" id="courseDetailsModal" aria-hidden="true">
+    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="courseDetailsTitle" style="width:920px; max-width:96vw;">
+      <button class="modal-close" type="button" id="courseDetailsClose" aria-label="Fechar">&times;</button>
+      <div class="modal-body">
+        <div class="modal-info course-modal-body">
+          <div class="course-details-header">
+            <div>
+              <h2 id="courseDetailsTitle">Curso</h2>
+              <p id="courseDetailsMeta" class="rooms-message"></p>
+            </div>
+            <div class="course-details-actions" id="courseDetailsActions"></div>
+          </div>
+          <div class="course-details-grid">
+            <div>
+              <div id="courseDetailsCoverWrapper" class="course-cover" hidden>
+                <img id="courseDetailsCover" alt="Capa do curso">
+              </div>
+              <div id="courseDetailsDescription" class="course-description"></div>
+            </div>
+            <aside class="course-summary">
+              <h4>Informações rápidas</h4>
+              <ul>
+                <li id="courseDetailsWhen"></li>
+                <li id="courseDetailsWhere"></li>
+                <li id="courseDetailsPrice"></li>
+                <li id="courseDetailsSeats"></li>
+              </ul>
+              <div id="courseDetailsStatus" class="rooms-message"></div>
+              <div id="courseEnrollArea">
+                <p class="rooms-message">Confirme sua participação para receber o ingresso.</p>
+                <label for="courseDetailsVoucher" class="course-label">Voucher (opcional)</label>
+                <div class="course-voucher-row">
+                  <input type="text" id="courseDetailsVoucher" placeholder="Código do voucher">
+                  <button type="button" class="btn btn-secondary btn-sm" id="courseDetailsVoucherApply">Aplicar</button>
+                </div>
+                <div id="courseDetailsVoucherResult" class="rooms-message"></div>
+                <button type="button" class="btn btn-primary" id="courseDetailsConfirm">Confirmar inscrição</button>
+              </div>
+              <div id="courseTicketSection" class="course-ticket" hidden>
+                <h4>Ingresso</h4>
+                <p id="courseTicketCode"></p>
+                <div id="courseTicketQr" class="course-ticket-qr"></div>
+                <p id="courseTicketInfo" class="rooms-message"></p>
+              </div>
+            </aside>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <footer class="site-footer">
     <div class="site-footer-inner">
       <div class="footer-column footer-map">
