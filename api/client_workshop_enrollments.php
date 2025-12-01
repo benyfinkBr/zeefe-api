@@ -40,13 +40,24 @@ try {
 
   $conditionsSql = implode(' OR ', array_map(fn($cond) => '(' . $cond . ')', $matchers));
 
-  $sql = "
+$hasEndDate = false;
+try {
+  $colStmt = $pdo->query("SHOW COLUMNS FROM workshops LIKE 'end_date'");
+  $hasEndDate = (bool) $colStmt->fetch();
+} catch (Throwable $e) {
+  $hasEndDate = false;
+}
+$endDateSelect = $hasEndDate
+  ? 'w.end_date     AS workshop_end_date,'
+  : 'NULL           AS workshop_end_date,';
+
+$sql = "
     SELECT
       e.*,
       w.title        AS workshop_title,
       w.subtitle     AS workshop_subtitle,
       w.date         AS workshop_date,
-      w.end_date     AS workshop_end_date,
+      {$endDateSelect}
       w.time_start   AS workshop_time_start,
       w.time_end     AS workshop_time_end,
       w.price_per_seat,

@@ -3431,7 +3431,7 @@ function renderAvailableCourses(errorText = '') {
       ? `<div class="workshop-card-cover"><img src="${escapeHtml(course.banner_path)}" alt="Imagem do curso ${escapeHtml(course.title || '')}"></div>`
       : '';
     const disabled = alreadyEnrolled || !activeClient?.email;
-    const enrollLabel = alreadyEnrolled ? 'Inscrito' : 'Inscrever-se';
+    const enrollLabel = alreadyEnrolled ? 'Inscrito' : 'Quero<br>participar';
     const enrollBtn = `<button type="button" class="btn btn-primary btn-sm" data-course-enroll="${course.id}"${disabled ? ' disabled' : ''}>${enrollLabel}</button>`;
     const secondaryBtn = `<a class="btn btn-secondary btn-sm" href="workshops.html" target="_blank" rel="noopener">Ver detalhes</a>`;
     const actions = disabled ? `<div class="workshop-actions">${alreadyEnrolled ? '<span class="chip pending">Inscrição registrada</span>' : ''}${secondaryBtn}</div>`
@@ -3553,7 +3553,7 @@ async function inscreverCurso(workshopId, triggerBtn) {
   try {
     if (triggerBtn) {
       triggerBtn.disabled = true;
-      triggerBtn.textContent = 'Inscrevendo...';
+      triggerBtn.textContent = 'Processando...';
     }
     const res = await fetch(`${API_BASE}/workshop_enroll.php`, {
       method: 'POST',
@@ -3574,7 +3574,7 @@ async function inscreverCurso(workshopId, triggerBtn) {
   } finally {
     if (triggerBtn) {
       triggerBtn.disabled = false;
-      triggerBtn.textContent = 'Inscrever-se';
+      triggerBtn.innerHTML = 'Quero<br>participar';
     }
   }
 }
