@@ -832,6 +832,7 @@ function updateCourseModalView() {
   if (courseCheckoutOpen) {
     const hasLink = Boolean(courseModalContext.checkoutUrl);
     courseCheckoutOpen.hidden = !hasLink;
+    courseCheckoutOpen.disabled = !hasLink;
     if (hasLink && courseModalStatus) {
       courseModalStatus.textContent = 'Pagamento pendente. Clique em "Abrir checkout de pagamento" para finalizar.';
     }
