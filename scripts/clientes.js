@@ -707,6 +707,22 @@ function getCourseFromCaches(workshopId) {
     || null;
 }
 
+async function fetchCheckoutIntent(context, contextId) {
+  try {
+    const url = `api/payment_intent_lookup.php?context=${encodeURIComponent(context)}&context_id=${encodeURIComponent(contextId)}`;
+    const res = await fetch(url, { credentials: 'include' });
+    const json = await res.json();
+    if (!json.success) return null;
+    const intent = json.intent;
+    if (intent && intent.checkout_url && String(intent.status || '').toLowerCase() === 'pending') {
+      return intent.checkout_url;
+    }
+  } catch (err) {
+    console.warn('Não foi possível consultar intent de pagamento', err);
+  }
+  return null;
+}
+
 async function fetchWorkshopDetails(workshopId) {
   try {
     const res = await fetch(`api/workshops_list.php?id=${encodeURIComponent(workshopId)}&upcoming=0&include_past=1`, { credentials: 'include' });
@@ -762,6 +778,16 @@ function closeCourseModal() {
   courseModal.classList.remove('show');
   courseModal.setAttribute('aria-hidden', 'true');
   courseModalContext.focusEnroll = false;
+  const enrollmentStatus = String(enrollment?.payment_status || '').toLowerCase();
+  if (!courseModalContext.checkoutUrl && enrollment && enrollmentStatus !== 'pago') {
+    fetchCheckoutIntent('workshop', enrollment.id || enrollment.enrollment_id || enrollment.workshop_id)
+      .then((url) => {
+        if (url) {
+          courseModalContext.checkoutUrl = url;
+          updateCourseModalView();
+        }
+      });
+  }
 }
 
 function updateCourseModalView() {
