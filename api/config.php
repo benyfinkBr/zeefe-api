@@ -23,6 +23,7 @@ return [
     'webhook_user' => 'teste123',
     'webhook_password' => '321teste',
     'accepted_payment_methods' => ['credit_card', 'pix', 'boleto'],
-    'checkout_expiration_seconds' => 60 * 60 * 24 // 24h
+    'checkout_expiration_seconds' => 60 * 60 * 24, // 24h
+    'debug' => true
   ]
 ];

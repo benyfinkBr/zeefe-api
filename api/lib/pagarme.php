@@ -39,12 +39,14 @@ function pagarme_request(string $method, string $path, array $body = null) {
 
   $json = json_decode($response, true);
   if ($status >= 400) {
+    error_log('Pagarme error (' . $status . '): ' . $response);
     $extra = '';
     if (!empty($json['errors']) && is_array($json['errors'])) {
       $details = array_map(function ($e) {
         $param = $e['parameter_name'] ?? $e['path'] ?? '';
         $msg = $e['message'] ?? '';
-        return trim($param . ': ' . $msg);
+        $code = $e['code'] ?? '';
+        return trim($param . ': ' . $msg . ($code ? " ({$code})" : ''));
       }, $json['errors']);
       $extra = ' Detalhes: ' . implode(' | ', $details);
     } elseif (!empty($json)) {
@@ -107,6 +109,10 @@ function pagarme_create_checkout_order(array $options): array {
     ]],
     'metadata' => $options['metadata'] ?? []
   ];
+
+  if (!empty($config['pagarme']['debug']) && $config['pagarme']['debug']) {
+    error_log('[PAGARME] Payload order: ' . json_encode($payload));
+  }
 
   return pagarme_request('POST', '/orders', $payload);
 }

@@ -38,6 +38,8 @@ function build_customer_payload(string $name, string $email, ?string $cpf, ?stri
   if ($document && (strlen($document) === 11 || strlen($document) === 14)) {
     $customer['document'] = $document;
     $customer['type'] = strlen($document) === 11 ? 'individual' : 'company';
+  } else {
+    $customer['type'] = 'individual';
   }
   $phonePayload = format_phone_payload($phone);
   if ($phonePayload) {
