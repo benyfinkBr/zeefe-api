@@ -110,6 +110,22 @@ function pagarme_create_checkout_order(array $options): array {
     'metadata' => $options['metadata'] ?? []
   ];
 
+  $checkout =& $payload['payments'][0]['checkout'];
+  if (in_array('pix', $methods, true) && empty($checkout['pix'])) {
+    $checkout['pix'] = [
+      'expires_in' => 3600
+    ];
+  }
+  if (in_array('boleto', $methods, true) && empty($checkout['boleto'])) {
+    $dueDate = (new DateTimeImmutable('now', new DateTimeZone('UTC')))
+      ->modify('+3 days')
+      ->format('Y-m-d\TH:i:s\Z');
+    $checkout['boleto'] = [
+      'due_at' => $dueDate,
+      'instructions' => 'Válido por 3 dias após emissão.'
+    ];
+  }
+
   if (!empty($config['pagarme']['debug']) && $config['pagarme']['debug']) {
     error_log('[PAGARME] Payload order: ' . json_encode($payload));
   }
