@@ -117,6 +117,7 @@ let clientCoursesCache = [];
 const workshopDetailsCache = new Map();
 let courseModalContext = { courseId: null, course: null, enrollment: null, voucher: null, voucherData: null, focusEnroll: false };
 let headerMenuOpen = false;
+let portalRefreshTimer = null;
 
 const reservationsContainer = document.getElementById('reservationsContainer');
 // Modal de ações da reserva
@@ -667,6 +668,22 @@ function syncHeaderScopeButtons() {
     headerScopeCompanyBtn.hidden = !canUseCompany;
     headerScopeCompanyBtn.disabled = !canUseCompany;
     headerScopeCompanyBtn.classList.toggle('active', canUseCompany && currentScope === 'company');
+  }
+}
+
+function startPortalAutoRefresh() {
+  stopPortalAutoRefresh();
+  portalRefreshTimer = setInterval(() => {
+    if (!activeClient) return;
+    carregarReservasGlobais().catch(() => {});
+    carregarCursosCliente();
+  }, 60000);
+}
+
+function stopPortalAutoRefresh() {
+  if (portalRefreshTimer) {
+    clearInterval(portalRefreshTimer);
+    portalRefreshTimer = null;
   }
 }
 
@@ -2752,6 +2769,7 @@ function aplicarClienteAtivo(cliente) {
   if (authMessage) authMessage.textContent = '';
   // Checa convites pendentes na primeira entrada
   checkPendingCompanyInvites();
+  startPortalAutoRefresh();
 }
 
 function fazerLogout() {
@@ -2773,6 +2791,7 @@ function fazerLogout() {
   visitorForm?.reset();
   setActivePanel('book');
   renderProfile();
+  stopPortalAutoRefresh();
   try {
     localStorage.removeItem('portalRememberToken');
   } catch (_) {}
