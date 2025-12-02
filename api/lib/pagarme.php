@@ -39,8 +39,13 @@ function pagarme_request(string $method, string $path, array $body = null) {
 
   $json = json_decode($response, true);
   if ($status >= 400) {
-    $message = $json['message'] ?? $json['errors'][0]['message'] ?? $response;
-    throw new RuntimeException('Pagar.me retornou erro (' . $status . '): ' . $message);
+    $extra = '';
+    if (!empty($json['errors']) && is_array($json['errors'])) {
+      $details = array_map(fn($e) => ($e['parameter_name'] ?? '') . ' ' . ($e['message'] ?? ''), $json['errors']);
+      $extra = ' Detalhes: ' . implode(' | ', $details);
+    }
+    $message = $json['message'] ?? $response;
+    throw new RuntimeException('Pagar.me retornou erro (' . $status . '): ' . $message . $extra);
   }
   return $json;
 }

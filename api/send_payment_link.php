@@ -29,6 +29,23 @@ function format_phone_payload(?string $phoneDigits): ?array {
   ];
 }
 
+function build_customer_payload(string $name, string $email, ?string $cpf, ?string $phone): array {
+  $document = $cpf ? preg_replace('/\D/', '', $cpf) : '';
+  $customer = [
+    'name' => $name,
+    'email' => $email
+  ];
+  if ($document && (strlen($document) === 11 || strlen($document) === 14)) {
+    $customer['document'] = $document;
+    $customer['type'] = strlen($document) === 11 ? 'individual' : 'company';
+  }
+  $phonePayload = format_phone_payload($phone);
+  if ($phonePayload) {
+    $customer['phones'] = ['mobile_phone' => $phonePayload];
+  }
+  return $customer;
+}
+
 try {
   $stmt = $pdo->prepare(
     'SELECT r.id, r.date, r.time_start, r.time_end, r.status, r.total_price, r.price,
@@ -63,15 +80,12 @@ try {
   }
   $amountCents = (int)round($amount * 100);
 
-  $cpf = preg_replace('/\D/', '', $reservation['client_cpf'] ?? '');
-  $phonePayload = format_phone_payload($reservation['client_phone'] ?? null);
-  $customer = [
-    'name' => $reservation['client_name'] ?: 'Cliente Ze.EFE',
-    'email' => $reservation['email'],
-    'type' => strlen($cpf) === 11 ? 'individual' : 'company',
-    'document' => $cpf ?: null,
-    'phones' => $phonePayload ? ['mobile_phone' => $phonePayload] : null
-  ];
+  $customer = build_customer_payload(
+    $reservation['client_name'] ?: 'Cliente Ze.EFE',
+    $reservation['email'],
+    $reservation['client_cpf'] ?? null,
+    $reservation['client_phone'] ?? null
+  );
 
   $dateFormatted = '';
   if (!empty($reservation['date'])) {

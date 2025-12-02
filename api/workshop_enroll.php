@@ -16,6 +16,23 @@ function format_mobile_for_pagarme(?string $phone): ?array {
   ];
 }
 
+function build_customer_payload(string $name, string $email, ?string $cpf, ?string $phone): array {
+  $document = $cpf ? preg_replace('/\D/', '', $cpf) : '';
+  $customer = [
+    'name' => $name,
+    'email' => $email
+  ];
+  if ($document && (strlen($document) === 11 || strlen($document) === 14)) {
+    $customer['document'] = $document;
+    $customer['type'] = strlen($document) === 11 ? 'individual' : 'company';
+  }
+  $phonePayload = format_mobile_for_pagarme($phone);
+  if ($phonePayload) {
+    $customer['phones'] = ['mobile_phone' => $phonePayload];
+  }
+  return $customer;
+}
+
 function compute_workshop_discount(PDO $pdo, string $voucherCode, float $amount, array $workshop): array {
   if ($voucherCode === '') {
     return ['discount' => 0.0, 'voucher' => null];
@@ -214,14 +231,7 @@ try {
   $checkoutUrl = null;
   $checkoutWarning = null;
   if ($paymentStatus !== 'pago' && $amountDue > 0) {
-    $customerPhone = format_mobile_for_pagarme($phone);
-    $customer = [
-      'name' => $name,
-      'email' => $email,
-      'document' => $cpf,
-      'type' => strlen((string)$cpf) === 11 ? 'individual' : 'company',
-      'phones' => $customerPhone ? ['mobile_phone' => $customerPhone] : null
-    ];
+    $customer = build_customer_payload($name, $email, $cpf, $phone);
     $metadata = [
       'entity' => 'workshop',
       'enrollment_id' => $enrollmentId,
