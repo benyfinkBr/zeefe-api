@@ -15,5 +15,14 @@ return [
     'https://www.zeefe.com.br',
     'https://zeefe.com.br',
     'http://localhost:8000'
+  ],
+  'pagarme' => [
+    'account_id' => 'acc_W695O0gUESAg4EyZ',
+    'public_key' => 'pk_test_RNoa2omHrUnZlGzK',
+    'secret_key' => 'sk_test_bcb214be5bd6476b80f4e5cdefa61078',
+    'webhook_user' => 'teste123',
+    'webhook_password' => '321teste',
+    'accepted_payment_methods' => ['credit_card', 'pix', 'boleto'],
+    'checkout_expiration_seconds' => 60 * 60 * 24 // 24h
   ]
 ];

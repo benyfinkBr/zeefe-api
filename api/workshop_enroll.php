@@ -1,7 +1,70 @@
 <?php
 require 'apiconfig.php';
+require_once __DIR__ . '/lib/pagarme.php';
+require_once __DIR__ . '/lib/payment_intents.php';
 
 header('Content-Type: application/json; charset=utf-8');
+
+function format_mobile_for_pagarme(?string $phone): ?array {
+  if (!$phone) return null;
+  $digits = preg_replace('/\D/', '', $phone);
+  if (strlen($digits) < 10) return null;
+  return [
+    'country_code' => '55',
+    'area_code' => substr($digits, 0, 2),
+    'number' => substr($digits, 2)
+  ];
+}
+
+function compute_workshop_discount(PDO $pdo, string $voucherCode, float $amount, array $workshop): array {
+  if ($voucherCode === '') {
+    return ['discount' => 0.0, 'voucher' => null];
+  }
+  $stmt = $pdo->prepare('SELECT * FROM vouchers WHERE code = :code LIMIT 1');
+  $stmt->execute([':code' => $voucherCode]);
+  $voucher = $stmt->fetch(PDO::FETCH_ASSOC);
+  if (!$voucher) {
+    throw new RuntimeException('Voucher informado não existe.');
+  }
+
+  $status = strtolower($voucher['status'] ?? 'ativo');
+  if ($status !== 'ativo') {
+    throw new RuntimeException('Voucher inativo.');
+  }
+  $startRaw = $voucher['starts_at'] ?? $voucher['valid_from'] ?? null;
+  $endRaw = $voucher['ends_at'] ?? $voucher['valid_to'] ?? null;
+  if (!empty($startRaw) && (new DateTimeImmutable()) < new DateTimeImmutable($startRaw)) {
+    throw new RuntimeException('Voucher ainda não está válido.');
+  }
+  if (!empty($endRaw) && (new DateTimeImmutable()) > new DateTimeImmutable($endRaw)) {
+    throw new RuntimeException('Voucher expirado.');
+  }
+
+  if (!empty($voucher['room_id']) && (int)$voucher['room_id'] !== (int)$workshop['room_id']) {
+    throw new RuntimeException('Voucher não aplicável para este curso.');
+  }
+
+  $maxRedemptions = $voucher['max_redemptions'] ?? $voucher['max_uses'] ?? null;
+  if ($maxRedemptions) {
+    $stmtCount = $pdo->prepare('SELECT COUNT(*) FROM workshop_enrollments WHERE voucher_code = :code');
+    $stmtCount->execute([':code' => $voucherCode]);
+    $used = (int)$stmtCount->fetchColumn();
+    if ($used >= (int)$maxRedemptions) {
+      throw new RuntimeException('Limite de uso do voucher atingido.');
+    }
+  }
+
+  $type = strtolower($voucher['type'] ?? 'percent');
+  $value = (float)($voucher['value'] ?? 0);
+  $discount = 0.0;
+  if ($type === 'percent') {
+    $discount = round(max(0, $amount) * ($value / 100), 2);
+  } else {
+    $discount = round(min($value, max(0, $amount)), 2);
+  }
+
+  return ['discount' => $discount, 'voucher' => $voucher];
+}
 
 try {
   $body = json_decode(file_get_contents('php://input'), true);
@@ -16,7 +79,7 @@ try {
   $email = trim($body['email'] ?? '');
   $cpf   = trim($body['cpf']   ?? '');
   $phone = trim($body['phone'] ?? '');
-  $voucherCode = trim($body['voucher_code'] ?? '');
+  $voucherCode = strtoupper(trim($body['voucher_code'] ?? ''));
 
   if ($workshopId <= 0 || $name === '' || $email === '') {
     http_response_code(400);
@@ -111,9 +174,22 @@ try {
     exit;
   }
 
+  $pricePerSeat = (float)($workshop['price_per_seat'] ?? 0);
+  $discountAmount = 0.00;
+  if ($voucherCode !== '') {
+    try {
+      $voucherResult = compute_workshop_discount($pdo, $voucherCode, $pricePerSeat, $workshop);
+      $discountAmount = $voucherResult['discount'];
+    } catch (Throwable $voucherErr) {
+      http_response_code(400);
+      echo json_encode(['success' => false, 'error' => $voucherErr->getMessage()]);
+      exit;
+    }
+  }
+  $amountDue = max(0, $pricePerSeat - $discountAmount);
+
   // Para suportar o "break even", as inscrições começam como pendentes.
   $paymentStatus = 'pendente';
-  $discountAmount = 0.00;
 
   $insE = $pdo->prepare('
     INSERT INTO workshop_enrollments (workshop_id, participant_id, public_code, payment_status, voucher_code, discount_amount, checkin_status)
@@ -125,14 +201,7 @@ try {
   // Lógica de break-even: a partir de min_seats, confirmamos todos os pendentes.
   $minSeats = (int) ($workshop['min_seats'] ?? 0);
   $activeSeatsAfter = (int) ($workshop['active_seats'] ?? 0) + 1;
-  $thresholdReached = false;
-
-  if ($minSeats > 0 && $activeSeatsAfter >= $minSeats) {
-    $updAll = $pdo->prepare("UPDATE workshop_enrollments SET payment_status = 'pago' WHERE workshop_id = ? AND payment_status = 'pendente'");
-    $updAll->execute([$workshopId]);
-    $thresholdReached = true;
-    $paymentStatus = 'pago';
-  }
+  $thresholdReached = ($minSeats > 0 && $activeSeatsAfter >= $minSeats);
 
   $pdo->commit();
 
@@ -142,6 +211,59 @@ try {
     urlencode($publicCode)
   );
 
+  $checkoutUrl = null;
+  $checkoutWarning = null;
+  if ($paymentStatus !== 'pago' && $amountDue > 0) {
+    $customerPhone = format_mobile_for_pagarme($phone);
+    $customer = [
+      'name' => $name,
+      'email' => $email,
+      'document' => $cpf,
+      'type' => strlen((string)$cpf) === 11 ? 'individual' : 'company',
+      'phones' => $customerPhone ? ['mobile_phone' => $customerPhone] : null
+    ];
+    $metadata = [
+      'entity' => 'workshop',
+      'enrollment_id' => $enrollmentId,
+      'workshop_id' => $workshopId
+    ];
+    try {
+      $order = pagarme_create_checkout_order([
+        'code' => 'workshop_' . $enrollmentId . '_' . time(),
+        'amount_cents' => (int)round($amountDue * 100),
+        'description' => sprintf('Workshop %s - Ze.EFE', $workshop['title'] ?? ''),
+        'customer' => $customer,
+        'metadata' => $metadata
+      ]);
+      $checkoutUrl = pagarme_extract_checkout_url($order);
+      if (!$checkoutUrl) {
+        throw new RuntimeException('Não foi possível gerar o checkout do pagamento.');
+      }
+      $payment = $order['payments'][0] ?? [];
+      $expiresSeconds = (int)($config['pagarme']['checkout_expiration_seconds'] ?? 86400);
+      $expiresAt = (new DateTimeImmutable())->modify('+' . $expiresSeconds . ' seconds')->format('Y-m-d H:i:s');
+      payment_intents_create($pdo, [
+        'context' => 'workshop',
+        'context_id' => $enrollmentId,
+        'pagarme_order_id' => $order['id'] ?? null,
+        'pagarme_payment_id' => $payment['id'] ?? null,
+        'checkout_url' => $checkoutUrl,
+        'amount' => $amountDue,
+        'status' => 'pending',
+        'metadata' => $metadata,
+        'expires_at' => $expiresAt,
+        'payload' => $order
+      ]);
+    } catch (Throwable $payErr) {
+      $checkoutWarning = $payErr->getMessage();
+      $checkoutUrl = null;
+    }
+  } elseif ($amountDue <= 0) {
+    $paymentStatus = 'pago';
+    $stmtPaid = $pdo->prepare('UPDATE workshop_enrollments SET payment_status = \'pago\' WHERE id = ?');
+    $stmtPaid->execute([$enrollmentId]);
+  }
+
   echo json_encode([
     'success' => true,
     'enrollment_id' => $enrollmentId,
@@ -149,6 +271,8 @@ try {
     'checkin_url' => $checkinUrl,
     'payment_status' => $paymentStatus,
     'threshold_reached' => $thresholdReached,
+    'checkout_url' => $checkoutUrl,
+    'warning' => $checkoutWarning
   ]);
 } catch (Throwable $e) {
   if ($pdo && $pdo->inTransaction()) {
