@@ -1,20 +1,70 @@
 (() => {
   const statusEl = document.getElementById('status');
-  const btn = document.getElementById('btnSave');
+  const btnSave = document.getElementById('btnSave');
+  const btnOpenModal = document.getElementById('btnOpenModal');
+  const modal = document.getElementById('paymentModal');
+  const closeModal = document.getElementById('closeModal');
+  const cardsList = document.getElementById('cardsList');
+  const existingCardsEl = document.getElementById('existingCards');
+  const addressInfoEl = document.getElementById('addressInfo');
 
   const show = (msg, isError = false) => {
     statusEl.textContent = msg;
     statusEl.style.color = isError ? '#c00' : '#0a6';
   };
 
-  const getPublicKey = () => {
-    // Public key usada apenas para tokenizar no navegador
-    return 'pk_test_RNoa2omHrUnZlGzK';
+  const getPublicKey = () => 'pk_test_RNoa2omHrUnZlGzK'; // somente tokenização
+
+  const open = () => modal.classList.add('open');
+  const close = () => modal.classList.remove('open');
+  closeModal.addEventListener('click', close);
+  modal.addEventListener('click', (e) => { if (e.target === modal) close(); });
+
+  const renderCards = (cards = []) => {
+    if (!cards.length) {
+      existingCardsEl.innerHTML = '<p>Nenhum cartão salvo.</p>';
+      cardsList.innerHTML = '';
+      return;
+    }
+    const list = cards.map(c => `<div class="card-item"><span>${c.brand ?? ''} ****${c.last4 ?? ''} (${c.exp_month ?? ''}/${c.exp_year ?? ''})</span></div>`).join('');
+    existingCardsEl.innerHTML = `<h4>Cartões salvos</h4>${list}`;
+    cardsList.innerHTML = `<h2>Cartões salvos</h2>${list}`;
   };
 
-  btn.addEventListener('click', async (e) => {
+  const renderAddress = (addr) => {
+    if (!addr) {
+      addressInfoEl.innerHTML = '<p><strong>Endereço:</strong> não cadastrado.</p>';
+      return;
+    }
+    const parts = [
+      addr.street, addr.number, addr.complement,
+      addr.city, addr.state, addr.zip_code
+    ].filter(Boolean).join(', ');
+    addressInfoEl.innerHTML = `<p><strong>Endereço:</strong> ${parts || '—'}</p>`;
+  };
+
+  const loadCards = async () => {
+    const clientId = Number(document.getElementById('clientId').value || 0);
+    if (!clientId) {
+      show('Informe o ID do cliente para listar cartões.', true);
+      return;
+    }
+    show('Carregando métodos de pagamento...');
+    const resp = await fetch(`api/customer_cards_list.php?client_id=${clientId}`);
+    const json = await resp.json();
+    if (!json.success) throw new Error(json.error || 'Erro ao carregar cartões.');
+    renderCards(json.cards || []);
+    renderAddress(json.address || null);
+    show('Métodos carregados.');
+  };
+
+  btnOpenModal.addEventListener('click', async () => {
+    open();
+    try { await loadCards(); } catch (e) { show(e.message, true); }
+  });
+
+  btnSave.addEventListener('click', async (e) => {
     e.preventDefault();
-    show('Gerando token do cartão...');
     const clientId = Number(document.getElementById('clientId').value || 0);
     const holderName = document.getElementById('holderName').value.trim();
     const cardNumber = document.getElementById('cardNumber').value.replace(/\s+/g, '');
@@ -33,6 +83,7 @@
     const expiration_date = `${expParts[0]}${expParts[1]}`;
 
     try {
+      show('Gerando token do cartão...');
       const client = await pagarme.client.connect({ api_key: getPublicKey() });
       const card = await client.cards.create({
         holder_name: holderName,
@@ -58,6 +109,7 @@
         throw new Error(json.error || 'Erro ao salvar cartão.');
       }
       show(`Cartão salvo (${json.brand ?? ''} ****${json.last4 ?? ''}).`);
+      await loadCards();
     } catch (err) {
       show(err.message || 'Erro ao salvar cartão.', true);
     }
