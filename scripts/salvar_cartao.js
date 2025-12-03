@@ -17,8 +17,16 @@
 
   const getPublicKey = () => 'pk_test_RNoa2omHrUnZlGzK'; // somente tokenização
 
-  const open = () => modal.classList.add('open');
-  const close = () => modal.classList.remove('open');
+  const open = () => {
+    if (!modal) return;
+    modal.classList.add('show');
+    modal.setAttribute('aria-hidden', 'false');
+  };
+  const close = () => {
+    if (!modal) return;
+    modal.classList.remove('show');
+    modal.setAttribute('aria-hidden', 'true');
+  };
   closeModal?.addEventListener('click', close);
   savePaymentClose?.addEventListener('click', close);
   modal?.addEventListener('click', (e) => { if (e.target === modal) close(); });
@@ -47,7 +55,12 @@
   };
 
   const loadCards = async () => {
-    const clientId = Number(document.getElementById('clientId')?.value || 0);
+    let clientId = Number(document.getElementById('clientId')?.value || 0);
+    if (!clientId && window.activeClient?.id) {
+      clientId = Number(window.activeClient.id);
+      const hidden = document.getElementById('clientId');
+      if (hidden) hidden.value = clientId;
+    }
     if (!clientId) {
       show('Informe o ID do cliente para listar cartões.', true);
       return;
