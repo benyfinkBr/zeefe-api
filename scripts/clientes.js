@@ -197,7 +197,14 @@ const profileInputs = {
   cpf: document.getElementById('profileCpfInput'),
   phone: document.getElementById('profilePhoneInput'),
   whatsapp: document.getElementById('profileWhatsappInput'),
-  company: document.getElementById('profileCompanyInput')
+  company: document.getElementById('profileCompanyInput'),
+  street: document.getElementById('profileStreetInput'),
+  number: document.getElementById('profileNumberInput'),
+  complement: document.getElementById('profileComplementInput'),
+  zip_code: document.getElementById('profileZipInput'),
+  city: document.getElementById('profileCityInput'),
+  state: document.getElementById('profileStateInput'),
+  country: document.getElementById('profileCountryInput')
 };
 
 // Modal de edição de perfil
@@ -223,6 +230,13 @@ const newPasswordInput = document.getElementById('newPassword');
 const newPasswordConfirmInput = document.getElementById('newPasswordConfirm');
 const pwdStrengthIndicator = document.getElementById('pwdStrengthIndicator');
 const pwdMatchIndicator = document.getElementById('pwdMatchIndicator');
+const editStreet = document.getElementById('editStreet');
+const editNumber = document.getElementById('editNumber');
+const editComplement = document.getElementById('editComplement');
+const editZip = document.getElementById('editZip');
+const editCity = document.getElementById('editCity');
+const editState = document.getElementById('editState');
+const editCountry = document.getElementById('editCountry');
 
 const portalNavButtons = Array.from(document.querySelectorAll('.portal-nav [data-panel]'));
 const portalSections = {
@@ -2744,6 +2758,8 @@ function aplicarClienteAtivo(cliente) {
   if (clientCompanyEl) {
     clientCompanyEl.textContent = obterNomeEmpresa(activeClient.company_id) || (activeClient.company_id ? 'Empresa não localizada' : 'Cliente pessoa física');
   }
+  const paymentClientIdInput = document.getElementById('clientId');
+  if (paymentClientIdInput) paymentClientIdInput.value = activeClient.id || '';
   // Exibe a aba Empresa para qualquer usuário que pertença a uma empresa
   if (companyTabButton) {
     const showCompany = Boolean(activeClient.company_id);
@@ -2777,6 +2793,8 @@ function fazerLogout() {
   currentReservations = [];
   currentVisitors = [];
   bookingVisitorIds = [];
+  const paymentClientIdInput = document.getElementById('clientId');
+  if (paymentClientIdInput) paymentClientIdInput.value = '';
   closeHeaderMenu();
   setPortalScope('pf');
   if (clientPanels) {
@@ -4161,6 +4179,20 @@ async function excluirRegistro(table, id) {
   }
 }
 
+function getActiveAddress() {
+  if (!activeClient) return {};
+  const addr = activeClient.address || activeClient.client_address || activeClient.address_data || {};
+  return {
+    street: addr.street || activeClient.street || '',
+    number: addr.number || activeClient.number || '',
+    complement: addr.complement || activeClient.complement || '',
+    zip_code: addr.zip_code || addr.cep || activeClient.zip_code || '',
+    city: addr.city || activeClient.city || '',
+    state: addr.state || activeClient.state || '',
+    country: addr.country || activeClient.country || 'BR'
+  };
+}
+
 function renderProfile() {
   if (!profileInputs.name) return;
   if (!activeClient) {
@@ -4178,6 +4210,14 @@ function renderProfile() {
   profileInputs.phone.value = formatPhone(activeClient.phone) || '';
   profileInputs.whatsapp.value = formatPhone(activeClient.whatsapp) || '';
   profileInputs.company.value = obterNomeEmpresa(activeClient.company_id) || (activeClient.company_id ? 'Empresa não localizada' : 'Cliente pessoa física');
+  const addr = getActiveAddress();
+  if (profileInputs.street) profileInputs.street.value = addr.street || '';
+  if (profileInputs.number) profileInputs.number.value = addr.number || '';
+  if (profileInputs.complement) profileInputs.complement.value = addr.complement || '';
+  if (profileInputs.zip_code) profileInputs.zip_code.value = addr.zip_code || '';
+  if (profileInputs.city) profileInputs.city.value = addr.city || '';
+  if (profileInputs.state) profileInputs.state.value = addr.state || '';
+  if (profileInputs.country) profileInputs.country.value = addr.country || 'BR';
   setProfileEditing(false);
 }
 
@@ -4190,6 +4230,14 @@ function openProfileEditModal() {
   if (editCpf) editCpf.value = formatCPF(activeClient.cpf) || '';
   if (editPhone) editPhone.value = formatPhone(activeClient.phone) || '';
   if (editWhatsapp) editWhatsapp.value = formatPhone(activeClient.whatsapp) || '';
+  const addr = getActiveAddress();
+  if (editStreet) editStreet.value = addr.street || '';
+  if (editNumber) editNumber.value = addr.number || '';
+  if (editComplement) editComplement.value = addr.complement || '';
+  if (editZip) editZip.value = addr.zip_code || '';
+  if (editCity) editCity.value = addr.city || '';
+  if (editState) editState.value = addr.state || '';
+  if (editCountry) editCountry.value = addr.country || 'BR';
   if (currentPasswordInput) currentPasswordInput.value = '';
   if (newPasswordInput) newPasswordInput.value = '';
   if (newPasswordConfirmInput) newPasswordConfirmInput.value = '';
@@ -4226,7 +4274,14 @@ async function onProfileEditSubmit(event){
     name: editName?.value.trim() || '',
     login: editLogin?.value.trim() || '',
     phone: somenteDigitos(editPhone?.value),
-    whatsapp: somenteDigitos(editWhatsapp?.value)
+    whatsapp: somenteDigitos(editWhatsapp?.value),
+    street: editStreet?.value.trim() || '',
+    number: editNumber?.value.trim() || '',
+    complement: editComplement?.value.trim() || '',
+    zip_code: editZip?.value.trim() || '',
+    city: editCity?.value.trim() || '',
+    state: editState?.value.trim() || '',
+    country: editCountry?.value.trim() || 'BR'
   };
   if (!payload.name || !payload.login) {
     if (profileEditMessage) profileEditMessage.textContent = 'Preencha nome e login.';
@@ -4240,7 +4295,16 @@ async function onProfileEditSubmit(event){
     });
     const json = await res.json();
     if (!json.success) throw new Error(json.error || 'Erro ao atualizar cadastro.');
-    activeClient = { ...activeClient, ...json.client };
+    const addressPayload = {
+      street: payload.street,
+      number: payload.number,
+      complement: payload.complement,
+      zip_code: payload.zip_code,
+      city: payload.city,
+      state: payload.state,
+      country: payload.country
+    };
+    activeClient = { ...activeClient, ...json.client, address: { ...(activeClient.address || {}), ...addressPayload } };
     renderProfile();
 
     if (profileEditMessage) profileEditMessage.textContent = 'Dados salvos com sucesso.';
@@ -4299,6 +4363,15 @@ async function onProfileSubmit(event) {
   const login = profileInputs.login?.value.trim();
   const phone = somenteDigitos(profileInputs.phone?.value);
   const whatsapp = somenteDigitos(profileInputs.whatsapp?.value);
+  const addr = {
+    street: profileInputs.street?.value.trim() || '',
+    number: profileInputs.number?.value.trim() || '',
+    complement: profileInputs.complement?.value.trim() || '',
+    zip_code: profileInputs.zip_code?.value.trim() || '',
+    city: profileInputs.city?.value.trim() || '',
+    state: profileInputs.state?.value.trim() || '',
+    country: profileInputs.country?.value.trim() || 'BR'
+  };
   if (!name || !login) {
     if (profileMessageEl) profileMessageEl.textContent = 'Preencha nome e login.';
     return;
@@ -4312,12 +4385,13 @@ async function onProfileSubmit(event) {
         name,
         login,
         phone,
-        whatsapp
+        whatsapp,
+        ...addr
       })
     });
     const json = await res.json();
     if (!json.success) throw new Error(json.error || 'Erro ao atualizar cadastro.');
-    activeClient = { ...activeClient, ...json.client };
+    activeClient = { ...activeClient, ...json.client, address: { ...(activeClient.address || {}), ...addr } };
     if (clientNameEl) clientNameEl.textContent = activeClient.name || activeClient.login || 'Cliente';
     if (clientCompanyEl) clientCompanyEl.textContent = obterNomeEmpresa(activeClient.company_id) || (activeClient.company_id ? 'Empresa não localizada' : 'Cliente pessoa física');
     renderProfile();

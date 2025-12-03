@@ -4,11 +4,13 @@
   const btnOpenModal = document.getElementById('btnOpenModal');
   const modal = document.getElementById('paymentModal');
   const closeModal = document.getElementById('closeModal');
+  const savePaymentClose = document.getElementById('savePaymentClose');
   const cardsList = document.getElementById('cardsList');
   const existingCardsEl = document.getElementById('existingCards');
   const addressInfoEl = document.getElementById('addressInfo');
 
   const show = (msg, isError = false) => {
+    if (!statusEl) return;
     statusEl.textContent = msg;
     statusEl.style.color = isError ? '#c00' : '#0a6';
   };
@@ -17,8 +19,9 @@
 
   const open = () => modal.classList.add('open');
   const close = () => modal.classList.remove('open');
-  closeModal.addEventListener('click', close);
-  modal.addEventListener('click', (e) => { if (e.target === modal) close(); });
+  closeModal?.addEventListener('click', close);
+  savePaymentClose?.addEventListener('click', close);
+  modal?.addEventListener('click', (e) => { if (e.target === modal) close(); });
 
   const renderCards = (cards = []) => {
     if (!cards.length) {
@@ -44,7 +47,7 @@
   };
 
   const loadCards = async () => {
-    const clientId = Number(document.getElementById('clientId').value || 0);
+    const clientId = Number(document.getElementById('clientId')?.value || 0);
     if (!clientId) {
       show('Informe o ID do cliente para listar cartões.', true);
       return;
@@ -58,14 +61,20 @@
     show('Métodos carregados.');
   };
 
-  btnOpenModal.addEventListener('click', async () => {
+  const openAndLoad = async () => {
     open();
-    try { await loadCards(); } catch (e) { show(e.message, true); }
-  });
+    try { await loadCards(); } catch (e) { show(e.message || 'Erro ao carregar cartões.', true); }
+  };
+
+  if (btnOpenModal) {
+    btnOpenModal.addEventListener('click', openAndLoad);
+  }
+  // Permite abertura via script global (clientes.js)
+  window.openPaymentModal = openAndLoad;
 
   btnSave.addEventListener('click', async (e) => {
     e.preventDefault();
-    const clientId = Number(document.getElementById('clientId').value || 0);
+    const clientId = Number(document.getElementById('clientId')?.value || 0);
     const holderName = document.getElementById('holderName').value.trim();
     const cardNumber = document.getElementById('cardNumber').value.replace(/\s+/g, '');
     const exp = document.getElementById('exp').value.replace(/\s+/g, '');

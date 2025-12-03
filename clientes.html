@@ -158,6 +158,7 @@
           <button type="button" data-panel="visitors">Visitantes</button>
           <button type="button" data-panel="company" id="companyTab" hidden>Empresa</button>
           <button type="button" data-panel="courses">Cursos</button>
+          <button type="button" class="portal-nav-links-btn" id="btnOpenModal">Pagamento</button>
           <button type="button" data-panel="profile">Meu Perfil</button>
         </nav>
         <button type="button" id="logoutBtn" class="nav-logout">Sair</button>
@@ -568,6 +569,40 @@
                   <label for="profileCompanyInput">Empresa</label>
                   <input type="text" id="profileCompanyInput" class="input-readonly" readonly data-immutable="true" />
                 </div>
+                <div class="form-grid-mini">
+                  <div>
+                    <label for="profileZipInput">CEP</label>
+                    <input type="text" id="profileZipInput" name="zip_code" maxlength="20" readonly />
+                  </div>
+                  <div>
+                    <label for="profileStateInput">Estado</label>
+                    <input type="text" id="profileStateInput" name="state" maxlength="10" readonly />
+                  </div>
+                </div>
+                <div class="form-grid-mini">
+                  <div>
+                    <label for="profileCityInput">Cidade</label>
+                    <input type="text" id="profileCityInput" name="city" readonly />
+                  </div>
+                  <div>
+                    <label for="profileCountryInput">País</label>
+                    <input type="text" id="profileCountryInput" name="country" readonly value="BR" />
+                  </div>
+                </div>
+                <div class="form-grid-mini">
+                  <div>
+                    <label for="profileStreetInput">Endereço</label>
+                    <input type="text" id="profileStreetInput" name="street" readonly />
+                  </div>
+                  <div>
+                    <label for="profileNumberInput">Número</label>
+                    <input type="text" id="profileNumberInput" name="number" readonly />
+                  </div>
+                </div>
+                <div class="form-row">
+                  <label for="profileComplementInput">Complemento</label>
+                  <input type="text" id="profileComplementInput" name="complement" readonly />
+                </div>
                 <p class="form-help">E-mail e CPF são definidos no cadastro inicial e não podem ser alterados pelo portal.</p>
                 <div class="form-row profile-actions">
                   <button type="button" class="btn btn-secondary" id="editProfileBtn">Editar Perfil</button>
@@ -837,6 +872,40 @@
                 <input type="text" id="editWhatsapp" name="whatsapp" maxlength="15" />
               </div>
             </div>
+            <div class="form-grid-mini">
+              <div>
+                <label for="editZip">CEP</label>
+                <input type="text" id="editZip" name="zip_code" maxlength="20" />
+              </div>
+              <div>
+                <label for="editState">Estado</label>
+                <input type="text" id="editState" name="state" maxlength="10" />
+              </div>
+            </div>
+            <div class="form-grid-mini">
+              <div>
+                <label for="editCity">Cidade</label>
+                <input type="text" id="editCity" name="city" />
+              </div>
+              <div>
+                <label for="editCountry">País</label>
+                <input type="text" id="editCountry" name="country" value="BR" />
+              </div>
+            </div>
+            <div class="form-grid-mini">
+              <div>
+                <label for="editStreet">Endereço</label>
+                <input type="text" id="editStreet" name="street" />
+              </div>
+              <div>
+                <label for="editNumber">Número</label>
+                <input type="text" id="editNumber" name="number" />
+              </div>
+            </div>
+            <div class="form-row">
+              <label for="editComplement">Complemento</label>
+              <input type="text" id="editComplement" name="complement" />
+            </div>
 
             <div class="modal-actions" style="margin-top:12px; display:flex; gap:12px; justify-content:space-between; flex-wrap:wrap;">
               <button type="button" class="btn btn-secondary" id="openPasswordModalBtn">Alterar senha</button>
@@ -1000,7 +1069,52 @@
     </div>
   </footer>
 
+  <!-- Modal: Método de Pagamento -->
+  <div class="modal-overlay" id="paymentModal" aria-hidden="true">
+    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="paymentModalTitle">
+      <button class="modal-close" type="button" id="closeModal" aria-label="Fechar">&times;</button>
+      <div class="modal-body">
+        <div class="modal-info" style="padding:24px; width:100%">
+          <h2 id="paymentModalTitle" style="margin-top:0">Método de pagamento</h2>
+          <input type="hidden" id="clientId" />
+          <div id="addressInfo" class="rooms-message" style="margin-bottom:12px;"></div>
+          <div id="existingCards" class="cards-list"></div>
+          <hr />
+          <h3 style="margin-top:12px;">Adicionar novo cartão</h3>
+          <div class="form-grid-mini">
+            <div>
+              <label for="holderName">Nome impresso</label>
+              <input id="holderName" type="text" autocomplete="cc-name" />
+            </div>
+            <div>
+              <label for="cardNumber">Número do cartão</label>
+              <input id="cardNumber" type="text" inputmode="numeric" autocomplete="cc-number" />
+            </div>
+          </div>
+          <div class="form-grid-mini">
+            <div>
+              <label for="exp">Validade (MM/AA)</label>
+              <input id="exp" type="text" placeholder="MM/AA" inputmode="numeric" autocomplete="cc-exp" />
+            </div>
+            <div>
+              <label for="cvv">CVV</label>
+              <input id="cvv" type="text" inputmode="numeric" autocomplete="cc-csc" />
+            </div>
+          </div>
+          <div class="form-row" style="margin-top:12px; display:flex; justify-content:flex-end; gap:12px;">
+            <button class="btn btn-secondary" type="button" id="savePaymentClose">Fechar</button>
+            <button class="btn btn-primary" type="button" id="btnSave">Salvar cartão</button>
+          </div>
+          <div id="status" class="rooms-message" style="margin-top:8px;"></div>
+          <div id="cardsList" class="cards-list" style="margin-top:12px;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="" defer></script>
+  <script src="https://assets.pagar.me/pagarme-js/5.0/pagarme.min.js" defer></script>
+  <script src="scripts/salvar_cartao.js" defer></script>
   <script src="scripts/clientes.js" defer></script>
 </body>
 </html>
