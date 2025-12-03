@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Salvar cartão - Ze.EFE</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    .card-form { max-width: 420px; margin: 40px auto; padding: 24px; border: 1px solid #d8d8d8; border-radius: 12px; background: #fff; }
+    .card-form h1 { margin-top: 0; }
+    .card-form label { display: block; margin: 12px 0 4px; font-weight: 600; }
+    .card-form input { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ccc; }
+    .card-form button { width: 100%; padding: 12px; margin-top: 16px; background: #0f4d3f; color: #fff; border: none; border-radius: 10px; font-size: 16px; cursor: pointer; }
+    .status { margin-top: 12px; font-size: 14px; }
+  </style>
+  <script src="https://assets.pagar.me/pagarme-js/5.0/pagarme.min.js"></script>
+</head>
+<body>
+  <div class="card-form">
+    <h1>Salvar cartão</h1>
+    <p>Seus dados de cartão são tokenizados pela Pagar.me e guardados de forma segura.</p>
+    <label for="clientId">ID do cliente (portal)</label>
+    <input id="clientId" type="number" placeholder="Ex.: 11" />
+
+    <label for="holderName">Nome impresso</label>
+    <input id="holderName" type="text" autocomplete="cc-name" />
+
+    <label for="cardNumber">Número do cartão</label>
+    <input id="cardNumber" type="text" inputmode="numeric" autocomplete="cc-number" />
+
+    <label for="exp">Validade (MM/AA)</label>
+    <input id="exp" type="text" placeholder="MM/AA" inputmode="numeric" autocomplete="cc-exp" />
+
+    <label for="cvv">CVV</label>
+    <input id="cvv" type="text" inputmode="numeric" autocomplete="cc-csc" />
+
+    <button id="btnSave">Salvar cartão</button>
+    <div class="status" id="status"></div>
+  </div>
+
+  <script src="scripts/salvar_cartao.js"></script>
+</body>
+</html>
