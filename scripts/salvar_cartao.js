@@ -104,6 +104,33 @@
 
   // Tokenizecard.js (checkout v1) integration
   let checkoutInstance = null;
+  let tokenizeRequested = false;
+
+  const ensureTokenizeScript = () => new Promise((resolve, reject) => {
+    if (window.PagarMeCheckout) {
+      return resolve();
+    }
+    if (tokenizeRequested) {
+      // aguarda um pouco se já solicitado
+      let tries = 0;
+      const timer = setInterval(() => {
+        if (window.PagarMeCheckout || tries > 20) {
+          clearInterval(timer);
+          return window.PagarMeCheckout ? resolve() : reject(new Error('Tokenizador não está disponível.'));
+        }
+        tries++;
+      }, 150);
+      return;
+    }
+    tokenizeRequested = true;
+    const script = document.createElement('script');
+    script.src = 'https://checkout.pagar.me/v1/tokenizecard.js';
+    script.async = true;
+    script.setAttribute('data-pagarmecheckout-app-id', getPublicKey());
+    script.onload = () => window.PagarMeCheckout ? resolve() : reject(new Error('Tokenizador não está disponível.'));
+    script.onerror = () => reject(new Error('Tokenizador não está disponível.'));
+    document.head.appendChild(script);
+  });
   const onTokenSuccess = async (data) => {
     try {
       const clientId = Number(document.getElementById('clientId')?.value || 0);
@@ -134,8 +161,14 @@
     show(message, true);
   };
 
-  if (window.PagarMeCheckout && typeof window.PagarMeCheckout.init === 'function') {
-    checkoutInstance = window.PagarMeCheckout.init(onTokenSuccess, onTokenFail);
+  const initTokenize = () => {
+    if (window.PagarMeCheckout && typeof window.PagarMeCheckout.init === 'function') {
+      checkoutInstance = window.PagarMeCheckout.init(onTokenSuccess, onTokenFail);
+    }
+  };
+
+  if (window.PagarMeCheckout) {
+    initTokenize();
   }
 
   btnSave.addEventListener('click', async (e) => {
@@ -177,6 +210,14 @@
 
     // Tokenização via tokenizecard.js (checkout v1)
     try {
+      show('Preparando tokenizador...');
+      await ensureTokenizeScript();
+      initTokenize();
+      if (!checkoutInstance || typeof checkoutInstance.createToken !== 'function') {
+        show('Tokenizador não está disponível.', true);
+        return;
+      }
+
       show('Gerando token do cartão...');
       const cardData = {
         card_holder_name: holderName,
@@ -186,13 +227,7 @@
         app_id: getPublicKey()
       };
 
-      if (checkoutInstance && typeof checkoutInstance.createToken === 'function') {
-        checkoutInstance.createToken(cardData);
-      } else if (window.PagarMeCheckout && typeof window.PagarMeCheckout.createToken === 'function') {
-        window.PagarMeCheckout.createToken(cardData, onTokenSuccess, onTokenFail);
-      } else {
-        show('Tokenizador não está disponível.', true);
-      }
+      checkoutInstance.createToken(cardData);
     } catch (err) {
       onTokenFail(err);
     }
