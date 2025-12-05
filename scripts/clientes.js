@@ -508,8 +508,9 @@ async function initialize() {
   editPhone?.addEventListener('input', () => { const d = somenteDigitos(editPhone.value).slice(0,11); editPhone.value = formatPhone(d); });
   editWhatsapp?.addEventListener('input', () => { const d = somenteDigitos(editWhatsapp.value).slice(0,11); editWhatsapp.value = formatPhone(d); });
   editZip?.addEventListener('input', () => { editZip.value = formatCEP(editZip.value); });
-  editZip?.addEventListener('blur', () => { autoFillAddressFromCEP(editZip.value); });
+  editZip?.addEventListener('blur', () => { autoFillAddressFromCEP(editZip.value, 'edit'); });
   profileZip?.addEventListener('input', () => { profileZip.value = formatCEP(profileZip.value); });
+  profileZip?.addEventListener('blur', () => { autoFillAddressFromCEP(profileZip.value, 'profile'); });
   openPasswordModalBtn?.addEventListener('click', openPasswordChangeModal);
   passwordChangeClose?.addEventListener('click', closePasswordChangeModal);
   passwordChangeCancel?.addEventListener('click', closePasswordChangeModal);
@@ -4593,7 +4594,34 @@ function formatCurrency(value){
   try{return n.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});}catch(_){return 'R$ '+(Math.round(n*100)/100).toFixed(2).replace('.',',');}
 }
 
-async function autoFillAddressFromCEP(cepValue){
+function setAddressFields(target, data = {}) {
+  const streetVal = data.logradouro || data.street || '';
+  const cityVal = data.localidade || data.city || '';
+  const stateVal = data.uf || data.state || '';
+  const compVal = data.complemento || data.complement || '';
+  const countryVal = data.country || 'BR';
+
+  const apply = (field, value) => {
+    if (field && value) field.value = value;
+  };
+
+  if (target === 'profile' || !target) {
+    apply(profileInputs.street, streetVal);
+    apply(profileInputs.city, cityVal);
+    apply(profileInputs.state, stateVal);
+    apply(profileInputs.complement, compVal);
+    if (profileInputs.country && !profileInputs.country.value) profileInputs.country.value = countryVal;
+  }
+  if (target === 'edit' || !target) {
+    apply(editStreet, streetVal);
+    apply(editCity, cityVal);
+    apply(editState, stateVal);
+    apply(editComplement, compVal);
+    if (editCountry && !editCountry.value) editCountry.value = countryVal;
+  }
+}
+
+async function autoFillAddressFromCEP(cepValue, target = 'edit'){
   const cepDigits = somenteDigitos(cepValue);
   if (cepDigits.length !== 8) return;
   try {
@@ -4601,11 +4629,7 @@ async function autoFillAddressFromCEP(cepValue){
     if (!res.ok) throw new Error('CEP não encontrado');
     const data = await res.json();
     if (data.erro) throw new Error('CEP não encontrado');
-    if (editStreet && data.logradouro) editStreet.value = data.logradouro;
-    if (editCity && data.localidade) editCity.value = data.localidade;
-    if (editState && data.uf) editState.value = data.uf;
-    if (editComplement && data.complemento) editComplement.value = data.complemento;
-    if (editCountry && !editCountry.value) editCountry.value = 'BR';
+    setAddressFields(target, data);
   } catch (err) {
     console.warn('Falha ao buscar CEP:', err.message || err);
   }
