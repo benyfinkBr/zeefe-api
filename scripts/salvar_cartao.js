@@ -107,14 +107,14 @@
     if (typeof window.pagarme !== 'undefined' || pagarmeScriptRequested) return;
     pagarmeScriptRequested = true;
     const script = document.createElement('script');
-    // CDN oficial estável
-    script.src = 'https://assets.pagar.me/pagarme-js/4.12/pagarme.min.js';
+    // Primário: jsDelivr (build browser)
+    script.src = 'https://cdn.jsdelivr.net/npm/pagarme@4.35.2/browser.js';
     script.async = true;
-    // Fallback: se a CDN oficial falhar, tenta jsDelivr
+    // Fallback: se jsDelivr falhar, tenta CDN oficial
     script.onerror = () => {
       const fallback = document.createElement('script');
       fallback.async = true;
-      fallback.src = 'https://cdn.jsdelivr.net/npm/pagarme@4.35.2/browser.js';
+      fallback.src = 'https://assets.pagar.me/pagarme-js/4.12/pagarme.min.js';
       document.head.appendChild(fallback);
     };
     document.head.appendChild(script);
