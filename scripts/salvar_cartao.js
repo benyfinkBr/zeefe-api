@@ -85,28 +85,77 @@
   // Permite abertura via script global (clientes.js)
   window.openPaymentModal = openAndLoad;
 
+  const expInput = document.getElementById('exp');
+  const normalizeExp = (value) => {
+    const digits = (value || '').replace(/\D/g, '').slice(0, 4);
+    if (digits.length <= 2) return digits;
+    return `${digits.slice(0, 2)}/${digits.slice(2, 4)}`;
+  };
+  const applyExpMask = () => {
+    if (!expInput) return;
+    expInput.value = normalizeExp(expInput.value);
+  };
+  if (expInput) {
+    expInput.maxLength = 5;
+    ['input', 'keyup', 'blur', 'change'].forEach(evt => {
+      expInput.addEventListener(evt, applyExpMask);
+    });
+  }
+
+  async function waitForPagarme(maxTries = 10, delay = 150) {
+    let tries = 0;
+    while (typeof window.pagarme === 'undefined' && tries < maxTries) {
+      await new Promise(r => setTimeout(r, delay));
+      tries++;
+    }
+    if (typeof window.pagarme === 'undefined') {
+      throw new Error('Biblioteca Pagar.me não carregou. Verifique a conexão.');
+    }
+    return window.pagarme;
+  }
+
   btnSave.addEventListener('click', async (e) => {
     e.preventDefault();
     const clientId = Number(document.getElementById('clientId')?.value || 0);
     const holderName = document.getElementById('holderName').value.trim();
     const cardNumber = document.getElementById('cardNumber').value.replace(/\s+/g, '');
-    const exp = document.getElementById('exp').value.replace(/\s+/g, '');
+    const expRaw = document.getElementById('exp').value;
+    const expDigits = (expRaw || '').replace(/\D/g, '').slice(0, 4);
+    const exp = expDigits.length === 4
+      ? `${expDigits.slice(0, 2)}/${expDigits.slice(2)}`
+      : normalizeExp(expRaw);
     const cvv = document.getElementById('cvv').value.trim();
+    if (expInput) expInput.value = exp; // garante que a máscara apareça
 
-    if (!clientId || !holderName || !cardNumber || !exp || !cvv) {
-      show('Preencha todos os campos.', true);
+    if (!clientId) {
+      show('Faça login para salvar o cartão.', true);
+      return;
+    }
+    if (!holderName || !cardNumber || !exp || !cvv) {
+      show('Preencha todos os campos do cartão.', true);
       return;
     }
     const expParts = exp.split('/');
-    if (expParts.length !== 2) {
+    if (expParts.length !== 2 || expParts[0].length !== 2 || expParts[1].length !== 2) {
       show('Validade inválida (use MM/AA).', true);
+      return;
+    }
+    const mm = Number(expParts[0]);
+    const yy = Number(expParts[1]);
+    if (Number.isNaN(mm) || mm < 1 || mm > 12) {
+      show('Mês inválido na validade.', true);
+      return;
+    }
+    if (cvv.length < 3 || cvv.length > 4) {
+      show('CVV inválido.', true);
       return;
     }
     const expiration_date = `${expParts[0]}${expParts[1]}`;
 
     try {
+      const pagarmeLib = await waitForPagarme();
       show('Gerando token do cartão...');
-      const client = await pagarme.client.connect({ api_key: getPublicKey() });
+      const client = await pagarmeLib.client.connect({ api_key: getPublicKey() });
       const card = await client.cards.create({
         holder_name: holderName,
         number: cardNumber,
