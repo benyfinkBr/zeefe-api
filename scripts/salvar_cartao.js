@@ -102,7 +102,18 @@
     });
   }
 
+  let pagarmeScriptRequested = false;
+  function ensurePagarmeScript() {
+    if (typeof window.pagarme !== 'undefined' || pagarmeScriptRequested) return;
+    pagarmeScriptRequested = true;
+    const script = document.createElement('script');
+    script.src = 'https://assets.pagar.me/pagarme-js/5.0/pagarme.min.js';
+    script.async = true;
+    document.head.appendChild(script);
+  }
+
   async function waitForPagarme(maxTries = 10, delay = 150) {
+    ensurePagarmeScript();
     let tries = 0;
     while (typeof window.pagarme === 'undefined' && tries < maxTries) {
       await new Promise(r => setTimeout(r, delay));
