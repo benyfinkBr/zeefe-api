@@ -237,6 +237,7 @@ const editZip = document.getElementById('editZip');
 const editCity = document.getElementById('editCity');
 const editState = document.getElementById('editState');
 const editCountry = document.getElementById('editCountry');
+const profileZip = document.getElementById('profileZipInput');
 
 const portalNavButtons = Array.from(document.querySelectorAll('.portal-nav [data-panel]'));
 const portalSections = {
@@ -506,6 +507,9 @@ async function initialize() {
   newPasswordConfirmInput?.addEventListener('input', updateModalPasswordIndicators);
   editPhone?.addEventListener('input', () => { const d = somenteDigitos(editPhone.value).slice(0,11); editPhone.value = formatPhone(d); });
   editWhatsapp?.addEventListener('input', () => { const d = somenteDigitos(editWhatsapp.value).slice(0,11); editWhatsapp.value = formatPhone(d); });
+  editZip?.addEventListener('input', () => { editZip.value = formatCEP(editZip.value); });
+  editZip?.addEventListener('blur', () => { autoFillAddressFromCEP(editZip.value); });
+  profileZip?.addEventListener('input', () => { profileZip.value = formatCEP(profileZip.value); });
   openPasswordModalBtn?.addEventListener('click', openPasswordChangeModal);
   passwordChangeClose?.addEventListener('click', closePasswordChangeModal);
   passwordChangeCancel?.addEventListener('click', closePasswordChangeModal);
@@ -4214,7 +4218,7 @@ function renderProfile() {
   if (profileInputs.street) profileInputs.street.value = addr.street || '';
   if (profileInputs.number) profileInputs.number.value = addr.number || '';
   if (profileInputs.complement) profileInputs.complement.value = addr.complement || '';
-  if (profileInputs.zip_code) profileInputs.zip_code.value = addr.zip_code || '';
+  if (profileInputs.zip_code) profileInputs.zip_code.value = formatCEP(addr.zip_code) || '';
   if (profileInputs.city) profileInputs.city.value = addr.city || '';
   if (profileInputs.state) profileInputs.state.value = addr.state || '';
   if (profileInputs.country) profileInputs.country.value = addr.country || 'BR';
@@ -4234,7 +4238,7 @@ function openProfileEditModal() {
   if (editStreet) editStreet.value = addr.street || '';
   if (editNumber) editNumber.value = addr.number || '';
   if (editComplement) editComplement.value = addr.complement || '';
-  if (editZip) editZip.value = addr.zip_code || '';
+  if (editZip) editZip.value = formatCEP(addr.zip_code) || '';
   if (editCity) editCity.value = addr.city || '';
   if (editState) editState.value = addr.state || '';
   if (editCountry) editCountry.value = addr.country || 'BR';
@@ -4278,7 +4282,7 @@ async function onProfileEditSubmit(event){
     street: editStreet?.value.trim() || '',
     number: editNumber?.value.trim() || '',
     complement: editComplement?.value.trim() || '',
-    zip_code: editZip?.value.trim() || '',
+    zip_code: somenteDigitos(editZip?.value),
     city: editCity?.value.trim() || '',
     state: editState?.value.trim() || '',
     country: editCountry?.value.trim() || 'BR'
@@ -4367,7 +4371,7 @@ async function onProfileSubmit(event) {
     street: profileInputs.street?.value.trim() || '',
     number: profileInputs.number?.value.trim() || '',
     complement: profileInputs.complement?.value.trim() || '',
-    zip_code: profileInputs.zip_code?.value.trim() || '',
+    zip_code: somenteDigitos(profileInputs.zip_code?.value),
     city: profileInputs.city?.value.trim() || '',
     state: profileInputs.state?.value.trim() || '',
     country: profileInputs.country?.value.trim() || 'BR'
@@ -4559,6 +4563,13 @@ function formatPhone(value) {
   return `(${ddd}) ${mid}${end ? '-' + end : ''}`;
 }
 
+function formatCEP(value) {
+  const digits = somenteDigitos(value).slice(0, 8);
+  if (!digits) return '';
+  if (digits.length <= 5) return digits;
+  return `${digits.slice(0, 5)}-${digits.slice(5)}`;
+}
+
 function toISODate(value) {
   if (!value) return '';
   const date = value instanceof Date ? new Date(value.getTime()) : new Date(value);
@@ -4580,6 +4591,24 @@ function formatCurrency(value){
   const n=Number(value);
   if(!isFinite(n))return '';
   try{return n.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});}catch(_){return 'R$ '+(Math.round(n*100)/100).toFixed(2).replace('.',',');}
+}
+
+async function autoFillAddressFromCEP(cepValue){
+  const cepDigits = somenteDigitos(cepValue);
+  if (cepDigits.length !== 8) return;
+  try {
+    const res = await fetch(`https://viacep.com.br/ws/${cepDigits}/json/`);
+    if (!res.ok) throw new Error('CEP não encontrado');
+    const data = await res.json();
+    if (data.erro) throw new Error('CEP não encontrado');
+    if (editStreet && data.logradouro) editStreet.value = data.logradouro;
+    if (editCity && data.localidade) editCity.value = data.localidade;
+    if (editState && data.uf) editState.value = data.uf;
+    if (editComplement && data.complemento) editComplement.value = data.complemento;
+    if (editCountry && !editCountry.value) editCountry.value = 'BR';
+  } catch (err) {
+    console.warn('Falha ao buscar CEP:', err.message || err);
+  }
 }
 
 
