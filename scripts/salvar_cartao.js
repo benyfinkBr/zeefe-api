@@ -161,14 +161,18 @@
     show(message, true);
   };
 
-  const initTokenize = () => {
-    if (window.PagarMeCheckout && typeof window.PagarMeCheckout.init === 'function') {
-      checkoutInstance = window.PagarMeCheckout.init(onTokenSuccess, onTokenFail);
+  const buildCheckout = () => {
+    if (window.PagarMeCheckout && window.PagarMeCheckout.Checkout) {
+      checkoutInstance = new window.PagarMeCheckout.Checkout({
+        encryption_key: getPublicKey(),
+        success: onTokenSuccess,
+        error: onTokenFail
+      });
     }
   };
 
-  if (window.PagarMeCheckout) {
-    initTokenize();
+  if (window.PagarMeCheckout && window.PagarMeCheckout.Checkout) {
+    buildCheckout();
   }
 
   btnSave.addEventListener('click', async (e) => {
@@ -212,7 +216,7 @@
     try {
       show('Preparando tokenizador...');
       await ensureTokenizeScript();
-      initTokenize();
+      buildCheckout();
       if (!checkoutInstance || typeof checkoutInstance.createToken !== 'function') {
         show('Tokenizador não está disponível.', true);
         return;
