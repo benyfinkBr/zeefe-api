@@ -1113,7 +1113,8 @@
   </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="" defer></script>
-  <script src="https://assets.pagar.me/pagarme-js/5.0/pagarme.min.js" defer></script>
+  <!-- Tenta CDN oficial; se falhar, scripts/salvar_cartao.js tem fallback para jsDelivr -->
+  <script src="https://assets.pagar.me/pagarme-js/4.12/pagarme.min.js" defer></script>
   <script src="scripts/salvar_cartao.js" defer></script>
   <script src="scripts/clientes.js" defer></script>
 </body>
