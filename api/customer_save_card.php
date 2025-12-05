@@ -24,6 +24,18 @@ function build_pagarme_customer_from_client(array $client): array {
       ]
     ];
   }
+  if (!empty($client['address'])) {
+    $addr = $client['address'];
+    $payload['address'] = [
+      'street' => $addr['street'] ?? '',
+      'number' => $addr['number'] ?? '',
+      'zip_code' => preg_replace('/\D/', '', $addr['zip_code'] ?? ''),
+      'neighborhood' => $addr['neighborhood'] ?? ($addr['city'] ?? ''),
+      'city' => $addr['city'] ?? '',
+      'state' => $addr['state'] ?? '',
+      'country' => $addr['country'] ?? 'BR'
+    ];
+  }
   return $payload;
 }
 
@@ -46,6 +58,10 @@ try {
   if (!$client) {
     throw new RuntimeException('Cliente não encontrado.');
   }
+  // endereço do cliente (mais recente)
+  $stmtAddr = $pdo->prepare('SELECT street, number, complement, zip_code, city, state, country FROM client_addresses WHERE client_id = ? ORDER BY updated_at DESC, id DESC LIMIT 1');
+  $stmtAddr->execute([$clientId]);
+  $client['address'] = $stmtAddr->fetch(PDO::FETCH_ASSOC) ?: [];
 
   // Busca customer Pagar.me existente em algum cartão
   $stmtCard = $pdo->prepare('SELECT pagarme_customer_id FROM customer_cards WHERE client_id = ? AND pagarme_customer_id IS NOT NULL LIMIT 1');
@@ -66,9 +82,21 @@ try {
   }
 
   // Cria cartão via token
-  $card = pagarme_request('POST', '/customers/' . $pagarmeCustomerId . '/cards', [
-    'token' => $cardToken
-  ]);
+  $payloadCard = ['token' => $cardToken];
+  if (!empty($client['address'])) {
+    $addr = $client['address'];
+    $payloadCard['billing_address'] = [
+      'street' => $addr['street'] ?? '',
+      'number' => $addr['number'] ?? '',
+      'zip_code' => preg_replace('/\D/', '', $addr['zip_code'] ?? ''),
+      'neighborhood' => $addr['neighborhood'] ?? ($addr['city'] ?? ''),
+      'city' => $addr['city'] ?? '',
+      'state' => $addr['state'] ?? '',
+      'country' => $addr['country'] ?? 'BR',
+      'complement' => $addr['complement'] ?? ''
+    ];
+  }
+  $card = pagarme_request('POST', '/customers/' . $pagarmeCustomerId . '/cards', $payloadCard);
 
   $pagarmeCardId = $card['id'] ?? null;
   if (!$pagarmeCardId) {

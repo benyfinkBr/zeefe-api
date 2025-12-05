@@ -24,6 +24,18 @@ function build_customer_payload_from_client(array $client): array {
       ]
     ];
   }
+  if (!empty($client['address'])) {
+    $addr = $client['address'];
+    $payload['address'] = [
+      'street' => $addr['street'] ?? '',
+      'number' => $addr['number'] ?? '',
+      'zip_code' => preg_replace('/\D/', '', $addr['zip_code'] ?? ''),
+      'neighborhood' => $addr['neighborhood'] ?? ($addr['city'] ?? ''),
+      'city' => $addr['city'] ?? '',
+      'state' => $addr['state'] ?? '',
+      'country' => $addr['country'] ?? 'BR'
+    ];
+  }
   return $payload;
 }
 
@@ -50,6 +62,10 @@ try {
   if (!$client) {
     throw new RuntimeException('Cliente não encontrado.');
   }
+  // endereço do cliente
+  $stmtAddr = $pdo->prepare('SELECT street, number, complement, zip_code, city, state, country FROM client_addresses WHERE client_id = ? ORDER BY updated_at DESC, id DESC LIMIT 1');
+  $stmtAddr->execute([$clientId]);
+  $client['address'] = $stmtAddr->fetch(PDO::FETCH_ASSOC) ?: [];
 
   // Carrega cartão salvo
   $stmtCard = $pdo->prepare('SELECT * FROM customer_cards WHERE id = ? AND client_id = ? AND status = \"active\" LIMIT 1');
