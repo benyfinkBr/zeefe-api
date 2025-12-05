@@ -15,7 +15,7 @@
     statusEl.style.color = isError ? '#c00' : '#0a6';
   };
 
-  const getPublicKey = () => 'pk_test_RNoa2omHrUnZlGzK'; // somente tokenização
+  const getPublicKey = () => 'pk_test_RNoa2omI'; // somente tokenização
 
   const open = () => {
     if (!modal) return;
