@@ -86,24 +86,6 @@
   // Permite abertura via script global (clientes.js)
   window.openPaymentModal = openAndLoad;
 
-  // Máscara de validade (MM/AA)
-  const expInput = document.getElementById('exp');
-  const normalizeExp = (value) => {
-    const digits = (value || '').replace(/\D/g, '').slice(0, 4);
-    if (digits.length <= 2) return digits;
-    return `${digits.slice(0, 2)}/${digits.slice(2, 4)}`;
-  };
-  const applyExpMask = () => {
-    if (!expInput) return;
-    expInput.value = normalizeExp(expInput.value);
-  };
-  if (expInput) {
-    expInput.maxLength = 5;
-    ['input', 'keyup', 'blur', 'change'].forEach(evt => {
-      expInput.addEventListener(evt, applyExpMask);
-    });
-  }
-
   // Integração com tokenizecard.js (nova API)
   if (form) {
     form.addEventListener('submit', async (event) => {
@@ -118,28 +100,27 @@
       // campos do cartão
       const holderName = document.getElementById('holderName')?.value?.trim();
       const cardNumber = document.getElementById('cardNumber')?.value?.replace(/\s+/g, '');
-      const exp = normalizeExp(document.getElementById('exp')?.value || '');
+      const expMonth = document.getElementById('expMonth')?.value?.replace(/\D/g, '').slice(0, 2);
+      const expYear = document.getElementById('expYear')?.value?.replace(/\D/g, '').slice(0, 2);
       const cvv = document.getElementById('cvv')?.value?.trim();
 
-      if (!holderName || !cardNumber || !exp || !cvv) {
+      if (!holderName || !cardNumber || !expMonth || !expYear || !cvv) {
         show('Preencha todos os campos do cartão.', true);
         return;
       }
-      const expParts = exp.split('/');
-      if (expParts.length !== 2 || expParts[0].length !== 2 || expParts[1].length !== 2) {
-        show('Validade inválida (use MM/AA).', true);
-        return;
-      }
-      const mm = Number(expParts[0]);
+      const mm = Number(expMonth);
       if (Number.isNaN(mm) || mm < 1 || mm > 12) {
         show('Mês inválido na validade.', true);
+        return;
+      }
+      if (expYear.length !== 2) {
+        show('Ano inválido na validade.', true);
         return;
       }
       if (cvv.length < 3 || cvv.length > 4) {
         show('CVV inválido.', true);
         return;
       }
-      if (expInput) expInput.value = exp; // mantém a máscara
 
       // o tokenizecard.js coloca o token em um input hidden chamado pagarmetoken
       const tokenInput = form.querySelector('input[name="pagarmetoken"]');
