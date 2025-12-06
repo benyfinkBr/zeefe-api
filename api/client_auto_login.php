@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/apiconfig.php';
+require_once __DIR__ . '/lib/pagarme_customers.php';
 
 $data = json_decode(file_get_contents('php://input'), true);
 $token = trim($data['token'] ?? '');
@@ -13,7 +14,7 @@ try {
   $hash = hash('sha256', $token);
   $now = (new DateTimeImmutable())->format('Y-m-d H:i:s');
 
-  $sql = 'SELECT t.client_id, t.expires_at, c.id, c.name, c.email, c.email_verified_at, c.login, c.cpf, c.password_hash, c.company_id, c.status, c.phone, c.whatsapp
+  $sql = 'SELECT t.client_id, t.expires_at, c.id, c.name, c.email, c.email_verified_at, c.login, c.cpf, c.password_hash, c.company_id, c.status, c.phone, c.whatsapp, c.pagarme_customer_id
           FROM client_remember_tokens t
           JOIN clients c ON c.id = t.client_id
           WHERE t.token_hash = :hash
@@ -61,6 +62,15 @@ try {
     }
   }
 
+  try {
+    $pagarmeCustomer = ensurePagarmeCustomer($pdo, (int)$row['id']);
+    $row['pagarme_customer_id'] = $pagarmeCustomer['id'] ?? ($row['pagarme_customer_id'] ?? null);
+  } catch (Throwable $e) {
+    http_response_code(400);
+    echo json_encode(['success' => false, 'error' => 'Falha ao criar/obter customer no Pagar.me: ' . $e->getMessage()]);
+    exit;
+  }
+
   $_SESSION['client_id'] = $row['id'];
   $_SESSION['client_name'] = $row['name'];
 
@@ -76,7 +86,8 @@ try {
       'company_name' => $companyName,
       'company_master' => $isCompanyMaster,
       'phone' => $row['phone'] ?? null,
-      'whatsapp' => $row['whatsapp'] ?? null
+      'whatsapp' => $row['whatsapp'] ?? null,
+      'pagarme_customer_id' => $row['pagarme_customer_id'] ?? null
     ]
   ]);
 } catch (Throwable $e) {

@@ -1,5 +1,6 @@
 <?php
 require 'apiconfig.php';
+require_once __DIR__ . '/lib/pagarme_customers.php';
 
 $data = json_decode(file_get_contents('php://input'), true);
 $login = trim($data['login'] ?? '');
@@ -12,7 +13,7 @@ if ($login === '' || $password === '') {
 }
 
 try {
-  $stmt = $pdo->prepare('SELECT id, name, email, email_verified_at, login, cpf, password_hash, company_id, status, phone, whatsapp FROM clients WHERE login = :login OR email = :login OR cpf = :cpf LIMIT 1');
+  $stmt = $pdo->prepare('SELECT id, name, email, email_verified_at, login, cpf, password_hash, company_id, status, phone, whatsapp, pagarme_customer_id FROM clients WHERE login = :login OR email = :login OR cpf = :cpf LIMIT 1');
   $stmt->execute([':login' => $login, ':cpf' => preg_replace('/\D/', '', $login)]);
   $client = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -67,6 +68,15 @@ try {
   }
 
   $rememberPayload = null;
+  // Garante customer espelhado no Pagar.me
+  try {
+    $pagarmeCustomer = ensurePagarmeCustomer($pdo, (int)$client['id']);
+    $client['pagarme_customer_id'] = $pagarmeCustomer['id'] ?? ($client['pagarme_customer_id'] ?? null);
+  } catch (Throwable $e) {
+    http_response_code(400);
+    echo json_encode(['success' => false, 'error' => 'Falha ao criar/obter customer no Pagar.me: ' . $e->getMessage()]);
+    exit;
+  }
   if ($remember) {
     try {
       $rawToken = bin2hex(random_bytes(32));
@@ -101,7 +111,8 @@ try {
       'company_name' => $companyName,
       'company_master' => $isCompanyMaster,
       'phone' => $client['phone'] ?? null,
-      'whatsapp' => $client['whatsapp'] ?? null
+      'whatsapp' => $client['whatsapp'] ?? null,
+      'pagarme_customer_id' => $client['pagarme_customer_id'] ?? null
     ],
     'remember' => $rememberPayload
   ]);
