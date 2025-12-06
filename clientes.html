@@ -1079,42 +1079,47 @@
           <input type="hidden" id="clientId" />
           <div id="existingCards" class="cards-list"></div>
           <hr />
-          <h3 style="margin-top:12px;">Adicionar novo cartão</h3>
-          <div class="form-grid-mini">
-            <div>
-              <label for="holderName">Nome impresso</label>
-              <input id="holderName" type="text" autocomplete="cc-name" />
+          <form id="paymentForm" data-pagarmecheckout-form>
+            <h3 style="margin-top:12px;">Adicionar novo cartão</h3>
+            <div class="form-grid-mini">
+              <div>
+                <label for="holderName">Nome impresso</label>
+                <input id="holderName" data-pagarmecheckout-element="holder_name-0" autocomplete="cc-name" />
+              </div>
+              <div>
+                <label for="cardNumber">Número do cartão</label>
+                <input id="cardNumber" data-pagarmecheckout-element="number-0" inputmode="numeric" autocomplete="cc-number" />
+              </div>
             </div>
-            <div>
-              <label for="cardNumber">Número do cartão</label>
-              <input id="cardNumber" type="text" inputmode="numeric" autocomplete="cc-number" />
+            <div class="form-grid-mini">
+              <div>
+                <label for="expMonth">Validade (MM/AA)</label>
+                <div style="display:flex; gap:8px;">
+                  <input id="expMonth" maxlength="2" placeholder="MM" data-pagarmecheckout-element="exp_month-0" />
+                  <input id="expYear" maxlength="2" placeholder="AA" data-pagarmecheckout-element="exp_year-0" />
+                </div>
+              </div>
+              <div>
+                <label for="cvv">CVV</label>
+                <input id="cvv" maxlength="4" data-pagarmecheckout-element="cvv-0" autocomplete="cc-csc" />
+              </div>
             </div>
-          </div>
-          <div class="form-grid-mini">
-            <div>
-              <label for="exp">Validade (MM/AA)</label>
-              <input id="exp" type="text" placeholder="MM/AA" inputmode="numeric" autocomplete="cc-exp" />
+            <div class="form-row" style="margin-top:12px; display:flex; justify-content:flex-end; gap:12px;">
+              <button class="btn btn-secondary" type="button" id="savePaymentClose">Fechar</button>
+              <button class="btn btn-primary" type="submit" id="btnSave">Salvar cartão</button>
             </div>
-            <div>
-              <label for="cvv">CVV</label>
-              <input id="cvv" type="text" inputmode="numeric" autocomplete="cc-csc" />
-            </div>
-          </div>
-          <div class="form-row" style="margin-top:12px; display:flex; justify-content:flex-end; gap:12px;">
-            <button class="btn btn-secondary" type="button" id="savePaymentClose">Fechar</button>
-            <button class="btn btn-primary" type="button" id="btnSave">Salvar cartão</button>
-          </div>
-          <div id="status" class="rooms-message" style="margin-top:8px;"></div>
-          <div id="cardsList" class="cards-list" style="margin-top:12px;"></div>
-          <div id="addressInfo" class="rooms-message" style="margin-top:12px;"></div>
+            <div id="status" class="rooms-message" style="margin-top:8px;"></div>
+            <div id="cardsList" class="cards-list" style="margin-top:12px;"></div>
+            <div id="addressInfo" class="rooms-message" style="margin-top:12px;"></div>
+          </form>
         </div>
       </div>
     </div>
   </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="" defer></script>
-  <!-- SDK Pagar.me v3 (documentado) carregado antes do JS do modal -->
-  <script src="https://assets.pagar.me/pagarme-js/3.0/pagarme.min.js" defer></script>
+  <script src="https://checkout.pagar.me/v1/tokenizecard.js"
+          data-pagarmecheckout-app-id="pk_test_RNoa2omHrUnZlGzK"></script>
   <script src="scripts/salvar_cartao.js" defer></script>
   <script src="scripts/clientes.js" defer></script>
 </body>
