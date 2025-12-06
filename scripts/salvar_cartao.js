@@ -61,7 +61,7 @@
     el.innerHTML = `${addr.street}, ${addr.number} - ${addr.city}/${addr.state}`;
   }
 
-  // TOKENIZAÇÃO OFICIAL DO PAGAR.ME
+  // TOKENIZAÇÃO OFICIAL Pagar.me
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     show("Gerando token...");

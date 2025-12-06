@@ -9,26 +9,18 @@ try {
     throw new RuntimeException('Informe client_id.');
   }
 
-  // Cartões salvos
-  $stmt = $pdo->prepare('SELECT id, pagarme_card_id, brand, last4, exp_month, exp_year, holder_name, status, created_at FROM customer_cards WHERE client_id = ? AND status = "active" ORDER BY created_at DESC');
-  $stmt->execute([$clientId]);
-  $cards = $stmt->fetchAll(PDO::FETCH_ASSOC);
+  $stmtCards = $pdo->prepare('SELECT brand, last4, exp_month, exp_year FROM customer_cards WHERE client_id = ? ORDER BY id DESC');
+  $stmtCards->execute([$clientId]);
+  $cards = $stmtCards->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
-  // Endereço (pega o mais recente)
-  $stmtAddr = $pdo->prepare('SELECT id, street, number, complement, zip_code, city, state, country FROM client_addresses WHERE client_id = ? ORDER BY updated_at DESC LIMIT 1');
+  $stmtAddr = $pdo->prepare('SELECT street, number, complement, zip_code, city, state, country FROM client_addresses WHERE client_id = ? ORDER BY id DESC LIMIT 1');
   $stmtAddr->execute([$clientId]);
-  $address = $stmtAddr->fetch(PDO::FETCH_ASSOC) ?: null;
-
-  // Perfil básico
-  $stmtCli = $pdo->prepare('SELECT id, name, email, cpf, phone, whatsapp FROM clients WHERE id = ? LIMIT 1');
-  $stmtCli->execute([$clientId]);
-  $client = $stmtCli->fetch(PDO::FETCH_ASSOC) ?: null;
+  $address = $stmtAddr->fetch(PDO::FETCH_ASSOC) ?: new stdClass();
 
   echo json_encode([
     'success' => true,
     'cards' => $cards,
-    'address' => $address,
-    'client' => $client
+    'address' => $address
   ]);
 } catch (Throwable $e) {
   http_response_code(400);
