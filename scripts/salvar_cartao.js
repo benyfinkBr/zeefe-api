@@ -1,9 +1,16 @@
 (() => {
-  if (typeof PagarMeCheckout !== "undefined") {
-    PagarMeCheckout.setDebug(true);
-    console.log("PagarMe DEBUG ativado");
+  console.log("PagarmeCheckout carregado?", window.PagarmeCheckout);
+  if (typeof PagarmeCheckout !== "undefined") {
+    if (typeof PagarmeCheckout.setDebug === "function") {
+      PagarmeCheckout.setDebug(true);
+      console.log("Pagarme DEBUG ativado");
+    }
+    PagarmeCheckout.init?.(
+      () => console.log("PagarmeCheckout init ok"),
+      (err) => console.error("Erro ao inicializar PagarmeCheckout", err)
+    );
   } else {
-    console.error("PagarMeCheckout NÃO carregou!");
+    console.error("PagarmeCheckout NÃO carregou!");
   }
 
   const modal = document.getElementById('paymentModal');
@@ -41,8 +48,8 @@
       show("Inputs devem estar dentro do form.", true);
       return false;
     }
-    if (typeof PagarMeCheckout !== "object") {
-      show("PagarMeCheckout indisponível.", true);
+    if (typeof PagarmeCheckout !== "object") {
+      show("PagarmeCheckout indisponível.", true);
       return false;
     }
     if (location.protocol === "file:") {
@@ -85,19 +92,17 @@
     el.innerHTML = `${a.street}, ${a.number} - ${a.city}/${a.state}`;
   }
 
-  form.addEventListener("submit", async (e) => {
-    e.preventDefault();
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
     show("Gerando token...");
 
     if (!validateSetup()) return;
 
-    // Verificar se tokenizecard.js carregou
-    if (typeof PagarMeCheckout === "undefined") {
+    if (typeof PagarmeCheckout === "undefined") {
       show("tokenizecard.js não carregou", true);
       return;
     }
 
-    // Verificar se os campos estão acessíveis
     const required = [
       "#holderName",
       "#cardNumber",
@@ -119,21 +124,29 @@
       }
     }
 
-    try {
-      const result = await PagarMeCheckout.tokenize(form);
-
-      console.log("RESULTADO TOKEN:", result);
-
-      if (!result || !result.pagarmetoken){
-        show("Token não retornado pelo Pagar.me", true);
+    let pagarmetoken = event.detail?.token || event.detail?.pagarmetoken;
+    if (!pagarmetoken && typeof PagarmeCheckout.tokenize === "function") {
+      try {
+        const result = await PagarmeCheckout.tokenize(form);
+        console.log("RESULTADO TOKEN:", result);
+        pagarmetoken = result?.pagarmetoken || result?.token || result?.id;
+      } catch (err) {
+        console.error("ERRO TOKENIZAÇÃO:", err);
+        show("Erro ao tokenizar o cartão", true);
         return;
       }
+    }
 
-      const pagarmetoken = result.pagarmetoken;
-      const clientId = Number(document.getElementById("clientId").value);
+    if (typeof pagarmetoken === "undefined") {
+      show("Token não retornado pelo Pagar.me", true);
+      return;
+    }
 
-      show("Salvando cartão...");
+    const clientId = Number(document.getElementById("clientId").value);
 
+    show("Salvando cartão...");
+
+    try {
       const resp = await fetch("api/customer_save_card.php", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -152,8 +165,8 @@
       setTimeout(close, 1000);
 
     } catch(err){
-      console.error("ERRO TOKENIZAÇÃO:", err);
-      show("Erro ao tokenizar o cartão", true);
+      console.error("ERRO AO SALVAR CARTÃO:", err);
+      show("Erro ao salvar cartão.", true);
     }
   });
 
