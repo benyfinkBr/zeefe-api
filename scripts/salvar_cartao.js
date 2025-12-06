@@ -1,6 +1,6 @@
 (() => {
+  // Elementos de UI
   const statusEl = document.getElementById('status');
-  const btnSave = document.getElementById('btnSave');
   const btnOpenModal = document.getElementById('btnOpenModal');
   const modal = document.getElementById('paymentModal');
   const closeModal = document.getElementById('closeModal');
@@ -8,6 +8,7 @@
   const cardsList = document.getElementById('cardsList');
   const existingCardsEl = document.getElementById('existingCards');
   const addressInfoEl = document.getElementById('addressInfo');
+  const form = document.querySelector('[data-pagarmecheckout-form]');
 
   const show = (msg, isError = false) => {
     if (!statusEl) return;
@@ -15,8 +16,7 @@
     statusEl.style.color = isError ? '#c00' : '#0a6';
   };
 
-  const getPublicKey = () => 'pk_test_RNoa2omHrUnZlGzK'; // apenas para tokenizecard.js
-
+  // Abertura/fechamento do modal
   const open = () => {
     if (!modal) return;
     modal.classList.add('show');
@@ -31,6 +31,7 @@
   savePaymentClose?.addEventListener('click', close);
   modal?.addEventListener('click', (e) => { if (e.target === modal) close(); });
 
+  // Renderização de cartões e endereço
   const renderCards = (cards = []) => {
     if (!cards.length) {
       existingCardsEl.innerHTML = '<p>Nenhum cartão salvo.</p>';
@@ -85,6 +86,7 @@
   // Permite abertura via script global (clientes.js)
   window.openPaymentModal = openAndLoad;
 
+  // Máscara de validade (MM/AA)
   const expInput = document.getElementById('exp');
   const normalizeExp = (value) => {
     const digits = (value || '').replace(/\D/g, '').slice(0, 4);
@@ -102,140 +104,68 @@
     });
   }
 
-  // Tokenizecard.js (checkout v1) integration
-  let checkoutInstance = null;
-  let tokenizeRequested = false;
+  // Integração com tokenizecard.js (nova API)
+  if (form) {
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
 
-  const ensureTokenizeScript = () => new Promise((resolve, reject) => {
-    if (window.PagarMeCheckout) {
-      return resolve();
-    }
-    if (tokenizeRequested) {
-      // aguarda um pouco se já solicitado
-      let tries = 0;
-      const timer = setInterval(() => {
-        if (window.PagarMeCheckout || tries > 20) {
-          clearInterval(timer);
-          return window.PagarMeCheckout ? resolve() : reject(new Error('Tokenizador não está disponível.'));
-        }
-        tries++;
-      }, 150);
-      return;
-    }
-    tokenizeRequested = true;
-    const script = document.createElement('script');
-    script.src = 'https://checkout.pagar.me/v1/tokenizecard.js';
-    script.async = true;
-    script.setAttribute('data-pagarmecheckout-app-id', getPublicKey());
-    script.onload = () => window.PagarMeCheckout ? resolve() : reject(new Error('Tokenizador não está disponível.'));
-    script.onerror = () => reject(new Error('Tokenizador não está disponível.'));
-    document.head.appendChild(script);
-  });
-  const onTokenSuccess = async (data) => {
-    try {
       const clientId = Number(document.getElementById('clientId')?.value || 0);
-      if (!clientId) throw new Error('Faça login para salvar o cartão.');
-      const token = data?.pagarmetoken;
-      if (!token) throw new Error('Token não retornado pelo Pagar.me.');
-
-      show('Enviando cartão para salvar...');
-      const resp = await fetch('api/customer_save_card.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          client_id: clientId,
-          pagarmetoken: token
-        })
-      });
-      const json = await resp.json();
-      if (!json.success) throw new Error(json.error || 'Erro ao salvar cartão.');
-      show(`Cartão salvo (${json.brand ?? ''} ****${json.last4 ?? ''}).`);
-      await loadCards();
-    } catch (err) {
-      show(err.message || 'Erro ao salvar cartão.', true);
-    }
-  };
-
-  const onTokenFail = (error) => {
-    const message = error?.message || error?.errors?.join?.(', ') || 'Falha ao gerar token do cartão.';
-    show(message, true);
-  };
-
-  const buildCheckout = () => {
-    if (window.PagarMeCheckout?.Checkout) {
-      checkoutInstance = new window.PagarMeCheckout.Checkout({
-        encryption_key: getPublicKey(),
-        success: onTokenSuccess,
-        error: onTokenFail
-      });
-    } else if (typeof window.PagarMeCheckout?.init === 'function') {
-      checkoutInstance = window.PagarMeCheckout.init(onTokenSuccess, onTokenFail);
-    }
-  };
-
-  if (window.PagarMeCheckout && window.PagarMeCheckout.Checkout) {
-    buildCheckout();
-  }
-
-  btnSave.addEventListener('click', async (e) => {
-    e.preventDefault();
-    const clientId = Number(document.getElementById('clientId')?.value || 0);
-    const holderName = document.getElementById('holderName').value.trim();
-    const cardNumber = document.getElementById('cardNumber').value.replace(/\s+/g, '');
-    const expRaw = document.getElementById('exp').value;
-    const expDigits = (expRaw || '').replace(/\D/g, '').slice(0, 4);
-    const exp = expDigits.length === 4
-      ? `${expDigits.slice(0, 2)}/${expDigits.slice(2)}`
-      : normalizeExp(expRaw);
-    const cvv = document.getElementById('cvv').value.trim();
-    if (expInput) expInput.value = exp; // garante que a máscara apareça
-
-    if (!clientId) {
-      show('Faça login para salvar o cartão.', true);
-      return;
-    }
-    if (!holderName || !cardNumber || !exp || !cvv) {
-      show('Preencha todos os campos do cartão.', true);
-      return;
-    }
-    const expParts = exp.split('/');
-    if (expParts.length !== 2 || expParts[0].length !== 2 || expParts[1].length !== 2) {
-      show('Validade inválida (use MM/AA).', true);
-      return;
-    }
-    const mm = Number(expParts[0]);
-    const yy = Number(expParts[1]);
-    if (Number.isNaN(mm) || mm < 1 || mm > 12) {
-      show('Mês inválido na validade.', true);
-      return;
-    }
-    if (cvv.length < 3 || cvv.length > 4) {
-      show('CVV inválido.', true);
-      return;
-    }
-
-    // Tokenização via tokenizecard.js (checkout v1)
-    try {
-      show('Preparando tokenizador...');
-      await ensureTokenizeScript();
-      buildCheckout();
-      if (!checkoutInstance || typeof checkoutInstance.createToken !== 'function') {
-        show('Tokenizador não está disponível.', true);
+      if (!clientId) {
+        show('Faça login para salvar o cartão.', true);
         return;
       }
 
-      show('Gerando token do cartão...');
-      const cardData = {
-        card_holder_name: holderName,
-        card_number: cardNumber,
-        card_expiration_date: `${expParts[0]}${expParts[1]}`,
-        card_cvv: cvv,
-        app_id: getPublicKey()
-      };
+      // campos do cartão
+      const holderName = document.getElementById('holderName')?.value?.trim();
+      const cardNumber = document.getElementById('cardNumber')?.value?.replace(/\s+/g, '');
+      const exp = normalizeExp(document.getElementById('exp')?.value || '');
+      const cvv = document.getElementById('cvv')?.value?.trim();
 
-      checkoutInstance.createToken(cardData);
-    } catch (err) {
-      onTokenFail(err);
-    }
-  });
+      if (!holderName || !cardNumber || !exp || !cvv) {
+        show('Preencha todos os campos do cartão.', true);
+        return;
+      }
+      const expParts = exp.split('/');
+      if (expParts.length !== 2 || expParts[0].length !== 2 || expParts[1].length !== 2) {
+        show('Validade inválida (use MM/AA).', true);
+        return;
+      }
+      const mm = Number(expParts[0]);
+      if (Number.isNaN(mm) || mm < 1 || mm > 12) {
+        show('Mês inválido na validade.', true);
+        return;
+      }
+      if (cvv.length < 3 || cvv.length > 4) {
+        show('CVV inválido.', true);
+        return;
+      }
+      if (expInput) expInput.value = exp; // mantém a máscara
+
+      // o tokenizecard.js coloca o token em um input hidden chamado pagarmetoken
+      const tokenInput = form.querySelector('input[name="pagarmetoken"]');
+      const pagarmeToken = tokenInput?.value;
+      if (!pagarmeToken) {
+        show('Token não retornado pelo Pagar.me. Verifique o carregamento do tokenizecard.js.', true);
+        return;
+      }
+
+      show('Enviando cartão para salvar...');
+      try {
+        const resp = await fetch('api/customer_save_card.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            client_id: clientId,
+            pagarmetoken: pagarmeToken
+          })
+        });
+        const json = await resp.json();
+        if (!json.success) throw new Error(json.error || 'Erro ao salvar cartão.');
+        show(`Cartão salvo (${json.brand ?? ''} ****${json.last4 ?? ''}).`);
+        await loadCards();
+      } catch (err) {
+        show(err.message || 'Erro ao salvar cartão.', true);
+      }
+    });
+  }
 })();
