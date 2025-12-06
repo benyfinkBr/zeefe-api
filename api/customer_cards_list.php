@@ -1,26 +1,38 @@
 <?php
 require 'apiconfig.php';
+require_once __DIR__ . '/lib/pagarme_customers.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
 try {
+  if (!isset($_SESSION['client_id'])) {
+    throw new RuntimeException('Sessão não autenticada.');
+  }
+
   $clientId = isset($_GET['client_id']) ? (int) $_GET['client_id'] : 0;
+  if ($clientId <= 0 && isset($_SESSION['client_id'])) {
+    $clientId = (int) $_SESSION['client_id'];
+  }
   if ($clientId <= 0) {
     throw new RuntimeException('Informe client_id.');
   }
 
-  $stmtCards = $pdo->prepare('SELECT brand, last4, exp_month, exp_year FROM customer_cards WHERE client_id = ? ORDER BY id DESC');
-  $stmtCards->execute([$clientId]);
-  $cards = $stmtCards->fetchAll(PDO::FETCH_ASSOC) ?: [];
+  if (session_status() === PHP_SESSION_ACTIVE && isset($_SESSION['client_id']) && (int)$_SESSION['client_id'] !== $clientId) {
+    throw new RuntimeException('Sessão inválida para este cliente.');
+  }
 
-  $stmtAddr = $pdo->prepare('SELECT street, number, complement, zip_code, city, state, country FROM client_addresses WHERE client_id = ? ORDER BY id DESC LIMIT 1');
-  $stmtAddr->execute([$clientId]);
-  $address = $stmtAddr->fetch(PDO::FETCH_ASSOC) ?: new stdClass();
+  [$client, $address] = fetchClientWithAddress($pdo, $clientId);
+  if (!$client) {
+    throw new RuntimeException('Cliente não encontrado.');
+  }
+
+  $list = listCardsForClient($pdo, $clientId);
 
   echo json_encode([
     'success' => true,
-    'cards' => $cards,
-    'address' => $address
+    'cards' => $list['cards'],
+    'address' => $address ?: new stdClass(),
+    'customer_id' => $list['customer_id']
   ]);
 } catch (Throwable $e) {
   http_response_code(400);

@@ -1,5 +1,6 @@
 <?php
 require 'apiconfig.php';
+require_once __DIR__ . '/lib/pagarme_customers.php';
 header('Content-Type: application/json');
 
 $data = json_decode(file_get_contents('php://input'), true);
@@ -8,10 +9,25 @@ $name = trim($data['name'] ?? '');
 $login = trim($data['login'] ?? '');
 $phone = preg_replace('/\D/', '', $data['phone'] ?? '');
 $whatsapp = preg_replace('/\D/', '', $data['whatsapp'] ?? '');
+$address = [
+  'street' => trim($data['street'] ?? ''),
+  'number' => trim($data['number'] ?? ''),
+  'complement' => trim($data['complement'] ?? ''),
+  'zip_code' => preg_replace('/\D/', '', $data['zip_code'] ?? ''),
+  'city' => trim($data['city'] ?? ''),
+  'state' => trim($data['state'] ?? ''),
+  'country' => trim($data['country'] ?? 'BR')
+];
 
 if ($id <= 0 || $name === '' || $login === '') {
   http_response_code(400);
   echo json_encode(['success' => false, 'error' => 'Dados inválidos.']);
+  exit;
+}
+
+if (session_status() === PHP_SESSION_ACTIVE && isset($_SESSION['client_id']) && (int)$_SESSION['client_id'] !== $id) {
+  http_response_code(403);
+  echo json_encode(['success' => false, 'error' => 'Sessão inválida.']);
   exit;
 }
 
@@ -42,6 +58,13 @@ try {
     exit;
   }
 
+  $addressSaved = upsertClientAddress($pdo, $id, $address);
+  try {
+    syncPagarmeAddress($pdo, $id, $addressSaved);
+  } catch (Throwable $e) {
+    error_log('[Pagarme] Falha ao sincronizar endereço: ' . $e->getMessage());
+  }
+
   echo json_encode([
     'success' => true,
     'message' => 'Dados atualizados com sucesso.',
@@ -53,7 +76,8 @@ try {
       'cpf' => $client['cpf'],
       'phone' => $client['phone'],
       'whatsapp' => $client['whatsapp'],
-      'company_id' => $client['company_id']
+      'company_id' => $client['company_id'],
+      'address' => $addressSaved
     ]
   ]);
 } catch (Throwable $e) {

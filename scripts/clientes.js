@@ -13,6 +13,13 @@ let bookingStepIndex = 0;
 let bookingCurrentMonth = new Date();
 const bookingToday = new Date();
 const bookingTodayISO = toISODate(bookingToday);
+const currentUrl = new URL(window.location.href);
+const hasPaymentToken = currentUrl.searchParams.has('pagarmetoken') || currentUrl.searchParams.has('token');
+const isPaymentReturn = hasPaymentToken;
+
+if (isPaymentReturn) {
+  console.log('[ZEEFE] Pagamento: ignorando auto-login');
+}
 
 // Helper: parse JSON safely to avoid "Unexpected end of JSON input"
 async function parseJsonSafe(res) {
@@ -318,7 +325,11 @@ async function initialize() {
   authViewButtons.forEach(btn => btn.addEventListener('click', () => setAuthView(btn.dataset.view)));
   setAuthView('login');
 
-  aplicarLoginMemorizado();
+  if (!hasPaymentToken) {
+    aplicarLoginMemorizado();
+  } else {
+    console.log('[Portal] Ignorando auto-login porque é retorno de pagamento (pagarmetoken na URL).');
+  }
   portalLoginForm?.addEventListener('submit', onPortalLoginSubmit);
   portalRegisterForm?.addEventListener('submit', onPortalRegisterSubmit);
   portalRecoveryForm?.addEventListener('submit', onPortalRecoverySubmit);
@@ -596,20 +607,28 @@ async function initialize() {
   renderBookingCalendar(bookingCurrentMonth);
 
   // Detect invite token from URL to drive registration flow
-  const url = new URL(window.location.href);
-  const inviteToken = url.searchParams.get('invite');
-  if (inviteToken) {
-    window.pendingInviteToken = inviteToken;
-    showAuthOverlay();
-    setAuthView('register');
-    if (authMessage) authMessage.textContent = 'Convite recebido: conclua seu cadastro para aceitar o vínculo com a empresa.';
+  if (!hasPaymentToken) {
+    const inviteToken = currentUrl.searchParams.get('invite');
+    if (inviteToken) {
+      window.pendingInviteToken = inviteToken;
+      showAuthOverlay();
+      setAuthView('register');
+      if (authMessage) authMessage.textContent = 'Convite recebido: conclua seu cadastro para aceitar o vínculo com a empresa.';
+    }
   }
   renderVisitorChecklist();
   setBookingStep(0);
   renderRoomOptions(bookingDateInput?.value || '');
   updateBookingNavigation();
-  setBodyAuthState(false);
-  showAuthOverlay();
+  if (hasPaymentToken) {
+    setBodyAuthState(true);
+    hideAuthOverlay();
+    if (clientPanels) clientPanels.hidden = false;
+    if (authSection) authSection.hidden = true;
+  } else {
+    setBodyAuthState(false);
+    showAuthOverlay();
+  }
   setActivePanel('book');
 }
 
@@ -2599,6 +2618,7 @@ async function onPortalLoginSubmit(event) {
     const res = await fetch(`${API_BASE}/client_portal_login.php`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify({ login: identifier, password, remember: lembrar })
     });
     const json = await res.json();
@@ -2701,6 +2721,7 @@ async function onPortalRegisterSubmit(event) {
     const res = await fetch(`${API_BASE}/client_register.php`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify(payload)
     });
     const json = await res.json();
@@ -4295,7 +4316,9 @@ async function onProfileEditSubmit(event){
   try {
     // Atualiza dados básicos
     const res = await fetch(`${API_BASE}/client_update_profile.php`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify(payload)
     });
     const json = await res.json();
@@ -4385,6 +4408,7 @@ async function onProfileSubmit(event) {
     const res = await fetch(`${API_BASE}/client_update_profile.php`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify({
         id: activeClient.id,
         name,

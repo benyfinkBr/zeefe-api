@@ -61,6 +61,9 @@ try {
     }
   }
 
+  $_SESSION['client_id'] = $row['id'];
+  $_SESSION['client_name'] = $row['name'];
+
   echo json_encode([
     'success' => true,
     'client' => [
@@ -80,4 +83,3 @@ try {
   http_response_code(500);
   echo json_encode(['success' => false, 'error' => 'Erro interno: ' . $e->getMessage()]);
 }
-

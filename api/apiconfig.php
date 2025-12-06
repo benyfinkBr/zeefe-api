@@ -18,6 +18,10 @@ if (in_array($origin, $allowed_origins)) {
   header("Access-Control-Allow-Origin: https://www.zeefe.com.br");
 }
 
+if (session_status() === PHP_SESSION_NONE) {
+  session_start();
+}
+
 header('Content-Type: application/json; charset=UTF-8');
 header('Access-Control-Allow-Credentials: true');
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS');

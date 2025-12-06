@@ -1,6 +1,7 @@
 <?php
 require 'apiconfig.php';
 require_once __DIR__ . '/lib/mailer.php';
+require_once __DIR__ . '/lib/pagarme_customers.php';
 
 $data = json_decode(file_get_contents('php://input'), true);
 $name = trim($data['name'] ?? '');
@@ -48,6 +49,18 @@ $hash = password_hash($password, PASSWORD_DEFAULT);
 
   $id = (int) $pdo->lastInsertId();
 
+  try {
+    $pagarme = ensurePagarmeCustomer($pdo, $id);
+    $responsePagarmeId = $pagarme['id'] ?? null;
+  } catch (Throwable $e) {
+    http_response_code(400);
+    echo json_encode(['success' => false, 'error' => 'Falha ao criar customer na Pagar.me: ' . $e->getMessage()]);
+    exit;
+  }
+
+  $_SESSION['client_id'] = $id;
+  $_SESSION['client_name'] = $name;
+
   $response = [
     'success' => true,
     'client' => [
@@ -58,7 +71,8 @@ $hash = password_hash($password, PASSWORD_DEFAULT);
       'cpf' => $cpf,
       'company_id' => $companyId,
       'phone' => $phone ?: null,
-      'whatsapp' => $phone ?: null
+      'whatsapp' => $phone ?: null,
+      'pagarme_customer_id' => $responsePagarmeId ?? null
     ]
   ];
 

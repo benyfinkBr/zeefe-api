@@ -9,24 +9,31 @@ try {
     throw new RuntimeException('Sessão não autenticada.');
   }
 
-  $input = getJsonInput();
-  $clientId = (int)($input['client_id'] ?? 0);
+  $clientId = isset($_GET['client_id']) ? (int)$_GET['client_id'] : (int)($_POST['client_id'] ?? 0);
   if ($clientId <= 0 && isset($_SESSION['client_id'])) {
     $clientId = (int) $_SESSION['client_id'];
   }
-  $token = trim($input['pagarmetoken'] ?? '');
-
-  if ($clientId <= 0 || $token === '') {
-    throw new RuntimeException('Informe client_id e pagarmetoken.');
+  if ($clientId <= 0) {
+    throw new RuntimeException('Informe client_id.');
   }
 
   if (session_status() === PHP_SESSION_ACTIVE && isset($_SESSION['client_id']) && (int)$_SESSION['client_id'] !== $clientId) {
     throw new RuntimeException('Sessão inválida para este cliente.');
   }
 
-  $card = saveCardForClient($pdo, $clientId, $token);
+  [$client, $address] = fetchClientWithAddress($pdo, $clientId);
+  if (!$client) {
+    throw new RuntimeException('Cliente não encontrado.');
+  }
 
-  echo json_encode(['success' => true, 'card' => $card]);
+  $list = listCardsForClient($pdo, $clientId);
+
+  echo json_encode([
+    'success' => true,
+    'cards' => $list['cards'],
+    'customer_id' => $list['customer_id'],
+    'address' => $address ?: new stdClass()
+  ]);
 } catch (Throwable $e) {
   http_response_code(400);
   echo json_encode(['success' => false, 'error' => $e->getMessage()]);

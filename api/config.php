@@ -19,7 +19,7 @@ return [
   'pagarme' => [
     'account_id' => 'acc_W695O0gUESAg4EyZ',
     'public_key' => 'pk_test_RNoa2omHrUnZlGzK',
-    'secret_key' => 'sk_test_bcb214be5bd6476b80f4e5cdefa61078',
+    'secret_key' => 'sk_test_RNoa2omHrUnZlGzK',
     'webhook_user' => 'teste123',
     'webhook_password' => '321teste',
     'accepted_payment_methods' => ['credit_card', 'pix', 'boleto'],

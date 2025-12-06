@@ -105,6 +105,9 @@ try {
     ],
     'remember' => $rememberPayload
   ]);
+
+  $_SESSION['client_id'] = $client['id'];
+  $_SESSION['client_name'] = $client['name'];
 } catch (Throwable $e) {
   http_response_code(500);
   echo json_encode(['success' => false, 'error' => 'Erro interno: ' . $e->getMessage()]);

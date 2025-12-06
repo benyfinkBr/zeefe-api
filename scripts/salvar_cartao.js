@@ -81,12 +81,15 @@
 
   const loadCards = async () => {
     const clientId = resolveClientId();
-    if (!clientId) return;
+    const url = clientId ? `api/pagarme_list_cards.php?client_id=${clientId}` : 'api/pagarme_list_cards.php';
 
     try {
-      const resp = await fetch(`api/customer_cards_list.php?client_id=${clientId}`);
+      const resp = await fetch(url, { credentials: 'include' });
       const json = await resp.json();
-      if (!json.success) return;
+      if (!json.success) {
+        if (json.error) show(json.error, true);
+        return;
+      }
       renderCards(json.cards || []);
       renderAddress(json.address || null);
     } catch (err) {
@@ -125,18 +128,18 @@
 
     const clientId = resolveClientId();
     if (!clientId) {
-      show('Cliente não identificado para salvar o cartão.', true);
-      return;
+      console.warn('Cliente não identificado no front. Tentando usar sessão no backend.');
     }
 
     show('Salvando cartão no servidor...');
 
     try {
-      const resp = await fetch('api/customer_save_card.php', {
+      const resp = await fetch('api/pagarme_save_card.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({
-          client_id: clientId,
+          client_id: clientId || undefined,
           pagarmetoken
         })
       });
