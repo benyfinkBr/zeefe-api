@@ -162,12 +162,14 @@
   };
 
   const buildCheckout = () => {
-    if (window.PagarMeCheckout && window.PagarMeCheckout.Checkout) {
+    if (window.PagarMeCheckout?.Checkout) {
       checkoutInstance = new window.PagarMeCheckout.Checkout({
         encryption_key: getPublicKey(),
         success: onTokenSuccess,
         error: onTokenFail
       });
+    } else if (typeof window.PagarMeCheckout?.init === 'function') {
+      checkoutInstance = window.PagarMeCheckout.init(onTokenSuccess, onTokenFail);
     }
   };
 
