@@ -51,8 +51,9 @@
     }
 
     const html = cards.map(c => `
-      <div class="card-item">
+      <div class="card-item" data-card-id="${c.card_id || ''}">
         <span>${c.brand ?? ''} ****${c.last4 ?? ''} (${c.exp_month ?? ''}/${c.exp_year ?? ''})</span>
+        ${c.card_id ? `<button type="button" class="btn btn-secondary btn-sm" data-action="delete-card" data-card-id="${c.card_id}">Excluir</button>` : ''}
       </div>
     `).join('');
 
@@ -109,6 +110,34 @@
   };
 
   btnOpenModal?.addEventListener('click', openAndLoad);
+
+  existingCardsEl?.addEventListener('click', async (ev) => {
+    const btn = ev.target.closest('[data-action="delete-card"]');
+    if (!btn) return;
+    const cardId = btn.dataset.cardId;
+    if (!cardId) return;
+    const clientId = resolveClientId();
+    if (!confirm('Excluir este cartão?')) return;
+    show('Excluindo cartão...');
+    try {
+      const resp = await fetch('api/pagarme_delete_card.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ card_id: cardId, client_id: clientId || undefined })
+      });
+      const json = await resp.json();
+      if (!json.success) {
+        show(json.error || 'Erro ao excluir cartão.', true);
+        return;
+      }
+      show('Cartão excluído.');
+      await loadCards();
+    } catch (err) {
+      console.error('Erro ao excluir cartão', err);
+      show('Erro ao excluir cartão.', true);
+    }
+  });
 
   // Apenas feedback visual; NÃO fazemos preventDefault aqui.
   form?.addEventListener('submit', () => {

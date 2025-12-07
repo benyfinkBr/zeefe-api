@@ -350,3 +350,19 @@ function listCardsForClient(PDO $pdo, int $clientId): array {
 
   return ['cards' => $normalized, 'customer_id' => $customerId];
 }
+
+function deleteCardForClient(PDO $pdo, int $clientId, string $cardId): array {
+  if ($cardId === '') {
+    throw new RuntimeException('Informe o card_id.');
+  }
+  ensurePagarmeColumns($pdo);
+  $customer = ensurePagarmeCustomer($pdo, $clientId);
+  $customerId = $customer['id'];
+
+  pagarme_request('DELETE', "/customers/{$customerId}/cards/{$cardId}");
+
+  $upd = $pdo->prepare('UPDATE customer_cards SET status = "inactive", updated_at = NOW() WHERE client_id = :cid AND pagarme_card_id = :card');
+  $upd->execute([':cid' => $clientId, ':card' => $cardId]);
+
+  return ['success' => true, 'customer_id' => $customerId, 'card_id' => $cardId];
+}
