@@ -48,7 +48,7 @@ try {
     ':id' => $id
   ]);
 
-  $stmtGet = $pdo->prepare('SELECT id, name, email, login, cpf, phone, whatsapp, company_id FROM clients WHERE id = :id LIMIT 1');
+  $stmtGet = $pdo->prepare('SELECT id, name, email, login, cpf, phone, whatsapp, company_id, pagarme_customer_id FROM clients WHERE id = :id LIMIT 1');
   $stmtGet->execute([':id' => $id]);
   $client = $stmtGet->fetch(PDO::FETCH_ASSOC);
 
@@ -60,9 +60,17 @@ try {
 
   $addressSaved = upsertClientAddress($pdo, $id, $address);
   try {
-    syncPagarmeAddress($pdo, $id, $addressSaved);
+    updatePagarmeCustomer($pdo, $id, [
+      'name' => $client['name'],
+      'email' => $client['email'],
+      'cpf' => $client['cpf'],
+      'phone' => $client['phone'] ?? $phone,
+      'whatsapp' => $client['whatsapp'] ?? $whatsapp
+    ], $addressSaved);
   } catch (Throwable $e) {
-    error_log('[Pagarme] Falha ao sincronizar endereço: ' . $e->getMessage());
+    http_response_code(400);
+    echo json_encode(['success' => false, 'error' => 'Falha ao sincronizar com Pagar.me: ' . $e->getMessage()]);
+    exit;
   }
 
   echo json_encode([

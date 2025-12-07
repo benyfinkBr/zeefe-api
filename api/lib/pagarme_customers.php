@@ -160,6 +160,38 @@ function syncPagarmeAddress(PDO $pdo, int $clientId, array $address): array {
   return ['address' => $addressClean, 'customer_id' => $customerId, 'pagarme_response' => $resp];
 }
 
+function updatePagarmeCustomer(PDO $pdo, int $clientId, array $clientData, array $address): array {
+  $customer = ensurePagarmeCustomer($pdo, $clientId);
+  $customerId = $customer['id'];
+
+  $cpf = preg_replace('/\D/', '', $clientData['cpf'] ?? '');
+  $phoneDigits = $clientData['phone'] ?? ($clientData['whatsapp'] ?? null);
+  $mobile = buildPhonePayload($phoneDigits);
+
+  $payload = [
+    'name' => $clientData['name'] ?? '',
+    'email' => $clientData['email'] ?? '',
+    'type' => (strlen($cpf) === 14) ? 'company' : 'individual',
+    'document' => $cpf ?: null,
+  ];
+  if ($mobile) {
+    $payload['phones'] = ['mobile_phone' => $mobile];
+  }
+  if (!empty($address)) {
+    $payload['address'] = [
+      'street' => $address['street'] ?? '',
+      'number' => $address['number'] ?? '',
+      'zip_code' => preg_replace('/\D/', '', $address['zip_code'] ?? ''),
+      'city' => $address['city'] ?? '',
+      'state' => $address['state'] ?? '',
+      'country' => $address['country'] ?? 'BR'
+    ];
+  }
+
+  $resp = pagarme_request('PATCH', '/customers/' . $customerId, $payload);
+  return ['customer_id' => $customerId, 'pagarme_response' => $resp];
+}
+
 function saveCardForClient(PDO $pdo, int $clientId, string $token): array {
   ensurePagarmeColumns($pdo);
   $customer = ensurePagarmeCustomer($pdo, $clientId);
