@@ -156,7 +156,7 @@ function syncPagarmeAddress(PDO $pdo, int $clientId, array $address): array {
     ]
   ];
 
-  $resp = pagarme_request('PATCH', '/customers/' . $customerId, $payload);
+  $resp = pagarme_request('PUT', '/customers/' . $customerId, $payload);
   return ['address' => $addressClean, 'customer_id' => $customerId, 'pagarme_response' => $resp];
 }
 
@@ -188,7 +188,7 @@ function updatePagarmeCustomer(PDO $pdo, int $clientId, array $clientData, array
     ];
   }
 
-  $resp = pagarme_request('PATCH', '/customers/' . $customerId, $payload);
+  $resp = pagarme_request('PUT', '/customers/' . $customerId, $payload);
   return ['customer_id' => $customerId, 'pagarme_response' => $resp];
 }
 
