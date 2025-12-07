@@ -325,10 +325,9 @@ async function initialize() {
   authViewButtons.forEach(btn => btn.addEventListener('click', () => setAuthView(btn.dataset.view)));
   setAuthView('login');
 
-  if (!hasPaymentToken) {
-    aplicarLoginMemorizado();
-  } else {
-    console.log('[Portal] Ignorando auto-login porque é retorno de pagamento (pagarmetoken na URL).');
+  aplicarLoginMemorizado();
+  if (hasPaymentToken) {
+    console.log('[Portal] Retorno de pagamento: mantendo portal e aplicando auto-login memorizado.');
   }
   portalLoginForm?.addEventListener('submit', onPortalLoginSubmit);
   portalRegisterForm?.addEventListener('submit', onPortalRegisterSubmit);

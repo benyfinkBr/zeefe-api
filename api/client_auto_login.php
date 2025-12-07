@@ -87,6 +87,10 @@ try {
     $pagarmeWarning = 'Falha ao sincronizar com Pagar.me: ' . $e->getMessage();
   }
 
+  $addrStmt = $pdo->prepare('SELECT street, number, complement, zip_code, city, state, country FROM client_addresses WHERE client_id = :cid ORDER BY updated_at DESC, id DESC LIMIT 1');
+  $addrStmt->execute([':cid' => $row['id']]);
+  $clientAddress = $addrStmt->fetch(PDO::FETCH_ASSOC) ?: null;
+
   $_SESSION['client_id'] = $row['id'];
   $_SESSION['client_name'] = $row['name'];
 
@@ -103,8 +107,10 @@ try {
       'company_master' => $isCompanyMaster,
       'phone' => $row['phone'] ?? null,
       'whatsapp' => $row['whatsapp'] ?? null,
-      'pagarme_customer_id' => $row['pagarme_customer_id'] ?? null
-    ]
+      'pagarme_customer_id' => $row['pagarme_customer_id'] ?? null,
+      'address' => $clientAddress
+    ],
+    'pagarme_warning' => $pagarmeWarning
   ]);
 } catch (Throwable $e) {
   http_response_code(500);

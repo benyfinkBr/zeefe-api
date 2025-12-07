@@ -79,6 +79,10 @@ try {
   }
 
   $rememberPayload = null;
+  // endereço mais recente
+  $addrStmt = $pdo->prepare('SELECT street, number, complement, zip_code, city, state, country FROM client_addresses WHERE client_id = :cid ORDER BY updated_at DESC, id DESC LIMIT 1');
+  $addrStmt->execute([':cid' => $client['id']]);
+  $clientAddress = $addrStmt->fetch(PDO::FETCH_ASSOC) ?: null;
   $pagarmeWarning = null;
   // Garante customer espelhado no Pagar.me (não bloqueia login se falhar)
   try {
@@ -122,7 +126,8 @@ try {
       'company_master' => $isCompanyMaster,
       'phone' => $client['phone'] ?? null,
       'whatsapp' => $client['whatsapp'] ?? null,
-      'pagarme_customer_id' => $client['pagarme_customer_id'] ?? null
+      'pagarme_customer_id' => $client['pagarme_customer_id'] ?? null,
+      'address' => $clientAddress
     ],
     'remember' => $rememberPayload,
     'pagarme_warning' => $pagarmeWarning
