@@ -62,13 +62,12 @@ try {
     }
   }
 
+  $pagarmeWarning = null;
   try {
     $pagarmeCustomer = ensurePagarmeCustomer($pdo, (int)$row['id']);
     $row['pagarme_customer_id'] = $pagarmeCustomer['id'] ?? ($row['pagarme_customer_id'] ?? null);
   } catch (Throwable $e) {
-    http_response_code(400);
-    echo json_encode(['success' => false, 'error' => 'Falha ao criar/obter customer no Pagar.me: ' . $e->getMessage()]);
-    exit;
+    $pagarmeWarning = 'Falha ao sincronizar com Pagar.me: ' . $e->getMessage();
   }
 
   $_SESSION['client_id'] = $row['id'];

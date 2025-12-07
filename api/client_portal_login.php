@@ -68,14 +68,13 @@ try {
   }
 
   $rememberPayload = null;
-  // Garante customer espelhado no Pagar.me
+  $pagarmeWarning = null;
+  // Garante customer espelhado no Pagar.me (não bloqueia login se falhar)
   try {
     $pagarmeCustomer = ensurePagarmeCustomer($pdo, (int)$client['id']);
     $client['pagarme_customer_id'] = $pagarmeCustomer['id'] ?? ($client['pagarme_customer_id'] ?? null);
   } catch (Throwable $e) {
-    http_response_code(400);
-    echo json_encode(['success' => false, 'error' => 'Falha ao criar/obter customer no Pagar.me: ' . $e->getMessage()]);
-    exit;
+    $pagarmeWarning = 'Falha ao sincronizar com Pagar.me: ' . $e->getMessage();
   }
   if ($remember) {
     try {
@@ -114,7 +113,8 @@ try {
       'whatsapp' => $client['whatsapp'] ?? null,
       'pagarme_customer_id' => $client['pagarme_customer_id'] ?? null
     ],
-    'remember' => $rememberPayload
+    'remember' => $rememberPayload,
+    'pagarme_warning' => $pagarmeWarning
   ]);
 
   $_SESSION['client_id'] = $client['id'];
