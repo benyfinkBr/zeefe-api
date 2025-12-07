@@ -145,18 +145,28 @@ function syncPagarmeAddress(PDO $pdo, int $clientId, array $address): array {
   $customer = ensurePagarmeCustomer($pdo, $clientId);
   $customerId = $customer['id'];
 
-  $payload = [
-    'address' => [
-      'street' => $addressClean['street'],
-      'number' => $addressClean['number'],
-      'zip_code' => $addressClean['zip_code'],
-      'city' => $addressClean['city'],
-      'state' => $addressClean['state'],
-      'country' => $addressClean['country']
-    ]
+  $addrPayload = [
+    'street' => $addressClean['street'] ?? '',
+    'number' => $addressClean['number'] ?? '',
+    'zip_code' => preg_replace('/\D/', '', $addressClean['zip_code'] ?? ''),
+    'city' => $addressClean['city'] ?? '',
+    'state' => $addressClean['state'] ?? '',
+    'country' => $addressClean['country'] ?? 'BR'
   ];
+  // Envia endereço apenas se os campos-chave estiverem presentes para evitar 422
+  $hasAddress =
+    !empty($addrPayload['street']) &&
+    !empty($addrPayload['number']) &&
+    strlen($addrPayload['zip_code']) >= 8 &&
+    !empty($addrPayload['city']) &&
+    !empty($addrPayload['state']);
 
-  $resp = pagarme_request('PUT', '/customers/' . $customerId, $payload);
+  $payload = [];
+  if ($hasAddress) {
+    $payload['address'] = $addrPayload;
+  }
+
+  $resp = $payload ? pagarme_request('PUT', '/customers/' . $customerId, $payload) : [];
   return ['address' => $addressClean, 'customer_id' => $customerId, 'pagarme_response' => $resp];
 }
 
@@ -169,16 +179,18 @@ function updatePagarmeCustomer(PDO $pdo, int $clientId, array $clientData, array
   $mobile = buildPhonePayload($phoneDigits);
 
   $payload = [
-    'name' => $clientData['name'] ?? '',
-    'email' => $clientData['email'] ?? '',
-    'type' => (strlen($cpf) === 14) ? 'company' : 'individual',
-    'document' => $cpf ?: null,
+    'name' => $clientData['name'] ?? null,
+    'email' => $clientData['email'] ?? null
   ];
+  if ($cpf && (strlen($cpf) === 11 || strlen($cpf) === 14)) {
+    $payload['type'] = (strlen($cpf) === 14) ? 'company' : 'individual';
+    $payload['document'] = $cpf;
+  }
   if ($mobile) {
     $payload['phones'] = ['mobile_phone' => $mobile];
   }
   if (!empty($address)) {
-    $payload['address'] = [
+    $addrPayload = [
       'street' => $address['street'] ?? '',
       'number' => $address['number'] ?? '',
       'zip_code' => preg_replace('/\D/', '', $address['zip_code'] ?? ''),
@@ -186,9 +198,24 @@ function updatePagarmeCustomer(PDO $pdo, int $clientId, array $clientData, array
       'state' => $address['state'] ?? '',
       'country' => $address['country'] ?? 'BR'
     ];
+    $hasAddress =
+      !empty($addrPayload['street']) &&
+      !empty($addrPayload['number']) &&
+      strlen($addrPayload['zip_code']) >= 8 &&
+      !empty($addrPayload['city']) &&
+      !empty($addrPayload['state']);
+    if ($hasAddress) {
+      $payload['address'] = $addrPayload;
+    }
   }
 
-  $resp = pagarme_request('PUT', '/customers/' . $customerId, $payload);
+  // remove chaves nulas ou vazias
+  $payload = array_filter($payload, function ($v) {
+    if (is_array($v)) return true;
+    return $v !== null && $v !== '';
+  });
+
+  $resp = $payload ? pagarme_request('PUT', '/customers/' . $customerId, $payload) : [];
   return ['customer_id' => $customerId, 'pagarme_response' => $resp];
 }
 
