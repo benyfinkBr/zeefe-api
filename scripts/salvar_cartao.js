@@ -139,29 +139,34 @@
     }
   });
 
-  // Apenas feedback visual; NÃO fazemos preventDefault aqui.
-  form?.addEventListener('submit', () => {
-    show('Enviando dados para o Pagar.me...');
-    // O tokenizecard.js vai interceptar o submit,
-    // criar o token e redirecionar para clientes.html?pagarmetoken=...
+  form?.addEventListener('submit', async (ev) => {
+    ev.preventDefault();
+    show('Gerando token...');
+
+    if (typeof PagarmeCheckout === 'undefined') {
+      show('tokenizecard.js não carregou', true);
+      return;
+    }
+    try {
+      const result = await PagarmeCheckout.tokenize(form);
+      const pagarmetoken = result?.pagarmetoken || result?.token || result?.id;
+      if (!pagarmetoken) {
+        show('Token não retornado pelo Pagar.me', true);
+        return;
+      }
+      await processToken(pagarmetoken);
+    } catch (err) {
+      console.error('Erro ao tokenizar', err);
+      show('Erro ao tokenizar o cartão.', true);
+    }
   });
 
-  // Fluxo oficial: após o redirect com ?pagarmetoken=...,
-  // salvamos o cartão no backend e limpamos o parâmetro da URL.
-  const processTokenFromUrl = async () => {
-    const url = new URL(window.location.href);
-    // o tokenizecard pode mandar "pagarmetoken" ou "token"
-    const pagarmetoken = url.searchParams.get('pagarmetoken') || url.searchParams.get('token');
-
-    if (!pagarmetoken) return;
-
+  const processToken = async (pagarmetoken) => {
     const clientId = resolveClientId();
     if (!clientId) {
       console.warn('Cliente não identificado no front. Tentando usar sessão no backend.');
     }
-
     show('Salvando cartão no servidor...');
-
     try {
       const resp = await fetch('api/pagarme_save_card.php', {
         method: 'POST',
@@ -185,15 +190,19 @@
     } catch (err) {
       console.error('Erro na requisição de salvamento do cartão:', err);
       show('Erro ao salvar cartão.', true);
-    } finally {
-      // Remove o pagarmetoken da URL para evitar reprocessar ao recarregar
-      url.searchParams.delete('pagarmetoken');
-      url.searchParams.delete('token');
-      const newUrl = url.pathname + (url.search ? `?${url.searchParams.toString()}` : '');
-      window.history.replaceState({}, '', newUrl);
     }
   };
 
-  // Processa token (se existir) assim que o script carregar
+  const processTokenFromUrl = async () => {
+    const url = new URL(window.location.href);
+    const pagarmetoken = url.searchParams.get('pagarmetoken') || url.searchParams.get('token');
+    if (!pagarmetoken) return;
+    await processToken(pagarmetoken);
+    url.searchParams.delete('pagarmetoken');
+    url.searchParams.delete('token');
+    const newUrl = url.pathname + (url.search ? `?${url.searchParams.toString()}` : '');
+    window.history.replaceState({}, '', newUrl);
+  };
+
   await processTokenFromUrl();
 })();
