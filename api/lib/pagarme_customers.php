@@ -146,17 +146,17 @@ function syncPagarmeAddress(PDO $pdo, int $clientId, array $address): array {
   $customerId = $customer['id'];
 
   $addrPayload = [
-    'street' => $addressClean['street'] ?? '',
-    'number' => $addressClean['number'] ?? '',
+    'line_1' => trim(($addressClean['street'] ?? '') . ', ' . ($addressClean['number'] ?? '')),
+    'line_2' => $addressClean['complement'] ?? '',
     'zip_code' => preg_replace('/\D/', '', $addressClean['zip_code'] ?? ''),
     'city' => $addressClean['city'] ?? '',
-    'state' => $addressClean['state'] ?? '',
-    'country' => $addressClean['country'] ?? 'BR'
+    'state' => strtoupper($addressClean['state'] ?? ''),
+    'country' => strtoupper($addressClean['country'] ?? 'BR')
   ];
   // Envia endereço apenas se os campos-chave estiverem presentes para evitar 422
   $hasAddress =
-    !empty($addrPayload['street']) &&
-    !empty($addrPayload['number']) &&
+    !empty($addressClean['street'] ?? '') &&
+    !empty($addressClean['number'] ?? '') &&
     strlen($addrPayload['zip_code']) >= 8 &&
     !empty($addrPayload['city']) &&
     !empty($addrPayload['state']);
@@ -167,6 +167,21 @@ function syncPagarmeAddress(PDO $pdo, int $clientId, array $address): array {
   }
 
   $resp = $payload ? pagarme_request('PUT', '/customers/' . $customerId, $payload) : [];
+  if (!empty($payload['address'])) {
+    try {
+      pagarme_request('POST', "/customers/{$customerId}/addresses", [
+        'line_1' => $payload['address']['line_1'] ?? '',
+        'line_2' => $payload['address']['line_2'] ?? '',
+        'zip_code' => $payload['address']['zip_code'],
+        'city' => $payload['address']['city'],
+        'state' => $payload['address']['state'],
+        'country' => $payload['address']['country'],
+        'type' => 'billing'
+      ]);
+    } catch (Throwable $e) {
+      error_log('[Pagarme] Falha ao registrar endereço na lista do customer: ' . $e->getMessage());
+    }
+  }
   return ['address' => $addressClean, 'customer_id' => $customerId, 'pagarme_response' => $resp];
 }
 
@@ -191,16 +206,16 @@ function updatePagarmeCustomer(PDO $pdo, int $clientId, array $clientData, array
   }
   if (!empty($address)) {
     $addrPayload = [
-      'street' => $address['street'] ?? '',
-      'number' => $address['number'] ?? '',
+      'line_1' => trim(($address['street'] ?? '') . ', ' . ($address['number'] ?? '')),
+      'line_2' => $address['complement'] ?? '',
       'zip_code' => preg_replace('/\D/', '', $address['zip_code'] ?? ''),
       'city' => $address['city'] ?? '',
       'state' => strtoupper($address['state'] ?? ''),
       'country' => strtoupper($address['country'] ?? 'BR')
     ];
     $hasAddress =
-      !empty($addrPayload['street']) &&
-      !empty($addrPayload['number']) &&
+      !empty($address['street'] ?? '') &&
+      !empty($address['number'] ?? '') &&
       strlen($addrPayload['zip_code']) >= 8 &&
       !empty($addrPayload['city']) &&
       !empty($addrPayload['state']);
@@ -221,8 +236,8 @@ function updatePagarmeCustomer(PDO $pdo, int $clientId, array $clientData, array
   if (!empty($payload['address'])) {
     try {
       pagarme_request('POST', "/customers/{$customerId}/addresses", [
-        'street' => $payload['address']['street'],
-        'number' => $payload['address']['number'],
+        'line_1' => $payload['address']['line_1'] ?? '',
+        'line_2' => $payload['address']['line_2'] ?? '',
         'zip_code' => $payload['address']['zip_code'],
         'city' => $payload['address']['city'],
         'state' => $payload['address']['state'],
