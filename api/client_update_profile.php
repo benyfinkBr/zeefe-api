@@ -59,6 +59,7 @@ try {
   }
 
   $addressSaved = upsertClientAddress($pdo, $id, $address);
+  $pagarmeWarning = null;
   try {
     updatePagarmeCustomer($pdo, $id, [
       'name' => $client['name'],
@@ -68,9 +69,7 @@ try {
       'whatsapp' => $client['whatsapp'] ?? $whatsapp
     ], $addressSaved);
   } catch (Throwable $e) {
-    http_response_code(400);
-    echo json_encode(['success' => false, 'error' => 'Falha ao sincronizar com Pagar.me: ' . $e->getMessage()]);
-    exit;
+    $pagarmeWarning = 'Falha ao sincronizar com Pagar.me: ' . $e->getMessage();
   }
 
   echo json_encode([
@@ -86,7 +85,8 @@ try {
       'whatsapp' => $client['whatsapp'],
       'company_id' => $client['company_id'],
       'address' => $addressSaved
-    ]
+    ],
+    'pagarme_warning' => $pagarmeWarning
   ]);
 } catch (Throwable $e) {
   http_response_code(500);

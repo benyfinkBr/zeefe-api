@@ -195,8 +195,8 @@ function updatePagarmeCustomer(PDO $pdo, int $clientId, array $clientData, array
       'number' => $address['number'] ?? '',
       'zip_code' => preg_replace('/\D/', '', $address['zip_code'] ?? ''),
       'city' => $address['city'] ?? '',
-      'state' => $address['state'] ?? '',
-      'country' => $address['country'] ?? 'BR'
+      'state' => strtoupper($address['state'] ?? ''),
+      'country' => strtoupper($address['country'] ?? 'BR')
     ];
     $hasAddress =
       !empty($addrPayload['street']) &&
