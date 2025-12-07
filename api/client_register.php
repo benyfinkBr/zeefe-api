@@ -19,10 +19,15 @@ if ($name === '' || $email === '' || $login === '' || $password === '') {
 }
 
 try {
-  $exists = $pdo->prepare('SELECT COUNT(*) FROM clients WHERE login = :login OR email = :email');
-  $exists->execute([':login' => $login, ':email' => $email]);
-  if ($exists->fetchColumn() > 0) {
-    echo json_encode(['success' => false, 'error' => 'Login ou e-mail já cadastrado.']);
+  $exists = $pdo->prepare('SELECT email, login, cpf FROM clients WHERE login = :login OR email = :email OR cpf = :cpf LIMIT 1');
+  $exists->execute([':login' => $login, ':email' => $email, ':cpf' => $cpf]);
+  if ($dup = $exists->fetch(PDO::FETCH_ASSOC)) {
+    $dupKey = '';
+    if (!empty($dup['email']) && strtolower($dup['email']) === strtolower($email)) $dupKey = 'e-mail';
+    elseif (!empty($dup['login']) && strtolower($dup['login']) === strtolower($login)) $dupKey = 'login';
+    elseif (!empty($dup['cpf']) && $dup['cpf'] === $cpf) $dupKey = 'CPF';
+    $msg = $dupKey ? "Este {$dupKey} já está cadastrado. Tente outro." : 'Login ou e-mail já cadastrado.';
+    echo json_encode(['success' => false, 'error' => $msg]);
     exit;
   }
 
