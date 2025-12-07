@@ -13,9 +13,20 @@ if ($login === '' || $password === '') {
 }
 
 try {
-  $stmt = $pdo->prepare('SELECT id, name, email, email_verified_at, login, cpf, password_hash, company_id, status, phone, whatsapp, pagarme_customer_id FROM clients WHERE login = :login OR email = :login OR cpf = :cpf LIMIT 1');
-  $stmt->execute([':login' => $login, ':cpf' => preg_replace('/\D/', '', $login)]);
-  $client = $stmt->fetch(PDO::FETCH_ASSOC);
+  // garante colunas novas (pagarme_customer_id)
+  try { ensurePagarmeColumns($pdo); } catch (Throwable $e) {}
+
+  try {
+    $stmt = $pdo->prepare('SELECT id, name, email, email_verified_at, login, cpf, password_hash, company_id, status, phone, whatsapp, pagarme_customer_id FROM clients WHERE login = :login OR email = :login OR cpf = :cpf LIMIT 1');
+    $stmt->execute([':login' => $login, ':cpf' => preg_replace('/\D/', '', $login)]);
+    $client = $stmt->fetch(PDO::FETCH_ASSOC);
+  } catch (Throwable $e) {
+    // fallback para bancos ainda sem coluna
+    $stmt = $pdo->prepare('SELECT id, name, email, email_verified_at, login, cpf, password_hash, company_id, status, phone, whatsapp FROM clients WHERE login = :login OR email = :login OR cpf = :cpf LIMIT 1');
+    $stmt->execute([':login' => $login, ':cpf' => preg_replace('/\D/', '', $login)]);
+    $client = $stmt->fetch(PDO::FETCH_ASSOC);
+    $client['pagarme_customer_id'] = null;
+  }
 
   if (!$client) {
     echo json_encode(['success' => false, 'error' => 'Credenciais inválidas.']);

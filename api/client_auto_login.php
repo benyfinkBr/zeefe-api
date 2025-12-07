@@ -11,17 +11,34 @@ if ($token === '') {
 }
 
 try {
+  // garante colunas novas (pagarme_customer_id)
+  try { ensurePagarmeColumns($pdo); } catch (Throwable $e) {}
+
   $hash = hash('sha256', $token);
   $now = (new DateTimeImmutable())->format('Y-m-d H:i:s');
 
-  $sql = 'SELECT t.client_id, t.expires_at, c.id, c.name, c.email, c.email_verified_at, c.login, c.cpf, c.password_hash, c.company_id, c.status, c.phone, c.whatsapp, c.pagarme_customer_id
-          FROM client_remember_tokens t
-          JOIN clients c ON c.id = t.client_id
-          WHERE t.token_hash = :hash
-          LIMIT 1';
-  $stmt = $pdo->prepare($sql);
-  $stmt->execute([':hash' => $hash]);
-  $row = $stmt->fetch(PDO::FETCH_ASSOC);
+  try {
+    $sql = 'SELECT t.client_id, t.expires_at, c.id, c.name, c.email, c.email_verified_at, c.login, c.cpf, c.password_hash, c.company_id, c.status, c.phone, c.whatsapp, c.pagarme_customer_id
+            FROM client_remember_tokens t
+            JOIN clients c ON c.id = t.client_id
+            WHERE t.token_hash = :hash
+            LIMIT 1';
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute([':hash' => $hash]);
+    $row = $stmt->fetch(PDO::FETCH_ASSOC);
+  } catch (Throwable $e) {
+    $sql = 'SELECT t.client_id, t.expires_at, c.id, c.name, c.email, c.email_verified_at, c.login, c.cpf, c.password_hash, c.company_id, c.status, c.phone, c.whatsapp
+            FROM client_remember_tokens t
+            JOIN clients c ON c.id = t.client_id
+            WHERE t.token_hash = :hash
+            LIMIT 1';
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute([':hash' => $hash]);
+    $row = $stmt->fetch(PDO::FETCH_ASSOC);
+    if ($row) {
+      $row['pagarme_customer_id'] = null;
+    }
+  }
 
   if (!$row) {
     echo json_encode(['success' => false, 'error' => 'Token inválido.']);
