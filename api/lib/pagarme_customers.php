@@ -216,6 +216,25 @@ function updatePagarmeCustomer(PDO $pdo, int $clientId, array $clientData, array
   });
 
   $resp = $payload ? pagarme_request('PUT', '/customers/' . $customerId, $payload) : [];
+
+  // Cria/atualiza endereço de cobrança na lista de endereços do customer para refletir no dashboard
+  if (!empty($payload['address'])) {
+    try {
+      pagarme_request('POST', "/customers/{$customerId}/addresses", [
+        'street' => $payload['address']['street'],
+        'number' => $payload['address']['number'],
+        'zip_code' => $payload['address']['zip_code'],
+        'city' => $payload['address']['city'],
+        'state' => $payload['address']['state'],
+        'country' => $payload['address']['country'],
+        'type' => 'billing'
+      ]);
+    } catch (Throwable $e) {
+      // não bloqueia fluxo
+      error_log('[Pagarme] Falha ao registrar endereço na lista do customer: ' . $e->getMessage());
+    }
+  }
+
   return ['customer_id' => $customerId, 'pagarme_response' => $resp];
 }
 
