@@ -326,6 +326,7 @@ async function initialize() {
   setAuthView('login');
 
   aplicarLoginMemorizado();
+  hydrateSessionFromServer();
   if (hasPaymentToken) {
     console.log('[Portal] Retorno de pagamento: mantendo portal e aplicando auto-login memorizado.');
   }
@@ -619,13 +620,12 @@ async function initialize() {
   setBookingStep(0);
   renderRoomOptions(bookingDateInput?.value || '');
   updateBookingNavigation();
-  if (hasPaymentToken) {
-    setBodyAuthState(true);
+  setBodyAuthState(Boolean(activeClient));
+  if (activeClient) {
     hideAuthOverlay();
     if (clientPanels) clientPanels.hidden = false;
     if (authSection) authSection.hidden = true;
   } else {
-    setBodyAuthState(false);
     showAuthOverlay();
   }
   setActivePanel('book');
