@@ -1086,6 +1086,9 @@ input, select {
         }
         actionButtons.push(`<button class="btn" onclick="abrirModalEdit(${rowId})">Editar</button>`);
         actionButtons.push(`<button class="btn" onclick="abrirModalExcluir(${rowId})">Excluir</button>`);
+        if (sec === 'clients') {
+          actionButtons.push(`<button class="btn danger" onclick="excluirTotalCliente(${rowId})">ETR</button>`);
+        }
 
         let extraControls = '';
         if (sec === 'reservations') {
@@ -2157,6 +2160,30 @@ input, select {
       } catch (err) {
         console.error(err);
         alert('Erro ao excluir registro.');
+      }
+    }
+
+    async function excluirTotalCliente(id) {
+      if (!id) return;
+      const ok = confirm('ETR: excluir COMPLETAMENTE este cliente e todos os registros vinculados? Esta ação é irreversível e apenas para testes.');
+      if (!ok) return;
+      try {
+        const res = await fetch(`${API_BASE}/admin_delete_client_cascade.php`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ client_id: id })
+        });
+        const json = await res.json();
+        if (json.success) {
+          alert('Cliente e registros vinculados excluídos.');
+          loadSection('clients');
+        } else {
+          throw new Error(json.error || 'Erro ao excluir cliente.');
+        }
+      } catch (err) {
+        console.error(err);
+        alert(err.message || 'Erro ao excluir cliente.');
       }
     }
 
