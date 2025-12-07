@@ -143,12 +143,18 @@
     ev.preventDefault();
     show('Gerando token...');
 
-    if (typeof PagarmeCheckout === 'undefined') {
+    const Checkout = window.PagarmeCheckout || window.PagarMeCheckout;
+    if (!Checkout) {
       show('tokenizecard.js não carregou', true);
       return;
     }
+    if (typeof Checkout.tokenize !== 'function') {
+      console.error('Checkout object', Checkout);
+      show('Tokenize indisponível (biblioteca não inicializada). Recarregue a página.', true);
+      return;
+    }
     try {
-      const result = await PagarmeCheckout.tokenize(form);
+      const result = await Checkout.tokenize(form);
       const pagarmetoken = result?.pagarmetoken || result?.token || result?.id;
       if (!pagarmetoken) {
         show('Token não retornado pelo Pagar.me', true);
