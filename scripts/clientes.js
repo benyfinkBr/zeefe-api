@@ -127,6 +127,17 @@ let headerMenuOpen = false;
 let portalRefreshTimer = null;
 
 const reservationsContainer = document.getElementById('reservationsContainer');
+// Client chat & suporte / problemas
+const clientChatModal = document.getElementById('clientChatModal');
+const clientChatClose = document.getElementById('clientChatClose');
+const clientChatForm = document.getElementById('clientChatForm');
+const openSupportChatBtn = document.getElementById('openSupportChatBtn');
+const clientSupportThreadItem = document.getElementById('clientSupportThreadItem');
+const openReportProblemBtn = document.getElementById('openReportProblemBtn');
+const reportProblemModal = document.getElementById('reportProblemModal');
+const reportProblemClose = document.getElementById('reportProblemClose');
+const reportProblemCancel = document.getElementById('reportProblemCancel');
+const reportProblemForm = document.getElementById('reportProblemForm');
 // Modal de ações da reserva
 const reservationActionsModal = document.getElementById('reservationActionsModal');
 // Empresa/Membros modais
