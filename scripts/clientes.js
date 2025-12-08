@@ -2814,30 +2814,32 @@ function aplicarClienteAtivo(cliente) {
 }
 
 function fazerLogout() {
-  activeClient = null;
-  currentReservations = [];
-  currentVisitors = [];
-  bookingVisitorIds = [];
-  const paymentClientIdInput = document.getElementById('clientId');
-  if (paymentClientIdInput) paymentClientIdInput.value = '';
-  closeHeaderMenu();
-  setPortalScope('pf');
-  if (clientPanels) {
-    clientPanels.hidden = true;
-  }
-  setBodyAuthState(false);
-  setAuthView('login');
-  showAuthOverlay();
-  reservationsContainer.innerHTML = '';
-  visitorsContainer.innerHTML = '';
-  bookingForm?.reset();
-  visitorForm?.reset();
-  setActivePanel('book');
-  renderProfile();
-  stopPortalAutoRefresh();
-  try {
-    localStorage.removeItem('portalRememberToken');
-  } catch (_) {}
+  const cleanup = () => {
+    activeClient = null;
+    currentReservations = [];
+    currentVisitors = [];
+    bookingVisitorIds = [];
+    const paymentClientIdInput = document.getElementById('clientId');
+    if (paymentClientIdInput) paymentClientIdInput.value = '';
+    closeHeaderMenu();
+    setPortalScope('pf');
+    if (clientPanels) clientPanels.hidden = true;
+    setBodyAuthState(false);
+    setAuthView('login');
+    showAuthOverlay();
+    if (reservationsContainer) reservationsContainer.innerHTML = '';
+    if (visitorsContainer) visitorsContainer.innerHTML = '';
+    bookingForm?.reset();
+    visitorForm?.reset();
+    setActivePanel('book');
+    renderProfile();
+    stopPortalAutoRefresh();
+    try { localStorage.removeItem('portalRememberToken'); } catch (_) {}
+  };
+
+  // encerra sessão no backend
+  fetch(`${API_BASE}/apilogout.php`, { credentials: 'include' })
+    .finally(cleanup);
 }
 
 function registrarPreferenciaLogin(lembrar, login, password) {
