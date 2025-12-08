@@ -203,17 +203,38 @@
     }
 
     function success(data) {
-      const pagarmetoken = data?.pagarmetoken || data?.token || data?.id;
+      console.log('[Pagar.me] success callback data:', data);
+
+      // 1. tenta pegar do objeto data retornado pelo tokenizecard.js
+      let pagarmetoken =
+        (data && (data.pagarmetoken ||
+                  data.payment_token ||
+                  data.token ||
+                  data.id)) || null;
+
+      // 2. fallback: tenta pegar do input hidden name="pagarmetoken"
       if (!pagarmetoken) {
-        show('Token não retornado pelo Pagar.me', true);
-        return false; // impede submit padrão se algo deu errado
+        const hidden =
+          document.querySelector('input[name="pagarmetoken"]') ||
+          document.querySelector('input[name^="pagarmetoken"]');
+        if (hidden && hidden.value) {
+          pagarmetoken = hidden.value;
+        }
       }
+
+      if (!pagarmetoken) {
+        console.error('[Pagar.me] Nenhum token encontrado nem em data nem no input hidden.');
+        show('Token não retornado pelo Pagar.me. Verifique o console do navegador.', true);
+        return false; // impede submit padrão
+      }
+
+      // Envia o token para o backend
       processToken(pagarmetoken);
-      return false; // impede o submit padrão do form (vamos salvar via fetch)
+      return false; // impede o submit padrão do form
     }
 
     function fail(error) {
-      console.error('Erro na tokenização do cartão:', error);
+      console.error('[Pagar.me] Erro na tokenização do cartão:', error);
       show('Erro ao tokenizar o cartão.', true);
       return false;
     }
