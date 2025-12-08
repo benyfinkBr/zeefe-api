@@ -29,6 +29,23 @@ async function parseJsonSafe(res) {
   }
 }
 
+async function hydrateSessionFromServer() {
+  try {
+    const res = await fetch(`${API_BASE}/client_session.php`, { credentials: 'include' });
+    const json = await res.json();
+    if (json && json.success && json.client) {
+      aplicarClienteAtivo(json.client);
+    }
+  } catch (err) {
+    console.warn('[Portal] Falha ao recuperar sessão do servidor', err);
+  }
+}
+
+function checkPendingCompanyInvites() {
+  // Placeholder seguro para evitar ReferenceError quando não houver implementação
+  return;
+}
+
 const bodyEl = document.body;
 const prefersReducedMotionQuery = window.matchMedia
   ? window.matchMedia('(prefers-reduced-motion: reduce)')
@@ -130,14 +147,25 @@ const reservationsContainer = document.getElementById('reservationsContainer');
 // Client chat & suporte / problemas
 const clientChatModal = document.getElementById('clientChatModal');
 const clientChatClose = document.getElementById('clientChatClose');
+const clientChatHeader = document.getElementById('clientChatHeader');
+const clientChatMessages = document.getElementById('clientChatMessages');
 const clientChatForm = document.getElementById('clientChatForm');
+const clientChatInput = document.getElementById('clientChatInput');
+const clientChatTitleEl = document.getElementById('clientChatTitle');
+const clientChatThreadsList = document.getElementById('clientChatThreadsList');
+let clientChatThreadId = null;
+let clientChatPollTimer = null;
 const openSupportChatBtn = document.getElementById('openSupportChatBtn');
 const clientSupportThreadItem = document.getElementById('clientSupportThreadItem');
+let clientChatThreadsCache = [];
 const openReportProblemBtn = document.getElementById('openReportProblemBtn');
 const reportProblemModal = document.getElementById('reportProblemModal');
 const reportProblemClose = document.getElementById('reportProblemClose');
 const reportProblemCancel = document.getElementById('reportProblemCancel');
 const reportProblemForm = document.getElementById('reportProblemForm');
+const reportIssueType = document.getElementById('reportIssueType');
+const reportIssueDescription = document.getElementById('reportIssueDescription');
+const reportProblemMessage = document.getElementById('reportProblemMessage');
 // Modal de ações da reserva
 const reservationActionsModal = document.getElementById('reservationActionsModal');
 // Empresa/Membros modais
@@ -2782,6 +2810,7 @@ async function onPortalRecoverySubmit(event) {
 function aplicarClienteAtivo(cliente) {
   if (!cliente) return;
   activeClient = cliente;
+  try { window.activeClient = cliente; } catch (_) {}
   setBodyAuthState(true);
   syncHeaderScopeButtons();
   hideAuthOverlay();
@@ -4840,25 +4869,3 @@ async function enviarLinkPagamento(reservationId) {
   if (!json.success) throw new Error(json.error || 'Falha ao enviar link de pagamento.');
   return json;
 }
-// Client chat modal elements
-const clientChatModal = document.getElementById('clientChatModal');
-const clientChatClose = document.getElementById('clientChatClose');
-const clientChatHeader = document.getElementById('clientChatHeader');
-const clientChatMessages = document.getElementById('clientChatMessages');
-const clientChatForm = document.getElementById('clientChatForm');
-const clientChatInput = document.getElementById('clientChatInput');
-let clientChatThreadId = null;
-let clientChatPollTimer = null;
-const openSupportChatBtn = document.getElementById('openSupportChatBtn');
-const clientChatTitleEl = document.getElementById('clientChatTitle');
-const clientSupportThreadItem = document.getElementById('clientSupportThreadItem');
-const clientChatThreadsList = document.getElementById('clientChatThreadsList');
-const openReportProblemBtn = document.getElementById('openReportProblemBtn');
-const reportProblemModal = document.getElementById('reportProblemModal');
-const reportProblemClose = document.getElementById('reportProblemClose');
-const reportProblemCancel = document.getElementById('reportProblemCancel');
-const reportProblemForm = document.getElementById('reportProblemForm');
-const reportIssueType = document.getElementById('reportIssueType');
-const reportIssueDescription = document.getElementById('reportIssueDescription');
-const reportProblemMessage = document.getElementById('reportProblemMessage');
-let clientChatThreadsCache = [];
