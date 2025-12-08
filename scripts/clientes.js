@@ -144,6 +144,7 @@ let headerMenuOpen = false;
 let portalRefreshTimer = null;
 
 const reservationsContainer = document.getElementById('reservationsContainer');
+const clientMessagesBadge = document.getElementById('clientMessagesBadge');
 // Client chat & suporte / problemas
 const clientChatModal = document.getElementById('clientChatModal');
 const clientChatClose = document.getElementById('clientChatClose');
@@ -611,6 +612,9 @@ async function initialize() {
   importContactsClose?.addEventListener('click', closeImportContactsModal);
   importContactsModal?.addEventListener('click', (e)=>{ if (e.target===importContactsModal) closeImportContactsModal(); });
   importPickFileBtn?.addEventListener('click', ()=> document.getElementById('companyXlsxInput')?.click());
+
+  // Badge de mensagens inicia oculto
+  if (clientMessagesBadge) clientMessagesBadge.hidden = true;
 
   // Scope buttons
   scopePFBtn?.addEventListener('click', () => setPortalScope('pf'));
@@ -3265,13 +3269,10 @@ async function loadClientThreads() {
     if (!json.success || !Array.isArray(json.data)) return [];
     const threads = json.data;
     // Atualiza indicador de novas mensagens no header
-    const badge = document.getElementById('clientMessagesBadge');
-    if (badge) {
-      const hasUnread = threads.some(t => Number(t.unread_for_client || 0) > 0);
-      badge.hidden = !hasUnread;
-    }
+    updateMessagesBadge(threads.some(t => Number(t.unread_for_client || 0) > 0));
     return threads;
   } catch {
+    updateMessagesBadge(false);
     return [];
   }
 }
@@ -3352,6 +3353,7 @@ async function fetchClientChatMessages(){
     }).join('');
     clientChatMessages.scrollTop = clientChatMessages.scrollHeight;
     try { await fetch(`${API_BASE}/messages_mark_read.php`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ thread_id: clientChatThreadId, who: 'client' }) }); } catch (_) {}
+    updateMessagesBadge(false);
   } catch (_) {
     clientChatMessages.innerHTML = '<div class="rooms-message">Falha ao carregar mensagens.</div>';
   }
@@ -3359,6 +3361,11 @@ async function fetchClientChatMessages(){
 
 function startClientChatPolling(){ stopClientChatPolling(); clientChatPollTimer = setInterval(fetchClientChatMessages, 10000); }
 function stopClientChatPolling(){ if (clientChatPollTimer) { clearInterval(clientChatPollTimer); clientChatPollTimer = null; } }
+
+function updateMessagesBadge(hasUnread) {
+  if (!clientMessagesBadge) return;
+  clientMessagesBadge.hidden = !hasUnread;
+}
 
 async function onClientChatSubmit(e){
   e.preventDefault();
