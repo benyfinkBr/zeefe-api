@@ -9,6 +9,10 @@
   const existingCardsEl = document.getElementById('existingCards');
   const addressInfoEl = document.getElementById('addressInfo');
 
+  // Normaliza o objeto exposto pelo tokenizecard.js (PagarmeCheckout vs PagarMeCheckout)
+  if (!window.PagarmeCheckout && window.PagarMeCheckout) window.PagarmeCheckout = window.PagarMeCheckout;
+  if (!window.PagarMeCheckout && window.PagarmeCheckout) window.PagarMeCheckout = window.PagarmeCheckout;
+
   const show = (msg, isError = false) => {
     if (!statusEl) return;
     statusEl.textContent = msg;
