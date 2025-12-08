@@ -255,10 +255,23 @@ function updatePagarmeCustomer(PDO $pdo, int $clientId, array $clientData, array
 
 function saveCardForClient(PDO $pdo, int $clientId, string $token): array {
   ensurePagarmeColumns($pdo);
+  [$client, $address] = fetchClientWithAddress($pdo, $clientId);
   $customer = ensurePagarmeCustomer($pdo, $clientId);
   $customerId = $customer['id'];
 
-  $card = pagarme_request('POST', "/customers/{$customerId}/cards", ['token' => $token]);
+  $payload = ['token' => $token];
+  if (!empty($address)) {
+    $payload['billing_address'] = [
+      'line_1'   => trim(($address['street'] ?? '') . ' ' . ($address['number'] ?? '')),
+      'line_2'   => $address['complement'] ?? '',
+      'zip_code' => preg_replace('/\D/', '', $address['zip_code'] ?? ''),
+      'city'     => $address['city'] ?? '',
+      'state'    => $address['state'] ?? '',
+      'country'  => $address['country'] ?? 'BR',
+    ];
+  }
+
+  $card = pagarme_request('POST', "/customers/{$customerId}/cards", $payload);
 
   $cardId = $card['id'] ?? null;
   if (!$cardId) {
