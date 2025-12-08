@@ -99,6 +99,7 @@
       renderAddress(json.address || null);
     } catch (err) {
       console.error('Erro ao carregar cartões:', err);
+      show('Erro ao carregar cartões.', true);
     }
   };
 
@@ -143,34 +144,7 @@
     }
   });
 
-  form?.addEventListener('submit', async (ev) => {
-    ev.preventDefault();
-    show('Gerando token...');
-
-    const Checkout = window.PagarmeCheckout || window.PagarMeCheckout;
-    if (!Checkout) {
-      show('tokenizecard.js não carregou', true);
-      return;
-    }
-    if (typeof Checkout.tokenize !== 'function') {
-      console.error('Checkout object', Checkout);
-      show('Tokenize indisponível (biblioteca não inicializada). Recarregue a página.', true);
-      return;
-    }
-    try {
-      const result = await Checkout.tokenize(form);
-      const pagarmetoken = result?.pagarmetoken || result?.token || result?.id;
-      if (!pagarmetoken) {
-        show('Token não retornado pelo Pagar.me', true);
-        return;
-      }
-      await processToken(pagarmetoken);
-    } catch (err) {
-      console.error('Erro ao tokenizar', err);
-      show('Erro ao tokenizar o cartão.', true);
-    }
-  });
-
+  // Envia o token gerado pelo tokenizecard.js para o backend
   const processToken = async (pagarmetoken) => {
     const clientId = resolveClientId();
     if (!clientId) {
@@ -203,6 +177,7 @@
     }
   };
 
+  // Caso tenha sido redirecionado com ?pagarmetoken= na URL (fluxos futuros)
   const processTokenFromUrl = async () => {
     const url = new URL(window.location.href);
     const pagarmetoken = url.searchParams.get('pagarmetoken') || url.searchParams.get('token');
@@ -214,5 +189,38 @@
     window.history.replaceState({}, '', newUrl);
   };
 
+  // Apenas mostra mensagem visual ao submeter; o tokenizecard.js cuida do resto
+  form?.addEventListener('submit', () => {
+    show('Gerando token do cartão...');
+  });
+
+  // Inicializa o tokenizecard.js conforme documentação
+  const initPagarmeCheckout = () => {
+    const Checkout = window.PagarmeCheckout || window.PagarMeCheckout;
+    if (!Checkout || typeof Checkout.init !== 'function') {
+      console.warn('PagarmeCheckout.init não encontrado. Verifique se tokenizecard.js foi incluído corretamente.');
+      return;
+    }
+
+    function success(data) {
+      const pagarmetoken = data?.pagarmetoken || data?.token || data?.id;
+      if (!pagarmetoken) {
+        show('Token não retornado pelo Pagar.me', true);
+        return false; // impede submit padrão se algo deu errado
+      }
+      processToken(pagarmetoken);
+      return false; // impede o submit padrão do form (vamos salvar via fetch)
+    }
+
+    function fail(error) {
+      console.error('Erro na tokenização do cartão:', error);
+      show('Erro ao tokenizar o cartão.', true);
+      return false;
+    }
+
+    Checkout.init(success, fail);
+  };
+
   await processTokenFromUrl();
+  initPagarmeCheckout();
 })();
