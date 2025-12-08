@@ -116,6 +116,41 @@
 
   btnOpenModal?.addEventListener('click', openAndLoad);
 
+  // Pré-visualização do cartão preenchido
+  const cardNumberInput = document.getElementById('cardNumber');
+  const holderNameInput = document.getElementById('holderName');
+  const expMonthInput = document.getElementById('expMonth');
+  const expYearInput = document.getElementById('expYear');
+  const cardPreviewNumber = document.getElementById('cardPreviewNumber');
+  const cardPreviewName = document.getElementById('cardPreviewName');
+  const cardPreviewExpiry = document.getElementById('cardPreviewExpiry');
+
+  const formatCardNumber = (value) => {
+    const digits = (value || '').replace(/\D/g, '').slice(0, 19);
+    return digits.replace(/(.{4})/g, '$1 ').trim();
+  };
+
+  const updatePreview = () => {
+    if (cardPreviewNumber) {
+      const formatted = formatCardNumber(cardNumberInput?.value || '');
+      cardPreviewNumber.textContent = formatted || '•••• •••• •••• ••••';
+    }
+    if (cardPreviewName) {
+      const name = (holderNameInput?.value || '').trim();
+      cardPreviewName.textContent = name || 'NOME DO CARTÃO';
+    }
+    if (cardPreviewExpiry) {
+      const mm = (expMonthInput?.value || '').replace(/\D/g, '').slice(0, 2);
+      const yy = (expYearInput?.value || '').replace(/\D/g, '').slice(0, 2);
+      cardPreviewExpiry.textContent = (mm || yy) ? `${mm.padEnd(2, '•')}/${yy.padEnd(2, '•')}` : 'MM/AA';
+    }
+  };
+
+  [cardNumberInput, holderNameInput, expMonthInput, expYearInput].forEach(el => {
+    el?.addEventListener('input', updatePreview);
+  });
+  updatePreview();
+
   existingCardsEl?.addEventListener('click', async (ev) => {
     const btn = ev.target.closest('[data-action="delete-card"]');
     if (!btn) return;

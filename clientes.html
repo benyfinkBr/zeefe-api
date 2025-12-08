@@ -1088,27 +1088,39 @@
           <input type="hidden" id="clientId" />
           <div id="existingCards" class="cards-list"></div>
           <hr />
-          <form id="paymentForm" data-pagarmecheckout-form>
+          <form id="paymentForm" class="payment-card-form" data-pagarmecheckout-form>
             <h3 style="margin-top:12px;">Adicionar novo cartão</h3>
-            <div class="form-grid-mini">
-              <div>
-                <label for="holderName">Nome impresso </label>
-                <input id="holderName" data-pagarmecheckout-element="holder_name-0" />
+            <div class="card-preview" id="cardPreview">
+              <div class="card-chip"></div>
+              <div class="card-number" id="cardPreviewNumber">•••• •••• •••• ••••</div>
+              <div class="card-row">
+                <div class="card-holder">
+                  <span>Nome impresso</span>
+                  <strong id="cardPreviewName">NOME DO CARTÃO</strong>
+                </div>
+                <div class="card-exp">
+                  <span>Validade</span>
+                  <strong id="cardPreviewExpiry">MM/AA</strong>
+                </div>
               </div>
-              <div>
+            </div>
+            <div class="payment-card-grid">
+              <div class="field wide">
                 <label for="cardNumber">Número do cartão</label>
                 <input id="cardNumber" data-pagarmecheckout-element="number-0" />
               </div>
-            </div>
-            <div class="form-grid-mini">
-              <div>
+              <div class="field wide">
+                <label for="holderName">Nome impresso</label>
+                <input id="holderName" data-pagarmecheckout-element="holder_name-0" />
+              </div>
+              <div class="field">
                 <label for="expMonth">Validade (MM/AA)</label>
-                <div style="display:flex; gap:8px;">
+                <div class="expiry-inputs">
                   <input id="expMonth" maxlength="2" data-pagarmecheckout-element="exp_month-0" />
                   <input id="expYear" maxlength="2" data-pagarmecheckout-element="exp_year-0" />
                 </div>
               </div>
-              <div>
+              <div class="field">
                 <label for="cvv">CVV</label>
                 <input id="cvv" maxlength="4" data-pagarmecheckout-element="cvv-0" />
               </div>
