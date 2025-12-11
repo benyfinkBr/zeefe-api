@@ -3346,7 +3346,11 @@ async function fetchClientChatMessages(){
     const res = await fetch(`${API_BASE}/messages_list_messages.php?thread_id=${encodeURIComponent(clientChatThreadId)}`);
     const json = await res.json();
     const list = json.success ? (json.data || []) : [];
-    if (!list.length) { clientChatMessages.innerHTML = '<div class="rooms-message">Nenhuma mensagem.</div>'; return; }
+    if (!list.length) {
+      clientChatMessages.innerHTML = '<div class="rooms-message">Nenhuma mensagem.</div>';
+      updateMessagesBadge(false);
+      return;
+    }
     clientChatMessages.innerHTML = list.map(m => {
       const me = (m.sender_type || '') === 'client';
       return `<div class="chat-bubble ${me ? 'me' : 'them'}"><div class="chat-text">${escapeHtml(m.body)}</div><div class="chat-time">${escapeHtml((m.created_at||'').toString().slice(0,16).replace('T',' '))}</div></div>`;
@@ -3356,6 +3360,7 @@ async function fetchClientChatMessages(){
     updateMessagesBadge(false);
   } catch (_) {
     clientChatMessages.innerHTML = '<div class="rooms-message">Falha ao carregar mensagens.</div>';
+    updateMessagesBadge(false);
   }
 }
 
