@@ -114,7 +114,7 @@ function enviarEmailStatusReserva(PDO $pdo, int $reservationId, string $action, 
  */
 function cobrarReservaComCartaoSalvo(PDO $pdo, int $reservationId): array {
   // Carrega dados essenciais da reserva/cliente
-  $stmt = $pdo->prepare('SELECT r.id, r.client_id, r.total_price, r.voucher_amount, r.room_id, r.advertiser_id, r.title FROM reservations r WHERE r.id = ? LIMIT 1');
+  $stmt = $pdo->prepare('SELECT r.id, r.client_id, r.total_price, r.voucher_amount, r.room_id, rm.advertiser_id, r.title FROM reservations r LEFT JOIN rooms rm ON rm.id = r.room_id WHERE r.id = ? LIMIT 1');
   $stmt->execute([$reservationId]);
   $res = $stmt->fetch(PDO::FETCH_ASSOC);
   if (!$res) {
