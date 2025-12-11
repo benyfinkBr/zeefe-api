@@ -170,22 +170,24 @@ function cobrarReservaComCartaoSalvo(PDO $pdo, int $reservationId): array {
     'room_id' => $res['room_id'] ?? null
   ];
 
+  // Payload conforme documentação v5 (orders + card_id)
   $payload = [
-    'code' => 'res_' . $reservationId . '_' . uniqid(),
+    'code'        => 'res_' . $reservationId . '_' . uniqid(),
+    'currency'    => 'BRL',
+    'customer_id' => $customerId,
     'items' => [[
-      'amount' => $amountCents,
+      'amount'      => $amountCents,
       'description' => $res['title'] ?: ('Reserva #' . $reservationId),
-      'quantity' => 1,
-      'code' => 'reservation'
+      'quantity'    => 1,
+      'code'        => 'reservation'
     ]],
-    'customer' => ['id' => $customerId],
     'payments' => [[
       'payment_method' => 'credit_card',
-      'amount' => $amountCents,
-      'capture' => true,
-      'credit_card' => [
-        'card_id' => $card['pagarme_card_id']
-      ]
+      'amount'         => $amountCents,
+      'credit_card'    => [
+        'card_id' => $card['pagarme_card_id'],
+      ],
+      'capture' => true
     ]],
     'metadata' => $metadata
   ];
@@ -193,8 +195,17 @@ function cobrarReservaComCartaoSalvo(PDO $pdo, int $reservationId): array {
   $order = pagarme_request('POST', '/orders', $payload);
   $charge = $order['charges'][0] ?? [];
   $status = strtolower($charge['status'] ?? '');
+
   if (!in_array($status, ['paid','authorized'], true)) {
-    throw new RuntimeException('Cobrança não concluída: ' . ($status ?: 'sem status retornado.'));
+    $reason = $status ?: 'sem status retornado';
+    $lastTx = $charge['last_transaction'] ?? null;
+    if ($lastTx) {
+      $reason .= ' | transaction_status=' . ($lastTx['status'] ?? 'unknown');
+      if (!empty($lastTx['acquirer_return_message'])) {
+        $reason .= ' | acquirer_message=' . $lastTx['acquirer_return_message'];
+      }
+    }
+    throw new RuntimeException('Cobrança não concluída: ' . $reason);
   }
 
   // Fee do anunciante (ou 15% padrão)
