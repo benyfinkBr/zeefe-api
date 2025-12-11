@@ -1182,7 +1182,11 @@ async function fetchMessagesOnce() {
     const res = await fetch(`${API_BASE}/messages_list_messages.php?thread_id=${encodeURIComponent(currentThreadId)}`);
     const json = await parseJsonSafe(res);
     const list = json.success ? (json.data || []) : [];
-    if (!list.length) { chatMessages.innerHTML = '<div class="rooms-message">Nenhuma mensagem.</div>'; return; }
+    if (!list.length) {
+      chatMessages.innerHTML = '<div class="rooms-message">Nenhuma mensagem.</div>';
+      updateAdvMessagesBadge(false);
+      return;
+    }
     chatMessages.innerHTML = list.map(m => {
       const me = (m.sender_type || '') === 'advertiser';
       return `<div class="chat-bubble ${me ? 'me' : 'them'}"><div class="chat-text">${escapeHtml(m.body)}</div><div class="chat-time">${escapeHtml((m.created_at||'').toString().slice(0,16).replace('T',' '))}</div></div>`;
@@ -1190,8 +1194,10 @@ async function fetchMessagesOnce() {
     chatMessages.scrollTop = chatMessages.scrollHeight;
     // marca como lida para o anunciante
     try { await fetch(`${API_BASE}/messages_mark_read.php`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ thread_id: currentThreadId, who: 'advertiser' }) }); } catch (_) {}
+    updateAdvMessagesBadge(false);
   } catch (e) {
     chatMessages.innerHTML = '<div class="rooms-message">Falha ao carregar mensagens.</div>';
+    updateAdvMessagesBadge(false);
   }
 }
 
@@ -1200,6 +1206,11 @@ function startChatPolling() {
   chatPollTimer = setInterval(fetchMessagesOnce, 10000);
 }
 function stopChatPolling() { if (chatPollTimer) { clearInterval(chatPollTimer); chatPollTimer = null; } }
+
+function updateAdvMessagesBadge(hasUnread) {
+  if (!advMessagesBadge) return;
+  advMessagesBadge.hidden = !hasUnread;
+}
 
 chatForm?.addEventListener('submit', async (e) => {
   e.preventDefault();
