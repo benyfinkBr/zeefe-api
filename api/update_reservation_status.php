@@ -182,9 +182,9 @@ function cobrarReservaComCartaoSalvo(PDO $pdo, int $reservationId): array {
     'payments' => [[
       'payment_method' => 'credit_card',
       'amount' => $amountCents,
+      'capture' => true,
       'credit_card' => [
-        'card_id' => $card['pagarme_card_id'],
-        'capture' => true
+        'card_id' => $card['pagarme_card_id']
       ]
     ]],
     'metadata' => $metadata
