@@ -114,7 +114,7 @@ function enviarEmailStatusReserva(PDO $pdo, int $reservationId, string $action, 
  */
 function cobrarReservaComCartaoSalvo(PDO $pdo, int $reservationId): array {
   // Carrega dados essenciais da reserva/cliente
-  $stmt = $pdo->prepare('SELECT r.id, r.client_id, r.total_price, r.voucher_amount, r.room_id, rm.advertiser_id, r.title FROM reservations r LEFT JOIN rooms rm ON rm.id = r.room_id WHERE r.id = ? LIMIT 1');
+  $stmt = $pdo->prepare('SELECT r.id, r.client_id, r.total_price, r.voucher_amount, r.price, r.room_id, rm.advertiser_id, rm.daily_rate, r.title FROM reservations r LEFT JOIN rooms rm ON rm.id = r.room_id WHERE r.id = ? LIMIT 1');
   $stmt->execute([$reservationId]);
   $res = $stmt->fetch(PDO::FETCH_ASSOC);
   if (!$res) {
@@ -126,8 +126,14 @@ function cobrarReservaComCartaoSalvo(PDO $pdo, int $reservationId): array {
     throw new RuntimeException('Cliente inválido para esta reserva.');
   }
 
-  // Valor bruto da reserva (total_price ou daily_rate), aplica voucher
+  // Valor bruto da reserva: tenta total_price > price > daily_rate da sala
   $gross = (float)($res['total_price'] ?? 0.0);
+  if ($gross <= 0 && isset($res['price'])) {
+    $gross = (float)$res['price'];
+  }
+  if ($gross <= 0 && isset($res['daily_rate'])) {
+    $gross = (float)$res['daily_rate'];
+  }
   $voucher = (float)($res['voucher_amount'] ?? 0.0);
   $paid = max(0.0, $gross - $voucher);
   if ($paid <= 0) {
