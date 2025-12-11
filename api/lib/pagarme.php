@@ -40,7 +40,7 @@ function pagarme_request(string $method, string $path, array $body = null) {
   $json = json_decode($response, true);
   if ($status >= 400) {
     error_log('Pagarme error (' . $status . '): ' . $response);
-    $extra = '';
+    $extraParts = [];
     if (!empty($json['errors']) && is_array($json['errors'])) {
       $details = array_map(function ($e) {
         $param = $e['parameter_name'] ?? $e['path'] ?? '';
@@ -48,11 +48,13 @@ function pagarme_request(string $method, string $path, array $body = null) {
         $code = $e['code'] ?? '';
         return trim($param . ': ' . $msg . ($code ? " ({$code})" : ''));
       }, $json['errors']);
-      $extra = ' Detalhes: ' . implode(' | ', $details);
-    } elseif (!empty($json)) {
-      $extra = ' Payload: ' . json_encode($json);
+      $extraParts[] = 'Detalhes: ' . implode(' | ', $details);
+    }
+    if (!empty($json)) {
+      $extraParts[] = 'Resposta: ' . json_encode($json);
     }
     $message = $json['message'] ?? $response;
+    $extra = $extraParts ? (' ' . implode(' ', $extraParts)) : '';
     throw new RuntimeException('Pagar.me retornou erro (' . $status . '): ' . $message . $extra);
   }
   return $json;
