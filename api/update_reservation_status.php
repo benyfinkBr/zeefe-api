@@ -114,7 +114,7 @@ function enviarEmailStatusReserva(PDO $pdo, int $reservationId, string $action, 
  */
 function cobrarReservaComCartaoSalvo(PDO $pdo, int $reservationId): array {
   // Carrega dados essenciais da reserva/cliente
-  $stmt = $pdo->prepare('SELECT r.id, r.client_id, r.total_price, r.voucher_amount, r.daily_rate, r.room_id, r.advertiser_id, r.title FROM reservations r WHERE r.id = ? LIMIT 1');
+  $stmt = $pdo->prepare('SELECT r.id, r.client_id, r.total_price, r.voucher_amount, r.room_id, r.advertiser_id, r.title FROM reservations r WHERE r.id = ? LIMIT 1');
   $stmt->execute([$reservationId]);
   $res = $stmt->fetch(PDO::FETCH_ASSOC);
   if (!$res) {
@@ -128,9 +128,6 @@ function cobrarReservaComCartaoSalvo(PDO $pdo, int $reservationId): array {
 
   // Valor bruto da reserva (total_price ou daily_rate), aplica voucher
   $gross = (float)($res['total_price'] ?? 0.0);
-  if ($gross <= 0 && isset($res['daily_rate'])) {
-    $gross = (float)$res['daily_rate'];
-  }
   $voucher = (float)($res['voucher_amount'] ?? 0.0);
   $paid = max(0.0, $gross - $voucher);
   if ($paid <= 0) {
