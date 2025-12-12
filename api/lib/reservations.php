@@ -1,10 +1,14 @@
 <?php
 function reservation_load(PDO $pdo, int $reservationId): ?array {
-  $stmt = $pdo->prepare('SELECT r.*, rooms.name AS room_name, rooms.street AS room_street, rooms.complement AS room_complement, rooms.city AS room_city, rooms.state AS room_state, clients.name AS client_name, clients.email AS client_email FROM reservations r JOIN rooms ON rooms.id = r.room_id JOIN clients ON clients.id = r.client_id WHERE r.id = ? LIMIT 1');
+  $stmt = $pdo->prepare('SELECT r.*, rooms.name AS room_name, rooms.street AS room_street, rooms.complement AS room_complement, rooms.city AS room_city, rooms.state AS room_state, clients.name AS client_name, clients.email AS client_email, clients.login AS client_login FROM reservations r JOIN rooms ON rooms.id = r.room_id JOIN clients ON clients.id = r.client_id WHERE r.id = ? LIMIT 1');
   $stmt->execute([$reservationId]);
   $row = $stmt->fetch(PDO::FETCH_ASSOC);
   if (!$row) {
     return null;
+  }
+
+  if (empty($row['client_email']) && !empty($row['client_login'])) {
+    $row['client_email'] = $row['client_login'];
   }
 
   $visitorsStmt = $pdo->prepare('SELECT v.name, v.email FROM reservation_visitors rv JOIN visitors v ON v.id = rv.visitor_id WHERE rv.reservation_id = ?');
