@@ -329,8 +329,8 @@ function enviarEmailReservaSolicitada(PDO $pdo, int $reservationId): void {
   }
 
   $emailCliente = $dados['client_email'] ?? '';
-  if (!$emailCliente && !empty($dados['login_email'])) {
-    $emailCliente = $dados['login_email'];
+  if (!$emailCliente && !empty($dados['client_login'])) {
+    $emailCliente = $dados['client_login'];
   }
   if (!$emailCliente && !empty($dados['email'])) {
     $emailCliente = $dados['email'];
