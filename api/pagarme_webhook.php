@@ -4,21 +4,21 @@ require_once __DIR__ . '/lib/payment_intents.php';
 require_once __DIR__ . '/lib/pagarme_events.php';
 require_once __DIR__ . '/lib/mailer.php';
 require_once __DIR__ . '/lib/reservations.php';
-if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-  header('Content-Type: application/json');
-  echo json_encode([
-    'ok' => true,
-    'endpoint' => 'pagarme_webhook',
-    'ts' => date('c')
-  ]);
+
+// Healthcheck (GET)
+if (($_SERVER['REQUEST_METHOD'] ?? 'POST') === 'GET') {
+  header('Content-Type: application/json; charset=utf-8');
+  http_response_code(200);
+  echo json_encode(['ok' => true, 'endpoint' => 'pagarme_webhook', 'ts' => date('c')]);
   exit;
 }
 
 $rawBody = file_get_contents('php://input');
 $payload = json_decode($rawBody, true);
-if (!is_array($payload)) {
-  error_log('[PagarMe webhook] Invalid JSON payload: ' . substr($rawBody ?? '', 0, 200));
-  header('Content-Type: application/json');
+if (!$payload) {
+  header('Content-Type: application/json; charset=utf-8');
+  error_log('[PAGARME_WEBHOOK] Payload inválido (json_decode). Body(200)=' . substr((string)$rawBody, 0, 200));
+  http_response_code(200);
   echo json_encode(['success' => true, 'ignored' => 'invalid_json']);
   exit;
 }
@@ -29,8 +29,9 @@ $charge    = $data['charge'] ?? null;
 $order     = $charge['order'] ?? null;
 
 if (!$eventType || !$data || !$charge || !$order) {
-  error_log('[PagarMe webhook] Malformed event: ' . substr($rawBody ?? '', 0, 200));
-  header('Content-Type: application/json');
+  header('Content-Type: application/json; charset=utf-8');
+  error_log('[PAGARME_WEBHOOK] Evento mal formatado. type=' . ($eventType ?: 'null') . ' | keys=' . implode(',', array_keys($payload)));
+  http_response_code(200);
   echo json_encode(['success' => true, 'ignored' => 'malformed_event']);
   exit;
 }
@@ -60,7 +61,7 @@ payment_intents_update_by_order($pdo, $orderId, $paymentId, [
 ]);
 
 $entity = $metadata['entity'] ?? null;
-$responsePayload = ['success' => true];
+$response = ['success' => true];
 $eventId = pagarme_events_store($pdo, [
   'hook_id' => $payload['id'] ?? null,
   'event_type' => $eventType,
@@ -87,8 +88,8 @@ try {
       enviarEmailPagamentoReservaFalhou($pdo, $reservationId, (string)$motivo);
       enviarEmailPagamentoReservaFalhouAnunciante($pdo, $reservationId, (string)$motivo);
     }
-    $responsePayload['reservation_id'] = $reservationId;
-  } elseif ($entity === 'workshop' && !empty($metadata['enrollment_id'])) {
+    $response['reservation_id'] = $reservationId;
+} elseif ($entity === 'workshop' && !empty($metadata['enrollment_id'])) {
     $enrollmentId = (int)$metadata['enrollment_id'];
     if ($statusMap === 'paid') {
       $stmt = $pdo->prepare('UPDATE workshop_enrollments SET payment_status = "pago" WHERE id = :id');
@@ -98,20 +99,18 @@ try {
       $stmt = $pdo->prepare('UPDATE workshop_enrollments SET payment_status = "pendente" WHERE id = :id');
       $stmt->execute([':id' => $enrollmentId]);
     }
-    $responsePayload['enrollment_id'] = $enrollmentId;
+    $response['enrollment_id'] = $enrollmentId;
   }
 } catch (Throwable $entityErr) {
   error_log('Erro ao sincronizar entidade após webhook: ' . $entityErr->getMessage());
   $processedOk = false;
-  $responsePayload['success'] = false;
-  $responsePayload['error'] = 'internal_error';
   if (!empty($eventId)) {
     pagarme_events_mark_processed($pdo, $eventId, $entityErr->getMessage(), false);
   }
 }
 
-header('Content-Type: application/json');
-echo json_encode($responsePayload);
+header('Content-Type: application/json; charset=utf-8');
+echo json_encode($response);
 if (!empty($eventId) && $processedOk) {
   pagarme_events_mark_processed($pdo, $eventId, $statusMap, true);
 }
