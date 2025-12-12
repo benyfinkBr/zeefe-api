@@ -85,7 +85,7 @@ function enviarEmailStatusReserva(PDO $pdo, int $reservationId, string $action, 
 
   switch ($action) {
     case 'confirm':
-      $detalhes['bloco_informacoes'] = '<p style="margin:0 0 10px;font-size:15px;line-height:1.6;">Sua reserva foi confirmada. Vamos processar o pagamento usando o método principal já cadastrado.</p><p style="margin:0 0 20px;font-size:14px;color:#8A7766;">Após a confirmação do pagamento, você receberá os detalhes e poderá convidar os visitantes.</p>';
+      $detalhes['bloco_informacoes'] = '<p style="margin:0 0 10px;font-size:15px;line-height:1.6;">Sua reserva foi confirmada. Vamos processar o pagamento usando o método principal já cadastrado.</p><p style="margin:0 0 20px;font-size:14px;color:#8A7766;">Assim que o pagamento for confirmado, enviaremos todos os dados completos da reserva e você poderá convidar os visitantes.</p>';
       $html = mailer_render('reservation_confirmed.php', $detalhes);
       mailer_send($dados['client_email'], 'Ze.EFE - Sua reserva foi confirmada', $html);
       break;
