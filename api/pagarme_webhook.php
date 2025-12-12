@@ -1,6 +1,7 @@
 <?php
 require 'apiconfig.php';
 require_once __DIR__ . '/lib/payment_intents.php';
+require_once __DIR__ . '/lib/pagarme_events.php';
 require_once __DIR__ . '/lib/mailer.php';
 require_once __DIR__ . '/lib/reservations.php';
 
@@ -77,7 +78,17 @@ payment_intents_update_by_order($pdo, $orderId, $paymentId, [
 
 $entity = $metadata['entity'] ?? null;
 $response = ['success' => true];
+$eventId = pagarme_events_store($pdo, [
+  'hook_id' => $payload['id'] ?? null,
+  'event_type' => $event,
+  'status_code' => null,
+  'status_text' => $status ?: $statusMap,
+  'entity' => $entity,
+  'context_id' => $metadata['reservation_id'] ?? $metadata['enrollment_id'] ?? null,
+  'payload' => $rawBody
+]);
 
+$processedOk = true;
 try {
   if ($entity === 'reservation' && !empty($metadata['reservation_id'])) {
     $reservationId = (int)$metadata['reservation_id'];
@@ -108,9 +119,16 @@ try {
   }
 } catch (Throwable $entityErr) {
   error_log('Erro ao sincronizar entidade após webhook: ' . $entityErr->getMessage());
+  $processedOk = false;
+  if (!empty($eventId)) {
+    pagarme_events_mark_processed($pdo, $eventId, $entityErr->getMessage(), false);
+  }
 }
 
 echo json_encode($response);
+if (!empty($eventId) && $processedOk) {
+  pagarme_events_mark_processed($pdo, $eventId, $statusMap, true);
+}
 
 function enviarEmailPagamentoReserva(PDO $pdo, int $reservationId, ?float $amount): void {
   $dados = reservation_load($pdo, $reservationId);
