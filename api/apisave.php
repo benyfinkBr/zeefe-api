@@ -360,11 +360,13 @@ function enviarEmailReservaSolicitada(PDO $pdo, int $reservationId): void {
     'link_portal'     => 'https://zeefe.com.br/clientes.html'
   ]);
 
-  $sent = mailer_send(
-    $emailCliente,
-    'Ze.EFE - recebemos sua solicitação',
-    $html
-  );
+  $tituloReserva = trim((string) ($dados['title'] ?? ''));
+  $assunto = 'Ze.EFE - recebemos sua solicitação';
+  if ($tituloReserva !== '') {
+    $assunto .= ' - ' . $tituloReserva;
+  }
+
+  $sent = mailer_send($emailCliente, $assunto, $html);
 
   if ($sent === false) {
     error_log("[MAIL][client] Falha no mailer_send para '{$emailCliente}' na reserva #{$reservationId}");
