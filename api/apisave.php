@@ -329,11 +329,6 @@ function agendarEnvioEmailsReserva(PDO $pdo, int $reservationId): void {
     } catch (Throwable $err) {
       error_log("[MAIL] Falha ao enviar e-mail para cliente da reserva #{$reservationId}: " . $err->getMessage());
     }
-    try {
-      enviarEmailReservaSolicitadaAnunciante($pdoRef, $reservationId);
-    } catch (Throwable $err) {
-      error_log("[MAIL] Falha ao enviar e-mail para anunciante da reserva #{$reservationId}: " . $err->getMessage());
-    }
   });
 }
 
