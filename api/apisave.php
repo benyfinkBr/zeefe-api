@@ -280,7 +280,12 @@ try {
       try {
         enviarEmailReservaSolicitada($pdo, $id);
       } catch (Throwable $mailError) {
-        error_log('Erro ao enviar e-mail da reserva: ' . $mailError->getMessage());
+        error_log('Erro ao enviar e-mail do cliente da reserva: ' . $mailError->getMessage());
+      }
+      try {
+        enviarEmailReservaSolicitadaAnunciante($pdo, $id);
+      } catch (Throwable $mailError) {
+        error_log('Erro ao enviar e-mail do anunciante da reserva: ' . $mailError->getMessage());
       }
     }
 
