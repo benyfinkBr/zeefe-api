@@ -64,6 +64,7 @@ try {
       $stmt = $pdo->prepare('UPDATE reservations SET payment_status = "confirmado", amount_gross = COALESCE(amount_gross, :amount), updated_at = NOW() WHERE id = :id');
       $stmt->execute([':amount' => $amount, ':id' => $reservationId]);
       enviarEmailPagamentoReserva($pdo, $reservationId, $amount);
+      enviarEmailDetalhesReservaPosPagamento($pdo, $reservationId);
     } elseif (in_array($statusMap, ['failed','canceled'], true)) {
       $stmt = $pdo->prepare('UPDATE reservations SET payment_status = "pendente", updated_at = NOW() WHERE id = :id');
       $stmt->execute([':id' => $reservationId]);
@@ -154,6 +155,43 @@ function enviarEmailPagamentoReservaFalhouAnunciante(PDO $pdo, int $reservationI
     mailer_send($row['advertiser_email'], 'Ze.EFE - Pagamento do cliente não aprovado', $html);
   } catch (Throwable $e) {
     error_log('Erro ao enviar e-mail de pagamento (falha) para anunciante: ' . $e->getMessage());
+  }
+}
+
+function enviarEmailDetalhesReservaPosPagamento(PDO $pdo, int $reservationId): void {
+  $dados = reservation_load($pdo, $reservationId);
+  if (!$dados || empty($dados['client_email'])) {
+    return;
+  }
+  $publicCode = reservation_get_public_code($pdo, $dados);
+  $enderecoPartes = [];
+  $map = [
+    $dados['room_street'] ?? null,
+    $dados['room_complement'] ?? null,
+    $dados['room_city'] ?? null,
+    $dados['room_state'] ?? null
+  ];
+  foreach ($map as $parte) {
+    if (!empty($parte)) {
+      $enderecoPartes[] = $parte;
+    }
+  }
+  $endereco = $enderecoPartes ? implode(', ', $enderecoPartes) : 'Disponível no portal';
+  $placeholders = [
+    'cliente_nome' => $dados['client_name'] ?? '',
+    'sala_nome' => $dados['room_name'] ?? '',
+    'data_formatada' => reservation_format_date($dados['date'] ?? ''),
+    'hora_inicio' => reservation_format_time($dados['time_start'] ?? null),
+    'hora_fim' => reservation_format_time($dados['time_end'] ?? null),
+    'endereco' => $endereco,
+    'codigo_publico' => $publicCode,
+    'link_portal' => 'https://zeefe.com.br/clientes.html'
+  ];
+  try {
+    $html = mailer_render('reservation_details_after_payment.php', $placeholders);
+    mailer_send($dados['client_email'], 'Ze.EFE - Detalhes da sua reserva', $html);
+  } catch (Throwable $e) {
+    error_log('Erro ao enviar e-mail com detalhes da reserva: ' . $e->getMessage());
   }
 }
 
