@@ -323,9 +323,24 @@ function sincronizarVisitantesReserva(PDO $pdo, $reservationId, array $visitors)
 
 function enviarEmailReservaSolicitada(PDO $pdo, int $reservationId): void {
   $dados = reservation_load($pdo, $reservationId);
-  if (!$dados || empty($dados['client_email'])) {
+  if (!$dados) {
+    error_log("enviarEmailReservaSolicitada: reserva {$reservationId} não encontrada.");
     return;
   }
+
+  $emailCliente = $dados['client_email'] ?? '';
+  if (!$emailCliente && !empty($dados['login_email'])) {
+    $emailCliente = $dados['login_email'];
+  }
+  if (!$emailCliente && !empty($dados['email'])) {
+    $emailCliente = $dados['email'];
+  }
+
+  if (!$emailCliente) {
+    error_log("enviarEmailReservaSolicitada: cliente da reserva {$reservationId} sem e-mail (client_email/login_email/email).");
+    return;
+  }
+
   $horaInicio = reservation_format_time($dados['time_start'] ?? null);
   $horaFim = reservation_format_time($dados['time_end'] ?? null);
   $visitantes = $dados['visitor_names'] ? implode(', ', $dados['visitor_names']) : 'Sem visitantes cadastrados';
@@ -338,7 +353,7 @@ function enviarEmailReservaSolicitada(PDO $pdo, int $reservationId): void {
     'visitantes' => $visitantes,
     'link_portal' => 'https://zeefe.com.br/clientes.html'
   ]);
-  mailer_send($dados['client_email'], 'Ze.EFE - recebemos sua solicitação', $html);
+  mailer_send($emailCliente, 'Ze.EFE - recebemos sua solicitação', $html);
 }
 
 function enviarEmailReservaSolicitadaAnunciante(PDO $pdo, int $reservationId): void {
