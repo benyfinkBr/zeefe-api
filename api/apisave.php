@@ -276,7 +276,7 @@ try {
       sincronizarVisitantesReserva($pdo, $id, $reservationVisitors);
     }
 
-    if ($table === 'reservations' && empty($rawRecord['id'])) {
+    if ($table === 'reservations') {
       try {
         enviarEmailReservaSolicitada($pdo, $id);
         enviarEmailReservaSolicitadaAnunciante($pdo, $id);
