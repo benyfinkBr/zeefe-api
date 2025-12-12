@@ -158,6 +158,7 @@ function cobrarReservaComCartaoSalvo(PDO $pdo, int $reservationId): array {
   }
 
   $metadata = [
+    'entity' => 'reservation',
     'context' => 'reservation',
     'reservation_id' => $reservationId,
     'client_id' => $clientId,
