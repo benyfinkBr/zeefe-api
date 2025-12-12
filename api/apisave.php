@@ -278,10 +278,9 @@ try {
 
     if ($table === 'reservations') {
       try {
-        enviarEmailReservaSolicitada($pdo, $id);
-        enviarEmailReservaSolicitadaAnunciante($pdo, $id);
+        agendarEnvioEmailsReserva($pdo, $id);
       } catch (Throwable $mailError) {
-        error_log('Erro ao enviar e-mail de solicitação de reserva: ' . $mailError->getMessage());
+        error_log('Erro ao agendar e-mails da reserva: ' . $mailError->getMessage());
       }
     }
 
@@ -319,6 +318,22 @@ function sincronizarVisitantesReserva(PDO $pdo, $reservationId, array $visitors)
       $stmtIns->execute([$reservationId, $visitorId]);
     }
   }
+}
+
+function agendarEnvioEmailsReserva(PDO $pdo, int $reservationId): void {
+  $pdoRef = $pdo;
+  register_shutdown_function(static function () use ($pdoRef, $reservationId) {
+    try {
+      enviarEmailReservaSolicitada($pdoRef, $reservationId);
+    } catch (Throwable $err) {
+      error_log("[MAIL] Falha ao enviar e-mail para cliente da reserva #{$reservationId}: " . $err->getMessage());
+    }
+    try {
+      enviarEmailReservaSolicitadaAnunciante($pdoRef, $reservationId);
+    } catch (Throwable $err) {
+      error_log("[MAIL] Falha ao enviar e-mail para anunciante da reserva #{$reservationId}: " . $err->getMessage());
+    }
+  });
 }
 
 function enviarEmailReservaSolicitada(PDO $pdo, int $reservationId): void {
