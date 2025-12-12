@@ -6,6 +6,27 @@ require_once __DIR__ . '/lib/reservations.php';
 
 $authUser = $_SERVER['PHP_AUTH_USER'] ?? '';
 $authPass = $_SERVER['PHP_AUTH_PW'] ?? '';
+if ($authUser === '' && isset($_SERVER['HTTP_AUTHORIZATION'])) {
+  $authHeader = $_SERVER['HTTP_AUTHORIZATION'];
+  if (stripos($authHeader, 'basic ') === 0) {
+    $decoded = base64_decode(substr($authHeader, 6));
+    if ($decoded !== false) {
+      [$parsedUser, $parsedPass] = array_pad(explode(':', $decoded, 2), 2, '');
+      $authUser = $parsedUser;
+      $authPass = $parsedPass;
+    }
+  }
+} elseif ($authUser === '' && isset($_SERVER['REDIRECT_HTTP_AUTHORIZATION'])) {
+  $authHeader = $_SERVER['REDIRECT_HTTP_AUTHORIZATION'];
+  if (stripos($authHeader, 'basic ') === 0) {
+    $decoded = base64_decode(substr($authHeader, 6));
+    if ($decoded !== false) {
+      [$parsedUser, $parsedPass] = array_pad(explode(':', $decoded, 2), 2, '');
+      $authUser = $parsedUser;
+      $authPass = $parsedPass;
+    }
+  }
+}
 $expectedUser = $config['pagarme']['webhook_user'] ?? '';
 $expectedPass = $config['pagarme']['webhook_password'] ?? '';
 if ($expectedUser !== '' && $expectedPass !== '') {
