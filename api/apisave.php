@@ -284,6 +284,7 @@ try {
       }
     }
 
+    
     echo json_encode(['success'=>true,'message'=>'Registro criado','insertId'=>$id]); exit;
   }
 
