@@ -66,9 +66,11 @@ try {
     } elseif (in_array($statusMap, ['failed','canceled'], true)) {
       $stmt = $pdo->prepare('UPDATE reservations SET payment_status = "pendente", updated_at = NOW() WHERE id = :id');
       $stmt->execute([':id' => $reservationId]);
+      $motivo = $charge['last_transaction']['acquirer_return_message'] ?? ($charge['last_transaction']['status'] ?? $statusMap);
+      enviarEmailPagamentoReservaFalhou($pdo, $reservationId, (string)$motivo);
     }
     $response['reservation_id'] = $reservationId;
-  } elseif ($entity === 'workshop' && !empty($metadata['enrollment_id'])) {
+} elseif ($entity === 'workshop' && !empty($metadata['enrollment_id'])) {
     $enrollmentId = (int)$metadata['enrollment_id'];
     if ($statusMap === 'paid') {
       $stmt = $pdo->prepare('UPDATE workshop_enrollments SET payment_status = "pago" WHERE id = :id');
@@ -106,6 +108,28 @@ function enviarEmailPagamentoReserva(PDO $pdo, int $reservationId, ?float $amoun
     mailer_send($dados['client_email'], 'Ze.EFE - Pagamento confirmado', $html);
   } catch (Throwable $e) {
     error_log('Erro ao enviar e-mail de pagamento da reserva: ' . $e->getMessage());
+  }
+}
+
+function enviarEmailPagamentoReservaFalhou(PDO $pdo, int $reservationId, string $motivo = ''): void {
+  $dados = reservation_load($pdo, $reservationId);
+  if (!$dados || empty($dados['client_email'])) {
+    return;
+  }
+  $placeholders = [
+    'cliente_nome' => $dados['client_name'] ?? 'Cliente Ze.EFE',
+    'sala_nome' => $dados['room_name'] ?? 'Sala Ze.EFE',
+    'data_formatada' => reservation_format_date($dados['date'] ?? ''),
+    'hora_inicio' => reservation_format_time($dados['time_start'] ?? null),
+    'hora_fim' => reservation_format_time($dados['time_end'] ?? null),
+    'motivo' => $motivo ?: 'A operadora não aprovou a cobrança. Confira os dados do cartão ou cadastre um novo método.',
+    'link_portal' => 'https://zeefe.com/clientes.html'
+  ];
+  try {
+    $html = mailer_render('payment_reservation_failed.php', $placeholders);
+    mailer_send($dados['client_email'], 'Ze.EFE - Pagamento não aprovado', $html);
+  } catch (Throwable $e) {
+    error_log('Erro ao enviar e-mail de pagamento (falha) da reserva: ' . $e->getMessage());
   }
 }
 
