@@ -189,6 +189,12 @@ input, select {
 .existing-photos { margin-bottom:6px; }
 .new-photos { margin-top:6px; }
 .field-hidden { display:none !important; }
+.email-options-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
 
 .modal-reservas .modal-content { max-width: 720px; }
 .reservation-list { display:flex; flex-direction:column; gap:10px; }
@@ -383,6 +389,34 @@ input, select {
       </div>
     </div>
   </div>
+
+  <!-- Modal: Disparo de e-mails de reservas -->
+  <div class="modal" id="reservationEmailsModal">
+    <div class="modal-content" style="max-width:540px">
+      <div class="modal-header">
+        <h3 id="reservationEmailsTitle">Disparar e-mails</h3>
+        <button class="modal-close" onclick="fecharEmailsModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p style="margin-top:0;font-size:15px;color:#6b5c4f;">
+          Selecione o e-mail que deseja reenviar para o cliente ou anunciante.
+        </p>
+        <div class="email-options-grid">
+          <button type="button" class="btn btn-secondary" onclick="dispararEmailReserva('request_client')">Solicitação - Cliente</button>
+          <button type="button" class="btn btn-secondary" onclick="dispararEmailReserva('request_advertiser')">Solicitação - Anunciante</button>
+          <button type="button" class="btn btn-secondary" onclick="dispararEmailReserva('confirm_client')">Confirmação da reserva</button>
+          <button type="button" class="btn btn-secondary" onclick="dispararEmailReserva('payment_confirmed')">Pagamento confirmado</button>
+          <button type="button" class="btn btn-secondary" onclick="dispararEmailReserva('payment_failed_client')">Pagamento negado - Cliente</button>
+          <button type="button" class="btn btn-secondary" onclick="dispararEmailReserva('payment_failed_advertiser')">Pagamento negado - Anunciante</button>
+          <button type="button" class="btn btn-secondary" onclick="dispararEmailReserva('details_after_payment')">Detalhes pós pagamento</button>
+        </div>
+        <div id="emailModalStatus" class="rooms-message" style="margin-top:16px;display:none"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" onclick="fecharEmailsModal()">Fechar</button>
+      </div>
+    </div>
+  </div>
   <!-- Modal: Anunciante da Sala -->
   <div class="modal" id="advertiserModal">
     <div class="modal-content" style="max-width:720px">
@@ -464,6 +498,10 @@ input, select {
     const adminMessagesHeader = document.getElementById('adminMessagesHeader');
     const adminMessagesList = document.getElementById('adminMessagesList');
     const adminMessagesForm = document.getElementById('adminMessagesForm');
+    const reservationEmailsModal = document.getElementById('reservationEmailsModal');
+    const reservationEmailsTitle = document.getElementById('reservationEmailsTitle');
+    const emailModalStatus = document.getElementById('emailModalStatus');
+    let reservationEmailTarget = null;
     const adminMessageInput = document.getElementById('adminMessageInput');
 
     function escapeHtml(value) {
@@ -1083,6 +1121,9 @@ input, select {
         if (sec === 'companies') {
           const nomeEmpresa = escapeHtml(row.nome_fantasia || row.razao_social || `Empresa #${rowId}`).replace(/'/g, "\\'");
           actionButtons.push(`<button class="btn-ghost" onclick="listarClientesEmpresa(${rowId}, '${nomeEmpresa}')">Clientes</button>`);
+        }
+        if (sec === 'reservations') {
+          actionButtons.push(`<button class="btn-ghost" onclick="abrirEmailsModal(${rowId})">E-mails</button>`);
         }
         actionButtons.push(`<button class="btn" onclick="abrirModalEdit(${rowId})">Editar</button>`);
         actionButtons.push(`<button class="btn" onclick="abrirModalExcluir(${rowId})">Excluir</button>`);
@@ -2450,12 +2491,17 @@ input, select {
     companyClientsModal.addEventListener('click', (event) => {
       if (event.target === companyClientsModal) fecharCompanyModal();
     });
+    reservationEmailsModal.addEventListener('click', (event) => {
+      if (event.target === reservationEmailsModal) fecharEmailsModal();
+    });
 
     document.addEventListener('keydown', (event) => {
       if (event.key !== 'Escape') return;
       const modalPrincipal = document.getElementById('modal');
       if (reservasModalEl.classList.contains('show')) {
         fecharReservasModal();
+      } else if (reservationEmailsModal.classList.contains('show')) {
+        fecharEmailsModal();
       } else if (companyClientsModal.classList.contains('show')) {
         fecharCompanyModal();
       } else if (modalPrincipal.classList.contains('show')) {
@@ -2480,6 +2526,40 @@ input, select {
         alert(json.message || 'Convite enviado.');
       } catch (e) {
         console.error(e); alert(e.message || 'Falha ao convidar.');
+      }
+    }
+
+    function abrirEmailsModal(reservationId) {
+      reservationEmailTarget = reservationId;
+      reservationEmailsTitle.textContent = `Disparar e-mails (Reserva #${reservationId})`;
+      emailModalStatus.style.display = 'none';
+      reservationEmailsModal.classList.add('show');
+    }
+
+    function fecharEmailsModal() {
+      reservationEmailTarget = null;
+      reservationEmailsModal.classList.remove('show');
+    }
+
+    async function dispararEmailReserva(tipo) {
+      if (!reservationEmailTarget) return;
+      emailModalStatus.style.display = 'block';
+      emailModalStatus.style.color = '#1D413A';
+      emailModalStatus.textContent = 'Enviando...';
+      try {
+        const res = await fetch(`${API_BASE}/admin_send_reservation_email.php`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ reservation_id: reservationEmailTarget, type })
+        });
+        const json = await res.json();
+        if (!json.success) throw new Error(json.error || 'Falha ao enviar e-mail.');
+        emailModalStatus.textContent = json.message || 'E-mail enviado.';
+        showToast('E-mail disparado.');
+      } catch (err) {
+        emailModalStatus.style.color = '#B54A3A';
+        emailModalStatus.textContent = err.message || 'Erro ao enviar e-mail.';
       }
     }
 
