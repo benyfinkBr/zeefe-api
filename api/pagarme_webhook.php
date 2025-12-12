@@ -17,6 +17,7 @@ if ($expectedUser !== '' && $expectedPass !== '') {
   }
 }
 
+
 $rawBody = file_get_contents('php://input');
 $payload = json_decode($rawBody, true);
 if (!$payload) {
