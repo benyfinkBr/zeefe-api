@@ -324,36 +324,51 @@ function sincronizarVisitantesReserva(PDO $pdo, $reservationId, array $visitors)
 function enviarEmailReservaSolicitada(PDO $pdo, int $reservationId): void {
   $dados = reservation_load($pdo, $reservationId);
   if (!$dados) {
-    error_log("enviarEmailReservaSolicitada: reserva {$reservationId} não encontrada.");
+    error_log("[MAIL][client] Reserva {$reservationId} não encontrada.");
     return;
   }
 
-  $emailCliente = $dados['client_email'] ?? '';
-  if (!$emailCliente && !empty($dados['client_login'])) {
-    $emailCliente = $dados['client_login'];
-  }
-  if (!$emailCliente && !empty($dados['email'])) {
-    $emailCliente = $dados['email'];
-  }
+  // Resolver e-mail do cliente (reservation_load pode retornar chaves diferentes)
+  $emailCliente = $dados['client_email']
+    ?? $dados['login_email']
+    ?? $dados['client_login_email']
+    ?? $dados['client_login']
+    ?? $dados['email']
+    ?? '';
 
-  if (!$emailCliente) {
-    error_log("enviarEmailReservaSolicitada: cliente da reserva {$reservationId} sem e-mail (client_email/login_email/email).");
+  $emailCliente = is_string($emailCliente) ? trim($emailCliente) : '';
+
+  if ($emailCliente === '' || !filter_var($emailCliente, FILTER_VALIDATE_EMAIL)) {
+    $keys = implode(',', array_keys($dados));
+    error_log("[MAIL][client] Reserva #{$reservationId} sem e-mail válido. email='{$emailCliente}' | keys={$keys}");
     return;
   }
 
   $horaInicio = reservation_format_time($dados['time_start'] ?? null);
   $horaFim = reservation_format_time($dados['time_end'] ?? null);
-  $visitantes = $dados['visitor_names'] ? implode(', ', $dados['visitor_names']) : 'Sem visitantes cadastrados';
+  $visitantes = !empty($dados['visitor_names'])
+    ? implode(', ', $dados['visitor_names'])
+    : 'Sem visitantes cadastrados';
+
   $html = mailer_render('reservation_requested.php', [
-    'cliente_nome' => $dados['client_name'] ?? '',
-    'sala_nome' => $dados['room_name'] ?? '',
-    'data_formatada' => reservation_format_date($dados['date']),
-    'hora_inicio' => $horaInicio,
-    'hora_fim' => $horaFim,
-    'visitantes' => $visitantes,
-    'link_portal' => 'https://zeefe.com.br/clientes.html'
+    'cliente_nome'    => $dados['client_name'] ?? '',
+    'sala_nome'       => $dados['room_name'] ?? '',
+    'data_formatada'  => reservation_format_date($dados['date']),
+    'hora_inicio'     => $horaInicio,
+    'hora_fim'        => $horaFim,
+    'visitantes'      => $visitantes,
+    'link_portal'     => 'https://zeefe.com.br/clientes.html'
   ]);
-  mailer_send($emailCliente, 'Ze.EFE - recebemos sua solicitação', $html);
+
+  $sent = mailer_send(
+    $emailCliente,
+    'Ze.EFE - recebemos sua solicitação',
+    $html
+  );
+
+  if ($sent === false) {
+    error_log("[MAIL][client] Falha no mailer_send para '{$emailCliente}' na reserva #{$reservationId}");
+  }
 }
 
 function enviarEmailReservaSolicitadaAnunciante(PDO $pdo, int $reservationId): void {
