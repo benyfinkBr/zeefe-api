@@ -25,12 +25,17 @@ if (!$payload) {
 
 $eventType = strtolower($payload['type'] ?? '');
 $data      = $payload['data'] ?? [];
-$charge    = $data['charge'] ?? null;
-$order     = $charge['order'] ?? null;
 
-if (!$eventType || !$data || !$charge || !$order) {
+// Webhook v5 pode vir como:
+// A) data: { charge: { ... , order: {...} } }
+// B) data: { ...campos da charge..., order: {...} }
+$charge = $data['charge'] ?? $data;
+$order  = $charge['order'] ?? ($data['order'] ?? null);
+
+if (!$eventType || !$data || !is_array($charge) || !$order) {
   header('Content-Type: application/json; charset=utf-8');
-  error_log('[PAGARME_WEBHOOK] Evento mal formatado. type=' . ($eventType ?: 'null') . ' | keys=' . implode(',', array_keys($payload)));
+  $dataKeys = is_array($data) ? implode(',', array_keys($data)) : 'not_array';
+  error_log('[PAGARME_WEBHOOK] Evento mal formatado. type=' . ($eventType ?: 'null') . ' | payload_keys=' . implode(',', array_keys($payload)) . ' | data_keys=' . $dataKeys);
   http_response_code(200);
   echo json_encode(['success' => true, 'ignored' => 'malformed_event']);
   exit;
@@ -40,7 +45,7 @@ $metadata   = $order['metadata'] ?? $charge['metadata'] ?? [];
 $orderId    = $order['id'] ?? null;
 $paymentId  = $charge['id'] ?? null;
 $status     = strtolower($charge['status'] ?? '');
-$amountCents = isset($charge['amount']) ? (int) $charge['amount'] : 0;
+$amountCents = isset($charge['paid_amount']) ? (int)$charge['paid_amount'] : (isset($charge['amount']) ? (int)$charge['amount'] : 0);
 $amount = $amountCents > 0 ? $amountCents / 100 : null;
 
 $statusMap = 'pending';
@@ -89,7 +94,8 @@ try {
       enviarEmailPagamentoReservaFalhouAnunciante($pdo, $reservationId, (string)$motivo);
     }
     $response['reservation_id'] = $reservationId;
-} elseif ($entity === 'workshop' && !empty($metadata['enrollment_id'])) {
+
+  } elseif ($entity === 'workshop' && !empty($metadata['enrollment_id'])) {
     $enrollmentId = (int)$metadata['enrollment_id'];
     if ($statusMap === 'paid') {
       $stmt = $pdo->prepare('UPDATE workshop_enrollments SET payment_status = "pago" WHERE id = :id');
@@ -161,7 +167,18 @@ function enviarEmailPagamentoReservaFalhou(PDO $pdo, int $reservationId, string 
 }
 
 function enviarEmailPagamentoReservaFalhouAnunciante(PDO $pdo, int $reservationId, string $motivo = ''): void {
-  $stmt = $pdo->prepare('SELECT r.date, r.time_start, r.time_end, rooms.name AS room_name, rooms.advertiser_id, a.display_name AS advertiser_name, a.login_email AS advertiser_email, c.name AS client_name FROM reservations r JOIN rooms ON rooms.id = r.room_id JOIN clients c ON c.id = r.client_id LEFT JOIN advertisers a ON a.id = rooms.advertiser_id WHERE r.id = ? LIMIT 1');
+  $stmt = $pdo->prepare('SELECT r.date, r.time_start, r.time_end,
+    rooms.name AS room_name,
+    rooms.advertiser_id,
+    COALESCE(a.display_name, a.name) AS advertiser_name,
+    COALESCE(a.login_email, a.email) AS advertiser_email,
+    c.name AS client_name
+    FROM reservations r
+    JOIN rooms ON rooms.id = r.room_id
+    JOIN clients c ON c.id = r.client_id
+    LEFT JOIN companies a ON a.id = rooms.advertiser_id
+    WHERE r.id = ?
+    LIMIT 1');
   $stmt->execute([$reservationId]);
   $row = $stmt->fetch(PDO::FETCH_ASSOC);
   if (!$row || empty($row['advertiser_email'])) {
