@@ -68,6 +68,7 @@ try {
       $stmt->execute([':id' => $reservationId]);
       $motivo = $charge['last_transaction']['acquirer_return_message'] ?? ($charge['last_transaction']['status'] ?? $statusMap);
       enviarEmailPagamentoReservaFalhou($pdo, $reservationId, (string)$motivo);
+      enviarEmailPagamentoReservaFalhouAnunciante($pdo, $reservationId, (string)$motivo);
     }
     $response['reservation_id'] = $reservationId;
 } elseif ($entity === 'workshop' && !empty($metadata['enrollment_id'])) {
@@ -130,6 +131,28 @@ function enviarEmailPagamentoReservaFalhou(PDO $pdo, int $reservationId, string 
     mailer_send($dados['client_email'], 'Ze.EFE - Pagamento não aprovado', $html);
   } catch (Throwable $e) {
     error_log('Erro ao enviar e-mail de pagamento (falha) da reserva: ' . $e->getMessage());
+  }
+}
+
+function enviarEmailPagamentoReservaFalhouAnunciante(PDO $pdo, int $reservationId, string $motivo = ''): void {
+  $stmt = $pdo->prepare('SELECT r.date, r.time_start, r.time_end, rooms.name AS room_name, rooms.advertiser_id, a.display_name AS advertiser_name, a.login_email AS advertiser_email, c.name AS client_name FROM reservations r JOIN rooms ON rooms.id = r.room_id JOIN clients c ON c.id = r.client_id LEFT JOIN advertisers a ON a.id = rooms.advertiser_id WHERE r.id = ? LIMIT 1');
+  $stmt->execute([$reservationId]);
+  $row = $stmt->fetch(PDO::FETCH_ASSOC);
+  if (!$row || empty($row['advertiser_email'])) {
+    return;
+  }
+  $placeholders = [
+    'sala_nome' => $row['room_name'] ?? '',
+    'data_formatada' => reservation_format_date($row['date'] ?? ''),
+    'cliente_nome' => $row['client_name'] ?? 'Cliente',
+    'motivo' => $motivo ?: 'Não autorizado',
+    'link_portal' => 'https://zeefe.com.br/anunciante.html'
+  ];
+  try {
+    $html = mailer_render('payment_reservation_failed_advertiser.php', $placeholders);
+    mailer_send($row['advertiser_email'], 'Ze.EFE - Pagamento do cliente não aprovado', $html);
+  } catch (Throwable $e) {
+    error_log('Erro ao enviar e-mail de pagamento (falha) para anunciante: ' . $e->getMessage());
   }
 }
 

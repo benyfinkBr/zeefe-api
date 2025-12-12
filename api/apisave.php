@@ -279,6 +279,7 @@ try {
     if ($table === 'reservations' && empty($rawRecord['id'])) {
       try {
         enviarEmailReservaSolicitada($pdo, $id);
+        enviarEmailReservaSolicitadaAnunciante($pdo, $id);
       } catch (Throwable $mailError) {
         error_log('Erro ao enviar e-mail de solicitação de reserva: ' . $mailError->getMessage());
       }
@@ -338,6 +339,28 @@ function enviarEmailReservaSolicitada(PDO $pdo, int $reservationId): void {
     'link_portal' => 'https://zeefe.com.br/clientes.html'
   ]);
   mailer_send($dados['client_email'], 'Ze.EFE - recebemos sua solicitação', $html);
+}
+
+function enviarEmailReservaSolicitadaAnunciante(PDO $pdo, int $reservationId): void {
+  $stmt = $pdo->prepare('SELECT r.date, r.time_start, r.time_end, rooms.name AS room_name, rooms.advertiser_id, c.name AS client_name, a.display_name AS advertiser_name, a.login_email AS advertiser_email FROM reservations r JOIN rooms ON rooms.id = r.room_id JOIN clients c ON c.id = r.client_id LEFT JOIN advertisers a ON a.id = rooms.advertiser_id WHERE r.id = ? LIMIT 1');
+  $stmt->execute([$reservationId]);
+  $row = $stmt->fetch(PDO::FETCH_ASSOC);
+  if (!$row || empty($row['advertiser_email'])) {
+    return;
+  }
+  $horaInicio = reservation_format_time($row['time_start'] ?? null);
+  $horaFim = reservation_format_time($row['time_end'] ?? null);
+  $placeholders = [
+    'anunciante_nome' => $row['advertiser_name'] ?: 'Anunciante',
+    'sala_nome' => $row['room_name'] ?? '',
+    'data_formatada' => reservation_format_date($row['date']),
+    'hora_inicio' => $horaInicio,
+    'hora_fim' => $horaFim,
+    'cliente_nome' => $row['client_name'] ?? 'Cliente',
+    'link_portal' => 'https://zeefe.com.br/anunciante.html'
+  ];
+  $html = mailer_render('reservation_requested_advertiser.php', $placeholders);
+  mailer_send($row['advertiser_email'], 'Ze.EFE - Nova solicitação de reserva', $html);
 }
 
 /**
