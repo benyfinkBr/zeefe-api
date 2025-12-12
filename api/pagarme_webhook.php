@@ -30,13 +30,36 @@ if ($authUser === '' && isset($_SERVER['HTTP_AUTHORIZATION'])) {
 }
 $expectedUser = $config['pagarme']['webhook_user'] ?? '';
 $expectedPass = $config['pagarme']['webhook_password'] ?? '';
-if ($expectedUser !== '' && $expectedPass !== '') {
-  if ($authUser !== $expectedUser || $authPass !== $expectedPass) {
-    header('WWW-Authenticate: Basic realm="PagarMe"');
-    http_response_code(401);
-    echo json_encode(['success' => false, 'error' => 'Unauthorized']);
-    exit;
+$accountId = $config['pagarme']['account_id'] ?? '';
+$secretKey = $config['pagarme']['secret_key'] ?? '';
+
+$validCombos = [];
+if ($expectedUser !== '' || $expectedPass !== '') {
+  $validCombos[] = [$expectedUser, $expectedPass];
+}
+if ($accountId !== '' && $secretKey !== '') {
+  $validCombos[] = [$accountId, $secretKey];
+}
+if ($secretKey !== '') {
+  $validCombos[] = [$secretKey, ''];
+}
+
+$authorized = true;
+if ($validCombos) {
+  $authorized = false;
+  foreach ($validCombos as [$user, $pass]) {
+    if ($authUser === $user && $authPass === $pass) {
+      $authorized = true;
+      break;
+    }
   }
+}
+
+if (!$authorized) {
+  header('WWW-Authenticate: Basic realm="PagarMe"');
+  http_response_code(401);
+  echo json_encode(['success' => false, 'error' => 'Unauthorized']);
+  exit;
 }
 
 
@@ -48,25 +71,32 @@ if (!$payload) {
   exit;
 }
 
-$event = strtolower($payload['type'] ?? $payload['event'] ?? '');
-$data = $payload['data'] ?? [];
-$charge = $data['charge'] ?? $data;
-$order = $charge['order'] ?? $data['order'] ?? null;
-$metadata = $order['metadata'] ?? $charge['metadata'] ?? [];
-$orderId = $order['id'] ?? $payload['data']['id'] ?? null;
-$paymentId = $charge['id'] ?? null;
-$status = strtolower($charge['status'] ?? '');
-$amountCents = (int)($charge['amount'] ?? 0);
+$eventType = strtolower($payload['type'] ?? '');
+$data      = $payload['data'] ?? [];
+$charge    = $data['charge'] ?? null;
+$order     = $charge['order'] ?? null;
+
+if (!$eventType || !$data || !$charge || !$order) {
+  http_response_code(400);
+  echo json_encode(['success' => false, 'error' => 'Evento mal formatado.']);
+  exit;
+}
+
+$metadata   = $order['metadata'] ?? $charge['metadata'] ?? [];
+$orderId    = $order['id'] ?? null;
+$paymentId  = $charge['id'] ?? null;
+$status     = strtolower($charge['status'] ?? '');
+$amountCents = isset($charge['amount']) ? (int) $charge['amount'] : 0;
 $amount = $amountCents > 0 ? $amountCents / 100 : null;
 
 $statusMap = 'pending';
-if (str_contains($event, 'paid') || $status === 'paid') {
+if (str_contains($eventType, 'paid') || $status === 'paid') {
   $statusMap = 'paid';
-} elseif (str_contains($event, 'processing') || $status === 'processing') {
+} elseif (str_contains($eventType, 'processing') || $status === 'processing') {
   $statusMap = 'pending';
-} elseif (str_contains($event, 'refunded') || str_contains($event, 'canceled') || $status === 'canceled' || $status === 'refunded') {
+} elseif (str_contains($eventType, 'refunded') || str_contains($eventType, 'canceled') || $status === 'canceled' || $status === 'refunded') {
   $statusMap = 'canceled';
-} elseif (str_contains($event, 'failed') || $status === 'failed' || str_contains($event, 'underpaid')) {
+} elseif (str_contains($eventType, 'failed') || $status === 'failed' || str_contains($eventType, 'underpaid')) {
   $statusMap = 'failed';
 }
 
@@ -80,7 +110,7 @@ $entity = $metadata['entity'] ?? null;
 $response = ['success' => true];
 $eventId = pagarme_events_store($pdo, [
   'hook_id' => $payload['id'] ?? null,
-  'event_type' => $event,
+  'event_type' => $eventType,
   'status_code' => null,
   'status_text' => $status ?: $statusMap,
   'entity' => $entity,
