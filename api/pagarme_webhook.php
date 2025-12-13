@@ -5,11 +5,56 @@ require_once __DIR__ . '/lib/pagarme_events.php';
 require_once __DIR__ . '/lib/mailer.php';
 require_once __DIR__ . '/lib/reservations.php';
 
+$diagTs = date('c');
+$reqMethod = $_SERVER['REQUEST_METHOD'] ?? 'CLI';
+$remoteIp = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+$ua = $_SERVER['HTTP_USER_AGENT'] ?? 'n/a';
+$host = $_SERVER['HTTP_HOST'] ?? 'n/a';
+$uri = $_SERVER['REQUEST_URI'] ?? 'n/a';
+$dbInfo = [
+  'db' => null,
+  'host' => null,
+  'user' => null
+];
+try {
+  $dbInfo['db'] = $pdo->query('SELECT DATABASE()')->fetchColumn();
+  $dbInfo['host'] = $pdo->query('SELECT @@hostname')->fetchColumn();
+  $dbInfo['user'] = $pdo->query('SELECT USER()')->fetchColumn();
+} catch (Throwable $e) {
+  error_log('[PAGARME_DIAG] Falha ao consultar DB info: ' . $e->getMessage());
+}
+error_log(sprintf('[PAGARME_DIAG] ts=%s method=%s ip=%s ua=%s host=%s uri=%s db=%s host_db=%s user=%s',
+  $diagTs, $reqMethod, $remoteIp, $ua, $host, $uri, $dbInfo['db'] ?? 'null', $dbInfo['host'] ?? 'null', $dbInfo['user'] ?? 'null'
+));
+
 // Healthcheck (GET)
 if (($_SERVER['REQUEST_METHOD'] ?? 'POST') === 'GET') {
-  header('Content-Type: application/json; charset=utf-8');
-  http_response_code(200);
-  echo json_encode(['ok' => true, 'endpoint' => 'pagarme_webhook', 'ts' => date('c')]);
+  if (!empty($_GET['diag'])) {
+    $tables = [];
+    try {
+      $stmt = $pdo->query("SHOW TABLES LIKE 'pagarme_events'");
+      $tables['pagarme_events'] = $stmt->fetchColumn() ? true : false;
+      $tables['payment_intents'] = $pdo->query("SHOW TABLES LIKE 'payment_intents'")->fetchColumn() ? true : false;
+      $count = $pdo->query("SELECT COUNT(*) FROM pagarme_events")->fetchColumn();
+    } catch (Throwable $e) {
+      $tables['error'] = $e->getMessage();
+      $count = null;
+    }
+    header('Content-Type: application/json; charset=utf-8');
+    http_response_code(200);
+    echo json_encode([
+      'ok' => true,
+      'endpoint' => 'pagarme_webhook',
+      'ts' => $diagTs,
+      'db' => $dbInfo,
+      'tables' => $tables,
+      'pagarme_events_count' => $count
+    ]);
+  } else {
+    header('Content-Type: application/json; charset=utf-8');
+    http_response_code(200);
+    echo json_encode(['ok' => true, 'endpoint' => 'pagarme_webhook', 'ts' => $diagTs]);
+  }
   exit;
 }
 
@@ -18,6 +63,7 @@ $payload = json_decode($rawBody, true);
 if (!$payload) {
   header('Content-Type: application/json; charset=utf-8');
   error_log('[PAGARME_WEBHOOK] Payload inválido (json_decode). Body(200)=' . substr((string)$rawBody, 0, 200));
+  error_log('[PAGARME_DIAG] exit=invalid_json');
   http_response_code(200);
   echo json_encode(['success' => true, 'ignored' => 'invalid_json']);
   exit;
@@ -32,10 +78,13 @@ $data      = $payload['data'] ?? [];
 $charge = $data['charge'] ?? $data;
 $order  = $charge['order'] ?? ($data['order'] ?? null);
 
+_pagarme_diag_log('type=' . ($eventType ?: 'null') . ' data_is_array=' . (is_array($data) ? '1' : '0') . ' order_exists=' . ($order ? '1' : '0'));
+
 if (!$eventType || !$data || !is_array($charge) || !$order) {
   header('Content-Type: application/json; charset=utf-8');
   $dataKeys = is_array($data) ? implode(',', array_keys($data)) : 'not_array';
   error_log('[PAGARME_WEBHOOK] Evento mal formatado. type=' . ($eventType ?: 'null') . ' | payload_keys=' . implode(',', array_keys($payload)) . ' | data_keys=' . $dataKeys);
+  _pagarme_diag_log('exit=malformed_event');
   http_response_code(200);
   echo json_encode(['success' => true, 'ignored' => 'malformed_event']);
   exit;
@@ -59,23 +108,34 @@ if (str_contains($eventType, 'paid') || $status === 'paid') {
   $statusMap = 'failed';
 }
 
-payment_intents_update_by_order($pdo, $orderId, $paymentId, [
-  'status' => $statusMap,
-  'pagarme_payment_id' => $paymentId,
-  'last_payload' => $rawBody
-]);
+try {
+  payment_intents_update_by_order($pdo, $orderId, $paymentId, [
+    'status' => $statusMap,
+    'pagarme_payment_id' => $paymentId,
+    'last_payload' => $rawBody
+  ]);
+} catch (Throwable $e) {
+  _pagarme_diag_log('payment_intents_update_by_order falhou: ' . $e->getMessage());
+}
 
 $entity = $metadata['entity'] ?? null;
+_pagarme_diag_log('store_event type=' . $eventType . ' order_id=' . ($orderId ?: 'null') . ' payment_id=' . ($paymentId ?: 'null') . ' status=' . ($status ?: 'null') . ' statusMap=' . $statusMap . ' metadata=' . json_encode($metadata));
 $response = ['success' => true];
-$eventId = pagarme_events_store($pdo, [
-  'hook_id' => $payload['id'] ?? null,
-  'event_type' => $eventType,
-  'status_code' => null,
-  'status_text' => $status ?: $statusMap,
-  'entity' => $entity,
-  'context_id' => $metadata['reservation_id'] ?? $metadata['enrollment_id'] ?? null,
-  'payload' => $rawBody
-]);
+$eventId = null;
+try {
+  $eventId = pagarme_events_store($pdo, [
+    'hook_id' => $payload['id'] ?? null,
+    'event_type' => $eventType,
+    'status_code' => null,
+    'status_text' => $status ?: $statusMap,
+    'entity' => $entity,
+    'context_id' => $metadata['reservation_id'] ?? $metadata['enrollment_id'] ?? null,
+    'payload' => $rawBody
+  ]);
+  _pagarme_diag_log('pagarme_events_store id=' . $eventId);
+} catch (Throwable $e) {
+  _pagarme_diag_log('pagarme_events_store falhou: ' . $e->getMessage());
+}
 
 $processedOk = true;
 try {
