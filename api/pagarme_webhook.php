@@ -82,15 +82,17 @@ try {
   if ($entity === 'reservation' && !empty($metadata['reservation_id'])) {
     $reservationId = (int)$metadata['reservation_id'];
     if ($statusMap === 'paid') {
+      $fallbackEmail = $charge['customer']['email'] ?? null;
       $stmt = $pdo->prepare('UPDATE reservations SET payment_status = "confirmado", amount_gross = COALESCE(amount_gross, :amount), updated_at = NOW() WHERE id = :id');
       $stmt->execute([':amount' => $amount, ':id' => $reservationId]);
-      enviarEmailPagamentoReserva($pdo, $reservationId, $amount);
-      enviarEmailDetalhesReservaPosPagamento($pdo, $reservationId);
+      enviarEmailPagamentoReserva($pdo, $reservationId, $amount, $fallbackEmail);
+      enviarEmailDetalhesReservaPosPagamento($pdo, $reservationId, $fallbackEmail);
     } elseif (in_array($statusMap, ['failed','canceled'], true)) {
+      $fallbackEmail = $charge['customer']['email'] ?? null;
       $stmt = $pdo->prepare('UPDATE reservations SET payment_status = "pendente", updated_at = NOW() WHERE id = :id');
       $stmt->execute([':id' => $reservationId]);
       $motivo = $charge['last_transaction']['acquirer_return_message'] ?? ($charge['last_transaction']['status'] ?? $statusMap);
-      enviarEmailPagamentoReservaFalhou($pdo, $reservationId, (string)$motivo);
+      enviarEmailPagamentoReservaFalhou($pdo, $reservationId, (string)$motivo, $fallbackEmail);
       enviarEmailPagamentoReservaFalhouAnunciante($pdo, $reservationId, (string)$motivo);
     }
     $response['reservation_id'] = $reservationId;
@@ -121,7 +123,7 @@ if (!empty($eventId) && $processedOk) {
   pagarme_events_mark_processed($pdo, $eventId, $statusMap, true);
 }
 
-function enviarEmailPagamentoReserva(PDO $pdo, int $reservationId, ?float $amount): void {
+function enviarEmailPagamentoReserva(PDO $pdo, int $reservationId, ?float $amount, ?string $fallbackEmail = null): void {
   $dados = reservation_load($pdo, $reservationId);
   if (!$dados) {
     error_log('[MAIL][client] reservation_load vazio para reserva #' . $reservationId);
@@ -131,9 +133,11 @@ function enviarEmailPagamentoReserva(PDO $pdo, int $reservationId, ?float $amoun
     $dados['client_email']
     ?? $dados['login_email']
     ?? $dados['email']
+    ?? $fallbackEmail
     ?? null;
 
   $emailCliente = is_string($emailCliente) ? trim($emailCliente) : null;
+  error_log('[MAIL][client] Reserva #' . $reservationId . ' destinatario_resolvido=' . ($emailCliente ?: 'null'));
 
   if (empty($emailCliente) || !filter_var($emailCliente, FILTER_VALIDATE_EMAIL)) {
     error_log('[MAIL][client] Sem e-mail válido para reserva #' . $reservationId);
@@ -147,17 +151,20 @@ function enviarEmailPagamentoReserva(PDO $pdo, int $reservationId, ?float $amoun
     'hora_inicio' => reservation_format_time($dados['time_start'] ?? null),
     'hora_fim' => reservation_format_time($dados['time_end'] ?? null),
     'valor_pago' => $valorFormatado,
-    'link_portal' => 'https://zeefe.com/clientes.html'
+    'link_portal' => 'https://zeefe.com.br/clientes.html'
   ];
   try {
     $html = mailer_render('payment_reservation_confirmed.php', $placeholders);
-    mailer_send($emailCliente, 'Ze.EFE - Pagamento confirmado', $html);
+    $sent = mailer_send($emailCliente, 'Ze.EFE - Pagamento confirmado', $html);
+    if ($sent === false) {
+      error_log('[MAIL][client] mailer_send retornou false para reserva #' . $reservationId . ' | email=' . $emailCliente);
+    }
   } catch (Throwable $e) {
     error_log('Erro ao enviar e-mail de pagamento da reserva: ' . $e->getMessage());
   }
 }
 
-function enviarEmailPagamentoReservaFalhou(PDO $pdo, int $reservationId, string $motivo = ''): void {
+function enviarEmailPagamentoReservaFalhou(PDO $pdo, int $reservationId, string $motivo = '', ?string $fallbackEmail = null): void {
   $dados = reservation_load($pdo, $reservationId);
   if (!$dados) {
     error_log('[MAIL][client] reservation_load vazio para reserva #' . $reservationId);
@@ -167,9 +174,11 @@ function enviarEmailPagamentoReservaFalhou(PDO $pdo, int $reservationId, string 
     $dados['client_email']
     ?? $dados['login_email']
     ?? $dados['email']
+    ?? $fallbackEmail
     ?? null;
 
   $emailCliente = is_string($emailCliente) ? trim($emailCliente) : null;
+  error_log('[MAIL][client] Reserva #' . $reservationId . ' destinatario_resolvido=' . ($emailCliente ?: 'null'));
 
   if (empty($emailCliente) || !filter_var($emailCliente, FILTER_VALIDATE_EMAIL)) {
     error_log('[MAIL][client] Sem e-mail válido para reserva #' . $reservationId);
@@ -182,11 +191,14 @@ function enviarEmailPagamentoReservaFalhou(PDO $pdo, int $reservationId, string 
     'hora_inicio' => reservation_format_time($dados['time_start'] ?? null),
     'hora_fim' => reservation_format_time($dados['time_end'] ?? null),
     'motivo' => $motivo ?: 'A operadora não aprovou a cobrança. Confira os dados do cartão ou cadastre um novo método.',
-    'link_portal' => 'https://zeefe.com/clientes.html'
+    'link_portal' => 'https://zeefe.com.br/clientes.html'
   ];
   try {
     $html = mailer_render('payment_reservation_failed.php', $placeholders);
-    mailer_send($emailCliente, 'Ze.EFE - Pagamento não aprovado', $html);
+    $sent = mailer_send($emailCliente, 'Ze.EFE - Pagamento não aprovado', $html);
+    if ($sent === false) {
+      error_log('[MAIL][client] mailer_send retornou false (falhou) para reserva #' . $reservationId . ' | email=' . $emailCliente);
+    }
   } catch (Throwable $e) {
     error_log('Erro ao enviar e-mail de pagamento (falha) da reserva: ' . $e->getMessage());
   }
@@ -225,7 +237,7 @@ function enviarEmailPagamentoReservaFalhouAnunciante(PDO $pdo, int $reservationI
   }
 }
 
-function enviarEmailDetalhesReservaPosPagamento(PDO $pdo, int $reservationId): void {
+function enviarEmailDetalhesReservaPosPagamento(PDO $pdo, int $reservationId, ?string $fallbackEmail = null): void {
   $dados = reservation_load($pdo, $reservationId);
   if (!$dados) {
     error_log('[MAIL][client] reservation_load vazio para reserva #' . $reservationId);
@@ -235,9 +247,11 @@ function enviarEmailDetalhesReservaPosPagamento(PDO $pdo, int $reservationId): v
     $dados['client_email']
     ?? $dados['login_email']
     ?? $dados['email']
+    ?? $fallbackEmail
     ?? null;
 
   $emailCliente = is_string($emailCliente) ? trim($emailCliente) : null;
+  error_log('[MAIL][client] Reserva #' . $reservationId . ' destinatario_resolvido=' . ($emailCliente ?: 'null'));
 
   if (empty($emailCliente) || !filter_var($emailCliente, FILTER_VALIDATE_EMAIL)) {
     error_log('[MAIL][client] Sem e-mail válido para reserva #' . $reservationId);
@@ -269,7 +283,10 @@ function enviarEmailDetalhesReservaPosPagamento(PDO $pdo, int $reservationId): v
   ];
   try {
     $html = mailer_render('reservation_details_after_payment.php', $placeholders);
-    mailer_send($emailCliente, 'Ze.EFE - Detalhes da sua reserva', $html);
+    $sent = mailer_send($emailCliente, 'Ze.EFE - Detalhes da sua reserva', $html);
+    if ($sent === false) {
+      error_log('[MAIL][client] mailer_send retornou false (detalhes) para reserva #' . $reservationId . ' | email=' . $emailCliente);
+    }
   } catch (Throwable $e) {
     error_log('Erro ao enviar e-mail com detalhes da reserva: ' . $e->getMessage());
   }
@@ -307,7 +324,7 @@ function enviarEmailPagamentoWorkshop(PDO $pdo, int $enrollmentId, ?float $amoun
     'valor_pago' => $valorFormatado,
     'codigo_ingresso' => $row['public_code'] ?? '',
     'checkin_url' => $checkinUrl,
-    'link_portal' => 'https://zeefe.com/clientes.html'
+    'link_portal' => 'https://zeefe.com.br/clientes.html'
   ];
   try {
     $html = mailer_render('payment_workshop_confirmed.php', $placeholders);
