@@ -1,7 +1,13 @@
 <?php
 /**
- * Public Pagar.me webhook endpoint (https://zeefe.com.br/pagarme_webhook.php)
- * Standalone: no sessions, no auth, always returns JSON 200.
+ * Public Pagar.me webhook endpoint
+ * URL: https://zeefe.com.br/pagarme_webhook.php
+ *
+ * Quick tests:
+ *   curl -i https://zeefe.com.br/pagarme_webhook.php
+ *   curl -i -X POST https://zeefe.com.br/pagarme_webhook.php \
+ *        -H "Content-Type: application/json" \
+ *        --data '{"type":"charge.paid","data":{"charge":{"id":"ch_test","status":"paid","order":{"id":"or_test","metadata":{"entity":"reservation","reservation_id":"51"}}}}}'
  */
 
 $config = include __DIR__ . '/api/config.php';
@@ -19,8 +25,8 @@ try {
         ]
     );
 } catch (Throwable $e) {
-    pagarme_log('DB connection failed: ' . $e->getMessage());
-    pagarme_respond(['ignored' => 'db_connection_error']);
+    pagarmeLog('DB connection failed: ' . $e->getMessage());
+    pagarmeRespond(['ignored' => 'db_connection_error']);
 }
 
 require_once __DIR__ . '/api/lib/payment_intents.php';
@@ -28,7 +34,7 @@ require_once __DIR__ . '/api/lib/pagarme_events.php';
 require_once __DIR__ . '/api/lib/reservations.php';
 require_once __DIR__ . '/api/lib/mailer.php';
 
-function pagarme_log(string $message): void
+function pagarmeLog(string $message): void
 {
     static $logFile = null;
     if ($logFile === null) {
@@ -40,17 +46,19 @@ function pagarme_log(string $message): void
             if (!is_dir($fallback)) {
                 @mkdir($fallback, 0755, true);
             }
-            $logFile = $fallback . '/pagarme_webhook.log';
+            if (is_writable($fallback)) {
+                $logFile = $fallback . '/pagarme_webhook.log';
+            }
         }
     }
 
     $line = sprintf("[%s] %s\n", date('c'), $message);
-    if (@file_put_contents($logFile, $line, FILE_APPEND) === false) {
-        error_log('[PAGARME_WEBHOOK_PUBLIC] ' . $message);
+    if (!$logFile || @file_put_contents($logFile, $line, FILE_APPEND) === false) {
+        error_log('[PAGARME_WEBHOOK_ROOT] ' . $message);
     }
 }
 
-function pagarme_respond(array $extra = []): void
+function pagarmeRespond(array $extra = []): void
 {
     header('Content-Type: application/json; charset=utf-8');
     http_response_code(200);
@@ -63,17 +71,53 @@ $ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
 $ua = $_SERVER['HTTP_USER_AGENT'] ?? 'n/a';
 $uri = $_SERVER['REQUEST_URI'] ?? '/pagarme_webhook.php';
 
-if ($method === 'GET') {
-    pagarme_log('Healthcheck uri=' . $uri . ' ip=' . $ip . ' ua=' . $ua);
-    pagarme_respond(['endpoint' => 'pagarme_webhook_public', 'ts' => date('c')]);
+if ($method === 'GET' && isset($_GET['diag'])) {
+    try {
+        $dbName = $pdo->query('SELECT DATABASE()')->fetchColumn();
+        $hostName = $pdo->query('SELECT @@hostname')->fetchColumn();
+        $dbUser = $pdo->query('SELECT USER()')->fetchColumn();
+        $count = $pdo->query('SELECT COUNT(*) FROM pagarme_events')->fetchColumn();
+    } catch (Throwable $e) {
+        pagarmeLog('Diag error: ' . $e->getMessage());
+        pagarmeRespond(['diag' => ['error' => $e->getMessage()]]);
+    }
+    pagarmeRespond([
+        'diag' => [
+            'database' => $dbName,
+            'host' => $hostName,
+            'user' => $dbUser,
+            'pagarme_events_count' => (int)$count
+        ]
+    ]);
 }
 
-$raw = file_get_contents('php://input');
-pagarme_log('POST hit uri=' . $uri . ' ip=' . $ip . ' ua=' . $ua . ' bytes=' . strlen((string)$raw) . ' body_sample=' . substr((string)$raw, 0, 300));
-$payload = json_decode($raw, true);
+if ($method === 'GET') {
+    pagarmeLog('Healthcheck uri=' . $uri . ' ip=' . $ip . ' ua=' . $ua);
+    pagarmeRespond(['endpoint' => 'pagarme_webhook_root', 'ts' => date('c')]);
+}
+
+$rawBody = file_get_contents('php://input');
+pagarmeLog('POST uri=' . $uri . ' ip=' . $ip . ' ua=' . $ua . ' bytes=' . strlen((string)$rawBody) . ' body_sample=' . substr((string)$rawBody, 0, 300));
+$payload = json_decode($rawBody, true);
 if (!is_array($payload)) {
-    pagarme_log('Invalid JSON: ' . json_last_error_msg());
-    pagarme_respond(['ignored' => 'invalid_json']);
+    pagarmeLog('Invalid JSON: ' . json_last_error_msg());
+    pagarmeRespond(['ignored' => 'invalid_json']);
+}
+
+$secret = $config['pagarme']['webhook_secret'] ?? '';
+if ($secret !== '') {
+    $header = $_SERVER['HTTP_X_HUB_SIGNATURE'] ?? $_SERVER['HTTP_X_PAGARME_SIGNATURE'] ?? '';
+    $hash = '';
+    if (str_starts_with($header, 'sha1=')) {
+        $hash = substr($header, 5);
+    } elseif ($header !== '') {
+        $hash = $header;
+    }
+    $expected = hash_hmac('sha1', $rawBody, $secret);
+    if (!$hash || !hash_equals($expected, $hash)) {
+        pagarmeLog('Invalid signature header=' . $header);
+        pagarmeRespond(['ignored' => 'invalid_signature']);
+    }
 }
 
 $eventType = strtolower($payload['type'] ?? '');
@@ -82,8 +126,8 @@ $charge = $data['charge'] ?? $data;
 $order = $charge['order'] ?? ($data['order'] ?? null);
 
 if (!$eventType || !is_array($data) || !is_array($charge) || !$order) {
-    pagarme_log('Malformed event type=' . ($eventType ?: 'null') . ' data_is_array=' . (is_array($data) ? '1' : '0'));
-    pagarme_respond(['ignored' => 'malformed_event']);
+    pagarmeLog('Malformed event type=' . ($eventType ?: 'null'));
+    pagarmeRespond(['ignored' => 'malformed_event']);
 }
 
 $metadata = $order['metadata'] ?? $charge['metadata'] ?? [];
@@ -110,10 +154,10 @@ try {
     payment_intents_update_by_order($pdo, $orderId, $paymentId, [
         'status' => $statusMap,
         'pagarme_payment_id' => $paymentId,
-        'last_payload' => $raw
+        'last_payload' => $rawBody
     ]);
 } catch (Throwable $e) {
-    pagarme_log('payment_intents_update_by_order error: ' . $e->getMessage());
+    pagarmeLog('payment_intents_update_by_order error: ' . $e->getMessage());
 }
 
 $eventId = null;
@@ -125,29 +169,29 @@ try {
         'status_text' => $status ?: $statusMap,
         'entity' => $metadata['entity'] ?? null,
         'context_id' => $metadata['reservation_id'] ?? $metadata['enrollment_id'] ?? null,
-        'payload' => $raw
+        'payload' => $rawBody
     ]);
 } catch (Throwable $e) {
-    pagarme_log('pagarme_events_store error: ' . $e->getMessage());
+    pagarmeLog('pagarme_events_store error: ' . $e->getMessage());
 }
 
 try {
-    pagarme_handle_business($pdo, $metadata, $charge, $statusMap, $amount);
+    pagarmeHandleBusiness($pdo, $metadata, $charge, $statusMap, $amount);
 } catch (Throwable $e) {
-    pagarme_log('Business handler error: ' . $e->getMessage());
+    pagarmeLog('Business error: ' . $e->getMessage());
     if ($eventId) {
         pagarme_events_mark_processed($pdo, $eventId, $e->getMessage(), false);
     }
-    pagarme_respond(['error' => 'internal_error']);
+    pagarmeRespond(['error' => 'internal_error']);
 }
 
 if ($eventId) {
     pagarme_events_mark_processed($pdo, $eventId, $statusMap, true);
 }
 
-pagarme_respond();
+pagarmeRespond();
 
-function pagarme_handle_business(PDO $pdo, array $metadata, array $charge, string $statusMap, ?float $amount): void
+function pagarmeHandleBusiness(PDO $pdo, array $metadata, array $charge, string $statusMap, ?float $amount): void
 {
     $entity = $metadata['entity'] ?? null;
     if ($entity === 'reservation' && !empty($metadata['reservation_id'])) {
