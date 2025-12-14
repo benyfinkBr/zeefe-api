@@ -1,0 +1,21 @@
+<IfModule mod_authz_core.c>
+    Require all granted
+</IfModule>
+
+# Disable inheritance of any parent auth rules
+AuthType none
+Satisfy any
+
+# Prevent redirects or rewrites from parent directories
+RewriteEngine Off
+
+# Reduce interference from WAF/mod_security (HostGator allows this directive)
+<IfModule mod_security.c>
+    SecFilterEngine Off
+    SecFilterScanPOST Off
+</IfModule>
+
+# Explicitly allow POST/GET
+<Limit GET POST OPTIONS>
+    Allow from all
+</Limit>
