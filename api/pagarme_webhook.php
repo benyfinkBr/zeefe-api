@@ -250,17 +250,30 @@ function process_webhook_business_logic(PDO $pdo, ?string $entity, array $metada
     if ($entity === 'reservation' && !empty($metadata['reservation_id'])) {
       $reservationId = (int)$metadata['reservation_id'];
       $fallbackEmail = $charge['customer']['email'] ?? null;
+
+      $stmt = $pdo->prepare('SELECT payment_status FROM reservations WHERE id = :id');
+      $stmt->execute([':id' => $reservationId]);
+      $currentStatus = $stmt->fetchColumn();
+
       if ($statusMap === 'paid') {
-        $stmt = $pdo->prepare('UPDATE reservations SET payment_status = "confirmado", amount_gross = COALESCE(amount_gross, :amount), updated_at = NOW() WHERE id = :id');
-        $stmt->execute([':amount' => $amount, ':id' => $reservationId]);
-        enviarEmailPagamentoReserva($pdo, $reservationId, $amount, $fallbackEmail);
-        enviarEmailDetalhesReservaPosPagamento($pdo, $reservationId, $fallbackEmail);
+        if ($currentStatus !== 'confirmado') {
+          $stmtUpdate = $pdo->prepare('UPDATE reservations SET payment_status = "confirmado", amount_gross = COALESCE(amount_gross, :amount), updated_at = NOW() WHERE id = :id');
+          $stmtUpdate->execute([':amount' => $amount, ':id' => $reservationId]);
+          enviarEmailPagamentoReserva($pdo, $reservationId, $amount, $fallbackEmail);
+          enviarEmailDetalhesReservaPosPagamento($pdo, $reservationId, $fallbackEmail);
+        } else {
+          $result['skipped'] = 'already_confirmed';
+        }
       } elseif (in_array($statusMap, ['failed', 'canceled'], true)) {
-        $stmt = $pdo->prepare('UPDATE reservations SET payment_status = "pendente", updated_at = NOW() WHERE id = :id');
-        $stmt->execute([':id' => $reservationId]);
-        $motivo = $charge['last_transaction']['acquirer_return_message'] ?? ($charge['last_transaction']['status'] ?? $statusMap);
-        enviarEmailPagamentoReservaFalhou($pdo, $reservationId, (string)$motivo, $fallbackEmail);
-        enviarEmailPagamentoReservaFalhouAnunciante($pdo, $reservationId, (string)$motivo);
+        if ($currentStatus !== 'pendente') {
+          $stmtUpdate = $pdo->prepare('UPDATE reservations SET payment_status = "pendente", updated_at = NOW() WHERE id = :id');
+          $stmtUpdate->execute([':id' => $reservationId]);
+          $motivo = $charge['last_transaction']['acquirer_return_message'] ?? ($charge['last_transaction']['status'] ?? $statusMap);
+          enviarEmailPagamentoReservaFalhou($pdo, $reservationId, (string)$motivo, $fallbackEmail);
+          enviarEmailPagamentoReservaFalhouAnunciante($pdo, $reservationId, (string)$motivo);
+        } else {
+          $result['skipped'] = 'already_pending';
+        }
       }
       $result['reservation_id'] = $reservationId;
     } elseif ($entity === 'workshop' && !empty($metadata['enrollment_id'])) {
