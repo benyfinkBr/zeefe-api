@@ -30,6 +30,30 @@ error_log(sprintf('[PAGARME_DIAG] ts=%s method=%s ip=%s ua=%s host=%s uri=%s db=
   $diagTs, $reqMethod, $remoteIp, $ua, $host, $uri, $dbInfo['db'] ?? 'null', $dbInfo['host'] ?? 'null', $dbInfo['user'] ?? 'null'
 ));
 
+if (!function_exists('_pagarme_diag_log')) {
+  function _pagarme_diag_log(string $msg): void {
+    error_log('[PAGARME_DIAG] ' . $msg);
+  }
+}
+
+function pagarme_events_store_fallback(PDO $pdo, array $row): ?int {
+  // Minimal insert that does not depend on any other library.
+  $stmt = $pdo->prepare(
+    'INSERT INTO pagarme_events (hook_id, event_type, status_code, status_text, entity, context_id, payload, received_at) '
+    . 'VALUES (:hook_id, :event_type, :status_code, :status_text, :entity, :context_id, :payload, NOW())'
+  );
+  $stmt->execute([
+    ':hook_id' => $row['hook_id'] ?? null,
+    ':event_type' => $row['event_type'] ?? null,
+    ':status_code' => $row['status_code'] ?? null,
+    ':status_text' => $row['status_text'] ?? null,
+    ':entity' => $row['entity'] ?? null,
+    ':context_id' => $row['context_id'] ?? null,
+    ':payload' => $row['payload'] ?? null,
+  ]);
+  return (int)$pdo->lastInsertId();
+}
+
 // Healthcheck (GET)
 if (($_SERVER['REQUEST_METHOD'] ?? 'POST') === 'GET') {
   if (!empty($_GET['diag'])) {
@@ -111,80 +135,62 @@ if (str_contains($eventType, 'paid') || $status === 'paid') {
   $statusMap = 'failed';
 }
 
-try {
-  payment_intents_update_by_order($pdo, $orderId, $paymentId, [
-    'status' => $statusMap,
-    'pagarme_payment_id' => $paymentId,
-    'last_payload' => $rawBody
-  ]);
-} catch (Throwable $e) {
-  _pagarme_diag_log('payment_intents_update_by_order falhou: ' . $e->getMessage());
-}
-
-$entity = $metadata['entity'] ?? null;
-_pagarme_diag_log('store_event type=' . $eventType . ' order_id=' . ($orderId ?: 'null') . ' payment_id=' . ($paymentId ?: 'null') . ' status=' . ($status ?: 'null') . ' statusMap=' . $statusMap . ' metadata=' . json_encode($metadata));
-$response = ['success' => true];
-$eventId = null;
-try {
-  $eventId = pagarme_events_store($pdo, [
-    'hook_id' => $payload['id'] ?? null,
-    'event_type' => $eventType,
-    'status_code' => null,
-    'status_text' => $status ?: $statusMap,
-    'entity' => $entity,
-    'context_id' => $metadata['reservation_id'] ?? $metadata['enrollment_id'] ?? null,
-    'payload' => $rawBody
-  ]);
-  _pagarme_diag_log('pagarme_events_store id=' . $eventId);
-} catch (Throwable $e) {
-  _pagarme_diag_log('pagarme_events_store falhou: ' . $e->getMessage());
-}
-
-$processedOk = true;
-try {
-  if ($entity === 'reservation' && !empty($metadata['reservation_id'])) {
-    $reservationId = (int)$metadata['reservation_id'];
-    if ($statusMap === 'paid') {
-      $fallbackEmail = $charge['customer']['email'] ?? null;
-      $stmt = $pdo->prepare('UPDATE reservations SET payment_status = "confirmado", amount_gross = COALESCE(amount_gross, :amount), updated_at = NOW() WHERE id = :id');
-      $stmt->execute([':amount' => $amount, ':id' => $reservationId]);
-      enviarEmailPagamentoReserva($pdo, $reservationId, $amount, $fallbackEmail);
-      enviarEmailDetalhesReservaPosPagamento($pdo, $reservationId, $fallbackEmail);
-    } elseif (in_array($statusMap, ['failed','canceled'], true)) {
-      $fallbackEmail = $charge['customer']['email'] ?? null;
-      $stmt = $pdo->prepare('UPDATE reservations SET payment_status = "pendente", updated_at = NOW() WHERE id = :id');
-      $stmt->execute([':id' => $reservationId]);
-      $motivo = $charge['last_transaction']['acquirer_return_message'] ?? ($charge['last_transaction']['status'] ?? $statusMap);
-      enviarEmailPagamentoReservaFalhou($pdo, $reservationId, (string)$motivo, $fallbackEmail);
-      enviarEmailPagamentoReservaFalhouAnunciante($pdo, $reservationId, (string)$motivo);
-    }
-    $response['reservation_id'] = $reservationId;
-
-  } elseif ($entity === 'workshop' && !empty($metadata['enrollment_id'])) {
-    $enrollmentId = (int)$metadata['enrollment_id'];
-    if ($statusMap === 'paid') {
-      $stmt = $pdo->prepare('UPDATE workshop_enrollments SET payment_status = "pago" WHERE id = :id');
-      $stmt->execute([':id' => $enrollmentId]);
-      enviarEmailPagamentoWorkshop($pdo, $enrollmentId, $amount);
-    } elseif (in_array($statusMap, ['failed','canceled'], true)) {
-      $stmt = $pdo->prepare('UPDATE workshop_enrollments SET payment_status = "pendente" WHERE id = :id');
-      $stmt->execute([':id' => $enrollmentId]);
-    }
-    $response['enrollment_id'] = $enrollmentId;
+if (function_exists('payment_intents_update_by_order')) {
+  try {
+    payment_intents_update_by_order($pdo, $orderId, $paymentId, [
+      'status' => $statusMap,
+      'pagarme_payment_id' => $paymentId,
+      'last_payload' => $rawBody
+    ]);
+  } catch (Throwable $e) {
+    _pagarme_diag_log('payment_intents_update_by_order falhou: ' . $e->getMessage());
   }
-} catch (Throwable $entityErr) {
-  error_log('Erro ao sincronizar entidade após webhook: ' . $entityErr->getMessage());
-  $processedOk = false;
-  if (!empty($eventId)) {
-    pagarme_events_mark_processed($pdo, $eventId, $entityErr->getMessage(), false);
+} else {
+  _pagarme_diag_log('payment_intents_update_by_order indisponível - ignorando atualização.');
+}
+
+// STORE-ONLY MODE: persist the event and always return 200.
+$entity = $metadata['entity'] ?? null;
+$response = ['success' => true, 'mode' => 'store_only'];
+$eventId = null;
+
+$storeRow = [
+  'hook_id' => $payload['id'] ?? null,
+  'event_type' => $eventType ?: (string)($payload['type'] ?? ''),
+  'status_code' => 200,
+  'status_text' => $status ?: ($charge['status'] ?? $statusMap),
+  'entity' => $entity,
+  'context_id' => $metadata['reservation_id'] ?? $metadata['enrollment_id'] ?? null,
+  'payload' => $rawBody,
+];
+
+try {
+  if (function_exists('pagarme_events_store')) {
+    $eventId = pagarme_events_store($pdo, $storeRow);
+  } else {
+    $eventId = pagarme_events_store_fallback($pdo, $storeRow);
+  }
+  _pagarme_diag_log('pagarme_events_store ok eventId=' . ($eventId ?: 'null'));
+  $response['event_id'] = $eventId;
+} catch (Throwable $e) {
+  // Fallback to direct insert if the helper failed.
+  _pagarme_diag_log('pagarme_events_store primary FAILED err=' . $e->getMessage());
+  try {
+    $eventId = pagarme_events_store_fallback($pdo, $storeRow);
+    _pagarme_diag_log('pagarme_events_store fallback ok eventId=' . ($eventId ?: 'null'));
+    $response['event_id'] = $eventId;
+    $response['stored_via'] = 'fallback';
+  } catch (Throwable $e2) {
+    _pagarme_diag_log('pagarme_events_store fallback FAILED err=' . $e2->getMessage());
+    $response['event_store_error'] = $e2->getMessage();
   }
 }
 
 header('Content-Type: application/json; charset=utf-8');
+header('X-Zeefe-Webhook-Handler: api/pagarme_webhook.php');
+http_response_code(200);
 echo json_encode($response);
-if (!empty($eventId) && $processedOk) {
-  pagarme_events_mark_processed($pdo, $eventId, $statusMap, true);
-}
+exit;
 
 function enviarEmailPagamentoReserva(PDO $pdo, int $reservationId, ?float $amount, ?string $fallbackEmail = null): void {
   $dados = reservation_load($pdo, $reservationId);
