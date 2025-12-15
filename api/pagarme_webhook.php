@@ -1,5 +1,5 @@
 <?php
-require 'apiconfig.php';
+require __DIR__ . '/apiconfig.php';
 require_once __DIR__ . '/lib/payment_intents.php';
 require_once __DIR__ . '/lib/pagarme_events.php';
 require_once __DIR__ . '/lib/mailer.php';
