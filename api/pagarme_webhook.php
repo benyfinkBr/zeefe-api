@@ -2,6 +2,10 @@
 // Always resolve config relative to this file.
 // Keep dependencies minimal to avoid fatals during webhook delivery.
 require __DIR__ . '/apiconfig.php';
+require_once __DIR__ . '/lib/payment_intents.php';
+require_once __DIR__ . '/lib/pagarme_events.php';
+require_once __DIR__ . '/lib/mailer.php';
+require_once __DIR__ . '/lib/reservations.php';
 
 // Try to load the event helper if available, but do not hard-fail.
 if (file_exists(__DIR__ . '/lib/pagarme_events.php')) {
