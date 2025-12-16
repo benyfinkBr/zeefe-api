@@ -23,6 +23,14 @@ function _respond_ok(array $payload = ['success' => true]): void {
   exit;
 }
 
+// Prevent apiconfig.php from sending headers or starting sessions when included here.
+if (!defined('ZEEFE_NO_GLOBAL_HEADERS')) {
+  define('ZEEFE_NO_GLOBAL_HEADERS', true);
+}
+if (!defined('ZEEFE_NO_SESSION')) {
+  define('ZEEFE_NO_SESSION', true);
+}
+
 // Load config safely (never hard-fail the webhook on missing includes).
 $pdo = $pdo ?? null;
 $apiconfigPath = __DIR__ . '/apiconfig.php';
