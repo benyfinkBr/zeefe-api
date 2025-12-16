@@ -2,24 +2,58 @@
 // Ze.EFE — Pagar.me Webhook (STORE-ONLY, bombproof)
 // Goal: if the request reaches PHP, write ONE row into `pagarme_events` and always reply HTTP 200.
 
-// Always resolve config relative to this file.
-// Keep dependencies minimal to avoid fatals during webhook delivery.
-require __DIR__ . '/apiconfig.php';
-
-// Try to load the event helper if available, but do not hard-fail.
-if (file_exists(__DIR__ . '/lib/pagarme_events.php')) {
-  require_once __DIR__ . '/lib/pagarme_events.php';
-}
-
-// Force PDO to throw exceptions so DB errors don't fail silently
-if (isset($pdo) && $pdo instanceof PDO) {
-  $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-  $pdo->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
-}
+// Harden runtime: never show errors to the client, always log.
+ini_set('display_errors', '0');
+ini_set('log_errors', '1');
 
 function _pagarme_diag_log(string $msg): void {
   error_log('[PAGARME_WEBHOOK] ' . $msg);
 }
+
+function _respond_ok(array $payload = ['success' => true]): void {
+  // Always reply 200 with JSON.
+  if (!headers_sent()) {
+    header('Content-Type: application/json; charset=utf-8');
+    header('Cache-Control: no-store, no-cache, must-revalidate');
+    header('X-Content-Type-Options: nosniff');
+    header('X-Zeefe-Webhook-Handler: api/pagarme_webhook.php');
+  }
+  http_response_code(200);
+  echo json_encode($payload);
+  exit;
+}
+
+// Load config safely (never hard-fail the webhook on missing includes).
+$pdo = $pdo ?? null;
+$apiconfigPath = __DIR__ . '/apiconfig.php';
+if (file_exists($apiconfigPath)) {
+  try {
+    require $apiconfigPath;
+  } catch (Throwable $e) {
+    _pagarme_diag_log('apiconfig require FAILED err=' . $e->getMessage());
+  }
+} else {
+  _pagarme_diag_log('apiconfig missing at ' . $apiconfigPath);
+}
+
+// Try to load the event helper if available, but do not hard-fail.
+$eventsLibPath = __DIR__ . '/lib/pagarme_events.php';
+if (file_exists($eventsLibPath)) {
+  try {
+    require_once $eventsLibPath;
+  } catch (Throwable $e) {
+    _pagarme_diag_log('pagarme_events.php require FAILED err=' . $e->getMessage());
+  }
+}
+
+// Force PDO to throw exceptions so DB errors don't fail silently.
+if (isset($pdo) && $pdo instanceof PDO) {
+  $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+  $pdo->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
+} else {
+  $pdo = null;
+}
+
 
 function pagarme_events_store_fallback(PDO $pdo, array $row): ?int {
   // Minimal insert that does not depend on any other library.
@@ -39,19 +73,18 @@ function pagarme_events_store_fallback(PDO $pdo, array $row): ?int {
   return (int)$pdo->lastInsertId();
 }
 
-function _respond_ok(array $payload = ['success' => true]): void {
-  header('Content-Type: application/json; charset=utf-8');
-  header('Cache-Control: no-store, no-cache, must-revalidate');
-  header('X-Content-Type-Options: nosniff');
-  header('X-Zeefe-Webhook-Handler: api/pagarme_webhook.php');
-  http_response_code(200);
-  echo json_encode($payload);
-  exit;
-}
-
 // Diagnostic mode (GET ?diag=1)
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'GET' && isset($_GET['diag'])) {
   try {
+    if (!$pdo) {
+      _respond_ok([
+        'ok' => true,
+        'pdo' => false,
+        'error' => 'pdo_not_initialized',
+        'ts' => date('c'),
+      ]);
+    }
+
     $db   = $pdo->query('SELECT DATABASE()')->fetchColumn();
     $user = $pdo->query('SELECT USER()')->fetchColumn();
     $host = $pdo->query('SELECT @@hostname')->fetchColumn();
@@ -135,6 +168,12 @@ try {
   _pagarme_diag_log('json_parse_exception=' . $e->getMessage());
 }
 
+// Ensure hook_id is never NULL (some schemas require NOT NULL).
+if (!$hookId) {
+  // If JSON did not parse, create a stable id from body; otherwise a unique one.
+  $hookId = $rawBody !== '' ? ('body_' . substr(sha1($rawBody), 0, 24)) : ('body_' . substr(sha1(uniqid('', true)), 0, 24));
+}
+
 $storeRow = [
   'hook_id' => $hookId,
   'event_type' => strtolower($eventType),
@@ -147,6 +186,11 @@ $storeRow = [
 
 $eventId = null;
 $storedVia = null;
+
+if (!$pdo) {
+  _pagarme_diag_log('pdo_not_initialized: cannot store event');
+  _respond_ok(['success' => true, 'stored' => false, 'error' => 'pdo_not_initialized']);
+}
 
 try {
   if (function_exists('pagarme_events_store')) {
