@@ -1,60 +1,27 @@
 <?php
-/**
- * Public entrypoint for Pagar.me webhooks.
- * - GET  => healthcheck JSON
- * - POST => routes to real handler under /api/
- *
- * This file must stay extremely small and must not read php://input.
- */
+require __DIR__ . '/api/apiconfig.php';
+require_once __DIR__ . '/api/lib/pagarme_ingest.php';
 
-header('Content-Type: application/json; charset=utf-8');
+$pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+$pdo->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
 
-$method = $_SERVER['REQUEST_METHOD'] ?? 'CLI';
+zeefe_pagarme_set_headers();
 
-if ($method === 'GET') {
-    $diag = !empty($_GET['diag']);
-
-    $payload = [
-        'ok' => true,
-        'endpoint' => 'pagarme_webhook_root',
-        'ts' => date('c'),
-    ];
-
-    if ($diag) {
-        $payload['server'] = [
-            'ip' => $_SERVER['SERVER_ADDR'] ?? 'unknown',
-            'host' => $_SERVER['HTTP_HOST'] ?? 'unknown',
-            'uri' => $_SERVER['REQUEST_URI'] ?? '',
-        ];
-    }
-
-    echo json_encode($payload);
+$method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
+if ($method === 'GET' && isset($_GET['diag'])) {
+    echo json_encode(zeefe_pagarme_diag($pdo));
     exit;
 }
 
-$handlerPaths = [
-    __DIR__ . '/api/pagarme_webhook.php',
-    __DIR__ . '/api/api/pagarme_webhook.php',
-];
-
-$foundHandler = null;
-foreach ($handlerPaths as $candidate) {
-    if (is_file($candidate)) {
-        $foundHandler = $candidate;
-        break;
-    }
+$rawBody = file_get_contents('php://input');
+if ($rawBody === false) {
+    $rawBody = '';
 }
 
-if (!$foundHandler) {
-    $message = '[PAGARME_WEBHOOK_ROOT] Handler not found. Tried: ' . implode(', ', $handlerPaths);
-    error_log($message);
-    http_response_code(500);
-    echo json_encode([
-        'success' => false,
-        'error' => 'handler_not_found',
-        'paths_tried' => $handlerPaths,
-    ]);
-    exit;
+try {
+    zeefe_pagarme_ingest($pdo, $rawBody);
+} catch (Throwable $e) {
+    error_log('[PAGARME_WEBHOOK_ROOT] ingest error: ' . $e->getMessage());
 }
 
-require $foundHandler;
+echo '{"success":true}';

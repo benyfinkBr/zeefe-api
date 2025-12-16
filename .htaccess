@@ -28,3 +28,29 @@
    php_flag zlib.output_compression Off
 </IfModule>
 # END cPanel-generated php ini directives, do not edit
+
+# Allow public webhook endpoints to bypass caches/WAF where possible.
+<Files "pagarme_webhook.php">
+  <IfModule mod_headers.c>
+    Header set Cache-Control "no-store, no-cache, must-revalidate"
+    Header set Pragma "no-cache"
+  </IfModule>
+  <IfModule mod_security.c>
+    SecFilterEngine Off
+  </IfModule>
+  <IfModule mod_security2.c>
+    SecRuleEngine Off
+  </IfModule>
+</Files>
+<Files "pagarme.php">
+  <IfModule mod_headers.c>
+    Header set Cache-Control "no-store, no-cache, must-revalidate"
+    Header set Pragma "no-cache"
+  </IfModule>
+  <IfModule mod_security.c>
+    SecFilterEngine Off
+  </IfModule>
+  <IfModule mod_security2.c>
+    SecRuleEngine Off
+  </IfModule>
+</Files>

@@ -1,6 +1,6 @@
 <?php
-require __DIR__ . '/../../api/apiconfig.php';
-require_once __DIR__ . '/../../api/lib/pagarme_ingest.php';
+require __DIR__ . '/../api/apiconfig.php';
+require_once __DIR__ . '/../api/lib/pagarme_ingest.php';
 
 $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 $pdo->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
@@ -21,7 +21,7 @@ if ($rawBody === false) {
 try {
     zeefe_pagarme_ingest($pdo, $rawBody);
 } catch (Throwable $e) {
-    error_log('[PAGARME_WEBHOOK_NEUTRAL] ingest error: ' . $e->getMessage());
+    error_log('[PAGARME_WEBHOOK_ROOT_PUBLIC] ingest error: ' . $e->getMessage());
 }
 
 echo '{"success":true}';
