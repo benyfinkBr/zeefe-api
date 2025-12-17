@@ -3,7 +3,7 @@ require 'apiconfig.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
-const PAGARME_SECRET_KEY = 'sk_test_RNoa2omHrUnZlGzK';
+const PAGARME_SECRET_KEY = 'sk_test_3ae095644045411a8b5e61da34f6d354';
 
 /**
  * Busca os dados do token diretamente na Pagar.me para obter as infos do cartão.

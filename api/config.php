@@ -20,7 +20,7 @@ return [
     'account_id' => 'acc_W695O0gUESAg4EyZ',
     'public_key' => 'pk_test_RNoa2omHrUnZlGzK',
     // Use a secret key válida do Pagar.me (mantém a que já estava configurada para testes)
-    'secret_key' => 'sk_test_bcb214be5bd6476b80f4e5cdefa61078',
+    'secret_key' => 'sk_test_3ae095644045411a8b5e61da34f6d354',
     'webhook_secret' => 'replace_with_pagarme_webhook_secret',
     'webhook_user' => 'teste123',
     'webhook_password' => '321teste',
