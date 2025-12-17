@@ -10,7 +10,7 @@ try {
   }
   $clientId = (int) $_SESSION['client_id'];
 
-  $stmt = $pdo->prepare('SELECT id, name, email, login, cpf, phone, whatsapp, company_id, pagarme_customer_id FROM clients WHERE id = :id LIMIT 1');
+  $stmt = $pdo->prepare('SELECT id, name, email, login, cpf, phone, whatsapp, company_id FROM clients WHERE id = :id LIMIT 1');
   $stmt->execute([':id' => $clientId]);
   $client = $stmt->fetch(PDO::FETCH_ASSOC);
   if (!$client) {
@@ -33,7 +33,6 @@ try {
       'phone' => $client['phone'] ?? null,
       'whatsapp' => $client['whatsapp'] ?? null,
       'company_id' => $client['company_id'] ?? null,
-      'pagarme_customer_id' => $client['pagarme_customer_id'] ?? null,
       'address' => $address
     ]
   ]);

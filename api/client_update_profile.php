@@ -1,6 +1,5 @@
 <?php
 require 'apiconfig.php';
-require_once __DIR__ . '/lib/pagarme_customers.php';
 header('Content-Type: application/json');
 
 $data = json_decode(file_get_contents('php://input'), true);
@@ -18,6 +17,50 @@ $address = [
   'state' => trim($data['state'] ?? ''),
   'country' => trim($data['country'] ?? 'BR')
 ];
+
+function saveClientAddress(PDO $pdo, int $clientId, array $address): array {
+  $clean = [
+    'street' => trim($address['street'] ?? ''),
+    'number' => trim($address['number'] ?? ''),
+    'complement' => trim($address['complement'] ?? ''),
+    'zip_code' => preg_replace('/\D/', '', $address['zip_code'] ?? ''),
+    'city' => trim($address['city'] ?? ''),
+    'state' => trim($address['state'] ?? ''),
+    'country' => trim($address['country'] ?? 'BR')
+  ];
+
+  $stmt = $pdo->prepare('SELECT id FROM client_addresses WHERE client_id = :id ORDER BY updated_at DESC, id DESC LIMIT 1');
+  $stmt->execute([':id' => $clientId]);
+  $addrId = $stmt->fetchColumn();
+
+  if ($addrId) {
+    $upd = $pdo->prepare('UPDATE client_addresses SET street = :street, number = :number, complement = :complement, zip_code = :zip_code, city = :city, state = :state, country = :country, updated_at = NOW() WHERE id = :id');
+    $upd->execute([
+      ':street' => $clean['street'],
+      ':number' => $clean['number'],
+      ':complement' => $clean['complement'],
+      ':zip_code' => $clean['zip_code'],
+      ':city' => $clean['city'],
+      ':state' => $clean['state'],
+      ':country' => $clean['country'],
+      ':id' => $addrId
+    ]);
+  } else {
+    $ins = $pdo->prepare('INSERT INTO client_addresses (client_id, street, number, complement, zip_code, city, state, country, created_at, updated_at) VALUES (:client_id, :street, :number, :complement, :zip_code, :city, :state, :country, NOW(), NOW())');
+    $ins->execute([
+      ':client_id' => $clientId,
+      ':street' => $clean['street'],
+      ':number' => $clean['number'],
+      ':complement' => $clean['complement'],
+      ':zip_code' => $clean['zip_code'],
+      ':city' => $clean['city'],
+      ':state' => $clean['state'],
+      ':country' => $clean['country']
+    ]);
+  }
+
+  return $clean;
+}
 
 if ($id <= 0 || $name === '' || $login === '') {
   http_response_code(400);
@@ -58,19 +101,7 @@ try {
     exit;
   }
 
-  $addressSaved = upsertClientAddress($pdo, $id, $address);
-  $pagarmeWarning = null;
-  try {
-    updatePagarmeCustomer($pdo, $id, [
-      'name' => $client['name'],
-      'email' => $client['email'],
-      'cpf' => $client['cpf'],
-      'phone' => $client['phone'] ?? $phone,
-      'whatsapp' => $client['whatsapp'] ?? $whatsapp
-    ], $addressSaved);
-  } catch (Throwable $e) {
-    $pagarmeWarning = 'Falha ao sincronizar com Pagar.me: ' . $e->getMessage();
-  }
+  $addressSaved = saveClientAddress($pdo, $id, $address);
 
   echo json_encode([
     'success' => true,
@@ -85,8 +116,7 @@ try {
       'whatsapp' => $client['whatsapp'],
       'company_id' => $client['company_id'],
       'address' => $addressSaved
-    ],
-    'pagarme_warning' => $pagarmeWarning
+    ]
   ]);
 } catch (Throwable $e) {
   http_response_code(500);

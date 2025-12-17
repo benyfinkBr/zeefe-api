@@ -3,6 +3,13 @@ require 'apiconfig.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
+http_response_code(503);
+echo json_encode([
+  'success' => false,
+  'error' => 'Pagamentos e cartões estão temporariamente desativados.'
+]);
+exit;
+
 const PAGARME_SECRET_KEY = 'sk_test_3ae095644045411a8b5e61da34f6d354';
 
 /**

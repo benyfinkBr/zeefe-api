@@ -1,37 +1,7 @@
 <?php
 require 'apiconfig.php';
-require_once __DIR__ . '/lib/pagarme.php';
-require_once __DIR__ . '/lib/payment_intents.php';
 
 header('Content-Type: application/json; charset=utf-8');
-
-function format_mobile_for_pagarme(?string $phone): ?array {
-  if (!$phone) return null;
-  $digits = preg_replace('/\D/', '', $phone);
-  if (strlen($digits) < 10) return null;
-  return [
-    'country_code' => '55',
-    'area_code' => substr($digits, 0, 2),
-    'number' => substr($digits, 2)
-  ];
-}
-
-function build_customer_payload(string $name, string $email, ?string $cpf, ?string $phone): array {
-  $document = $cpf ? preg_replace('/\D/', '', $cpf) : '';
-  $customer = [
-    'name' => $name,
-    'email' => $email
-  ];
-  if ($document && (strlen($document) === 11 || strlen($document) === 14)) {
-    $customer['document'] = $document;
-    $customer['type'] = strlen($document) === 11 ? 'individual' : 'company';
-  }
-  $phonePayload = format_mobile_for_pagarme($phone);
-  if ($phonePayload) {
-    $customer['phones'] = ['mobile_phone' => $phonePayload];
-  }
-  return $customer;
-}
 
 function compute_workshop_discount(PDO $pdo, string $voucherCode, float $amount, array $workshop): array {
   if ($voucherCode === '') {
@@ -231,43 +201,7 @@ try {
   $checkoutUrl = null;
   $checkoutWarning = null;
   if ($paymentStatus !== 'pago' && $amountDue > 0) {
-    $customer = build_customer_payload($name, $email, $cpf, $phone);
-    $metadata = [
-      'entity' => 'workshop',
-      'enrollment_id' => $enrollmentId,
-      'workshop_id' => $workshopId
-    ];
-    try {
-      $order = pagarme_create_checkout_order([
-        'code' => 'workshop_' . $enrollmentId . '_' . time(),
-        'amount_cents' => (int)round($amountDue * 100),
-        'description' => sprintf('Workshop %s - Ze.EFE', $workshop['title'] ?? ''),
-        'customer' => $customer,
-        'metadata' => $metadata
-      ]);
-      $checkoutUrl = pagarme_extract_checkout_url($order);
-      if (!$checkoutUrl) {
-        throw new RuntimeException('Não foi possível gerar o checkout do pagamento.');
-      }
-      $payment = $order['payments'][0] ?? [];
-      $expiresSeconds = (int)($config['pagarme']['checkout_expiration_seconds'] ?? 86400);
-      $expiresAt = (new DateTimeImmutable())->modify('+' . $expiresSeconds . ' seconds')->format('Y-m-d H:i:s');
-      payment_intents_create($pdo, [
-        'context' => 'workshop',
-        'context_id' => $enrollmentId,
-        'pagarme_order_id' => $order['id'] ?? null,
-        'pagarme_payment_id' => $payment['id'] ?? null,
-        'checkout_url' => $checkoutUrl,
-        'amount' => $amountDue,
-        'status' => 'pending',
-        'metadata' => $metadata,
-        'expires_at' => $expiresAt,
-        'payload' => $order
-      ]);
-    } catch (Throwable $payErr) {
-      $checkoutWarning = $payErr->getMessage();
-      $checkoutUrl = null;
-    }
+    $checkoutWarning = 'Pagamentos online estão temporariamente indisponíveis. Entraremos em contato para combinar o pagamento.';
   } elseif ($amountDue <= 0) {
     $paymentStatus = 'pago';
     $stmtPaid = $pdo->prepare('UPDATE workshop_enrollments SET payment_status = \'pago\' WHERE id = ?');

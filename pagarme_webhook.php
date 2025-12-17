@@ -1,5 +1,10 @@
 <?php
 // Root-level fallback webhook endpoint (store-only)
+header('Content-Type: application/json; charset=utf-8');
+http_response_code(410);
+echo json_encode(['success' => false, 'error' => 'Integração Pagar.me desativada']);
+exit;
+
 if (!defined('ZEEFE_NO_GLOBAL_HEADERS')) {
   define('ZEEFE_NO_GLOBAL_HEADERS', true);
 }

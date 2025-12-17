@@ -16,16 +16,8 @@ return [
     'https://zeefe.com.br',
     'http://localhost:8000'
   ],
+  // Pagamentos desativados: bloco mantido apenas para referência.
   'pagarme' => [
-    'account_id' => 'acc_W695O0gUESAg4EyZ',
-    'public_key' => 'pk_test_RNoa2omHrUnZlGzK',
-    // Use a secret key válida do Pagar.me (mantém a que já estava configurada para testes)
-    'secret_key' => 'sk_test_3ae095644045411a8b5e61da34f6d354',
-    'webhook_secret' => 'replace_with_pagarme_webhook_secret',
-    'webhook_user' => 'teste123',
-    'webhook_password' => '321teste',
-    'accepted_payment_methods' => ['credit_card', 'pix', 'boleto'],
-    'checkout_expiration_seconds' => 60 * 60 * 24, // 24h
-    'debug' => true
+    'enabled' => false
   ]
 ];

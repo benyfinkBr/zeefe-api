@@ -1,6 +1,5 @@
 <?php
 require 'apiconfig.php';
-require_once __DIR__ . '/lib/pagarme_customers.php';
 
 $data = json_decode(file_get_contents('php://input'), true);
 $login = trim($data['login'] ?? '');
@@ -13,19 +12,14 @@ if ($login === '' || $password === '') {
 }
 
 try {
-  // garante colunas novas (pagarme_customer_id)
-  try { ensurePagarmeColumns($pdo); } catch (Throwable $e) {}
-
   try {
-    $stmt = $pdo->prepare('SELECT id, name, email, email_verified_at, login, cpf, password_hash, company_id, status, phone, whatsapp, pagarme_customer_id FROM clients WHERE login = :login OR email = :login OR cpf = :cpf LIMIT 1');
-    $stmt->execute([':login' => $login, ':cpf' => preg_replace('/\D/', '', $login)]);
-    $client = $stmt->fetch(PDO::FETCH_ASSOC);
-  } catch (Throwable $e) {
-    // fallback para bancos ainda sem coluna
     $stmt = $pdo->prepare('SELECT id, name, email, email_verified_at, login, cpf, password_hash, company_id, status, phone, whatsapp FROM clients WHERE login = :login OR email = :login OR cpf = :cpf LIMIT 1');
     $stmt->execute([':login' => $login, ':cpf' => preg_replace('/\D/', '', $login)]);
     $client = $stmt->fetch(PDO::FETCH_ASSOC);
-    $client['pagarme_customer_id'] = null;
+  } catch (Throwable $e) {
+    $stmt = $pdo->prepare('SELECT id, name, email, email_verified_at, login, cpf, password_hash, company_id, status, phone, whatsapp FROM clients WHERE login = :login OR email = :login OR cpf = :cpf LIMIT 1');
+    $stmt->execute([':login' => $login, ':cpf' => preg_replace('/\D/', '', $login)]);
+    $client = $stmt->fetch(PDO::FETCH_ASSOC);
   }
 
   if (!$client) {
@@ -83,14 +77,6 @@ try {
   $addrStmt = $pdo->prepare('SELECT street, number, complement, zip_code, city, state, country FROM client_addresses WHERE client_id = :cid ORDER BY updated_at DESC, id DESC LIMIT 1');
   $addrStmt->execute([':cid' => $client['id']]);
   $clientAddress = $addrStmt->fetch(PDO::FETCH_ASSOC) ?: null;
-  $pagarmeWarning = null;
-  // Garante customer espelhado no Pagar.me (não bloqueia login se falhar)
-  try {
-    $pagarmeCustomer = ensurePagarmeCustomer($pdo, (int)$client['id']);
-    $client['pagarme_customer_id'] = $pagarmeCustomer['id'] ?? ($client['pagarme_customer_id'] ?? null);
-  } catch (Throwable $e) {
-    $pagarmeWarning = 'Falha ao sincronizar com Pagar.me: ' . $e->getMessage();
-  }
   if ($remember) {
     try {
       $rawToken = bin2hex(random_bytes(32));
@@ -126,11 +112,9 @@ try {
       'company_master' => $isCompanyMaster,
       'phone' => $client['phone'] ?? null,
       'whatsapp' => $client['whatsapp'] ?? null,
-      'pagarme_customer_id' => $client['pagarme_customer_id'] ?? null,
       'address' => $clientAddress
     ],
-    'remember' => $rememberPayload,
-    'pagarme_warning' => $pagarmeWarning
+    'remember' => $rememberPayload
   ]);
 
   $_SESSION['client_id'] = $client['id'];

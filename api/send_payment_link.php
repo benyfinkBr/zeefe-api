@@ -1,10 +1,15 @@
 <?php
 require 'apiconfig.php';
 require_once __DIR__ . '/lib/mailer.php';
-require_once __DIR__ . '/lib/pagarme.php';
-require_once __DIR__ . '/lib/payment_intents.php';
 
 header('Content-Type: application/json');
+
+http_response_code(503);
+echo json_encode([
+  'success' => false,
+  'error' => 'Envio de link de pagamento está temporariamente desativado.'
+]);
+exit;
 
 $data = json_decode(file_get_contents('php://input'), true);
 $reservationId = isset($data['reservation_id']) ? (int) $data['reservation_id'] : 0;

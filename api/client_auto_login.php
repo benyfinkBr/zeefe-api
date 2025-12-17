@@ -1,6 +1,5 @@
 <?php
 require_once __DIR__ . '/apiconfig.php';
-require_once __DIR__ . '/lib/pagarme_customers.php';
 
 $data = json_decode(file_get_contents('php://input'), true);
 $token = trim($data['token'] ?? '');
@@ -11,14 +10,11 @@ if ($token === '') {
 }
 
 try {
-  // garante colunas novas (pagarme_customer_id)
-  try { ensurePagarmeColumns($pdo); } catch (Throwable $e) {}
-
   $hash = hash('sha256', $token);
   $now = (new DateTimeImmutable())->format('Y-m-d H:i:s');
 
   try {
-    $sql = 'SELECT t.client_id, t.expires_at, c.id, c.name, c.email, c.email_verified_at, c.login, c.cpf, c.password_hash, c.company_id, c.status, c.phone, c.whatsapp, c.pagarme_customer_id
+    $sql = 'SELECT t.client_id, t.expires_at, c.id, c.name, c.email, c.email_verified_at, c.login, c.cpf, c.password_hash, c.company_id, c.status, c.phone, c.whatsapp
             FROM client_remember_tokens t
             JOIN clients c ON c.id = t.client_id
             WHERE t.token_hash = :hash
@@ -35,9 +31,6 @@ try {
     $stmt = $pdo->prepare($sql);
     $stmt->execute([':hash' => $hash]);
     $row = $stmt->fetch(PDO::FETCH_ASSOC);
-    if ($row) {
-      $row['pagarme_customer_id'] = null;
-    }
   }
 
   if (!$row) {
@@ -79,14 +72,6 @@ try {
     }
   }
 
-  $pagarmeWarning = null;
-  try {
-    $pagarmeCustomer = ensurePagarmeCustomer($pdo, (int)$row['id']);
-    $row['pagarme_customer_id'] = $pagarmeCustomer['id'] ?? ($row['pagarme_customer_id'] ?? null);
-  } catch (Throwable $e) {
-    $pagarmeWarning = 'Falha ao sincronizar com Pagar.me: ' . $e->getMessage();
-  }
-
   $addrStmt = $pdo->prepare('SELECT street, number, complement, zip_code, city, state, country FROM client_addresses WHERE client_id = :cid ORDER BY updated_at DESC, id DESC LIMIT 1');
   $addrStmt->execute([':cid' => $row['id']]);
   $clientAddress = $addrStmt->fetch(PDO::FETCH_ASSOC) ?: null;
@@ -107,10 +92,8 @@ try {
       'company_master' => $isCompanyMaster,
       'phone' => $row['phone'] ?? null,
       'whatsapp' => $row['whatsapp'] ?? null,
-      'pagarme_customer_id' => $row['pagarme_customer_id'] ?? null,
       'address' => $clientAddress
-    ],
-    'pagarme_warning' => $pagarmeWarning
+    ]
   ]);
 } catch (Throwable $e) {
   http_response_code(500);

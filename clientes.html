@@ -158,7 +158,6 @@
           <button type="button" data-panel="visitors">Visitantes</button>
           <button type="button" data-panel="company" id="companyTab" hidden>Empresa</button>
           <button type="button" data-panel="courses">Cursos</button>
-          <button type="button" id="btnOpenModal">Pagamento</button>
           <button type="button" data-panel="profile">Meu Perfil</button>
         </nav>
         <button type="button" id="logoutBtn" class="nav-logout">Sair</button>
@@ -1070,7 +1069,6 @@
         <div class="footer-powered-logos">
           <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='110' height='30'><text x='5' y='20' font-family='Arial' font-size='16' fill='%23005CAB'>HostGator</text></svg>" alt="HostGator" loading="lazy">
           <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='130' height='30'><text x='5' y='20' font-family='Arial' font-size='16' fill='%2300317A'>Contabilizei</text></svg>" alt="Contabilizei" loading="lazy">
-          <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='110' height='30'><text x='5' y='20' font-family='Arial' font-size='16' fill='%2300B376'>pagar.me</text></svg>" alt="Pagar.me" loading="lazy">
           <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='80' height='30'><text x='5' y='20' font-family='Arial' font-size='16' fill='%23E10D5C'>cora</text></svg>" alt="Cora" loading="lazy">
         </div>
       </div>
@@ -1078,70 +1076,13 @@
     </div>
   </footer>
 
-  <!-- Modal: Método de Pagamento -->
-  <div class="modal-overlay" id="paymentModal" aria-hidden="true">
-    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="paymentModalTitle">
-      <button class="modal-close" type="button" id="closeModal" aria-label="Fechar">&times;</button>
-      <div class="modal-body">
-        <div class="modal-info" style="padding:24px; width:100%">
-          <h2 id="paymentModalTitle" style="margin-top:0">Método de pagamento</h2>
-          <input type="hidden" id="clientId" />
-          <div id="existingCards" class="cards-list"></div>
-          <hr />
-          <form id="paymentForm" class="payment-card-form" data-pagarmecheckout-form>
-            <h3 style="margin-top:12px;">Adicionar novo cartão</h3>
-            <div class="card-preview" id="cardPreview">
-              <div class="card-chip"></div>
-              <div class="card-number" id="cardPreviewNumber">•••• •••• •••• ••••</div>
-              <div class="card-row">
-                <div class="card-holder">
-                  <span>Nome impresso</span>
-                  <strong id="cardPreviewName">NOME DO CARTÃO</strong>
-                </div>
-                <div class="card-exp">
-                  <span>Validade</span>
-                  <strong id="cardPreviewExpiry">MM/AA</strong>
-                </div>
-              </div>
-            </div>
-            <div class="payment-card-grid">
-              <div class="field wide">
-                <label for="cardNumber">Número do cartão</label>
-                <input id="cardNumber" data-pagarmecheckout-element="number-0" />
-              </div>
-              <div class="field wide">
-                <label for="holderName">Nome impresso</label>
-                <input id="holderName" data-pagarmecheckout-element="holder_name-0" />
-              </div>
-              <div class="field">
-                <label for="expMonth">Validade (MM/AA)</label>
-                <div class="expiry-inputs">
-                  <input id="expMonth" maxlength="2" data-pagarmecheckout-element="exp_month-0" />
-                  <input id="expYear" maxlength="2" data-pagarmecheckout-element="exp_year-0" />
-                </div>
-              </div>
-              <div class="field">
-                <label for="cvv">CVV</label>
-                <input id="cvv" maxlength="4" data-pagarmecheckout-element="cvv-0" />
-              </div>
-            </div>
-            <div class="form-row" style="margin-top:12px; display:flex; justify-content:flex-end; gap:12px;">
-              <button class="btn btn-secondary" type="button" id="savePaymentClose">Fechar</button>
-              <button class="btn btn-primary" type="submit" id="btnSave">Salvar cartão</button>
-            </div>
-            <div id="status" class="rooms-message" style="margin-top:8px;"></div>
-            <div id="cardsList" class="cards-list" style="margin-top:12px;"></div>
-            <div id="addressInfo" class="rooms-message" style="margin-top:12px;"></div>
-          </form>
-        </div>
-      </div>
-    </div>
+  <!-- Aviso de pagamentos -->
+  <div class="rooms-message" style="max-width:960px; margin:24px auto; text-align:center;">
+    <strong>Pagamentos online temporariamente indisponíveis.</strong> Você pode continuar navegando,
+    reservar salas e inscrever-se em cursos; entraremos em contato para combinar o pagamento.
   </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="" defer></script>
-  <script src="https://checkout.pagar.me/v1/tokenizecard.js"
-          data-pagarmecheckout-app-id="pk_test_RNoa2omHrUnZlGzK"></script>
-  <script src="scripts/salvar_cartao.js" defer></script>
   <script src="scripts/clientes.js" defer></script>
 </body>
 </html>

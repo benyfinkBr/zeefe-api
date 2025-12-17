@@ -6,6 +6,12 @@
 ini_set('display_errors', '0');
 ini_set('log_errors', '1');
 
+// Webhook desativado: pagamentos estão desligados.
+header('Content-Type: application/json; charset=utf-8');
+http_response_code(410);
+echo json_encode(['success' => false, 'error' => 'Integração Pagar.me desativada']);
+exit;
+
 function _pagarme_diag_log(string $msg): void {
   error_log('[PAGARME_WEBHOOK] ' . $msg);
 }
