@@ -91,7 +91,7 @@ try {
     ':id' => $id
   ]);
 
-  $stmtGet = $pdo->prepare('SELECT id, name, email, login, cpf, phone, whatsapp, company_id, pagarme_customer_id FROM clients WHERE id = :id LIMIT 1');
+  $stmtGet = $pdo->prepare('SELECT id, name, email, login, cpf, phone, whatsapp, company_id FROM clients WHERE id = :id LIMIT 1');
   $stmtGet->execute([':id' => $id]);
   $client = $stmtGet->fetch(PDO::FETCH_ASSOC);
 
