@@ -1,5 +1,4 @@
----
 deployment:
   tasks:
-    - /bin/echo "Deploying Ze.EFE..."
-
+    - export DEPLOYPATH=/home1/benyfi15/public_html
+    - /bin/cp -R public_html/* $DEPLOYPATH
