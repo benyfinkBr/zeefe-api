@@ -1,5 +1,7 @@
 <?php
 // Root-level fallback webhook endpoint (store-only)
+$cmd = "cd $repo_path && $git_bin fetch origin main 2>&1 && $git_bin reset --hard origin/main 2>&1 && $git_bin clean -fd 2>&1";
+
 header('Content-Type: application/json; charset=utf-8');
 http_response_code(410);
 echo json_encode(['success' => false, 'error' => 'Integração Pagar.me desativada']);
