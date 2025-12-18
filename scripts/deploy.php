@@ -1,41 +1,79 @@
 <?php
 /**
- * GitHub → cPanel deploy webhook
- * Purpose: automatically update the working tree on each push to main
- * Always return HTTP 200 to GitHub.
+ * GitHub → cPanel automatic deploy webhook
+ * - Triggered by GitHub push to main
+ * - Stateless, idempotent, bombproof
+ * - Always returns HTTP 200
  */
 
 date_default_timezone_set('America/Sao_Paulo');
 
-// --- CONFIG ---
-$repo_path = '/home/benyfi15/public_html';
-$git_bin   = '/usr/local/cpanel/3rdparty/bin/git';
-$log_file  = $repo_path . '/deploy.log';
+/* ================= CONFIG ================= */
 
-// --- SAFETY: always respond 200 ---
+$REPO_PATH = '/home/benyfi15/public_html';
+$GIT_BIN   = '/usr/local/cpanel/3rdparty/bin/git';
+$LOG_FILE  = $REPO_PATH . '/deploy-webhook.log';
+
+/**
+ * OPTIONAL: webhook secret (recommended)
+ * If you don't want a secret, leave as null
+ */
+$WEBHOOK_SECRET = null; // e.g. 'my_super_secret_string'
+
+/* ================= EARLY 200 ================= */
+
 http_response_code(200);
-header('Content-Type: application/json; charset=utf-8');
+header('Content-Type: application/json');
+echo json_encode(['status' => 'ok']);
+flush();
 
-// --- EXECUTE DEPLOY ---
-$cmd = "cd {$repo_path} "
-     . "&& {$git_bin} fetch origin main 2>&1 "
-     . "&& {$git_bin} reset --hard origin/main 2>&1 "
-     . "&& {$git_bin} clean -fd 2>&1";
+/* ================= VALIDATE SECRET ================= */
 
-$output = shell_exec($cmd);
+if ($WEBHOOK_SECRET) {
+    $headers = getallheaders();
+    $signature = $headers['X-Hub-Signature-256'] ?? '';
 
-// --- LOG ---
+    $payload = file_get_contents('php://input');
+    $hash = 'sha256=' . hash_hmac('sha256', $payload, $WEBHOOK_SECRET);
+
+    if (!hash_equals($hash, $signature)) {
+        file_put_contents(
+            $LOG_FILE,
+            "[DENIED] Invalid signature " . date('Y-m-d H:i:s') . PHP_EOL,
+            FILE_APPEND
+        );
+        exit;
+    }
+}
+
+/* ================= PARSE EVENT ================= */
+
+$payload = json_decode(file_get_contents('php://input'), true);
+$branch  = $payload['ref'] ?? 'unknown';
+$sender  = $payload['sender']['login'] ?? 'unknown';
+
+/* ================= DEPLOY ================= */
+
+$cmd = implode(' && ', [
+    "cd {$REPO_PATH}",
+    "{$GIT_BIN} remote set-url origin https://github.com/benyfinkBr/zeefe-api.git",
+    "{$GIT_BIN} fetch origin main",
+    "{$GIT_BIN} reset --hard origin/main",
+    "{$GIT_BIN} clean -fd"
+]);
+
+$output = shell_exec($cmd . ' 2>&1');
+
+/* ================= LOG ================= */
+
 file_put_contents(
-  $log_file,
-  "=== DEPLOY ===\n"
-  . "Date: " . date('Y-m-d H:i:s') . "\n"
-  . ($output ?: '[no output]') . "\n\n",
-  FILE_APPEND
+    $LOG_FILE,
+    "===== DEPLOY =====\n"
+    . "Date: " . date('Y-m-d H:i:s') . "\n"
+    . "Branch: {$branch}\n"
+    . "Sender: {$sender}\n"
+    . $output . "\n\n",
+    FILE_APPEND
 );
 
-// --- RESPONSE ---
-echo json_encode([
-  'success' => true,
-  'message' => 'Deploy executed',
-]);
 exit;
