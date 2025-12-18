@@ -20,8 +20,11 @@ if (!$username || !$password) {
 
 try {
   // === tabela original ===
-  $stmt = $pdo->prepare("SELECT id, username, password FROM admins WHERE username = :u OR email = :u LIMIT 1");
-  $stmt->execute([':u'=>$username]);
+  $stmt = $pdo->prepare("SELECT id, username, password FROM admins WHERE username = :username OR email = :email LIMIT 1");
+  $stmt->execute([
+    ':username' => $username,
+    ':email' => $username
+  ]);
   $user = $stmt->fetch();
 
   // === compara diretamente (formato simples, igual ao original) ===
