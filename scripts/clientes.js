@@ -2758,7 +2758,15 @@ async function onPortalLoginSubmit(event) {
     });
     const json = await res.json();
     if (window.DEBUG) console.debug('[Portal] Resposta login', json);
-    if (!json.success) throw new Error(json.error || 'Não foi possível autenticar.');
+    if (!json.success) {
+      if (json.code === 'email_unverified') {
+        const message = json.error || 'Confirme seu e-mail antes de acessar.';
+        authMessage.textContent = message;
+        showEmailVerifyModal(identifier, message);
+        return;
+      }
+      throw new Error(json.error || 'Não foi possível autenticar.');
+    }
     if (lembrar && json.remember && json.remember.token) {
       registrarPreferenciaLogin(true, json.remember.token, identifier);
     } else if (!lembrar) {
