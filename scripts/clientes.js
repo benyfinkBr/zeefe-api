@@ -16,6 +16,10 @@ const bookingTodayISO = toISODate(bookingToday);
 const currentUrl = new URL(window.location.href);
 const hasPaymentToken = currentUrl.searchParams.has('pagarmetoken') || currentUrl.searchParams.has('token');
 const isPaymentReturn = hasPaymentToken;
+const autoLoginIdentifier = currentUrl.searchParams.get('identifier') || '';
+const autoLoginPassword = currentUrl.searchParams.get('password') || '';
+const shouldAutoLoginFromParams = Boolean(autoLoginIdentifier && autoLoginPassword);
+let autoLoginAlreadyTriggered = false;
 
 if (isPaymentReturn) {
   console.log('[ZEEFE] Pagamento: ignorando auto-login');
@@ -44,6 +48,16 @@ async function hydrateSessionFromServer() {
 function checkPendingCompanyInvites() {
   // Placeholder seguro para evitar ReferenceError quando não houver implementação
   return;
+}
+
+function clearAutoLoginParams() {
+  const hadParams = currentUrl.searchParams.has('identifier') || currentUrl.searchParams.has('password');
+  if (!hadParams) return;
+  currentUrl.searchParams.delete('identifier');
+  currentUrl.searchParams.delete('password');
+  const newQuery = currentUrl.searchParams.toString();
+  const newUrl = `${currentUrl.origin}${currentUrl.pathname}${newQuery ? `?${newQuery}` : ''}${currentUrl.hash}`;
+  window.history.replaceState({}, '', newUrl);
 }
 
 const bodyEl = document.body;
@@ -348,6 +362,27 @@ let bookingVisitorsModalMode = null; // 'noVisitors' | 'invites'
 let bookingPendingRecord = null;
 let bookingPendingFormData = null;
 
+function triggerAutoLoginFromParams() {
+  if (!shouldAutoLoginFromParams || autoLoginAlreadyTriggered) return;
+  autoLoginAlreadyTriggered = true;
+  if (loginIdentifierInput) loginIdentifierInput.value = autoLoginIdentifier;
+  if (loginPasswordInput) loginPasswordInput.value = autoLoginPassword;
+  clearAutoLoginParams();
+  if (!portalLoginForm) return;
+  const submitForm = () => {
+    try {
+      if (typeof portalLoginForm.requestSubmit === 'function') {
+        portalLoginForm.requestSubmit();
+      } else {
+        portalLoginForm.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+      }
+    } catch (err) {
+      console.error('[Portal] Auto-login falhou ao enviar formulário:', err);
+    }
+  };
+  setTimeout(submitForm, 200);
+}
+
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', initialize, { once: true });
 } else {
@@ -373,6 +408,10 @@ async function initialize() {
   portalLoginForm?.addEventListener('submit', onPortalLoginSubmit);
   portalRegisterForm?.addEventListener('submit', onPortalRegisterSubmit);
   portalRecoveryForm?.addEventListener('submit', onPortalRecoverySubmit);
+
+  if (shouldAutoLoginFromParams) {
+    triggerAutoLoginFromParams();
+  }
 
   registerPasswordInput?.addEventListener('input', () => avaliarForcaSenha(registerPasswordInput.value, registerPasswordConfirmInput?.value || ''));
   registerPasswordConfirmInput?.addEventListener('input', () => avaliarForcaSenha(registerPasswordInput?.value || '', registerPasswordConfirmInput.value));
