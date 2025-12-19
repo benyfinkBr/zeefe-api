@@ -838,14 +838,16 @@ main {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 4px 10px;
+  height: 34px;
+  padding: 0 16px;
   border-radius: 999px;
   background: var(--brand-sand);
   color: var(--brand-green);
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   font-weight: 700;
-  min-width: 120px;
+  width: 140px;
   text-transform: capitalize;
+  text-align: center;
 }
 .news-card h4 {
   margin: 0;
