@@ -53,9 +53,6 @@ $hash = password_hash($password, PASSWORD_DEFAULT);
 
   $id = (int) $pdo->lastInsertId();
 
-  $_SESSION['client_id'] = $id;
-  $_SESSION['client_name'] = $name;
-
   $response = [
     'success' => true,
     'client' => [
