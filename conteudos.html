@@ -117,16 +117,16 @@
             coverWrap.appendChild(img);
             card.appendChild(coverWrap);
           }
-          const tag = document.createElement('span');
-          tag.className = 'news-tag';
-          tag.textContent = p.category || 'Conteúdo';
-          card.appendChild(tag);
           const title = document.createElement('h4');
           const link = document.createElement('a');
           link.href = `conteudo-detalhe.html?id=${p.id}`;
           link.textContent = p.title || 'Conteúdo';
           title.appendChild(link);
           card.appendChild(title);
+          const tag = document.createElement('span');
+          tag.className = 'news-tag';
+          tag.textContent = (p.category || 'Conteúdo');
+          card.appendChild(tag);
           const summary = document.createElement('p');
           summary.textContent = p.summary || '';
           card.appendChild(summary);

@@ -835,19 +835,13 @@ main {
   object-fit: cover;
 }
 .news-tag {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  height: 34px;
-  padding: 0 16px;
-  border-radius: 999px;
-  background: var(--brand-sand);
-  color: var(--brand-green);
-  font-size: 0.8rem;
-  font-weight: 700;
-  width: 140px;
-  text-transform: capitalize;
-  text-align: center;
+  display: block;
+  margin-top: 4px;
+  color: var(--brand-muted);
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 600;
 }
 .news-card h4 {
   margin: 0;
