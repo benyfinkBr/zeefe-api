@@ -808,6 +808,7 @@ main {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 16px;
+  align-items: stretch;
 }
 .news-card {
   background: #fff;
@@ -818,6 +819,7 @@ main {
   flex-direction: column;
   gap: 12px;
   box-shadow: 0 12px 24px rgba(0,0,0,0.06);
+  height: 100%;
 }
 .news-card-cover {
   width: 100%;
@@ -833,13 +835,17 @@ main {
   object-fit: cover;
 }
 .news-tag {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   padding: 4px 10px;
   border-radius: 999px;
   background: var(--brand-sand);
   color: var(--brand-green);
   font-size: 0.78rem;
   font-weight: 700;
+  min-width: 120px;
+  text-transform: capitalize;
 }
 .news-card h4 {
   margin: 0;
