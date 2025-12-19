@@ -172,6 +172,13 @@ let clientChatThreadId = null;
 let clientChatPollTimer = null;
 const openSupportChatBtn = document.getElementById('openSupportChatBtn');
 const clientSupportThreadItem = document.getElementById('clientSupportThreadItem');
+const emailVerifyModal = document.getElementById('emailVerifyModal');
+const emailVerifyClose = document.getElementById('emailVerifyClose');
+const emailVerifyDismiss = document.getElementById('emailVerifyDismiss');
+const emailVerifyResend = document.getElementById('emailVerifyResend');
+const emailVerifyMessage = document.getElementById('emailVerifyMessage');
+const emailVerifyFeedback = document.getElementById('emailVerifyFeedback');
+let emailVerifyIdentifier = '';
 let clientChatThreadsCache = [];
 const openReportProblemBtn = document.getElementById('openReportProblemBtn');
 const reportProblemModal = document.getElementById('reportProblemModal');
@@ -383,6 +390,47 @@ function triggerAutoLoginFromParams() {
   setTimeout(submitForm, 200);
 }
 
+function showEmailVerifyModal(identifier, message) {
+  if (!emailVerifyModal) return;
+  emailVerifyIdentifier = identifier || '';
+  if (emailVerifyMessage) {
+    emailVerifyMessage.textContent = message || 'Encontramos seu cadastro, mas é necessário confirmar o e-mail antes de acessar o portal.';
+  }
+  if (emailVerifyFeedback) emailVerifyFeedback.textContent = '';
+  emailVerifyModal.classList.add('show');
+  emailVerifyModal.setAttribute('aria-hidden', 'false');
+}
+
+function hideEmailVerifyModal() {
+  if (!emailVerifyModal) return;
+  emailVerifyModal.classList.remove('show');
+  emailVerifyModal.setAttribute('aria-hidden', 'true');
+}
+
+async function handleEmailVerifyResend() {
+  if (!emailVerifyResend || !emailVerifyFeedback) return;
+  const identifier = (emailVerifyIdentifier || loginIdentifierInput?.value || '').trim();
+  if (!identifier) {
+    emailVerifyFeedback.textContent = 'Informe o login ou e-mail para reenviar.';
+    return;
+  }
+  emailVerifyResend.disabled = true;
+  emailVerifyFeedback.textContent = 'Enviando novo link...';
+  try {
+    const res = await fetch(`${API_BASE}/client_resend_verification.php`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ login: identifier })
+    });
+    const json = await res.json();
+    emailVerifyFeedback.textContent = json.message || (json.success ? 'Link reenviado. Verifique sua caixa de entrada.' : (json.error || 'Não foi possível reenviar o link.'));
+  } catch (err) {
+    emailVerifyFeedback.textContent = 'Erro ao reenviar link. Tente novamente.';
+  } finally {
+    emailVerifyResend.disabled = false;
+  }
+}
+
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', initialize, { once: true });
 } else {
@@ -435,6 +483,12 @@ async function initialize() {
       window.open(courseModalContext.checkoutUrl, '_blank', 'noopener');
     }
   });
+  emailVerifyClose?.addEventListener('click', hideEmailVerifyModal);
+  emailVerifyDismiss?.addEventListener('click', hideEmailVerifyModal);
+  emailVerifyModal?.addEventListener('click', (event) => {
+    if (event.target === emailVerifyModal) hideEmailVerifyModal();
+  });
+  emailVerifyResend?.addEventListener('click', handleEmailVerifyResend);
 
   // Debounce helper para evitar gravações frequentes
   function debounce(fn, delay = 600) {
@@ -2716,38 +2770,10 @@ async function onPortalLoginSubmit(event) {
     const msg = err.message || 'Erro ao autenticar.';
     authMessage.textContent = msg;
     if (/confirme seu e-mail/i.test(msg) && loginIdentifierInput?.value) {
-      renderResendVerification(loginIdentifierInput.value.trim());
+      showEmailVerifyModal(loginIdentifierInput.value.trim(), msg);
+      return;
     }
   }
-}
-
-function renderResendVerification(identifier) {
-  let btn = document.getElementById('resendVerificationBtn');
-  if (!btn) {
-    btn = document.createElement('button');
-    btn.id = 'resendVerificationBtn';
-    btn.className = 'btn btn-secondary btn-sm';
-    btn.style.marginTop = '8px';
-    btn.textContent = 'Reenviar link de verificação';
-    authMessage?.appendChild(document.createElement('br'));
-    authMessage?.appendChild(btn);
-  }
-  btn.onclick = async () => {
-    btn.disabled = true;
-    try {
-      const res = await fetch(`${API_BASE}/client_resend_verification.php`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ login: identifier })
-      });
-      const json = await res.json();
-      authMessage.textContent = json.message || (json.success ? 'Link reenviado.' : (json.error || 'Falha ao reenviar.'));
-    } catch (e) {
-      authMessage.textContent = 'Falha ao reenviar link.';
-    } finally {
-      btn.disabled = false;
-    }
-  };
 }
 
 async function onPortalRegisterSubmit(event) {

@@ -980,6 +980,25 @@
     </div>
   </div>
 
+  <div class="modal-overlay" id="emailVerifyModal" aria-hidden="true">
+    <div class="modal-dialog modal-small" role="dialog" aria-modal="true" aria-labelledby="emailVerifyTitle">
+      <button class="modal-close" type="button" id="emailVerifyClose" aria-label="Fechar">&times;</button>
+      <div class="modal-body">
+        <div class="modal-info" style="padding:24px;">
+          <h2 id="emailVerifyTitle">Confirme seu e-mail</h2>
+          <p id="emailVerifyMessage" class="rooms-message" style="margin:8px 0 16px;">
+            Encontramos seu cadastro, mas é necessário confirmar o e-mail antes de acessar o portal.
+          </p>
+          <div class="modal-actions" style="display:flex; gap:12px; justify-content:flex-end; flex-wrap:wrap;">
+            <button type="button" class="btn btn-secondary" id="emailVerifyDismiss">Fechar</button>
+            <button type="button" class="btn btn-primary" id="emailVerifyResend">Reenviar link de verificação</button>
+          </div>
+          <div id="emailVerifyFeedback" class="rooms-message" role="status" aria-live="polite" style="margin-top:12px;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Modal: Detalhes do curso -->
   <div class="modal-overlay" id="courseDetailsModal" aria-hidden="true">
     <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="courseDetailsTitle" style="width:920px; max-width:96vw;">
