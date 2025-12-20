@@ -48,7 +48,7 @@ $hash = password_hash($password, PASSWORD_DEFAULT);
     ':whatsapp' => $phone ?: null,
     ':type' => $type,
     ':company_id' => $companyId ?: null,
-    ':status' => 'ativo'
+    ':status' => 'pendente'
   ]);
 
   $id = (int) $pdo->lastInsertId();
