@@ -13,12 +13,20 @@ if ($login === '' || $password === '') {
 
 try {
   try {
-    $stmt = $pdo->prepare('SELECT id, name, email, email_verified_at, login, cpf, password_hash, company_id, status, phone, whatsapp FROM clients WHERE login = :login OR email = :login OR cpf = :cpf LIMIT 1');
-    $stmt->execute([':login' => $login, ':cpf' => preg_replace('/\D/', '', $login)]);
+    $stmt = $pdo->prepare('SELECT id, name, email, email_verified_at, login, cpf, password_hash, company_id, status, phone, whatsapp FROM clients WHERE login = :login OR email = :email OR cpf = :cpf LIMIT 1');
+    $stmt->execute([
+      ':login' => $login,
+      ':email' => $login,
+      ':cpf' => preg_replace('/\D/', '', $login)
+    ]);
     $client = $stmt->fetch(PDO::FETCH_ASSOC);
   } catch (Throwable $e) {
-    $stmt = $pdo->prepare('SELECT id, name, email, email_verified_at, login, cpf, password_hash, company_id, status, phone, whatsapp FROM clients WHERE login = :login OR email = :login OR cpf = :cpf LIMIT 1');
-    $stmt->execute([':login' => $login, ':cpf' => preg_replace('/\D/', '', $login)]);
+    $stmt = $pdo->prepare('SELECT id, name, email, email_verified_at, login, cpf, password_hash, company_id, status, phone, whatsapp FROM clients WHERE login = :login OR email = :email OR cpf = :cpf LIMIT 1');
+    $stmt->execute([
+      ':login' => $login,
+      ':email' => $login,
+      ':cpf' => preg_replace('/\D/', '', $login)
+    ]);
     $client = $stmt->fetch(PDO::FETCH_ASSOC);
   }
 
