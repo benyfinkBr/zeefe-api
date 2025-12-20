@@ -1298,9 +1298,14 @@ setupAdvHeaderMenu();
 loginForm?.addEventListener('submit', onLoginSubmit);
 logoutBtn?.addEventListener('click', () => {
   closeAdvHeaderMenu();
-  advClient = null; myAdvertiser=null; myRooms=[]; myReservations=[];
-  registrarPreferenciaLoginAdv(false);
-  setAuthVisible(true);
+  const cleanup = () => {
+    advClient = null; myAdvertiser = null; myRooms = []; myReservations = [];
+    registrarPreferenciaLoginAdv(false);
+    setAuthVisible(true);
+  };
+  fetch(`${API_BASE}/advertiser_logout.php`, { credentials: 'include' })
+    .catch(() => {})
+    .finally(cleanup);
 });
 refreshBtn?.addEventListener('click', () => { if (advClient) afterLogin(); });
 navButtons.forEach(btn => btn.addEventListener('click', () => setActivePanel(btn.dataset.panel)));

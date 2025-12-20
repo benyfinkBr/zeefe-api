@@ -95,6 +95,9 @@ try {
     }
   }
 
+  $_SESSION['advertiser_id'] = (int) $adv['id'];
+  $_SESSION['advertiser_name'] = $adv['display_name'] ?? $adv['full_name'] ?? ($adv['login_email'] ?? 'Anunciante');
+
   echo json_encode(['success' => true, 'advertiser' => $payload, 'remember' => $rememberPayload]);
 } catch (Throwable $e) {
   http_response_code(500);
