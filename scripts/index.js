@@ -29,6 +29,16 @@ document.addEventListener('DOMContentLoaded', () => {
   const openLoginChoiceBtn = document.getElementById('openLoginChoice');
   const entryChoiceModal = document.getElementById('entryChoiceModal');
   const entryChoiceClose = document.getElementById('entryChoiceClose');
+  const homeHeaderGuest = document.getElementById('homeHeaderGuest');
+  const homeHeaderAccount = document.getElementById('homeHeaderAccount');
+  const homeHeaderAccountBtn = document.getElementById('homeHeaderAccountBtn');
+  const homeHeaderAccountLabel = document.getElementById('homeHeaderAccountLabel');
+  const homeHeaderAccountMenu = document.getElementById('homeHeaderAccountMenu');
+  const homeHeaderUserLabel = document.getElementById('homeHeaderUserLabel');
+  const homeHeaderPortalBtn = document.getElementById('homeHeaderPortal');
+  const homeHeaderLogoutBtn = document.getElementById('homeHeaderLogout');
+  let homeHeaderMenuOpen = false;
+  let homeHeaderSession = null;
 
   const benefits = [
     { icon: '☕', title: 'Café, água e internet', description: 'Café premium, água e Wi-Fi ultra rápida inclusos' },
@@ -603,6 +613,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
+  setupHomeHeaderMenu();
+  hydrateHomeHeaderSession();
+
   function renderFeaturedWorkshops() {
     if (!workshopsStrip || !workshopsMessage) return;
     workshopsStrip.innerHTML = '';
@@ -659,5 +672,98 @@ document.addEventListener('DOMContentLoaded', () => {
 
       workshopsStrip.appendChild(card);
     });
+  }
+
+  function setupHomeHeaderMenu() {
+    if (!homeHeaderAccount || !homeHeaderAccountBtn) return;
+    homeHeaderAccountBtn.addEventListener('click', (event) => {
+      event.preventDefault();
+      setHomeHeaderMenuState(!homeHeaderMenuOpen);
+    });
+    document.addEventListener('click', (event) => {
+      if (!homeHeaderMenuOpen || !homeHeaderAccount) return;
+      if (!homeHeaderAccount.contains(event.target)) {
+        setHomeHeaderMenuState(false);
+      }
+    });
+    homeHeaderPortalBtn?.addEventListener('click', () => {
+      if (!homeHeaderSession) return;
+      const destino = homeHeaderSession.type === 'advertiser' ? 'anunciante.html' : 'clientes.html';
+      window.location.href = destino;
+    });
+    homeHeaderLogoutBtn?.addEventListener('click', async () => {
+      await homeHeaderLogout();
+      setHomeHeaderMenuState(false);
+    });
+  }
+
+  function setHomeHeaderMenuState(open) {
+    homeHeaderMenuOpen = Boolean(open);
+    homeHeaderAccount?.classList.toggle('open', homeHeaderMenuOpen);
+    homeHeaderAccountBtn?.setAttribute('aria-expanded', homeHeaderMenuOpen ? 'true' : 'false');
+  }
+
+  async function hydrateHomeHeaderSession() {
+    const client = await tryFetchJson('api/client_session.php');
+    if (client?.success && client.client) {
+      setHomeHeaderState({
+        type: 'client',
+        name: client.client.name || 'Cliente'
+      });
+      return;
+    }
+    const advertiser = await tryFetchJson('api/advertiser_session.php');
+    if (advertiser?.success && advertiser.advertiser) {
+      setHomeHeaderState({
+        type: 'advertiser',
+        name: advertiser.advertiser.display_name || advertiser.advertiser.full_name || advertiser.advertiser.email || 'Anunciante'
+      });
+      return;
+    }
+    setHomeHeaderState(null);
+  }
+
+  async function tryFetchJson(url) {
+    try {
+      const res = await fetch(url, { credentials: 'include' });
+      return await res.json();
+    } catch (_) {
+      return null;
+    }
+  }
+
+  function setHomeHeaderState(session) {
+    homeHeaderSession = session;
+    const isLogged = Boolean(session);
+    if (homeHeaderGuest) homeHeaderGuest.hidden = isLogged;
+    if (homeHeaderAccount) homeHeaderAccount.hidden = !isLogged;
+    if (!isLogged) {
+      setHomeHeaderMenuState(false);
+      if (homeHeaderAccountLabel) homeHeaderAccountLabel.textContent = 'Minha Conta';
+      if (homeHeaderUserLabel) homeHeaderUserLabel.textContent = '';
+      return;
+    }
+    const typeLabel = session.type === 'advertiser' ? 'Portal do Anunciante' : 'Portal do Cliente';
+    if (homeHeaderAccountLabel) homeHeaderAccountLabel.textContent = session.name || 'Minha Conta';
+    if (homeHeaderUserLabel) homeHeaderUserLabel.textContent = session.name ? `${session.name} · ${typeLabel}` : typeLabel;
+    if (homeHeaderPortalBtn) {
+      homeHeaderPortalBtn.textContent = session.type === 'advertiser'
+        ? 'Ir para o Portal do Anunciante'
+        : 'Ir para o Portal do Cliente';
+    }
+  }
+
+  async function homeHeaderLogout() {
+    if (!homeHeaderSession) return;
+    const endpoint = homeHeaderSession.type === 'advertiser' ? 'api/advertiser_logout.php' : 'api/apilogout.php';
+    try {
+      await fetch(endpoint, { credentials: 'include' });
+    } catch (_) {}
+    if (homeHeaderSession.type === 'client') {
+      try { localStorage.removeItem('portalRememberToken'); } catch (_) {}
+    } else {
+      try { localStorage.removeItem('advRememberToken'); } catch (_) {}
+    }
+    setHomeHeaderState(null);
   }
 });

@@ -24,7 +24,19 @@
       </div>
       <div class="site-header-actions">
         <a href="#contato" class="site-link">Contato</a>
-        <button class="btn btn-outline" type="button" id="openLoginChoice">Entrar</button>
+        <div class="site-header-guest" id="homeHeaderGuest">
+          <button class="btn btn-outline" type="button" id="openLoginChoice">Entrar</button>
+        </div>
+        <div class="site-header-user" id="homeHeaderAccount" hidden>
+          <button class="user-menu-trigger" type="button" id="homeHeaderAccountBtn" aria-haspopup="true" aria-expanded="false">
+            <span id="homeHeaderAccountLabel">Minha Conta</span>
+          </button>
+          <div class="user-menu-dropdown" id="homeHeaderAccountMenu" role="menu">
+            <p class="user-menu-label" id="homeHeaderUserLabel"></p>
+            <button type="button" class="user-menu-item" id="homeHeaderPortal">Abrir portal</button>
+            <button type="button" class="user-menu-item user-menu-danger" id="homeHeaderLogout">Sair</button>
+          </div>
+        </div>
       </div>
     </div>
   </header>

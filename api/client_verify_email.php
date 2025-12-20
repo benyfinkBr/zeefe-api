@@ -50,8 +50,12 @@ try {
     exit;
   }
 
-  $upd = $pdo->prepare('UPDATE clients SET email_verified_at = NOW(), verification_token = NULL, verification_token_expires = NULL, updated_at = NOW() WHERE id = :id');
-  $upd->execute([':id' => $client['id']]);
+  $upd = $pdo->prepare('UPDATE clients SET email_verified_at = NOW(), verification_token = NULL, verification_token_expires = NULL, status = CASE WHEN status = :pending THEN :active ELSE status END, updated_at = NOW() WHERE id = :id');
+  $upd->execute([
+    ':id' => $client['id'],
+    ':pending' => 'pendente',
+    ':active' => 'ativo'
+  ]);
 
   if (wants_json()) {
     echo json_encode(['success' => true, 'message' => 'E-mail verificado com sucesso.']);
