@@ -3,7 +3,18 @@ declare(strict_types=1);
 
 use Stripe\StripeClient;
 
-require_once __DIR__ . '/../../vendor/autoload.php';
+function zeefe_stripe_autoload(): void {
+  static $loaded = false;
+  if ($loaded) {
+    return;
+  }
+  $autoload = __DIR__ . '/../../vendor/autoload.php';
+  if (!file_exists($autoload)) {
+    throw new RuntimeException('Stripe SDK não encontrado. Rode composer install no servidor.');
+  }
+  require_once $autoload;
+  $loaded = true;
+}
 
 function zeefe_stripe_config(array $config): array {
   $stripe = $config['stripe'] ?? null;
@@ -15,6 +26,7 @@ function zeefe_stripe_config(array $config): array {
 
 function zeefe_stripe_client(array $config): StripeClient {
   $stripeConfig = zeefe_stripe_config($config);
+  zeefe_stripe_autoload();
   return new StripeClient($stripeConfig['secret_key']);
 }
 
