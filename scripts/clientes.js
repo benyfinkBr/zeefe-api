@@ -23,6 +23,7 @@ const shouldAutoLoginFromParams = Boolean(autoLoginIdentifier && autoLoginPasswo
 let autoLoginAlreadyTriggered = false;
 let cardPaymentsFeature = null;
 
+
 if (isPaymentReturn) {
   console.log('[ZEEFE] Pagamento: ignorando auto-login');
 }
