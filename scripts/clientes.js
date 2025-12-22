@@ -124,7 +124,6 @@ const cardModal = document.getElementById('cardModal');
 const cardModalClose = document.getElementById('cardModalClose');
 const cardModalCancel = document.getElementById('cardModalCancel');
 const openCardModalBtn = document.getElementById('openCardModalBtn');
-const openCardModalSideBtn = document.getElementById('openCardModalSideBtn');
 const cardErrorsEl = document.getElementById('cardErrors');
 const cardSaveMessageEl = document.getElementById('cardSaveMessage');
 const cardSubmitBtn = document.getElementById('cardSubmitBtn');
@@ -186,7 +185,6 @@ function closeCardModal() {
 }
 
 openCardModalBtn?.addEventListener('click', openCardModal);
-openCardModalSideBtn?.addEventListener('click', openCardModal);
 cardModalClose?.addEventListener('click', closeCardModal);
 cardModalCancel?.addEventListener('click', closeCardModal);
 cardModal?.addEventListener('click', (event) => {
