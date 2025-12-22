@@ -123,7 +123,7 @@ const rememberMeCheckbox = document.getElementById('portalRememberMe');
 const authScopePFBtn = document.getElementById('authScopePFBtn');
 const authScopeCompanyBtn = document.getElementById('authScopeCompanyBtn');
 let desiredScope = 'pf';
-const REGISTER_PREFILL_ENABLED = true;
+const REGISTER_PREFILL_ENABLED = false;
 
 const clientPanels = document.getElementById('clientPanels');
 const clientNameEl = document.getElementById('clientName');
