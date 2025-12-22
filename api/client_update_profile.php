@@ -108,12 +108,6 @@ try {
     zeefe_stripe_sync_customer($pdo, $stripe, $id, $addressSaved);
   } catch (Throwable $stripeError) {
     error_log('[Stripe] Falha ao atualizar cliente: ' . $stripeError->getMessage());
-    http_response_code(500);
-    echo json_encode([
-      'success' => false,
-      'error' => 'Não foi possível sincronizar com o Stripe. Verifique as credenciais STRIPE_SECRET_KEY / STRIPE_PUBLISHABLE_KEY.'
-    ]);
-    exit;
   }
 
   echo json_encode([
