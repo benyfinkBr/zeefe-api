@@ -124,6 +124,7 @@ const cardModal = document.getElementById('cardModal');
 const cardModalClose = document.getElementById('cardModalClose');
 const cardModalCancel = document.getElementById('cardModalCancel');
 const openCardModalBtn = document.getElementById('openCardModalBtn');
+const openCardModalSideBtn = document.getElementById('openCardModalSideBtn');
 const cardErrorsEl = document.getElementById('cardErrors');
 const cardSaveMessageEl = document.getElementById('cardSaveMessage');
 const cardSubmitBtn = document.getElementById('cardSubmitBtn');
@@ -423,7 +424,6 @@ const profileInputs = {
   state: document.getElementById('profileStateInput'),
   country: document.getElementById('profileCountryInput')
 };
-const openCardModalSideBtn = document.getElementById('openCardModalSideBtn');
 
 // Modal de edição de perfil
 const profileEditModal = document.getElementById('profileEditModal');
