@@ -61,6 +61,11 @@ function zeefe_stripe_ensure_schema(PDO $pdo): void {
   } catch (Throwable $e) {
     error_log('[Stripe] Falha ao garantir coluna customer_cards.stripe_payment_method_id: ' . $e->getMessage());
   }
+  try {
+    ensureColumn($pdo, 'customer_cards', 'pagarme_card_id', 'VARCHAR(80) NULL', 'stripe_payment_method_id');
+  } catch (Throwable $e) {
+    error_log('[Stripe] Falha ao garantir coluna customer_cards.pagarme_card_id: ' . $e->getMessage());
+  }
 
   try {
     if (!zeefe_stripe_index_exists($pdo, 'customer_cards', 'uniq_stripe_payment_method')) {
