@@ -25,7 +25,7 @@ let cardPaymentsFeature = null;
 
 
 
-
+// teste de atualização
 if (isPaymentReturn) {
   console.log('[ZEEFE] Pagamento: ignorando auto-login');
 }
