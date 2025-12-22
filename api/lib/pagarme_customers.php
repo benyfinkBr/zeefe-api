@@ -1,22 +1,18 @@
 <?php
 require_once __DIR__ . '/pagarme.php';
-
-function ensureColumn(PDO $pdo, string $table, string $column, string $definition): void {
-  try {
-    $stmt = $pdo->prepare("SHOW COLUMNS FROM `{$table}` LIKE :col");
-    $stmt->execute([':col' => $column]);
-    if ($stmt->fetch()) {
-      return;
-    }
-    $pdo->exec("ALTER TABLE `{$table}` ADD COLUMN `{$column}` {$definition}");
-  } catch (Throwable $e) {
-    error_log("[Pagarme] Não foi possível garantir coluna {$table}.{$column}: " . $e->getMessage());
-  }
-}
+require_once __DIR__ . '/db_schema.php';
 
 function ensurePagarmeColumns(PDO $pdo): void {
-  ensureColumn($pdo, 'clients', 'pagarme_customer_id', "varchar(80) NULL AFTER `company_role`");
-  ensureColumn($pdo, 'customer_cards', 'fingerprint', "varchar(128) NULL AFTER `pagarme_card_id`");
+  try {
+    ensureColumn($pdo, 'clients', 'pagarme_customer_id', 'VARCHAR(80) NULL', 'company_role');
+  } catch (Throwable $e) {
+    error_log('[Pagarme] Não foi possível garantir coluna clients.pagarme_customer_id: ' . $e->getMessage());
+  }
+  try {
+    ensureColumn($pdo, 'customer_cards', 'fingerprint', 'VARCHAR(128) NULL', 'pagarme_card_id');
+  } catch (Throwable $e) {
+    error_log('[Pagarme] Não foi possível garantir coluna customer_cards.fingerprint: ' . $e->getMessage());
+  }
 }
 
 function fetchClientWithAddress(PDO $pdo, int $clientId): array {

@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 use Stripe\StripeClient;
 
+require_once __DIR__ . '/db_schema.php';
+
 function zeefe_stripe_autoload(): void {
   static $loaded = false;
   if ($loaded) {
@@ -30,12 +32,6 @@ function zeefe_stripe_client(array $config): StripeClient {
   return new StripeClient($stripeConfig['secret_key']);
 }
 
-function zeefe_stripe_column_exists(PDO $pdo, string $table, string $column): bool {
-  $stmt = $pdo->prepare("SHOW COLUMNS FROM `{$table}` LIKE :column");
-  $stmt->execute([':column' => $column]);
-  return (bool)$stmt->fetch(PDO::FETCH_ASSOC);
-}
-
 function zeefe_stripe_index_exists(PDO $pdo, string $table, string $indexName): bool {
   $stmt = $pdo->prepare("SHOW INDEX FROM `{$table}` WHERE Key_name = :name");
   $stmt->execute([':name' => $indexName]);
@@ -49,25 +45,19 @@ function zeefe_stripe_ensure_schema(PDO $pdo): void {
   }
 
   try {
-    if (!zeefe_stripe_column_exists($pdo, 'clients', 'stripe_customer_id')) {
-      $pdo->exec("ALTER TABLE `clients` ADD COLUMN `stripe_customer_id` varchar(80) NULL AFTER `company_role`");
-    }
+    ensureColumn($pdo, 'clients', 'stripe_customer_id', 'VARCHAR(80) NULL', 'company_role');
   } catch (Throwable $e) {
     error_log('[Stripe] Falha ao garantir coluna clients.stripe_customer_id: ' . $e->getMessage());
   }
 
   try {
-    if (!zeefe_stripe_column_exists($pdo, 'customer_cards', 'stripe_customer_id')) {
-      $pdo->exec("ALTER TABLE `customer_cards` ADD COLUMN `stripe_customer_id` varchar(80) NULL AFTER `client_id`");
-    }
+    ensureColumn($pdo, 'customer_cards', 'stripe_customer_id', 'VARCHAR(80) NULL', 'client_id');
   } catch (Throwable $e) {
     error_log('[Stripe] Falha ao garantir coluna customer_cards.stripe_customer_id: ' . $e->getMessage());
   }
 
   try {
-    if (!zeefe_stripe_column_exists($pdo, 'customer_cards', 'stripe_payment_method_id')) {
-      $pdo->exec("ALTER TABLE `customer_cards` ADD COLUMN `stripe_payment_method_id` varchar(80) NULL AFTER `stripe_customer_id`");
-    }
+    ensureColumn($pdo, 'customer_cards', 'stripe_payment_method_id', 'VARCHAR(80) NULL', 'stripe_customer_id');
   } catch (Throwable $e) {
     error_log('[Stripe] Falha ao garantir coluna customer_cards.stripe_payment_method_id: ' . $e->getMessage());
   }
