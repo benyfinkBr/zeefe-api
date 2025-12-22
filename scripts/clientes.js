@@ -185,6 +185,7 @@ function closeCardModal() {
 }
 
 openCardModalBtn?.addEventListener('click', openCardModal);
+openCardModalSideBtn?.addEventListener('click', openCardModal);
 cardModalClose?.addEventListener('click', closeCardModal);
 cardModalCancel?.addEventListener('click', closeCardModal);
 cardModal?.addEventListener('click', (event) => {
@@ -422,6 +423,7 @@ const profileInputs = {
   state: document.getElementById('profileStateInput'),
   country: document.getElementById('profileCountryInput')
 };
+const openCardModalSideBtn = document.getElementById('openCardModalSideBtn');
 
 // Modal de edição de perfil
 const profileEditModal = document.getElementById('profileEditModal');
