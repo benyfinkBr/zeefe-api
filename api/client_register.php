@@ -54,8 +54,18 @@ $hash = password_hash($password, PASSWORD_DEFAULT);
 
   $id = (int) $pdo->lastInsertId();
 
-  $stripe = zeefe_stripe_client($config);
-  zeefe_stripe_sync_customer($pdo, $stripe, $id);
+  try {
+    $stripe = zeefe_stripe_client($config);
+    zeefe_stripe_sync_customer($pdo, $stripe, $id);
+  } catch (Throwable $stripeError) {
+    error_log('[Stripe] Falha ao criar cliente: ' . $stripeError->getMessage());
+    http_response_code(500);
+    echo json_encode([
+      'success' => false,
+      'error' => 'Não foi possível sincronizar o cadastro com o Stripe. Verifique as credenciais STRIPE_SECRET_KEY / STRIPE_PUBLISHABLE_KEY.'
+    ]);
+    exit;
+  }
 
   $response = [
     'success' => true,
