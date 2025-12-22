@@ -665,7 +665,7 @@
     <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="reservationActionsTitle">
       <button class="modal-close" type="button" id="reservationActionsClose" aria-label="Fechar">&times;</button>
       <div class="modal-body">
-        <div class="modal-info" style="padding:24px; width:100%">
+        <div class="modal-info card-payment-modal" style="padding:24px; width:100%">
           <h2 id="reservationActionsTitle" style="margin-top:0">Ações da reserva</h2>
           <p id="reservationActionsMeta" class="rooms-message"></p>
           <div id="reservationActionsButtons" class="actions-grid"></div>
@@ -997,6 +997,18 @@
               <input type="text" id="cardHolderName" autocomplete="cc-name" required />
             </div>
             <div class="form-row">
+              <label for="stripeCardElement">Dados do cartão</label>
+              <div class="stripe-card-wrapper">
+                <div id="stripeCardElement" class="stripe-card-element"></div>
+              </div>
+            </div>
+            <div class="form-row billing-toggle-row">
+              <label class="checkbox-toggle" for="cardUseProfileData">
+                <input type="checkbox" id="cardUseProfileData" checked />
+                <span>Usar os dados do cadastro para faturamento</span>
+              </label>
+            </div>
+            <div class="form-row">
               <label for="cardBillingEmail">E-mail para recibos</label>
               <input type="email" id="cardBillingEmail" autocomplete="email" />
             </div>
@@ -1033,10 +1045,6 @@
             <div class="form-row">
               <label for="cardBillingComplement">Complemento</label>
               <input type="text" id="cardBillingComplement" />
-            </div>
-            <div class="form-row">
-              <label>Dados do cartão</label>
-              <div id="stripeCardElement" class="stripe-card-element"></div>
             </div>
             <div id="cardErrors" class="rooms-message state-error" aria-live="polite"></div>
             <div id="cardSaveMessage" class="rooms-message state-ok" aria-live="polite"></div>

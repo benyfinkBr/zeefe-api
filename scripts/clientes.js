@@ -5080,10 +5080,21 @@ function initCardPaymentsFeature() {
   const openButtons = Array.from(document.querySelectorAll('[data-open-card-modal]'));
   const cardListSection = document.getElementById('cardListSection');
   const cardListEl = document.getElementById('cardList');
+  const useProfileDataCheckbox = document.getElementById('cardUseProfileData');
   const cardListEmpty = document.getElementById('cardListEmpty');
   const cardListError = document.getElementById('cardListError');
   const closeBtn = document.getElementById('cardModalClose');
   const cancelBtn = document.getElementById('cardModalCancel');
+  const billingFieldInputs = [
+    billingEmailInput,
+    billingZipInput,
+    billingStateInput,
+    billingCityInput,
+    billingCountryInput,
+    billingStreetInput,
+    billingNumberInput,
+    billingComplementInput
+  ];
 
   if (!cardForm || !cardModal) {
     return {
@@ -5255,18 +5266,46 @@ function initCardPaymentsFeature() {
     };
   }
 
-  function hydrateBillingFields(client) {
+  function hydrateBillingFields(client, options = {}) {
     if (!client) return;
+    const { force = true } = options;
     const addr = extractAddress(client);
-    if (holderInput && !holderInput.value) holderInput.value = client.name || '';
-    if (billingEmailInput && !billingEmailInput.value) billingEmailInput.value = client.email || '';
-    if (billingZipInput) billingZipInput.value = formatCEP(addr.zip_code) || '';
-    if (billingStateInput) billingStateInput.value = addr.state || '';
-    if (billingCityInput) billingCityInput.value = addr.city || '';
-    if (billingCountryInput) billingCountryInput.value = addr.country || 'BR';
-    if (billingStreetInput) billingStreetInput.value = addr.street || '';
-    if (billingNumberInput) billingNumberInput.value = addr.number || '';
-    if (billingComplementInput) billingComplementInput.value = addr.complement || '';
+    const setValue = (input, value) => {
+      if (!input) return;
+      if (force || !input.value) {
+        input.value = value || '';
+      }
+    };
+    setValue(holderInput, client.name || '');
+    setValue(billingEmailInput, client.email || '');
+    if (billingZipInput && (force || !billingZipInput.value)) {
+      billingZipInput.value = formatCEP(addr.zip_code) || '';
+    }
+    setValue(billingStateInput, addr.state || '');
+    setValue(billingCityInput, addr.city || '');
+    setValue(billingCountryInput, addr.country || 'BR');
+    setValue(billingStreetInput, addr.street || '');
+    setValue(billingNumberInput, addr.number || '');
+    setValue(billingComplementInput, addr.complement || '');
+  }
+
+  function setBillingFieldsReadonly(readOnly) {
+    billingFieldInputs.forEach((input) => {
+      if (!input) return;
+      input.readOnly = readOnly;
+      input.classList.toggle('input-readonly', readOnly);
+    });
+  }
+
+  function syncBillingMode(clientOverride = null) {
+    const useProfile = Boolean(useProfileDataCheckbox?.checked);
+    setBillingFieldsReadonly(useProfile);
+    if (useProfile) {
+      const source = clientOverride || activeClient;
+      if (source) {
+        hydrateBillingFields(source, { force: true });
+      }
+    }
   }
 
   function toggleModal(show) {
@@ -5285,7 +5324,8 @@ function initCardPaymentsFeature() {
       return false;
     }
     if (cardClientInput) cardClientInput.value = activeClient.id;
-    hydrateBillingFields(activeClient);
+    hydrateBillingFields(activeClient, { force: true });
+    syncBillingMode(activeClient);
     toggleModal(true);
     return true;
   }
@@ -5387,9 +5427,12 @@ function initCardPaymentsFeature() {
     currentClientId = client?.id || null;
     if (cardClientInput) cardClientInput.value = currentClientId || '';
     if (client) {
-      hydrateBillingFields(client);
+      hydrateBillingFields(client, { force: true });
       refreshCardList(currentClientId);
+      syncBillingMode(client);
     } else {
+      if (useProfileDataCheckbox) useProfileDataCheckbox.checked = true;
+      setBillingFieldsReadonly(true);
       if (cardListSection) cardListSection.hidden = true;
       if (cardListEmpty) {
         cardListEmpty.hidden = false;
@@ -5397,6 +5440,10 @@ function initCardPaymentsFeature() {
       }
       if (cardListError) cardListError.hidden = true;
       holderInput && (holderInput.value = '');
+      billingFieldInputs.forEach((input) => {
+        if (!input) return;
+        input.value = '';
+      });
     }
   }
 
@@ -5410,6 +5457,10 @@ function initCardPaymentsFeature() {
   document.addEventListener('keydown', (event) => {
     if (event.key === 'Escape') closeModal();
   });
+  useProfileDataCheckbox?.addEventListener('change', () => {
+    syncBillingMode();
+  });
+  syncBillingMode();
 
   return {
     openModal,
