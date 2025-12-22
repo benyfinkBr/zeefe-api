@@ -50,26 +50,26 @@ function zeefe_stripe_ensure_schema(PDO $pdo): void {
 
   try {
     if (!zeefe_stripe_column_exists($pdo, 'clients', 'stripe_customer_id')) {
-      $pdo->exec("ALTER TABLE `clients` ADD COLUMN `stripe_customer_id` varchar(80) NULL AFTER `pagarme_customer_id`");
+      $pdo->exec("ALTER TABLE `clients` ADD COLUMN `stripe_customer_id` varchar(80) NULL AFTER `company_role`");
     }
   } catch (Throwable $e) {
     error_log('[Stripe] Falha ao garantir coluna clients.stripe_customer_id: ' . $e->getMessage());
   }
 
   try {
-    if (!zeefe_stripe_column_exists($pdo, 'customer_cards', 'stripe_payment_method_id')) {
-      $pdo->exec("ALTER TABLE `customer_cards` ADD COLUMN `stripe_payment_method_id` varchar(80) NULL AFTER `pagarme_card_id`");
-    }
-  } catch (Throwable $e) {
-    error_log('[Stripe] Falha ao garantir coluna customer_cards.stripe_payment_method_id: ' . $e->getMessage());
-  }
-
-  try {
     if (!zeefe_stripe_column_exists($pdo, 'customer_cards', 'stripe_customer_id')) {
-      $pdo->exec("ALTER TABLE `customer_cards` ADD COLUMN `stripe_customer_id` varchar(80) NULL AFTER `stripe_payment_method_id`");
+      $pdo->exec("ALTER TABLE `customer_cards` ADD COLUMN `stripe_customer_id` varchar(80) NULL AFTER `client_id`");
     }
   } catch (Throwable $e) {
     error_log('[Stripe] Falha ao garantir coluna customer_cards.stripe_customer_id: ' . $e->getMessage());
+  }
+
+  try {
+    if (!zeefe_stripe_column_exists($pdo, 'customer_cards', 'stripe_payment_method_id')) {
+      $pdo->exec("ALTER TABLE `customer_cards` ADD COLUMN `stripe_payment_method_id` varchar(80) NULL AFTER `stripe_customer_id`");
+    }
+  } catch (Throwable $e) {
+    error_log('[Stripe] Falha ao garantir coluna customer_cards.stripe_payment_method_id: ' . $e->getMessage());
   }
 
   try {
