@@ -21,6 +21,7 @@ const autoLoginIdentifier = currentUrl.searchParams.get('identifier') || '';
 const autoLoginPassword = currentUrl.searchParams.get('password') || '';
 const shouldAutoLoginFromParams = Boolean(autoLoginIdentifier && autoLoginPassword);
 let autoLoginAlreadyTriggered = false;
+let cardPaymentsFeature = null;
 
 if (isPaymentReturn) {
   console.log('[ZEEFE] Pagamento: ignorando auto-login');
@@ -913,6 +914,10 @@ function closeHeaderMenu() {
 }
 
 function openCardSavePage() {
+  if (cardPaymentsFeature?.openModal) {
+    const opened = cardPaymentsFeature.openModal();
+    if (opened) return;
+  }
   try {
     const url = new URL('salvar-cartao.html', window.location.origin);
     const clientId = activeClient?.id || getStoredActiveClientId();
@@ -3012,6 +3017,7 @@ function aplicarClienteAtivo(cliente) {
     companyBookingRow.hidden = !Boolean(activeClient.company_id);
   }
   renderProfile();
+  cardPaymentsFeature?.setClient(activeClient);
   resetBookingForm();
   // Apply desired scope after login (fallback to PF if no company)
   const scopeToApply = (desiredScope === 'company' && activeClient.company_id) ? 'company' : 'pf';
@@ -3046,6 +3052,7 @@ function fazerLogout() {
     setActivePanel('book');
     renderProfile();
     stopPortalAutoRefresh();
+    cardPaymentsFeature?.setClient(null);
     try { localStorage.removeItem('portalRememberToken'); } catch (_) {}
   };
 
@@ -5050,34 +5057,55 @@ async function enviarLinkPagamento(reservationId) {
   return json;
 }
 
-(function initStandaloneCardSaveForm() {
+function initCardPaymentsFeature() {
+  const cardModal = document.getElementById('cardModal');
   const cardForm = document.getElementById('cardSaveForm');
-  if (!cardForm) return;
-
-  const clientInput = document.getElementById('cardClientId');
+  const cardClientInput = document.getElementById('cardClientId');
   const holderInput = document.getElementById('cardHolderName');
+  const billingEmailInput = document.getElementById('cardBillingEmail');
+  const billingZipInput = document.getElementById('cardBillingZip');
+  const billingStateInput = document.getElementById('cardBillingState');
+  const billingCityInput = document.getElementById('cardBillingCity');
+  const billingCountryInput = document.getElementById('cardBillingCountry');
+  const billingStreetInput = document.getElementById('cardBillingStreet');
+  const billingNumberInput = document.getElementById('cardBillingNumber');
+  const billingComplementInput = document.getElementById('cardBillingComplement');
   const cardElementContainer = document.getElementById('stripeCardElement');
   const errorEl = document.getElementById('cardErrors');
   const successEl = document.getElementById('cardSaveMessage');
-  const submitBtn = document.getElementById('cardSubmitBtn') || cardForm.querySelector('button[type="submit"]');
+  const submitBtn = document.getElementById('cardSubmitBtn') || cardForm?.querySelector('button[type="submit"]');
+  const openButtons = Array.from(document.querySelectorAll('[data-open-card-modal]'));
   const cardListSection = document.getElementById('cardListSection');
   const cardListEl = document.getElementById('cardList');
+  const cardListEmpty = document.getElementById('cardListEmpty');
+  const cardListError = document.getElementById('cardListError');
+  const closeBtn = document.getElementById('cardModalClose');
+  const cancelBtn = document.getElementById('cardModalCancel');
+
+  if (!cardForm || !cardModal) {
+    return {
+      openModal: () => false,
+      setClient: () => {},
+      refreshCards: () => {}
+    };
+  }
 
   let stripe = null;
   let cardElement = null;
   let isSubmitting = false;
   let publishableKeyPromise = null;
+  let currentClientId = null;
 
   function setError(message) {
     if (!errorEl) return;
     errorEl.textContent = message || '';
-    errorEl.classList.toggle('visible', Boolean(message));
+    errorEl.hidden = !message;
   }
 
   function setSuccess(message) {
     if (!successEl) return;
     successEl.textContent = message || '';
-    successEl.classList.toggle('visible', Boolean(message));
+    successEl.hidden = !message;
   }
 
   function clearMessages() {
@@ -5086,25 +5114,23 @@ async function enviarLinkPagamento(reservationId) {
   }
 
   function setLoading(state) {
+    cardForm.classList.toggle('is-loading', Boolean(state));
     if (submitBtn) {
       submitBtn.disabled = Boolean(state);
       submitBtn.textContent = state ? 'Salvando cartão...' : 'Salvar cartão';
     }
-    cardForm.classList.toggle('is-loading', Boolean(state));
   }
 
   async function fetchStripePublishableKey() {
     if (!publishableKeyPromise) {
-      publishableKeyPromise = fetch(`${API_BASE}/stripe_public_key.php`, {
-        credentials: 'include'
-      })
+      publishableKeyPromise = fetch(`${API_BASE}/stripe_public_key.php`, { credentials: 'include' })
         .then(response => parseJsonSafe(response).then(json => ({ response, json })))
         .then(({ response, json }) => {
           if (!response.ok || !json.success) {
             throw new Error(json.error || 'Stripe não configurado.');
           }
           if (!json.publishable_key) {
-            throw new Error('Chave pública da Stripe ausente.');
+            throw new Error('Chave pública não encontrada.');
           }
           return json.publishable_key;
         });
@@ -5120,18 +5146,15 @@ async function enviarLinkPagamento(reservationId) {
         throw new Error('Não foi possível carregar a biblioteca Stripe. Recarregue a página.');
       }
       if (!cardElementContainer) {
-        throw new Error('Campo de cartão não encontrado na página.');
+        throw new Error('Campo de cartão não encontrado.');
       }
       stripe = Stripe(publishableKey);
       const elements = stripe.elements();
       cardElement = elements.create('card', { hidePostalCode: true });
       cardElement.mount(cardElementContainer);
       cardElement.on('change', (event) => {
-        if (event.error) {
-          setError(event.error.message);
-        } else if (!isSubmitting) {
-          setError('');
-        }
+        if (event.error) setError(event.error.message);
+        else if (!isSubmitting) setError('');
       });
       return stripe;
     } catch (err) {
@@ -5141,14 +5164,35 @@ async function enviarLinkPagamento(reservationId) {
     }
   }
 
-  async function refreshCardList(clientId) {
+  function setCardListState(state) {
     if (!cardListSection || !cardListEl) return;
+    const { hidden, message, error } = state;
+    if (typeof hidden === 'boolean') cardListSection.hidden = hidden;
+    if (message) cardListEl.innerHTML = `<li>${escapeHtml(message)}</li>`;
+    if (cardListError) {
+      if (error) {
+        cardListError.textContent = error;
+        cardListError.hidden = false;
+      } else {
+        cardListError.hidden = true;
+        cardListError.textContent = '';
+      }
+    }
+  }
+
+  async function refreshCardList(clientId) {
+    if (!cardListSection || !cardListEl || !cardListEmpty) return;
     if (!clientId) {
       cardListSection.hidden = true;
+      cardListEmpty.hidden = false;
+      cardListEmpty.textContent = 'Faça login para visualizar os cartões cadastrados.';
+      cardListError.hidden = true;
       return;
     }
+    cardListEmpty.hidden = true;
     cardListSection.hidden = false;
     cardListEl.innerHTML = '<li>Carregando cartões...</li>';
+    if (cardListError) cardListError.hidden = true;
     try {
       const response = await fetch(`${API_BASE}/customer_cards_list.php`, {
         method: 'POST',
@@ -5161,7 +5205,9 @@ async function enviarLinkPagamento(reservationId) {
       }
       const cards = Array.isArray(json.cards) ? json.cards : [];
       if (!cards.length) {
-        cardListEl.innerHTML = '<li>Nenhum cartão salvo para este cliente.</li>';
+        cardListSection.hidden = true;
+        cardListEmpty.hidden = false;
+        cardListEmpty.textContent = 'Nenhum cartão salvo para este cliente.';
         return;
       }
       cardListEl.innerHTML = '';
@@ -5183,28 +5229,75 @@ async function enviarLinkPagamento(reservationId) {
         cardListEl.appendChild(li);
       });
     } catch (err) {
-      cardListEl.innerHTML = `<li class="card-error">Erro ao carregar cartões: ${escapeHtml(err.message || 'Falha desconhecida')}</li>`;
+      cardListSection.hidden = true;
+      cardListEmpty.hidden = true;
+      if (cardListError) {
+        cardListError.hidden = false;
+        cardListError.textContent = err.message || 'Erro ao carregar cartões.';
+      }
     }
   }
 
-  function handleClientIdChange() {
-    const value = Number(clientInput?.value);
-    if (Number.isFinite(value) && value > 0) {
-      rememberActiveClientId(value);
-      refreshCardList(value);
-    } else if (cardListSection) {
-      cardListSection.hidden = true;
+  function extractAddress(client) {
+    if (!client) return {};
+    const addr = client.address || client.client_address || client.address_data || {};
+    return {
+      street: addr.street || client.street || '',
+      number: addr.number || client.number || '',
+      complement: addr.complement || client.complement || '',
+      zip_code: addr.zip_code || addr.cep || client.zip_code || '',
+      city: addr.city || client.city || '',
+      state: addr.state || client.state || '',
+      country: addr.country || client.country || 'BR'
+    };
+  }
+
+  function hydrateBillingFields(client) {
+    if (!client) return;
+    const addr = extractAddress(client);
+    if (holderInput && !holderInput.value) holderInput.value = client.name || '';
+    if (billingEmailInput && !billingEmailInput.value) billingEmailInput.value = client.email || '';
+    if (billingZipInput) billingZipInput.value = formatCEP(addr.zip_code) || '';
+    if (billingStateInput) billingStateInput.value = addr.state || '';
+    if (billingCityInput) billingCityInput.value = addr.city || '';
+    if (billingCountryInput) billingCountryInput.value = addr.country || 'BR';
+    if (billingStreetInput) billingStreetInput.value = addr.street || '';
+    if (billingNumberInput) billingNumberInput.value = addr.number || '';
+    if (billingComplementInput) billingComplementInput.value = addr.complement || '';
+  }
+
+  function toggleModal(show) {
+    cardModal.classList.toggle('show', show);
+    cardModal.setAttribute('aria-hidden', show ? 'false' : 'true');
+    if (show) {
+      clearMessages();
+      setLoading(false);
+      initStripeElement().catch(() => {});
     }
+  }
+
+  function openModal() {
+    if (!activeClient?.id) {
+      alert('Faça login para cadastrar um cartão.');
+      return false;
+    }
+    if (cardClientInput) cardClientInput.value = activeClient.id;
+    hydrateBillingFields(activeClient);
+    toggleModal(true);
+    return true;
+  }
+
+  function closeModal() {
+    toggleModal(false);
   }
 
   async function handleCardFormSubmit(event) {
     event.preventDefault();
     if (isSubmitting) return;
     clearMessages();
-    const clientId = Number(clientInput?.value);
+    const clientId = Number(cardClientInput?.value);
     if (!Number.isFinite(clientId) || clientId <= 0) {
-      setError('Informe um código de cliente válido.');
-      clientInput?.focus();
+      setError('Cliente inválido. Faça login novamente.');
       return;
     }
     const cardholder = (holderInput?.value || '').trim();
@@ -5219,9 +5312,28 @@ async function enviarLinkPagamento(reservationId) {
       return;
     }
     if (!stripe || !cardElement) {
-      setError('Stripe não inicializado. Recarregue a página e tente novamente.');
+      setError('Stripe não inicializado. Recarregue a página.');
       return;
     }
+
+    const billingDetails = { name: cardholder };
+    const email = (billingEmailInput?.value || '').trim();
+    if (email) billingDetails.email = email;
+    const address = {};
+    const street = (billingStreetInput?.value || '').trim();
+    const number = (billingNumberInput?.value || '').trim();
+    if (street) address.line1 = number ? `${street}, ${number}` : street;
+    const complement = (billingComplementInput?.value || '').trim();
+    if (complement) address.line2 = complement;
+    const city = (billingCityInput?.value || '').trim();
+    if (city) address.city = city;
+    const state = (billingStateInput?.value || '').trim();
+    if (state) address.state = state;
+    const country = (billingCountryInput?.value || '').trim() || 'BR';
+    if (country) address.country = country.toUpperCase();
+    const zip = somenteDigitos(billingZipInput?.value);
+    if (zip) address.postal_code = zip;
+    if (Object.keys(address).length) billingDetails.address = address;
 
     isSubmitting = true;
     setLoading(true);
@@ -5233,22 +5345,15 @@ async function enviarLinkPagamento(reservationId) {
       });
       const setupJson = await parseJsonSafe(setupRes);
       if (!setupRes.ok || !setupJson.success) {
-        throw new Error(setupJson.error || 'Não foi possível iniciar o cadastro do cartão.');
+        throw new Error(setupJson.error || 'Não foi possível iniciar o cadastro.');
       }
       const clientSecret = setupJson.client_secret;
-      if (!clientSecret) {
-        throw new Error('Resposta inválida do Stripe.');
-      }
+      if (!clientSecret) throw new Error('Resposta inválida do Stripe.');
 
       const confirmation = await stripe.confirmCardSetup(clientSecret, {
-        payment_method: {
-          card: cardElement,
-          billing_details: { name: cardholder }
-        }
+        payment_method: { card: cardElement, billing_details: billingDetails }
       });
-      if (confirmation.error) {
-        throw confirmation.error;
-      }
+      if (confirmation.error) throw confirmation.error;
       const setupIntent = confirmation.setupIntent;
       const saveRes = await fetch(`${API_BASE}/customer_save_card.php`, {
         method: 'POST',
@@ -5265,35 +5370,50 @@ async function enviarLinkPagamento(reservationId) {
       }
 
       cardElement.clear();
-      setSuccess('Cartão salvo com sucesso! Você pode fechar esta aba com segurança.');
-      rememberActiveClientId(clientId);
+      setSuccess('Cartão salvo com sucesso! Você já pode fechar este modal.');
       refreshCardList(clientId);
     } catch (err) {
-      setError(err?.message || 'Falha ao salvar o cartão. Verifique os dados e tente novamente.');
+      setError(err?.message || 'Falha ao salvar o cartão.');
     } finally {
       isSubmitting = false;
       setLoading(false);
     }
   }
 
-  function hydrateInitialClientId() {
-    const params = new URLSearchParams(window.location.search);
-    const queryValue = Number(params.get('client_id') || params.get('client'));
-    const stored = getStoredActiveClientId();
-    if (clientInput) {
-      if (Number.isFinite(queryValue) && queryValue > 0) {
-        clientInput.value = queryValue;
-      } else if (stored) {
-        clientInput.value = stored;
+  function setClient(client) {
+    currentClientId = client?.id || null;
+    if (cardClientInput) cardClientInput.value = currentClientId || '';
+    if (client) {
+      hydrateBillingFields(client);
+      refreshCardList(currentClientId);
+    } else {
+      if (cardListSection) cardListSection.hidden = true;
+      if (cardListEmpty) {
+        cardListEmpty.hidden = false;
+        cardListEmpty.textContent = 'Faça login para gerenciar cartões.';
       }
+      if (cardListError) cardListError.hidden = true;
+      holderInput && (holderInput.value = '');
     }
-    handleClientIdChange();
   }
 
-  initStripeElement().catch(() => {});
-  hydrateInitialClientId();
-
+  openButtons.forEach(btn => btn.addEventListener('click', openModal));
   cardForm.addEventListener('submit', handleCardFormSubmit);
-  clientInput?.addEventListener('change', handleClientIdChange);
-  clientInput?.addEventListener('blur', handleClientIdChange);
-})();
+  closeBtn?.addEventListener('click', closeModal);
+  cancelBtn?.addEventListener('click', closeModal);
+  cardModal.addEventListener('click', (event) => {
+    if (event.target === cardModal) closeModal();
+  });
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') closeModal();
+  });
+
+  return {
+    openModal,
+    setClient,
+    refreshCards: refreshCardList
+  };
+}
+
+cardPaymentsFeature = initCardPaymentsFeature();
+cardPaymentsFeature?.setClient(null);

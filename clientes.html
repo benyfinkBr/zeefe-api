@@ -612,6 +612,25 @@
                 </div>
               </form>
             </article>
+
+            <article class="form-card payment-card" id="paymentCardSection">
+              <div class="section-headline">
+                <div>
+                  <h3>Cartões de pagamento</h3>
+                  <p class="form-help">Cadastre um cartão para agilizar reservas, assinaturas e cursos.</p>
+                </div>
+                <button type="button" class="btn btn-primary btn-sm" id="openCardModalBtn" data-open-card-modal>
+                  Cadastrar cartão
+                </button>
+              </div>
+              <div id="cardListSection" class="card-list-section" hidden>
+                <ul id="cardList" class="card-list"></ul>
+              </div>
+              <div id="cardListEmpty" class="rooms-message" hidden>
+                Nenhum cartão cadastrado ainda. Clique em &ldquo;Cadastrar cartão&rdquo; para adicionar um novo método.
+              </div>
+              <div id="cardListError" class="rooms-message state-error" hidden></div>
+            </article>
           </div>
 
           <div id="panel-courses" class="portal-section" hidden>
@@ -963,6 +982,74 @@
     </div>
   </div>
 
+  <!-- Modal: Cartão de pagamento -->
+  <div class="modal-overlay" id="cardModal" aria-hidden="true">
+    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="cardModalTitle" style="max-width:560px;">
+      <button class="modal-close" type="button" id="cardModalClose" aria-label="Fechar">&times;</button>
+      <div class="modal-body">
+        <div class="modal-info" style="padding:24px; width:100%">
+          <h2 id="cardModalTitle" style="margin-top:0">Cadastrar cartão</h2>
+          <p class="rooms-message" style="margin-bottom:16px;">Os dados são enviados com segurança diretamente à Stripe.</p>
+          <form id="cardSaveForm" class="profile-edit-form">
+            <input type="hidden" id="cardClientId" name="client_id" />
+            <div class="form-row">
+              <label for="cardHolderName">Nome impresso no cartão</label>
+              <input type="text" id="cardHolderName" autocomplete="cc-name" required />
+            </div>
+            <div class="form-row">
+              <label for="cardBillingEmail">E-mail para recibos</label>
+              <input type="email" id="cardBillingEmail" autocomplete="email" />
+            </div>
+            <div class="form-grid-mini">
+              <div>
+                <label for="cardBillingZip">CEP</label>
+                <input type="text" id="cardBillingZip" autocomplete="postal-code" maxlength="20" />
+              </div>
+              <div>
+                <label for="cardBillingState">Estado</label>
+                <input type="text" id="cardBillingState" autocomplete="address-level1" maxlength="10" />
+              </div>
+            </div>
+            <div class="form-grid-mini">
+              <div>
+                <label for="cardBillingCity">Cidade</label>
+                <input type="text" id="cardBillingCity" autocomplete="address-level2" />
+              </div>
+              <div>
+                <label for="cardBillingCountry">País</label>
+                <input type="text" id="cardBillingCountry" autocomplete="country" maxlength="2" value="BR" />
+              </div>
+            </div>
+            <div class="form-grid-mini">
+              <div>
+                <label for="cardBillingStreet">Endereço</label>
+                <input type="text" id="cardBillingStreet" autocomplete="address-line1" />
+              </div>
+              <div>
+                <label for="cardBillingNumber">Número</label>
+                <input type="text" id="cardBillingNumber" autocomplete="address-line2" />
+              </div>
+            </div>
+            <div class="form-row">
+              <label for="cardBillingComplement">Complemento</label>
+              <input type="text" id="cardBillingComplement" />
+            </div>
+            <div class="form-row">
+              <label>Dados do cartão</label>
+              <div id="stripeCardElement" class="stripe-card-element"></div>
+            </div>
+            <div id="cardErrors" class="rooms-message state-error" aria-live="polite"></div>
+            <div id="cardSaveMessage" class="rooms-message state-ok" aria-live="polite"></div>
+            <div class="modal-actions" style="display:flex; gap:12px; justify-content:flex-end; margin-top:12px;">
+              <button type="button" class="btn btn-secondary" id="cardModalCancel">Cancelar</button>
+              <button type="submit" class="btn btn-primary" id="cardSubmitBtn">Salvar cartão</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Modal: Convites pendentes (inbox) -->
   <div class="modal-overlay" id="inviteInboxModal" aria-hidden="true">
     <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="inviteInboxTitle">
@@ -1102,6 +1189,7 @@
   </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="" defer></script>
+  <script src="https://js.stripe.com/v3/" defer></script>
   <script src="scripts/clientes.js" defer></script>
 </body>
 </html>
