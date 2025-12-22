@@ -1,5 +1,6 @@
 <?php
 require 'apiconfig.php';
+require_once __DIR__ . '/lib/stripe_helpers.php';
 header('Content-Type: application/json');
 
 $data = json_decode(file_get_contents('php://input'), true);
@@ -102,6 +103,8 @@ try {
   }
 
   $addressSaved = saveClientAddress($pdo, $id, $address);
+  $stripe = zeefe_stripe_client($config);
+  zeefe_stripe_sync_customer($pdo, $stripe, $id, $addressSaved);
 
   echo json_encode([
     'success' => true,

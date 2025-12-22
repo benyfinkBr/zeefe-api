@@ -73,7 +73,7 @@ function zeefe_stripe_ensure_schema(PDO $pdo): void {
 
 function zeefe_stripe_fetch_client(PDO $pdo, int $clientId): array {
   zeefe_stripe_ensure_schema($pdo);
-  $stmt = $pdo->prepare('SELECT id, name, email, stripe_customer_id FROM clients WHERE id = :id LIMIT 1');
+  $stmt = $pdo->prepare('SELECT id, name, email, phone, whatsapp, stripe_customer_id FROM clients WHERE id = :id LIMIT 1');
   $stmt->execute([':id' => $clientId]);
   $client = $stmt->fetch(PDO::FETCH_ASSOC);
   if (!$client) {
@@ -145,4 +145,58 @@ function zeefe_stripe_upsert_card(PDO $pdo, int $clientId, string $stripeCustome
     'holder_name' => $cardData['holder'] ?? null,
     'payment_method_id' => $cardData['payment_method_id']
   ];
+}
+
+function zeefe_stripe_format_phone(?string $number): ?string {
+  if (!$number) {
+    return null;
+  }
+  $digits = preg_replace('/\D+/', '', $number);
+  if (!$digits) {
+    return null;
+  }
+  if (strpos($digits, '55') !== 0) {
+    $digits = '55' . $digits;
+  }
+  return '+' . $digits;
+}
+
+function zeefe_stripe_address_payload(array $address): array {
+  $line1 = trim(($address['street'] ?? '') . ' ' . ($address['number'] ?? ''));
+  $payload = array_filter([
+    'line1' => $line1 ?: null,
+    'line2' => $address['complement'] ?? null,
+    'city' => $address['city'] ?? null,
+    'state' => $address['state'] ?? null,
+    'postal_code' => preg_replace('/\D+/', '', $address['zip_code'] ?? '') ?: null,
+    'country' => strtoupper($address['country'] ?? 'BR'),
+  ]);
+  return $payload;
+}
+
+function zeefe_stripe_sync_customer(PDO $pdo, StripeClient $stripe, int $clientId, array $address = []): string {
+  $client = zeefe_stripe_fetch_client($pdo, $clientId);
+  $customerId = zeefe_stripe_ensure_customer($pdo, $stripe, $client);
+
+  $payload = [];
+  if (!empty($client['name'])) {
+    $payload['name'] = $client['name'];
+  }
+  if (!empty($client['email'])) {
+    $payload['email'] = $client['email'];
+  }
+  $phone = zeefe_stripe_format_phone($client['phone'] ?? ($client['whatsapp'] ?? null));
+  if ($phone) {
+    $payload['phone'] = $phone;
+  }
+  $addressPayload = zeefe_stripe_address_payload($address);
+  if ($addressPayload) {
+    $payload['address'] = $addressPayload;
+  }
+
+  if ($payload) {
+    $stripe->customers->update($customerId, $payload);
+  }
+
+  return $customerId;
 }

@@ -1,6 +1,7 @@
 <?php
 require 'apiconfig.php';
 require_once __DIR__ . '/lib/mailer.php';
+require_once __DIR__ . '/lib/stripe_helpers.php';
 
 $data = json_decode(file_get_contents('php://input'), true);
 $name = trim($data['name'] ?? '');
@@ -52,6 +53,9 @@ $hash = password_hash($password, PASSWORD_DEFAULT);
   ]);
 
   $id = (int) $pdo->lastInsertId();
+
+  $stripe = zeefe_stripe_client($config);
+  zeefe_stripe_sync_customer($pdo, $stripe, $id);
 
   $response = [
     'success' => true,
