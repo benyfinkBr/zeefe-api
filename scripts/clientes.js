@@ -1,4 +1,4 @@
-const API_BASE = 'api';
+const API_BASE = '/api';
 const DEFAULT_START_TIME = '08:00';
 const DEFAULT_END_TIME = '20:00';
 

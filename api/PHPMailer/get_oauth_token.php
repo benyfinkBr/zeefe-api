@@ -47,6 +47,20 @@ use Stevenmaguire\OAuth2\Client\Provider\Microsoft;
 //@see https://github.com/greew/oauth2-azure-provider
 use Greew\OAuth2\Client\Provider\Azure;
 
+$secure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off');
+session_set_cookie_params([
+    'lifetime' => 0,
+    'path'     => '/',
+    'domain'   => '',
+    'secure'   => $secure,
+    'httponly' => true,
+    'samesite' => 'Lax'
+]);
+if (session_status() !== PHP_SESSION_ACTIVE) {
+    session_start();
+    error_log('[SESSION] ID=' . session_id());
+}
+
 if (!isset($_GET['code']) && !isset($_POST['provider'])) {
     ?>
 <html>
@@ -76,8 +90,6 @@ if (!isset($_GET['code']) && !isset($_POST['provider'])) {
 }
 
 require 'vendor/autoload.php';
-
-session_start();
 
 $providerName = '';
 $clientId = '';

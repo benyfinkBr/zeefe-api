@@ -1,5 +1,18 @@
 <?php
 // diagnostico.php — ferramenta de verificação de sessão, CORS e DB para Ze.EFE
+$secure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off');
+session_set_cookie_params([
+    'lifetime' => 0,
+    'path'     => '/',
+    'domain'   => '',
+    'secure'   => $secure,
+    'httponly' => true,
+    'samesite' => 'Lax'
+]);
+if (session_status() !== PHP_SESSION_ACTIVE) {
+    session_start();
+    error_log('[SESSION] ID=' . session_id());
+}
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -21,17 +34,6 @@ $diagnostic['http_origin'] = $_SERVER['HTTP_ORIGIN'] ?? null;
 $diagnostic['server_name'] = $_SERVER['SERVER_NAME'] ?? null;
 
 // ==== 3. Sessão ====
-session_name('ZEEFESESSID');
-session_set_cookie_params([
-    'lifetime' => 0,
-    'path' => '/',
-    'domain' => $_SERVER['HTTP_HOST'] ?? '',
-    'secure' => $isHttps,
-    'httponly' => true,
-    'samesite' => $isHttps ? 'None' : 'Lax'
-]);
-session_start();
-
 if (!isset($_SESSION['diagnostic_runs'])) $_SESSION['diagnostic_runs'] = 0;
 $_SESSION['diagnostic_runs']++;
 

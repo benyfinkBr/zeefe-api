@@ -1,4 +1,4 @@
-const API_BASE = 'api';
+const API_BASE = '/api';
 const ADV_REMEMBER_KEY = 'advRememberToken';
 
 // Estado

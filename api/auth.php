@@ -1,9 +1,19 @@
 <?php
 ini_set('session.save_path', '/home1/benyfi15/tmp');
 session_save_path('/home1/benyfi15/tmp');
-session_start();
-
-session_start();
+$secure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off');
+session_set_cookie_params([
+    'lifetime' => 0,
+    'path'     => '/',
+    'domain'   => '',
+    'secure'   => $secure,
+    'httponly' => true,
+    'samesite' => 'Lax'
+]);
+if (session_status() !== PHP_SESSION_ACTIVE) {
+    session_start();
+    error_log('[SESSION] ID=' . session_id());
+}
 header('Access-Control-Allow-Credentials: true');
 header('Access-Control-Allow-Origin: https://www.zeefe.com.br');
 

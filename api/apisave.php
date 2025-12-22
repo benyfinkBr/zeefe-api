@@ -1,11 +1,17 @@
 <?php
+$secure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off');
 session_set_cookie_params([
-    'path' => '/',
-    'secure' => true,
+    'lifetime' => 0,
+    'path'     => '/',
+    'domain'   => '',
+    'secure'   => $secure,
     'httponly' => true,
-    'samesite' => 'None'
+    'samesite' => 'Lax'
 ]);
-session_start();
+if (session_status() !== PHP_SESSION_ACTIVE) {
+    session_start();
+    error_log('[SESSION] ID=' . session_id());
+}
 header('Content-Type: application/json');
 require_once 'apiconfig.php';
 require_once __DIR__ . '/lib/mailer.php';
