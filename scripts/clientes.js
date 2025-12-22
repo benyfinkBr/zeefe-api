@@ -105,6 +105,7 @@ const portalRegisterForm = document.getElementById('portalRegisterForm');
 const portalRecoveryForm = document.getElementById('portalRecoveryForm');
 const authMessage = document.getElementById('authMessage');
 const passwordHint = document.getElementById('passwordHint');
+const registerNameInput = document.getElementById('registerName');
 const registerPasswordInput = document.getElementById('registerPassword');
 const registerPasswordConfirmInput = document.getElementById('registerPasswordConfirm');
 const registerEmailInput = document.getElementById('registerEmail');
@@ -121,6 +122,7 @@ const rememberMeCheckbox = document.getElementById('portalRememberMe');
 const authScopePFBtn = document.getElementById('authScopePFBtn');
 const authScopeCompanyBtn = document.getElementById('authScopeCompanyBtn');
 let desiredScope = 'pf';
+const REGISTER_PREFILL_ENABLED = true;
 
 const clientPanels = document.getElementById('clientPanels');
 const clientNameEl = document.getElementById('clientName');
@@ -135,6 +137,35 @@ const headerReservationsBtn = document.getElementById('clientHeaderReservations'
 const headerProfileBtn = document.getElementById('clientHeaderProfile');
 const headerMessagesBtn = document.getElementById('clientHeaderMessages');
 const headerLogoutBtn = document.getElementById('clientHeaderLogout');
+
+function prefillPortalRegisterForm() {
+  if (!REGISTER_PREFILL_ENABLED || !portalRegisterForm) return;
+  const uniqueSlug = Date.now().toString().slice(-6);
+  const defaultPass = 'Teste@123';
+  if (registerNameInput && !registerNameInput.value) {
+    registerNameInput.value = 'Teste Ze.EFE';
+  }
+  if (registerEmailInput && !registerEmailInput.value) {
+    registerEmailInput.value = `teste+${uniqueSlug}@zeefe.com.br`;
+  }
+  if (registerCpfInput && !registerCpfInput.value) {
+    registerCpfInput.value = '37333590895';
+    registerCpfInput.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+  if (registerPhoneInput && !registerPhoneInput.value) {
+    registerPhoneInput.value = '11999990000';
+    registerPhoneInput.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+  if (registerPasswordInput && !registerPasswordInput.value) {
+    registerPasswordInput.value = defaultPass;
+  }
+  if (registerPasswordConfirmInput && !registerPasswordConfirmInput.value) {
+    registerPasswordConfirmInput.value = defaultPass;
+  }
+  avaliarForcaSenha(registerPasswordInput?.value || '', registerPasswordConfirmInput?.value || '');
+}
+
+prefillPortalRegisterForm();
 
 const bookingForm = document.getElementById('reservationBookForm');
 const bookingFormTitle = document.getElementById('bookingFormTitle');
