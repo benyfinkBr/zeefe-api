@@ -13,6 +13,7 @@ let bookingStepIndex = 0;
 let bookingCurrentMonth = new Date();
 const bookingToday = new Date();
 const bookingTodayISO = toISODate(bookingToday);
+const ACTIVE_CLIENT_STORAGE_KEY = 'zeefeActiveClientId';
 const currentUrl = new URL(window.location.href);
 const hasPaymentToken = currentUrl.searchParams.has('pagarmetoken') || currentUrl.searchParams.has('token');
 const isPaymentReturn = hasPaymentToken;
@@ -58,6 +59,32 @@ function clearAutoLoginParams() {
   const newQuery = currentUrl.searchParams.toString();
   const newUrl = `${currentUrl.origin}${currentUrl.pathname}${newQuery ? `?${newQuery}` : ''}${currentUrl.hash}`;
   window.history.replaceState({}, '', newUrl);
+}
+
+function rememberActiveClientId(id) {
+  try {
+    if (id) {
+      localStorage.setItem(ACTIVE_CLIENT_STORAGE_KEY, String(id));
+    } else {
+      localStorage.removeItem(ACTIVE_CLIENT_STORAGE_KEY);
+    }
+  } catch (_) {
+    /* ignore storage errors */
+  }
+}
+
+function getStoredActiveClientId() {
+  try {
+    const stored = localStorage.getItem(ACTIVE_CLIENT_STORAGE_KEY);
+    const value = Number(stored);
+    return Number.isFinite(value) && value > 0 ? value : null;
+  } catch (_) {
+    return null;
+  }
+}
+
+function clearStoredActiveClientId() {
+  rememberActiveClientId(null);
 }
 
 const bodyEl = document.body;
@@ -779,6 +806,7 @@ function setBodyAuthState(isAuthenticated) {
 
 function setupHeaderMenu() {
   if (!headerAccountWrap || !headerAccountBtn) return;
+  ensureCardMenuItem();
   headerAccountBtn.addEventListener('click', (event) => {
     event.preventDefault();
     setHeaderMenuState(!headerMenuOpen);
@@ -822,6 +850,27 @@ function setupHeaderMenu() {
   syncHeaderScopeButtons();
 }
 
+function ensureCardMenuItem() {
+  if (!headerAccountWrap) return;
+  const menu = headerAccountWrap.querySelector('.user-menu-dropdown');
+  if (!menu || menu.querySelector('#clientHeaderCardSave')) return;
+  const cardButton = document.createElement('button');
+  cardButton.type = 'button';
+  cardButton.className = 'user-menu-item';
+  cardButton.id = 'clientHeaderCardSave';
+  cardButton.textContent = 'Cadastrar cartão';
+  cardButton.addEventListener('click', () => {
+    openCardSavePage();
+    closeHeaderMenu();
+  });
+  const logoutButton = menu.querySelector('#clientHeaderLogout');
+  if (logoutButton) {
+    menu.insertBefore(cardButton, logoutButton);
+  } else {
+    menu.appendChild(cardButton);
+  }
+}
+
 function setHeaderMenuState(open) {
   headerMenuOpen = Boolean(open);
   headerAccountWrap?.classList.toggle('open', headerMenuOpen);
@@ -830,6 +879,19 @@ function setHeaderMenuState(open) {
 
 function closeHeaderMenu() {
   setHeaderMenuState(false);
+}
+
+function openCardSavePage() {
+  try {
+    const url = new URL('salvar-cartao.html', window.location.origin);
+    const clientId = activeClient?.id || getStoredActiveClientId();
+    if (clientId) {
+      url.searchParams.set('client_id', clientId);
+    }
+    window.open(url.toString(), '_blank', 'noopener');
+  } catch (_) {
+    window.location.href = 'salvar-cartao.html';
+  }
 }
 
 function syncHeaderScopeButtons() {
@@ -2887,6 +2949,7 @@ async function onPortalRecoverySubmit(event) {
 function aplicarClienteAtivo(cliente) {
   if (!cliente) return;
   activeClient = cliente;
+  rememberActiveClientId(activeClient?.id);
   try { window.activeClient = cliente; } catch (_) {}
   setBodyAuthState(true);
   syncHeaderScopeButtons();
@@ -2933,6 +2996,7 @@ function aplicarClienteAtivo(cliente) {
 function fazerLogout() {
   const cleanup = () => {
     activeClient = null;
+    clearStoredActiveClientId();
     currentReservations = [];
     currentVisitors = [];
     bookingVisitorIds = [];
@@ -4954,3 +5018,251 @@ async function enviarLinkPagamento(reservationId) {
   if (!json.success) throw new Error(json.error || 'Falha ao enviar link de pagamento.');
   return json;
 }
+
+(function initStandaloneCardSaveForm() {
+  const cardForm = document.getElementById('cardSaveForm');
+  if (!cardForm) return;
+
+  const clientInput = document.getElementById('cardClientId');
+  const holderInput = document.getElementById('cardHolderName');
+  const cardElementContainer = document.getElementById('stripeCardElement');
+  const errorEl = document.getElementById('cardErrors');
+  const successEl = document.getElementById('cardSaveMessage');
+  const submitBtn = document.getElementById('cardSubmitBtn') || cardForm.querySelector('button[type="submit"]');
+  const cardListSection = document.getElementById('cardListSection');
+  const cardListEl = document.getElementById('cardList');
+
+  let stripe = null;
+  let cardElement = null;
+  let isSubmitting = false;
+  let publishableKeyPromise = null;
+
+  function setError(message) {
+    if (!errorEl) return;
+    errorEl.textContent = message || '';
+    errorEl.classList.toggle('visible', Boolean(message));
+  }
+
+  function setSuccess(message) {
+    if (!successEl) return;
+    successEl.textContent = message || '';
+    successEl.classList.toggle('visible', Boolean(message));
+  }
+
+  function clearMessages() {
+    setError('');
+    setSuccess('');
+  }
+
+  function setLoading(state) {
+    if (submitBtn) {
+      submitBtn.disabled = Boolean(state);
+      submitBtn.textContent = state ? 'Salvando cartão...' : 'Salvar cartão';
+    }
+    cardForm.classList.toggle('is-loading', Boolean(state));
+  }
+
+  async function fetchStripePublishableKey() {
+    if (!publishableKeyPromise) {
+      publishableKeyPromise = fetch(`${API_BASE}/stripe_public_key.php`, {
+        credentials: 'include'
+      })
+        .then(response => parseJsonSafe(response).then(json => ({ response, json })))
+        .then(({ response, json }) => {
+          if (!response.ok || !json.success) {
+            throw new Error(json.error || 'Stripe não configurado.');
+          }
+          if (!json.publishable_key) {
+            throw new Error('Chave pública da Stripe ausente.');
+          }
+          return json.publishable_key;
+        });
+    }
+    return publishableKeyPromise;
+  }
+
+  async function initStripeElement() {
+    if (stripe) return stripe;
+    try {
+      const publishableKey = await fetchStripePublishableKey();
+      if (typeof Stripe === 'undefined') {
+        throw new Error('Não foi possível carregar a biblioteca Stripe. Recarregue a página.');
+      }
+      if (!cardElementContainer) {
+        throw new Error('Campo de cartão não encontrado na página.');
+      }
+      stripe = Stripe(publishableKey);
+      const elements = stripe.elements();
+      cardElement = elements.create('card', { hidePostalCode: true });
+      cardElement.mount(cardElementContainer);
+      cardElement.on('change', (event) => {
+        if (event.error) {
+          setError(event.error.message);
+        } else if (!isSubmitting) {
+          setError('');
+        }
+      });
+      return stripe;
+    } catch (err) {
+      setError(err.message || 'Não foi possível inicializar o Stripe.');
+      if (submitBtn) submitBtn.disabled = true;
+      throw err;
+    }
+  }
+
+  async function refreshCardList(clientId) {
+    if (!cardListSection || !cardListEl) return;
+    if (!clientId) {
+      cardListSection.hidden = true;
+      return;
+    }
+    cardListSection.hidden = false;
+    cardListEl.innerHTML = '<li>Carregando cartões...</li>';
+    try {
+      const response = await fetch(`${API_BASE}/customer_cards_list.php`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ client_id: clientId })
+      });
+      const json = await parseJsonSafe(response);
+      if (!response.ok || !json.success) {
+        throw new Error(json.error || 'Não foi possível listar os cartões.');
+      }
+      const cards = Array.isArray(json.cards) ? json.cards : [];
+      if (!cards.length) {
+        cardListEl.innerHTML = '<li>Nenhum cartão salvo para este cliente.</li>';
+        return;
+      }
+      cardListEl.innerHTML = '';
+      cards.forEach((card) => {
+        const li = document.createElement('li');
+        const brand = (card.brand || 'Cartão').toUpperCase();
+        const lastDigits = card.last4 ? `•••• ${card.last4}` : 'Sem final disponível';
+        const expMonth = card.exp_month ? String(card.exp_month).padStart(2, '0') : null;
+        const expYear = card.exp_year ? String(card.exp_year) : null;
+        const exp = expMonth && expYear ? `${expMonth}/${expYear}` : 'Sem validade';
+        const providerLabel = card.provider === 'stripe' ? 'Stripe' : 'Legado';
+        const statusLabel = card.status === 'inactive' ? ' (inativo)' : '';
+        li.innerHTML = `
+          <span class="card-brand">${escapeHtml(brand + statusLabel)}</span>
+          <span>${escapeHtml(lastDigits)}</span>
+          <span>Expira em ${escapeHtml(exp)}</span>
+          <span class="card-provider">${escapeHtml(providerLabel)}</span>
+        `;
+        cardListEl.appendChild(li);
+      });
+    } catch (err) {
+      cardListEl.innerHTML = `<li class="card-error">Erro ao carregar cartões: ${escapeHtml(err.message || 'Falha desconhecida')}</li>`;
+    }
+  }
+
+  function handleClientIdChange() {
+    const value = Number(clientInput?.value);
+    if (Number.isFinite(value) && value > 0) {
+      rememberActiveClientId(value);
+      refreshCardList(value);
+    } else if (cardListSection) {
+      cardListSection.hidden = true;
+    }
+  }
+
+  async function handleCardFormSubmit(event) {
+    event.preventDefault();
+    if (isSubmitting) return;
+    clearMessages();
+    const clientId = Number(clientInput?.value);
+    if (!Number.isFinite(clientId) || clientId <= 0) {
+      setError('Informe um código de cliente válido.');
+      clientInput?.focus();
+      return;
+    }
+    const cardholder = (holderInput?.value || '').trim();
+    if (!cardholder) {
+      setError('Informe o nome impresso no cartão.');
+      holderInput?.focus();
+      return;
+    }
+    try {
+      await initStripeElement();
+    } catch (_) {
+      return;
+    }
+    if (!stripe || !cardElement) {
+      setError('Stripe não inicializado. Recarregue a página e tente novamente.');
+      return;
+    }
+
+    isSubmitting = true;
+    setLoading(true);
+    try {
+      const setupRes = await fetch(`${API_BASE}/customer_create_setup_intent.php`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ client_id: clientId })
+      });
+      const setupJson = await parseJsonSafe(setupRes);
+      if (!setupRes.ok || !setupJson.success) {
+        throw new Error(setupJson.error || 'Não foi possível iniciar o cadastro do cartão.');
+      }
+      const clientSecret = setupJson.client_secret;
+      if (!clientSecret) {
+        throw new Error('Resposta inválida do Stripe.');
+      }
+
+      const confirmation = await stripe.confirmCardSetup(clientSecret, {
+        payment_method: {
+          card: cardElement,
+          billing_details: { name: cardholder }
+        }
+      });
+      if (confirmation.error) {
+        throw confirmation.error;
+      }
+      const setupIntent = confirmation.setupIntent;
+      const saveRes = await fetch(`${API_BASE}/customer_save_card.php`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          client_id: clientId,
+          setup_intent_id: setupIntent?.id,
+          set_default: true
+        })
+      });
+      const saveJson = await parseJsonSafe(saveRes);
+      if (!saveRes.ok || !saveJson.success) {
+        throw new Error(saveJson.error || 'Não foi possível salvar o cartão.');
+      }
+
+      cardElement.clear();
+      setSuccess('Cartão salvo com sucesso! Você pode fechar esta aba com segurança.');
+      rememberActiveClientId(clientId);
+      refreshCardList(clientId);
+    } catch (err) {
+      setError(err?.message || 'Falha ao salvar o cartão. Verifique os dados e tente novamente.');
+    } finally {
+      isSubmitting = false;
+      setLoading(false);
+    }
+  }
+
+  function hydrateInitialClientId() {
+    const params = new URLSearchParams(window.location.search);
+    const queryValue = Number(params.get('client_id') || params.get('client'));
+    const stored = getStoredActiveClientId();
+    if (clientInput) {
+      if (Number.isFinite(queryValue) && queryValue > 0) {
+        clientInput.value = queryValue;
+      } else if (stored) {
+        clientInput.value = stored;
+      }
+    }
+    handleClientIdChange();
+  }
+
+  initStripeElement().catch(() => {});
+  hydrateInitialClientId();
+
+  cardForm.addEventListener('submit', handleCardFormSubmit);
+  clientInput?.addEventListener('change', handleClientIdChange);
+  clientInput?.addEventListener('blur', handleClientIdChange);
+})();

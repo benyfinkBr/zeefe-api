@@ -10,7 +10,7 @@ echo json_encode([
 ]);
 exit;
 
-const PAGARME_SECRET_KEY = 'sk_test_3ae095644045411a8b5e61da34f6d354';
+const PAGARME_SECRET_KEY = '';
 
 /**
  * Busca os dados do token diretamente na Pagar.me para obter as infos do cartão.

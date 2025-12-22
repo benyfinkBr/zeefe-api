@@ -16,8 +16,12 @@ return [
     'https://zeefe.com.br',
     'http://localhost:8000'
   ],
-  // Pagamentos desativados: bloco mantido apenas para referência.
   'pagarme' => [
     'enabled' => false
+  ],
+  'stripe' => [
+    'publishable_key' => getenv('STRIPE_PUBLISHABLE_KEY') ?: '',
+    'secret_key' => getenv('STRIPE_SECRET_KEY') ?: '',
+    'webhook_secret' => getenv('STRIPE_WEBHOOK_SECRET') ?: ''
   ]
 ];
