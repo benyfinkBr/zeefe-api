@@ -22,7 +22,19 @@
       </div>
       <div class="site-header-actions">
         <a href="index.html#contato" class="site-link">Contato</a>
-        <button class="btn btn-outline" type="button" onclick="window.location='clientes.html'">Entrar</button>
+        <div class="site-header-guest" id="homeHeaderGuest">
+          <button class="btn btn-outline" type="button" onclick="window.location='clientes.html'">Entrar</button>
+        </div>
+        <div class="site-header-user" id="homeHeaderAccount" hidden>
+          <button class="user-menu-trigger" type="button" id="homeHeaderAccountBtn" aria-haspopup="true" aria-expanded="false">
+            <span id="homeHeaderAccountLabel">Minha Conta</span>
+          </button>
+          <div class="user-menu-dropdown" id="homeHeaderAccountMenu" role="menu">
+            <p class="user-menu-label" id="homeHeaderUserLabel"></p>
+            <button type="button" class="user-menu-item" id="homeHeaderPortal">Ir para o portal</button>
+            <button type="button" class="user-menu-item user-menu-danger" id="homeHeaderLogout">Sair</button>
+          </div>
+        </div>
       </div>
     </div>
   </header>
@@ -80,6 +92,7 @@
       <p>© 2025 Ze.EFE - Todos os direitos reservados</p>
     </div>
   </footer>
+  <script src="scripts/header-session.js" defer></script>
   <script>
     (async () => {
       const grid = document.getElementById('conteudosGrid');
