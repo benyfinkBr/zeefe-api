@@ -310,14 +310,29 @@ function zeefe_stripe_find_active_card(PDO $pdo, int $clientId): ?array {
 }
 
 function zeefe_stripe_reservation_amount_cents(array $reservation): int {
+  $base = null;
   $candidates = ['total_price', 'amount_gross', 'price'];
   foreach ($candidates as $field) {
     if (isset($reservation[$field]) && is_numeric($reservation[$field])) {
       $float = (float)$reservation[$field];
       if ($float > 0) {
-        return (int)round($float * 100);
+        $base = $float;
+        break;
       }
     }
   }
-  return 0;
+  if (($base === null || $base <= 0) && isset($reservation['room_daily_rate']) && is_numeric($reservation['room_daily_rate'])) {
+    $daily = (float)$reservation['room_daily_rate'];
+    if ($daily > 0) {
+      $base = $daily;
+    }
+  }
+  if ($base === null) {
+    $base = 0.0;
+  }
+  $voucher = isset($reservation['voucher_amount']) && is_numeric($reservation['voucher_amount'])
+    ? (float)$reservation['voucher_amount']
+    : 0.0;
+  $net = max(0.0, $base - $voucher);
+  return (int)round($net * 100);
 }

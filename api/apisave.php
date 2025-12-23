@@ -32,6 +32,7 @@ $record = $rawRecord;
 
 $roomAmenities = [];
 $reservationVisitors = null;
+$reservationRoomData = null;
 if ($table === 'rooms') {
   $amenitiesInput = $rawRecord['amenities'] ?? [];
   if (!is_array($amenitiesInput)) $amenitiesInput = [];
@@ -138,10 +139,10 @@ try {
     $record['company_id'] = null;
   }
 
-  if ($table === 'reservations') {
-    $reservationId = $rawRecord['id'] ?? null;
-    $roomId = $rawRecord['room_id'] ?? null;
-    $date   = $rawRecord['date'] ?? null;
+if ($table === 'reservations') {
+  $reservationId = $rawRecord['id'] ?? null;
+  $roomId = $rawRecord['room_id'] ?? null;
+  $date   = $rawRecord['date'] ?? null;
 
     if ($reservationId && (!$roomId || !$date)) {
       $stmtInfo = $pdo->prepare("SELECT room_id, date FROM reservations WHERE id = ?");
@@ -154,11 +155,11 @@ try {
     }
 
     if ($roomId && $date) {
-      $stmtRoom = $pdo->prepare("SELECT status, maintenance_start, maintenance_end, deactivated_from FROM rooms WHERE id = ? LIMIT 1");
+      $stmtRoom = $pdo->prepare("SELECT status, maintenance_start, maintenance_end, deactivated_from, daily_rate FROM rooms WHERE id = ? LIMIT 1");
       $stmtRoom->execute([$roomId]);
       $room = $stmtRoom->fetch(PDO::FETCH_ASSOC);
-
       if ($room) {
+        $reservationRoomData = $room;
         $dateCheck = new DateTime($date);
         if ($room['status'] === 'manutencao') {
           $block = true;
@@ -183,11 +184,40 @@ try {
             http_response_code(400);
             echo json_encode(['error' => 'A sala está desativada para a data selecionada.']);
             exit;
-          }
         }
       }
     }
   }
+
+  $baseAmount = null;
+  foreach (['total_price', 'amount_gross', 'price'] as $field) {
+    if (isset($record[$field]) && $record[$field] !== '' && $record[$field] !== null) {
+      $value = (float)$record[$field];
+      if ($value > 0) {
+        $baseAmount = $value;
+        break;
+      }
+    }
+  }
+  if (($baseAmount === null || $baseAmount <= 0) && $reservationRoomData) {
+    $daily = isset($reservationRoomData['daily_rate']) ? (float)$reservationRoomData['daily_rate'] : 0.0;
+    if ($daily > 0) {
+      $baseAmount = $daily;
+    }
+  }
+  if ($baseAmount !== null && $baseAmount > 0) {
+    $formatted = number_format($baseAmount, 2, '.', '');
+    if (!isset($record['total_price']) || (float)$record['total_price'] <= 0) {
+      $record['total_price'] = $formatted;
+    }
+    if (!isset($record['amount_gross']) || (float)$record['amount_gross'] <= 0) {
+      $record['amount_gross'] = $formatted;
+    }
+    if (!isset($record['price']) || (float)$record['price'] <= 0) {
+      $record['price'] = $formatted;
+    }
+  }
+}
 
   // Normalizações simples
   foreach ($record as $k => $v) {
