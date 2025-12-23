@@ -144,48 +144,63 @@ if ($table === 'reservations') {
   $roomId = $rawRecord['room_id'] ?? null;
   $date   = $rawRecord['date'] ?? null;
 
-    if ($reservationId && (!$roomId || !$date)) {
-      $stmtInfo = $pdo->prepare("SELECT room_id, date FROM reservations WHERE id = ?");
-      $stmtInfo->execute([$reservationId]);
-      $existingReservation = $stmtInfo->fetch(PDO::FETCH_ASSOC);
-      if ($existingReservation) {
-        if (!$roomId) $roomId = $existingReservation['room_id'];
-        if (!$date)   $date   = $existingReservation['date'];
+  if ($reservationId && (!$roomId || !$date)) {
+    $stmtInfo = $pdo->prepare("SELECT room_id, date FROM reservations WHERE id = ?");
+    $stmtInfo->execute([$reservationId]);
+    $existingReservation = $stmtInfo->fetch(PDO::FETCH_ASSOC);
+    if ($existingReservation) {
+      if (!$roomId) $roomId = $existingReservation['room_id'];
+      if (!$date)   $date   = $existingReservation['date'];
+    }
+  }
+
+  if ($roomId && $date) {
+    $stmtRoom = $pdo->prepare("SELECT status, maintenance_start, maintenance_end, deactivated_from, daily_rate FROM rooms WHERE id = ? LIMIT 1");
+    $stmtRoom->execute([$roomId]);
+    $room = $stmtRoom->fetch(PDO::FETCH_ASSOC);
+    if ($room) {
+      $reservationRoomData = $room;
+      $dateCheck = new DateTime($date);
+      if ($room['status'] === 'manutencao') {
+        $block = true;
+        if (!empty($room['maintenance_start'])) {
+          $start = new DateTime($room['maintenance_start']);
+          if ($dateCheck < $start) $block = false;
+        }
+        if (!empty($room['maintenance_end'])) {
+          $end = new DateTime($room['maintenance_end']);
+          if ($dateCheck > $end) $block = false;
+        }
+        if ($block) {
+          http_response_code(400);
+          echo json_encode(['error' => 'A sala está em manutenção na data selecionada.']);
+          exit;
+        }
+      }
+
+      if ($room['status'] === 'desativada' && !empty($room['deactivated_from'])) {
+        $deactivatedFrom = new DateTime($room['deactivated_from']);
+        if ($dateCheck >= $deactivatedFrom) {
+          http_response_code(400);
+          echo json_encode(['error' => 'A sala está desativada para a data selecionada.']);
+          exit;
+        }
       }
     }
 
-    if ($roomId && $date) {
-      $stmtRoom = $pdo->prepare("SELECT status, maintenance_start, maintenance_end, deactivated_from, daily_rate FROM rooms WHERE id = ? LIMIT 1");
-      $stmtRoom->execute([$roomId]);
-      $room = $stmtRoom->fetch(PDO::FETCH_ASSOC);
-      if ($room) {
-        $reservationRoomData = $room;
-        $dateCheck = new DateTime($date);
-        if ($room['status'] === 'manutencao') {
-          $block = true;
-          if (!empty($room['maintenance_start'])) {
-            $start = new DateTime($room['maintenance_start']);
-            if ($dateCheck < $start) $block = false;
-          }
-          if (!empty($room['maintenance_end'])) {
-            $end = new DateTime($room['maintenance_end']);
-            if ($dateCheck > $end) $block = false;
-          }
-          if ($block) {
-            http_response_code(400);
-            echo json_encode(['error' => 'A sala está em manutenção na data selecionada.']);
-            exit;
-          }
-        }
-
-        if ($room['status'] === 'desativada' && !empty($room['deactivated_from'])) {
-          $deactivatedFrom = new DateTime($room['deactivated_from']);
-          if ($dateCheck >= $deactivatedFrom) {
-            http_response_code(400);
-            echo json_encode(['error' => 'A sala está desativada para a data selecionada.']);
-            exit;
-        }
-      }
+    $conflictSql = 'SELECT id FROM reservations WHERE room_id = :room AND date = :date';
+    $conflictParams = [':room' => $roomId, ':date' => $date];
+    if ($reservationId) {
+      $conflictSql .= ' AND id <> :id';
+      $conflictParams[':id'] = $reservationId;
+    }
+    $conflictSql .= ' LIMIT 1';
+    $conflictStmt = $pdo->prepare($conflictSql);
+    $conflictStmt->execute($conflictParams);
+    if ($conflictStmt->fetch(PDO::FETCH_ASSOC)) {
+      http_response_code(400);
+      echo json_encode(['error' => 'Já existe uma reserva para esta sala na data selecionada.']);
+      exit;
     }
   }
 

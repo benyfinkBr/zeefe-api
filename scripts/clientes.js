@@ -2748,13 +2748,12 @@ function isRoomSelectable(room, date) {
 
 function isRoomAvailableOnDate(room, date, reservationId) {
   const roomId = String(room.id);
+  const blockingStatuses = ['pendente', 'confirmada', 'concluida'];
   return !allReservationsCache.some(res => {
     if (String(res.room_id) !== roomId) return false;
     if (reservationId && String(res.id) === String(reservationId)) return false;
     const status = (res.status || '').toLowerCase();
-    // Apenas reservas efetivamente confirmadas devem bloquear a data.
-    // Pendentes/negadas/canceladas não bloqueiam o calendário.
-    if (!['confirmada', 'concluida'].includes(status)) return false;
+    if (!blockingStatuses.includes(status)) return false;
     return res.date === date;
   });
 }

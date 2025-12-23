@@ -1548,13 +1548,37 @@ function openReservationModal(id){
       </table>`;
   }
   advResMessage.textContent='';
+  const statusLower = (r?.status || '').toLowerCase();
+  if (['confirmada', 'concluida'].includes(statusLower)) {
+    setAdvResConfirmMode('close');
+  } else {
+    setAdvResConfirmMode('confirm');
+  }
   advResModal?.classList.add('show'); advResModal?.setAttribute('aria-hidden','false');
 }
 function closeReservationModal(){ advResModal?.classList.remove('show'); advResModal?.setAttribute('aria-hidden','true'); advResCurrentId=null; }
 advResClose?.addEventListener('click', closeReservationModal);
 advResCancel?.addEventListener('click', () => updateReservationStatus('cancel'));
 advResDeny?.addEventListener('click', () => updateReservationStatus('deny'));
-advResConfirm?.addEventListener('click', () => updateReservationStatus('confirm'));
+function setAdvResConfirmMode(mode){
+  if (!advResConfirm) return;
+  if (mode === 'close') {
+    advResConfirm.textContent = 'Fechar';
+    advResConfirm.dataset.mode = 'close';
+  } else {
+    advResConfirm.textContent = 'Confirmar';
+    advResConfirm.dataset.mode = 'confirm';
+  }
+}
+advResConfirm?.addEventListener('click', () => {
+  if (!advResConfirm) return;
+  if (advResConfirm.dataset.mode === 'close') {
+    closeReservationModal();
+    setAdvResConfirmMode('confirm');
+    return;
+  }
+  updateReservationStatus('confirm');
+});
 advResOpenChat?.addEventListener('click', () => { closeReservationModal(); openAdvChatDrawer(); });
 
 async function updateReservationStatus(action){
@@ -1597,6 +1621,9 @@ async function updateReservationStatus(action){
     } else {
       // fallback simples
       closeReservationModal();
+    }
+    if (action === 'confirm') {
+      setAdvResConfirmMode('close');
     }
   } catch (e) {
     advResMessage.textContent = e.message || 'Erro ao atualizar.';
