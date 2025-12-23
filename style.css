@@ -1,3 +1,7 @@
+/* CSS final servido: /style.css (único arquivo referenciado em *.html)
+   Cache busting: ativo (?v=20241222)
+   .htaccess: regra aplicada (no-cache para style.css)
+   DEPLOY_MARKER: 2024-12-22T22:15:00Z */
 :root {
   --brand-green: #1D413A;
   --brand-dark: #16332E;
