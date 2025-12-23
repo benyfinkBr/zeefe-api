@@ -68,6 +68,100 @@ function zeefe_stripe_ensure_schema(PDO $pdo): void {
   }
 
   try {
+    ensureColumn($pdo, 'reservations', 'stripe_payment_intent_id', 'VARCHAR(80) NULL', null);
+  } catch (Throwable $e) {
+    error_log('[Stripe] Falha ao garantir coluna reservations.stripe_payment_intent_id: ' . $e->getMessage());
+  }
+  try {
+    ensureColumn($pdo, 'reservations', 'stripe_charge_id', 'VARCHAR(80) NULL', null);
+  } catch (Throwable $e) {
+    error_log('[Stripe] Falha ao garantir coluna reservations.stripe_charge_id: ' . $e->getMessage());
+  }
+  try {
+    ensureColumn($pdo, 'reservations', 'payment_confirmed_at', 'DATETIME NULL', null);
+  } catch (Throwable $e) {
+    error_log('[Stripe] Falha ao garantir coluna reservations.payment_confirmed_at: ' . $e->getMessage());
+  }
+
+  try {
+    ensureColumn($pdo, 'payments', 'provider', 'VARCHAR(20) NOT NULL DEFAULT \'stripe\'', null);
+  } catch (Throwable $e) {
+    error_log('[Stripe] Falha ao garantir coluna payments.provider: ' . $e->getMessage());
+  }
+  try {
+    ensureColumn($pdo, 'payments', 'currency', 'VARCHAR(10) NULL DEFAULT \'BRL\'', null);
+  } catch (Throwable $e) {
+    error_log('[Stripe] Falha ao garantir coluna payments.currency: ' . $e->getMessage());
+  }
+  try {
+    ensureColumn($pdo, 'payments', 'amount_cents', 'INT UNSIGNED NULL', null);
+  } catch (Throwable $e) {
+    error_log('[Stripe] Falha ao garantir coluna payments.amount_cents: ' . $e->getMessage());
+  }
+  try {
+    ensureColumn($pdo, 'payments', 'stripe_payment_intent_id', 'VARCHAR(80) NULL', null);
+  } catch (Throwable $e) {
+    error_log('[Stripe] Falha ao garantir coluna payments.stripe_payment_intent_id: ' . $e->getMessage());
+  }
+  try {
+    ensureColumn($pdo, 'payments', 'stripe_charge_id', 'VARCHAR(80) NULL', null);
+  } catch (Throwable $e) {
+    error_log('[Stripe] Falha ao garantir coluna payments.stripe_charge_id: ' . $e->getMessage());
+  }
+  try {
+    ensureColumn($pdo, 'payments', 'stripe_customer_id', 'VARCHAR(80) NULL', null);
+  } catch (Throwable $e) {
+    error_log('[Stripe] Falha ao garantir coluna payments.stripe_customer_id: ' . $e->getMessage());
+  }
+  try {
+    ensureColumn($pdo, 'payments', 'stripe_payment_method_id', 'VARCHAR(80) NULL', null);
+  } catch (Throwable $e) {
+    error_log('[Stripe] Falha ao garantir coluna payments.stripe_payment_method_id: ' . $e->getMessage());
+  }
+  try {
+    ensureColumn($pdo, 'payments', 'failure_code', 'VARCHAR(80) NULL', null);
+  } catch (Throwable $e) {
+    error_log('[Stripe] Falha ao garantir coluna payments.failure_code: ' . $e->getMessage());
+  }
+  try {
+    ensureColumn($pdo, 'payments', 'failure_message', 'VARCHAR(255) NULL', null);
+  } catch (Throwable $e) {
+    error_log('[Stripe] Falha ao garantir coluna payments.failure_message: ' . $e->getMessage());
+  }
+
+  try {
+    ensureColumn($pdo, 'payment_intents', 'stripe_payment_intent_id', 'VARCHAR(80) NULL', null);
+  } catch (Throwable $e) {
+    error_log('[Stripe] Falha ao garantir coluna payment_intents.stripe_payment_intent_id: ' . $e->getMessage());
+  }
+  try {
+    ensureColumn($pdo, 'payment_intents', 'stripe_setup_intent_id', 'VARCHAR(80) NULL', null);
+  } catch (Throwable $e) {
+    error_log('[Stripe] Falha ao garantir coluna payment_intents.stripe_setup_intent_id: ' . $e->getMessage());
+  }
+  try {
+    ensureColumn($pdo, 'payment_intents', 'stripe_checkout_session_id', 'VARCHAR(120) NULL', null);
+  } catch (Throwable $e) {
+    error_log('[Stripe] Falha ao garantir coluna payment_intents.stripe_checkout_session_id: ' . $e->getMessage());
+  }
+  try {
+    ensureColumn($pdo, 'payment_intents', 'stripe_client_secret', 'VARCHAR(120) NULL', null);
+  } catch (Throwable $e) {
+    error_log('[Stripe] Falha ao garantir coluna payment_intents.stripe_client_secret: ' . $e->getMessage());
+  }
+  try {
+    ensureColumn($pdo, 'payment_intents', 'stripe_status', 'VARCHAR(32) NULL', null);
+  } catch (Throwable $e) {
+    error_log('[Stripe] Falha ao garantir coluna payment_intents.stripe_status: ' . $e->getMessage());
+  }
+
+  try {
+    zeefe_stripe_ensure_events_table($pdo);
+  } catch (Throwable $e) {
+    error_log('[Stripe] Falha ao garantir tabela stripe_events: ' . $e->getMessage());
+  }
+
+  try {
     if (!zeefe_stripe_index_exists($pdo, 'customer_cards', 'uniq_stripe_payment_method')) {
       $pdo->exec("ALTER TABLE `customer_cards` ADD UNIQUE KEY `uniq_stripe_payment_method` (`stripe_payment_method_id`)");
     }
@@ -206,4 +300,24 @@ function zeefe_stripe_sync_customer(PDO $pdo, StripeClient $stripe, int $clientI
   }
 
   return $customerId;
+}
+
+function zeefe_stripe_find_active_card(PDO $pdo, int $clientId): ?array {
+  $stmt = $pdo->prepare('SELECT * FROM customer_cards WHERE client_id = :client AND status = "active" AND stripe_payment_method_id IS NOT NULL ORDER BY updated_at DESC, id DESC LIMIT 1');
+  $stmt->execute([':client' => $clientId]);
+  $row = $stmt->fetch(PDO::FETCH_ASSOC);
+  return $row ?: null;
+}
+
+function zeefe_stripe_reservation_amount_cents(array $reservation): int {
+  $candidates = ['total_price', 'amount_gross', 'price'];
+  foreach ($candidates as $field) {
+    if (isset($reservation[$field]) && is_numeric($reservation[$field])) {
+      $float = (float)$reservation[$field];
+      if ($float > 0) {
+        return (int)round($float * 100);
+      }
+    }
+  }
+  return 0;
 }
