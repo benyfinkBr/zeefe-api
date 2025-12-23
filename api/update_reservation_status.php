@@ -163,8 +163,7 @@ function stripeConfirmReservation(PDO $pdo, array $config, array $reservation): 
       'confirm' => true,
       'payment_method_types' => ['card'],
       'metadata' => $metadata,
-      'description' => $description,
-      'setup_future_usage' => 'off_session'
+      'description' => $description
     ], [
       'idempotency_key' => 'reservation_confirm_' . $reservation['id']
     ]);
