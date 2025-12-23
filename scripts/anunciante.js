@@ -12,6 +12,16 @@ let chatPollTimer = null;
 let workshopSelectedDates = [];
 let advHeaderMenuOpen = false;
 
+function syncHeaderWithAdvertiserSession(advertiser) {
+  if (advertiser) {
+    window.ZEEFE_HEADER?.persistSession?.({
+      type: 'advertiser',
+      name: advertiser.display_name || advertiser.full_name || advertiser.email || ''
+    });
+  } else {
+    window.ZEEFE_HEADER?.clearSession?.();
+  }
+}
 // Seletores
 const authContainer = document.getElementById('authContainer');
 const loginForm = document.getElementById('advLoginForm');
@@ -347,6 +357,7 @@ async function afterLogin() {
   if (panelsWrap) panelsWrap.hidden = false;
   // Preenche direto a partir do anunciante autenticado
   myAdvertiser = advClient || null;
+  syncHeaderWithAdvertiserSession(myAdvertiser);
   if (myAdvertiser?.display_name) {
     advDisplay.textContent = myAdvertiser.display_name;
   } else {
@@ -1300,6 +1311,7 @@ logoutBtn?.addEventListener('click', () => {
   closeAdvHeaderMenu();
   const cleanup = () => {
     advClient = null; myAdvertiser = null; myRooms = []; myReservations = [];
+    syncHeaderWithAdvertiserSession(null);
     registrarPreferenciaLoginAdv(false);
     setAuthVisible(true);
   };

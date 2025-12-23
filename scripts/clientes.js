@@ -50,6 +50,17 @@ async function hydrateSessionFromServer() {
   }
 }
 
+function syncHeaderWithClientSession(cliente) {
+  if (cliente) {
+    window.ZEEFE_HEADER?.persistSession?.({
+      type: 'client',
+      name: cliente.name || cliente.login || ''
+    });
+  } else {
+    window.ZEEFE_HEADER?.clearSession?.();
+  }
+}
+
 function checkPendingCompanyInvites() {
   // Placeholder seguro para evitar ReferenceError quando não houver implementação
   return;
@@ -2987,6 +2998,7 @@ async function onPortalRecoverySubmit(event) {
 function aplicarClienteAtivo(cliente) {
   if (!cliente) return;
   activeClient = cliente;
+  syncHeaderWithClientSession(activeClient);
   rememberActiveClientId(activeClient?.id);
   try { window.activeClient = cliente; } catch (_) {}
   setBodyAuthState(true);
@@ -3035,6 +3047,7 @@ function aplicarClienteAtivo(cliente) {
 function fazerLogout() {
   const cleanup = () => {
     activeClient = null;
+    syncHeaderWithClientSession(null);
     clearStoredActiveClientId();
     currentReservations = [];
     currentVisitors = [];
