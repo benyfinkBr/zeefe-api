@@ -3395,9 +3395,39 @@ body.client-portal-page.client-logged-out .portal-shell {
   height: 18px;
   accent-color: var(--brand-green);
 }
+.card-payment-modal .billing-fields {
+  transition: opacity .15s ease;
+}
+.card-payment-modal .billing-fields.is-hidden {
+  opacity: 0;
+  height: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
 .card-payment-modal .input-readonly {
   background: #f7f5f1;
   color: var(--brand-muted);
+}
+.card-payment-modal .card-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(29, 65, 58, 0.08);
+}
+.card-payment-modal .card-list li:last-child {
+  border-bottom: none;
+}
+.card-payment-modal .card-remove-btn {
+  background: transparent;
+  border: none;
+  color: #b54a3a;
+  cursor: pointer;
+  font-weight: 600;
+}
+.card-payment-modal .card-remove-btn:hover {
+  text-decoration: underline;
 }
 
 .profile-form .profile-actions {

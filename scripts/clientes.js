@@ -5085,6 +5085,7 @@ function initCardPaymentsFeature() {
   const cardListError = document.getElementById('cardListError');
   const closeBtn = document.getElementById('cardModalClose');
   const cancelBtn = document.getElementById('cardModalCancel');
+  const billingFieldsContainer = document.getElementById('cardBillingFields');
   const billingFieldInputs = [
     billingEmailInput,
     billingZipInput,
@@ -5194,6 +5195,36 @@ function initCardPaymentsFeature() {
     }
   }
 
+  async function requestCardDeletion(card) {
+    const clientId = currentClientId || activeClient?.id;
+    if (!clientId) {
+      alert('Faça login para gerenciar cartões.');
+      return;
+    }
+    const confirmMsg = `Remover o cartão ${card.brand || ''} ${card.last4 ? '•••• ' + card.last4 : ''}?`;
+    if (!window.confirm(confirmMsg.trim())) {
+      return;
+    }
+    try {
+      const response = await fetch(`${API_BASE}/customer_delete_card.php`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          client_id: clientId,
+          card_id: card.id,
+          payment_method_id: card.stripe_payment_method_id || ''
+        })
+      });
+      const json = await parseJsonSafe(response);
+      if (!response.ok || !json.success) {
+        throw new Error(json.error || 'Não foi possível remover o cartão.');
+      }
+      refreshCardList(clientId);
+    } catch (err) {
+      alert(err.message || 'Falha ao remover o cartão.');
+    }
+  }
+
   async function refreshCardList(clientId) {
     if (!cardListSection || !cardListEl || !cardListEmpty) return;
     if (!clientId) {
@@ -5234,12 +5265,24 @@ function initCardPaymentsFeature() {
         const exp = expMonth && expYear ? `${expMonth}/${expYear}` : 'Sem validade';
         const providerLabel = card.provider === 'stripe' ? 'Stripe' : 'Legado';
         const statusLabel = card.status === 'inactive' ? ' (inativo)' : '';
-        li.innerHTML = `
+        const info = document.createElement('div');
+        info.className = 'card-info';
+        info.innerHTML = `
           <span class="card-brand">${escapeHtml(brand + statusLabel)}</span>
           <span>${escapeHtml(lastDigits)}</span>
           <span>Expira em ${escapeHtml(exp)}</span>
           <span class="card-provider">${escapeHtml(providerLabel)}</span>
         `;
+        const actions = document.createElement('div');
+        actions.className = 'card-actions';
+        const removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.className = 'card-remove-btn';
+        removeBtn.textContent = 'Remover';
+        removeBtn.addEventListener('click', () => requestCardDeletion(card));
+        actions.appendChild(removeBtn);
+        li.appendChild(info);
+        li.appendChild(actions);
         cardListEl.appendChild(li);
       });
     } catch (err) {
@@ -5300,6 +5343,10 @@ function initCardPaymentsFeature() {
   function syncBillingMode(clientOverride = null) {
     const useProfile = Boolean(useProfileDataCheckbox?.checked);
     setBillingFieldsReadonly(useProfile);
+    if (billingFieldsContainer) {
+      billingFieldsContainer.classList.toggle('is-hidden', useProfile);
+      billingFieldsContainer.hidden = useProfile;
+    }
     if (useProfile) {
       const source = clientOverride || activeClient;
       if (source) {
