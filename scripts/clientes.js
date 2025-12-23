@@ -5110,6 +5110,7 @@ function initCardPaymentsFeature() {
   let isSubmitting = false;
   let publishableKeyPromise = null;
   let currentClientId = null;
+  let allowCloseAfterSuccess = false;
 
   function setError(message) {
     if (!errorEl) return;
@@ -5117,22 +5118,33 @@ function initCardPaymentsFeature() {
     errorEl.hidden = !message;
   }
 
-  function setSuccess(message) {
+  function setSuccess(message, canClose = false) {
     if (!successEl) return;
     successEl.textContent = message || '';
     successEl.hidden = !message;
+    allowCloseAfterSuccess = Boolean(canClose && message);
+    if (allowCloseAfterSuccess && submitBtn) {
+      submitBtn.textContent = 'Fechar';
+      submitBtn.disabled = false;
+    } else if (submitBtn && !isSubmitting) {
+      submitBtn.textContent = 'Salvar cartão';
+    }
   }
 
   function clearMessages() {
     setError('');
-    setSuccess('');
+    setSuccess('', false);
   }
 
   function setLoading(state) {
     cardForm.classList.toggle('is-loading', Boolean(state));
     if (submitBtn) {
       submitBtn.disabled = Boolean(state);
-      submitBtn.textContent = state ? 'Salvando cartão...' : 'Salvar cartão';
+      if (allowCloseAfterSuccess) {
+        submitBtn.textContent = 'Fechar';
+      } else {
+        submitBtn.textContent = state ? 'Salvando cartão...' : 'Salvar cartão';
+      }
     }
   }
 
@@ -5167,7 +5179,17 @@ function initCardPaymentsFeature() {
       const elements = stripe.elements();
       cardElement = elements.create('card', { hidePostalCode: true });
       cardElement.mount(cardElementContainer);
+      const wrapper = cardElementContainer?.closest('.stripe-card-wrapper');
+      cardElement.on('focus', () => {
+        if (wrapper) wrapper.classList.add('is-focused');
+      });
+      cardElement.on('blur', () => {
+        if (wrapper) wrapper.classList.remove('is-focused');
+      });
       cardElement.on('change', (event) => {
+        if (wrapper) {
+          wrapper.classList.toggle('is-invalid', Boolean(event.error));
+        }
         if (event.error) setError(event.error.message);
         else if (!isSubmitting) setError('');
       });
@@ -5359,6 +5381,7 @@ function initCardPaymentsFeature() {
     cardModal.classList.toggle('show', show);
     cardModal.setAttribute('aria-hidden', show ? 'false' : 'true');
     if (show) {
+      allowCloseAfterSuccess = false;
       clearMessages();
       setLoading(false);
       initStripeElement().catch(() => {});
@@ -5383,6 +5406,10 @@ function initCardPaymentsFeature() {
 
   async function handleCardFormSubmit(event) {
     event.preventDefault();
+    if (allowCloseAfterSuccess) {
+      closeModal();
+      return;
+    }
     if (isSubmitting) return;
     clearMessages();
     const clientId = Number(cardClientInput?.value);
@@ -5460,7 +5487,7 @@ function initCardPaymentsFeature() {
       }
 
       cardElement.clear();
-      setSuccess('Cartão salvo com sucesso! Você já pode fechar este modal.');
+      setSuccess('Cartão salvo com sucesso! Você já pode fechar este modal.', true);
       refreshCardList(clientId);
     } catch (err) {
       setError(err?.message || 'Falha ao salvar o cartão.');
