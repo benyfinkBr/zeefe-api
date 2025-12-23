@@ -3372,7 +3372,7 @@ body.client-portal-page.client-logged-out .portal-shell {
 
 .card-payment-modal .stripe-card-wrapper {
   width: 100%;
-  border: 1px solid rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(0, 0, 0, 1);
   border-radius: 12px;
   padding: 0 16px;
   background: #fff;
