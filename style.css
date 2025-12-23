@@ -3378,8 +3378,8 @@ body.client-portal-page.client-logged-out .portal-shell {
   width: 100%;
   border: 2px solid #101010;
   border-radius: 14px;
-  padding: 0 18px;
-  background: #fff;
+  padding: 6px 18px;
+  background: #f6f8fb;
   min-height: 60px;
   display: flex;
   align-items: center;
