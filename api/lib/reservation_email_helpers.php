@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/mailer.php';
 require_once __DIR__ . '/reservations.php';
+require_once __DIR__ . '/ics.php';
 
 function emailSolicitacaoCliente(PDO $pdo, int $reservationId): void {
   $dados = reservation_load($pdo, $reservationId);
@@ -139,7 +140,52 @@ function emailDetalhesPosPagamento(PDO $pdo, int $reservationId): void {
     'link_portal' => 'https://zeefe.com.br/clientes.html'
   ];
   $html = mailer_render('reservation_details_after_payment.php', $placeholders);
-  mailer_send($dados['client_email'], 'Ze.EFE - Detalhes da sua reserva', $html);
+  $attachments = [];
+  try {
+    $date = $dados['date'] ?? date('Y-m-d');
+    $start = trim($dados['time_start'] ?? '08:00');
+    $end = trim($dados['time_end'] ?? '20:00');
+    $normalizeTime = static function (string $t): string {
+      $t = trim($t);
+      if (preg_match('/^\d{2}:\d{2}:\d{2}$/', $t)) {
+        return $t;
+      }
+      if (preg_match('/^\d{2}:\d{2}$/', $t)) {
+        return $t . ':00';
+      }
+      $dt = DateTime::createFromFormat('H:i:s', $t) ?: DateTime::createFromFormat('H:i', $t);
+      return $dt ? $dt->format('H:i:s') : '00:00:00';
+    };
+    $startTs = strtotime($date . ' ' . $normalizeTime($start));
+    $endTs = strtotime($date . ' ' . $normalizeTime($end));
+    $summary = 'Reserva Ze.EFE - ' . ($dados['room_name'] ?? 'Sala');
+    $descResumo = ($dados['title'] ? ($dados['title'] . "\n\n") : '') . trim($dados['description'] ?? '');
+    $street = trim((string)($dados['room_street'] ?? ''));
+    $compl = trim((string)($dados['room_complement'] ?? ''));
+    $addr1 = $street ? ($street . ($compl ? ' - ' . $compl : '')) : '';
+    $cityState = trim((string)($dados['room_city'] ?? ''));
+    if (!empty($dados['room_state'])) {
+      $cityState .= ($cityState ? ' - ' : '') . strtoupper((string)$dados['room_state']);
+    }
+    $parts = array_filter([$addr1 ?: null, $cityState ?: null]);
+    $location = $parts ? implode(', ', $parts) : ($dados['room_name'] ?? 'Sala Ze.EFE');
+    $attachments[] = [
+      'data' => ics_generate([
+        'summary' => $summary,
+        'description' => $descResumo,
+        'location' => $location,
+        'start' => $startTs,
+        'end' => $endTs,
+        'uid' => 'zeefe-' . ($dados['public_code'] ?? $reservationId) . '-' . md5($summary . $date),
+        'tz' => 'America/Sao_Paulo'
+      ]),
+      'name' => 'reserva.ics',
+      'type' => 'text/calendar'
+    ];
+  } catch (Throwable $icsError) {
+    error_log('[MAIL] Falha ao gerar ICS da reserva #' . $reservationId . ': ' . $icsError->getMessage());
+  }
+  mailer_send($dados['client_email'], 'Ze.EFE - Detalhes da sua reserva', $html, '', $attachments);
 }
 
 function buscarDadosAnunciante(PDO $pdo, int $reservationId): array {
