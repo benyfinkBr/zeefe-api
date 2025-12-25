@@ -4109,6 +4109,11 @@ body.anunciante-page #advChatMessages.chat-messages {
   display: block;
 }
 
+.field-error {
+  border-color: #b54a3a !important;
+  box-shadow: 0 0 0 1px rgba(181, 74, 58, 0.45) inset;
+}
+
 .modal-footer {
   display: flex;
   justify-content: flex-end;

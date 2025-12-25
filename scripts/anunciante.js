@@ -230,6 +230,33 @@ const advStatusNoticeReservations = document.getElementById('advStatusNoticeRese
 
 let amenitiesCache = null;
 let amenitiesRequest = null;
+const REQUIRED_ROOM_FIELDS = [
+  { el: roomName, label: 'Nome da sala' },
+  { el: roomCap, label: 'Capacidade' },
+  { el: roomCity, label: 'Cidade' },
+  { el: roomState, label: 'Estado (UF)' }
+];
+
+function clearRoomFieldErrors() {
+  REQUIRED_ROOM_FIELDS.forEach(({ el }) => {
+    el?.classList.remove('field-error');
+  });
+}
+
+function validateRequiredRoomFields() {
+  const missing = [];
+  REQUIRED_ROOM_FIELDS.forEach(({ el, label }) => {
+    if (!el) return;
+    const value = el.value?.trim();
+    const isNumberField = el === roomCap;
+    const valid = isNumberField ? Number(value) > 0 : Boolean(value);
+    if (!valid) {
+      el.classList.add('field-error');
+      missing.push(label);
+    }
+  });
+  return missing;
+}
 
 function setAuthVisible(show) {
   if (!authContainer) return;
@@ -327,13 +354,25 @@ function collectSelectedAmenities() {
     .filter(id => Number.isFinite(id) && id > 0);
 }
 
+function parseRoomPhotoPaths(photoPathValue) {
+  if (Array.isArray(photoPathValue)) {
+    return photoPathValue.map(p => String(p || '').trim()).filter(Boolean);
+  }
+  if (typeof photoPathValue === 'string' && photoPathValue.length) {
+    return photoPathValue.split(',').map(p => p.trim()).filter(Boolean);
+  }
+  return [];
+}
+
+function getRoomPrimaryPhoto(room) {
+  if (!room) return '';
+  const paths = parseRoomPhotoPaths(room.photo_path);
+  return paths.length ? paths[0] : '';
+}
+
 function renderRoomPhotosPreview(photoPathValue) {
   if (!roomPhotosPreview) return;
-  const paths = Array.isArray(photoPathValue)
-    ? photoPathValue
-    : typeof photoPathValue === 'string' && photoPathValue.length
-      ? photoPathValue.split(',').map(p => p.trim()).filter(Boolean)
-      : [];
+  const paths = parseRoomPhotoPaths(photoPathValue);
   if (!paths.length) {
     roomPhotosPreview.innerHTML = '<p class="input-hint">Nenhuma foto cadastrada.</p>';
     return;
@@ -560,9 +599,14 @@ async function loadRooms() {
       roomsContainer.innerHTML = '<div class="rooms-message">Nenhuma sala vinculada. Use “Divulgar nova sala”.</div>';
       return;
     }
-    roomsContainer.innerHTML = myRooms.map(r => `
+    roomsContainer.innerHTML = myRooms.map(r => {
+      const primaryPhoto = getRoomPrimaryPhoto(r);
+      const photoSection = primaryPhoto
+        ? `<div class="room-photo"><img src="${escapeHtml(primaryPhoto)}" alt="Foto da sala ${escapeHtml(r.name || '')}" loading="lazy"></div>`
+        : `<div class="room-photo room-photo-empty"><div class="room-photo-placeholder">Sem foto cadastrada</div></div>`;
+      return `
       <article class="room-card">
-        <div class="room-photo">📷</div>
+        ${photoSection}
         <div class="room-info">
           <h4>${escapeHtml(r.name || 'Sala')}</h4>
           <p class="room-meta">${escapeHtml(r.city || '')} - ${escapeHtml(r.state || '')} ${r.lat && r.lon ? ' • <span title="Tem localização no mapa">📍</span>' : ''}</p>
@@ -571,7 +615,8 @@ async function loadRooms() {
           </div>
         </div>
       </article>
-    `).join('');
+    `;
+    }).join('');
     // Eventos dos botões de sala
     roomsContainer.querySelectorAll('button[data-room][data-act="details"]').forEach(btn => btn.addEventListener('click', () => openRoomDetailsModal(btn.getAttribute('data-room'))));
   } catch (e) {
@@ -1514,6 +1559,7 @@ cepInput?.addEventListener('blur', () => autoFillRoomAddressFromCep(cepInput?.va
 async function openRoomModal(roomData){
   if (!roomModal) return;
   roomMsg.textContent = '';
+  clearRoomFieldErrors();
 
   const selectedAmenities = Array.isArray(roomData?.amenities) ? roomData.amenities : [];
   await renderRoomAmenities(selectedAmenities);
@@ -1604,7 +1650,12 @@ async function onRoomFormSubmit(e){
     advertiser_id: myAdvertiser.id,
     amenities: collectSelectedAmenities()
   };
-  if (!record.name) { roomMsg.textContent = 'Informe o nome da sala.'; return; }
+  clearRoomFieldErrors();
+  const requiredMissing = validateRequiredRoomFields();
+  if (requiredMissing.length) {
+    roomMsg.textContent = 'Preencha os campos obrigatórios destacados.';
+    return;
+  }
   if (!isEdit) {
     record.created_at = new Date().toISOString().slice(0,19).replace('T',' ');
   } else {
