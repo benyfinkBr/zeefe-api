@@ -696,6 +696,11 @@
                 <select id="portariaInteligente"><option value="Sim">Sim</option><option value="Não">Não</option></select>
               </div>
 
+              <div class="form-group">
+                <label for="cep">CEP</label>
+                <input type="text" id="cep" inputmode="numeric" maxlength="9" placeholder="00000-000" />
+                <small class="input-hint">Digite os 8 dígitos para preencher o endereço automaticamente.</small>
+              </div>
               <div class="form-group" style="grid-column: span 3">
                 <label for="street">Rua</label>
                 <input type="text" id="street" />
@@ -703,10 +708,6 @@
               <div class="form-group">
                 <label for="complement">Complemento</label>
                 <input type="text" id="complement" />
-              </div>
-              <div class="form-group">
-                <label for="cep">CEP</label>
-                <input type="text" id="cep" />
               </div>
               <div class="form-group">
                 <label for="roomState">Estado (UF)</label>
@@ -769,6 +770,9 @@
                 <label for="roomPhotos">Fotos da sala</label>
                 <input type="file" id="roomPhotos" accept="image/*" multiple />
                 <small class="input-hint">Envie imagens JPG/PNG/WEBP (até 8MB cada).</small>
+                <div id="roomPhotosPreview" class="room-photos-preview">
+                  <p class="input-hint">Nenhuma foto cadastrada.</p>
+                </div>
               </div>
               <div class="form-group" style="grid-column: span 4">
                 <label>Comodidades disponíveis</label>
@@ -776,7 +780,6 @@
               </div>
             </div>
             <div class="modal-actions" style="display:flex; gap:12px; justify-content:flex-end;">
-              <button type="button" class="btn btn-secondary" id="advRoomGeocode">Geocodificar</button>
               <button type="button" class="btn btn-secondary" id="advRoomCancel">Cancelar</button>
               <button type="submit" class="btn btn-primary">Salvar</button>
             </div>

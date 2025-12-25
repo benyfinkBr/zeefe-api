@@ -186,7 +186,6 @@ const roomCancel = document.getElementById('advRoomCancel');
 const roomForm = document.getElementById('advRoomForm');
 const roomMsg = document.getElementById('advRoomMessage');
 const roomIdHidden = document.getElementById('roomIdHidden');
-const roomGeocodeBtn = document.getElementById('advRoomGeocode');
 const roomName = document.getElementById('roomName');
 const roomCap = document.getElementById('roomCapacity');
 const roomCity = document.getElementById('roomCity');
@@ -194,6 +193,9 @@ const roomState = document.getElementById('roomState');
 const roomPrice = document.getElementById('roomPrice');
 const roomStatus = document.getElementById('roomStatus');
 const roomDesc = document.getElementById('roomDescription');
+const roomAmenitiesGrid = document.getElementById('advAmenitiesGrid');
+const roomPhotosInput = document.getElementById('roomPhotos');
+const roomPhotosPreview = document.getElementById('roomPhotosPreview');
 // extra admin-like fields
 const dailyRate = document.getElementById('dailyRate');
 const facilitatedAccess = document.getElementById('facilitatedAccess');
@@ -226,6 +228,9 @@ const advStatusNoticeClose = document.getElementById('advStatusNoticeClose');
 const advStatusNoticeOk = document.getElementById('advStatusNoticeOk');
 const advStatusNoticeReservations = document.getElementById('advStatusNoticeReservations');
 
+let amenitiesCache = null;
+let amenitiesRequest = null;
+
 function setAuthVisible(show) {
   if (!authContainer) return;
   if (show) {
@@ -236,6 +241,149 @@ function setAuthVisible(show) {
     document.body.classList.add('client-authenticated');
     document.body.classList.remove('client-logged-out');
     authContainer.hidden = true;
+  }
+}
+
+function somenteDigitos(valor) {
+  return String(valor || '').replace(/\D/g, '');
+}
+
+function maskCepValue(valor) {
+  const digits = somenteDigitos(valor).slice(0, 8);
+  if (digits.length <= 5) return digits;
+  return `${digits.slice(0, 5)}-${digits.slice(5)}`;
+}
+
+function handleCepInput(event) {
+  if (!event?.target) return;
+  const masked = maskCepValue(event.target.value);
+  if (event.target.value !== masked) {
+    event.target.value = masked;
+  }
+  if (somenteDigitos(masked).length === 8) {
+    autoFillRoomAddressFromCep(masked);
+  }
+}
+
+async function autoFillRoomAddressFromCep(value) {
+  const digits = somenteDigitos(value);
+  if (digits.length !== 8) return;
+  try {
+    const res = await fetch(`https://viacep.com.br/ws/${digits}/json/`);
+    if (!res.ok) throw new Error('CEP não encontrado');
+    const data = await res.json();
+    if (data.erro) throw new Error('CEP não encontrado');
+    if (streetInput && data.logradouro && !streetInput.value) streetInput.value = data.logradouro;
+    if (roomCity && data.localidade) roomCity.value = data.localidade;
+    if (roomState && data.uf) roomState.value = data.uf;
+    if (complementInput && data.complemento && !complementInput.value) complementInput.value = data.complemento;
+  } catch (err) {
+    console.warn('[CEP] Falha ao buscar endereço:', err.message || err);
+  }
+}
+
+async function ensureAmenitiesLoaded() {
+  if (amenitiesCache) return amenitiesCache;
+  if (amenitiesRequest) return amenitiesRequest;
+  amenitiesRequest = fetch(`${API_BASE}/apiget.php?table=amenities`, { credentials: 'include' })
+    .then(res => res.json())
+    .then(json => (json.success ? (json.data || []) : []))
+    .catch(() => [])
+    .finally(() => { amenitiesRequest = null; });
+  amenitiesCache = await amenitiesRequest;
+  return amenitiesCache;
+}
+
+async function renderRoomAmenities(selectedIds = []) {
+  if (!roomAmenitiesGrid) return;
+  const amenities = await ensureAmenitiesLoaded();
+  roomAmenitiesGrid.innerHTML = '';
+  if (!amenities.length) {
+    roomAmenitiesGrid.innerHTML = '<p class="input-hint">Nenhuma comodidade cadastrada.</p>';
+    return;
+  }
+  const selected = new Set((selectedIds || []).map(id => String(id)));
+  const fragment = document.createDocumentFragment();
+  amenities.forEach(item => {
+    const wrapper = document.createElement('label');
+    wrapper.className = 'amenity-check';
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.value = item.id;
+    checkbox.checked = selected.has(String(item.id));
+    const span = document.createElement('span');
+    span.textContent = item.name || `Comodidade ${item.id}`;
+    wrapper.appendChild(checkbox);
+    wrapper.appendChild(span);
+    fragment.appendChild(wrapper);
+  });
+  roomAmenitiesGrid.appendChild(fragment);
+}
+
+function collectSelectedAmenities() {
+  if (!roomAmenitiesGrid) return [];
+  return Array.from(roomAmenitiesGrid.querySelectorAll('input[type="checkbox"]:checked'))
+    .map(input => Number(input.value))
+    .filter(id => Number.isFinite(id) && id > 0);
+}
+
+function renderRoomPhotosPreview(photoPathValue) {
+  if (!roomPhotosPreview) return;
+  const paths = Array.isArray(photoPathValue)
+    ? photoPathValue
+    : typeof photoPathValue === 'string' && photoPathValue.length
+      ? photoPathValue.split(',').map(p => p.trim()).filter(Boolean)
+      : [];
+  if (!paths.length) {
+    roomPhotosPreview.innerHTML = '<p class="input-hint">Nenhuma foto cadastrada.</p>';
+    return;
+  }
+  const fragment = document.createDocumentFragment();
+  paths.forEach(src => {
+    const thumb = document.createElement('div');
+    thumb.className = 'room-photo-thumb';
+    const img = document.createElement('img');
+    img.src = src;
+    img.alt = 'Foto da sala';
+    thumb.appendChild(img);
+    fragment.appendChild(thumb);
+  });
+  roomPhotosPreview.innerHTML = '';
+  roomPhotosPreview.appendChild(fragment);
+}
+
+async function uploadRoomPhotos(roomId) {
+  if (!roomId || !roomPhotosInput || !roomPhotosInput.files?.length) return null;
+  const formData = new FormData();
+  formData.append('id', roomId);
+  if (myAdvertiser?.id) {
+    formData.append('advertiser_id', myAdvertiser.id);
+  }
+  Array.from(roomPhotosInput.files).forEach(file => formData.append('files[]', file));
+  const res = await fetch(`${API_BASE}/apiuploadroomphoto.php`, {
+    method: 'POST',
+    body: formData,
+    credentials: 'include'
+  });
+  const json = await parseJsonSafe(res);
+  if (!json.success) throw new Error(json.error || 'Falha ao enviar fotos.');
+  roomPhotosInput.value = '';
+  renderRoomPhotosPreview(json.photo_path);
+  return json;
+}
+
+async function geocodeRoomLocation(roomId) {
+  if (!roomId) return;
+  try {
+    const res = await fetch(`${API_BASE}/geocode_room.php`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ room_id: roomId })
+    });
+    await res.json();
+  } catch (err) {
+    console.warn('[Geocode] Falha ao atualizar localização da sala', err);
   }
 }
 
@@ -1358,13 +1506,18 @@ document.getElementById('advQuickRegisterBtn')?.addEventListener('click', ()=>{
 });
 roomClose?.addEventListener('click', () => { closeRoomModal(); });
 roomCancel?.addEventListener('click', () => { closeRoomModal(); });
-roomGeocodeBtn?.addEventListener('click', onRoomGeocode);
 roomModal?.addEventListener('click', (e)=> { if (e.target === roomModal) closeRoomModal(); });
 roomForm?.addEventListener('submit', onRoomFormSubmit);
+cepInput?.addEventListener('input', handleCepInput);
+cepInput?.addEventListener('blur', () => autoFillRoomAddressFromCep(cepInput?.value || ''));
 
-function openRoomModal(roomData){
+async function openRoomModal(roomData){
   if (!roomModal) return;
   roomMsg.textContent = '';
+
+  const selectedAmenities = Array.isArray(roomData?.amenities) ? roomData.amenities : [];
+  await renderRoomAmenities(selectedAmenities);
+  renderRoomPhotosPreview(roomData?.photo_path || '');
 
   const isEdit = !!roomData;
   if (isEdit) {
@@ -1377,7 +1530,7 @@ function openRoomModal(roomData){
     if (portariaInteligente) portariaInteligente.value = roomData.portaria_inteligente || '';
     if (streetInput) streetInput.value = roomData.street || '';
     if (complementInput) complementInput.value = roomData.complement || '';
-    if (cepInput) cepInput.value = roomData.cep || '';
+    if (cepInput) cepInput.value = roomData.cep ? maskCepValue(roomData.cep) : '';
     if (roomState) roomState.value = roomData.state || '';
     if (roomCity) roomCity.value = roomData.city || '';
     if (respNome) respNome.value = roomData.responsavel_nome || '';
@@ -1415,8 +1568,7 @@ function openRoomModal(roomData){
     if (deactivatedFrom) deactivatedFrom.value = '';
   }
 
-  const photosInput = document.getElementById('roomPhotos');
-  if (photosInput) photosInput.value = '';
+  if (roomPhotosInput) roomPhotosInput.value = '';
 
   roomModal.classList.add('show');
   roomModal.setAttribute('aria-hidden','false');
@@ -1436,7 +1588,7 @@ async function onRoomFormSubmit(e){
     portaria_inteligente: portariaInteligente?.value || null,
     street: (streetInput?.value||'').trim(),
     complement: (complementInput?.value||'').trim(),
-    cep: (cepInput?.value||'').trim(),
+    cep: cepInput?.value ? maskCepValue(cepInput.value) : '',
     state: (roomState?.value||'').trim(),
     city: (roomCity?.value||'').trim(),
     responsavel_nome: (respNome?.value||'').trim(),
@@ -1449,7 +1601,8 @@ async function onRoomFormSubmit(e){
     maintenance_start: (maintenanceStart?.value||'') || null,
     maintenance_end: (maintenanceEnd?.value||'') || null,
     deactivated_from: (deactivatedFrom?.value||'') || null,
-    advertiser_id: myAdvertiser.id
+    advertiser_id: myAdvertiser.id,
+    amenities: collectSelectedAmenities()
   };
   if (!record.name) { roomMsg.textContent = 'Informe o nome da sala.'; return; }
   if (!isEdit) {
@@ -1457,13 +1610,29 @@ async function onRoomFormSubmit(e){
   } else {
     record.id = Number(roomIdHidden.value);
   }
-  const payload = { table: 'rooms', data: record };
+  const payload = { table: 'rooms', record };
   try {
-    const url = isEdit ? `${API_BASE}/apiupdate.php` : `${API_BASE}/apiadd.php`;
-    const res = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+    const res = await fetch(`${API_BASE}/apisave.php`, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      credentials: 'include',
+      body: JSON.stringify(payload)
+    });
     const json = await parseJsonSafe(res);
     if (!json.success) throw new Error(json.error || (isEdit ? 'Falha ao salvar sala.' : 'Falha ao criar sala.'));
-    roomMsg.textContent = isEdit ? 'Sala atualizada com sucesso!' : 'Sala criada com sucesso!';
+    const savedId = isEdit ? record.id : (json.insertId || record.id);
+    if (roomPhotosInput?.files?.length && savedId) {
+      try {
+        await uploadRoomPhotos(savedId);
+      } catch (uploadErr) {
+        console.error('[Sala] Erro ao enviar fotos', uploadErr);
+        roomMsg.textContent = 'Sala salva, mas houve erro ao enviar as fotos.';
+      }
+    }
+    if (savedId) {
+      geocodeRoomLocation(savedId);
+    }
+    roomMsg.textContent = json.message || (isEdit ? 'Sala atualizada com sucesso!' : 'Sala criada com sucesso!');
     await loadRooms();
     closeRoomModal();
     setActivePanel('rooms');
@@ -1667,20 +1836,6 @@ advRoomDetClose?.addEventListener('click', closeRoomDetailsModal);
 advRoomDetCancel?.addEventListener('click', closeRoomDetailsModal);
 advRoomDetModal?.addEventListener('click', (e)=> { if (e.target === advRoomDetModal) closeRoomDetailsModal(); });
 advResModal?.addEventListener('click', (e)=> { if (e.target === advResModal) closeReservationModal(); });
-
-// Geocodificação no modal de sala (edição)
-async function onRoomGeocode(){
-  const idEl = document.getElementById('roomIdHidden');
-  const id = idEl && idEl.value ? Number(idEl.value) : 0;
-  if (!id) { roomMsg.textContent = 'Salve a sala antes de geocodificar.'; return; }
-  roomMsg.textContent = 'Geocodificando…';
-  try {
-    const res = await fetch(`${API_BASE}/geocode_room.php`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ room_id: id }) });
-    const json = await parseJsonSafe(res);
-    if (!json.success) throw new Error(json.error || 'Falha ao geocodificar.');
-    roomMsg.textContent = 'Localização atualizada.';
-  } catch (e) { roomMsg.textContent = e.message || 'Erro ao geocodificar.'; }
-}
 
 advRecoveryForm?.addEventListener('submit', async (e) => {
   e.preventDefault(); advRecoveryMessage.textContent='';

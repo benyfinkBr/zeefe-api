@@ -4085,6 +4085,30 @@ body.anunciante-page #advChatMessages.chat-messages {
   font-size: 0.85rem;
 }
 
+.room-photos-preview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.room-photos-preview .room-photo-thumb {
+  width: 72px;
+  height: 72px;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(29, 65, 58, 0.18);
+  background: #fdfdfc;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.65);
+}
+
+.room-photos-preview .room-photo-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
 .modal-footer {
   display: flex;
   justify-content: flex-end;
