@@ -230,6 +230,7 @@ const advStatusNoticeReservations = document.getElementById('advStatusNoticeRese
 
 let amenitiesCache = null;
 let amenitiesRequest = null;
+let currentRoomPhotoList = [];
 const REQUIRED_ROOM_FIELDS = [
   { el: roomName, label: 'Nome da sala' },
   { el: roomCap, label: 'Capacidade' },
@@ -374,6 +375,7 @@ function renderRoomPhotosPreview(photoPathValue, options = {}) {
   if (!roomPhotosPreview) return;
   const { roomId = null, allowDelete = false } = options;
   const paths = parseRoomPhotoPaths(photoPathValue);
+  currentRoomPhotoList = paths;
   if (!paths.length) {
     roomPhotosPreview.innerHTML = '<p class="input-hint">Nenhuma foto cadastrada.</p>';
     return;
@@ -402,6 +404,12 @@ function renderRoomPhotosPreview(photoPathValue, options = {}) {
 
 async function uploadRoomPhotos(roomId) {
   if (!roomId || !roomPhotosInput || !roomPhotosInput.files?.length) return null;
+  const newFilesCount = roomPhotosInput.files.length;
+  const existingCount = currentRoomPhotoList.length;
+  if (existingCount + newFilesCount > 10) {
+    roomMsg.textContent = 'Envie no máximo 10 fotos por sala.';
+    return null;
+  }
   const formData = new FormData();
   formData.append('id', roomId);
   if (myAdvertiser?.id) {
