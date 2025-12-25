@@ -370,8 +370,9 @@ function getRoomPrimaryPhoto(room) {
   return paths.length ? paths[0] : '';
 }
 
-function renderRoomPhotosPreview(photoPathValue) {
+function renderRoomPhotosPreview(photoPathValue, options = {}) {
   if (!roomPhotosPreview) return;
+  const { roomId = null, allowDelete = false } = options;
   const paths = parseRoomPhotoPaths(photoPathValue);
   if (!paths.length) {
     roomPhotosPreview.innerHTML = '<p class="input-hint">Nenhuma foto cadastrada.</p>';
@@ -385,6 +386,14 @@ function renderRoomPhotosPreview(photoPathValue) {
     img.src = src;
     img.alt = 'Foto da sala';
     thumb.appendChild(img);
+    if (allowDelete && roomId) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'remove-photo-btn';
+      btn.textContent = '×';
+      btn.addEventListener('click', () => removeRoomPhoto(roomId, src, thumb));
+      thumb.appendChild(btn);
+    }
     fragment.appendChild(thumb);
   });
   roomPhotosPreview.innerHTML = '';
@@ -407,7 +416,7 @@ async function uploadRoomPhotos(roomId) {
   const json = await parseJsonSafe(res);
   if (!json.success) throw new Error(json.error || 'Falha ao enviar fotos.');
   roomPhotosInput.value = '';
-  renderRoomPhotosPreview(json.photo_path);
+  renderRoomPhotosPreview(json.photo_path, { roomId, allowDelete: true });
   return json;
 }
 
@@ -1556,6 +1565,24 @@ roomForm?.addEventListener('submit', onRoomFormSubmit);
 cepInput?.addEventListener('input', handleCepInput);
 cepInput?.addEventListener('blur', () => autoFillRoomAddressFromCep(cepInput?.value || ''));
 
+async function removeRoomPhoto(roomId, photoPath, thumbEl) {
+  if (!roomId || !photoPath) return;
+  try {
+    const res = await fetch(`${API_BASE}/apidelete_room_photo.php`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ roomId, photo: photoPath })
+    });
+    const json = await parseJsonSafe(res);
+    if (!json.success) throw new Error(json.error || 'Não foi possível remover a foto.');
+    roomMsg.textContent = 'Foto removida.';
+    renderRoomPhotosPreview(json.photo_path, { roomId, allowDelete: true });
+  } catch (err) {
+    roomMsg.textContent = err.message || 'Erro ao remover foto.';
+  }
+}
+
 async function openRoomModal(roomData){
   if (!roomModal) return;
   roomMsg.textContent = '';
@@ -1563,7 +1590,8 @@ async function openRoomModal(roomData){
 
   const selectedAmenities = Array.isArray(roomData?.amenities) ? roomData.amenities : [];
   await renderRoomAmenities(selectedAmenities);
-  renderRoomPhotosPreview(roomData?.photo_path || '');
+  const currentId = roomData?.id || null;
+  renderRoomPhotosPreview(roomData?.photo_path || '', { roomId: currentId, allowDelete: Boolean(currentId) });
 
   const isEdit = !!roomData;
   if (isEdit) {
