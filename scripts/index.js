@@ -578,6 +578,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Modal de escolha de entrada (cliente ou anunciante)
   openLoginChoiceBtn?.addEventListener('click', () => {
+    const session = window.ZEEFE_HEADER?.getSession?.();
+    if (session) {
+      const destino = session.type === 'advertiser' ? 'anunciante.html' : 'clientes.html';
+      window.location.href = destino;
+      return;
+    }
     if (!entryChoiceModal) return;
     entryChoiceModal.classList.add('show');
     entryChoiceModal.setAttribute('aria-hidden', 'false');
