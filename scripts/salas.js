@@ -29,6 +29,17 @@ const modalRate = document.getElementById('roomModalRate');
 const modalGallery = document.getElementById('roomModalGallery');
 const modalAmenities = document.getElementById('roomModalAmenities');
 const modalReserve = document.getElementById('roomModalReserve');
+const openLoginChoiceBtn = document.getElementById('openLoginChoice');
+
+openLoginChoiceBtn?.addEventListener('click', () => {
+  const session = window.ZEEFE_HEADER?.getSession?.();
+  if (session) {
+    const destino = session.type === 'advertiser' ? 'anunciante.html' : 'clientes.html';
+    window.location.href = destino;
+    return;
+  }
+  window.location.href = 'clientes.html';
+});
 
 init();
 
