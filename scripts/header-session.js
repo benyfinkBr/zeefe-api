@@ -1,7 +1,7 @@
 ( () => {
   const STORAGE_KEY = 'zeefeHeaderSession';
   const COOKIE_KEY = 'ZEEFE_HEADER_SESSION';
-  const COOKIE_DOMAIN = '.zeefe.com.br';
+  const COOKIE_DOMAIN = location.hostname.endsWith('zeefe.com.br') ? '.zeefe.com.br' : location.hostname;
   const COOKIE_MAX_AGE = 60 * 60 * 24 * 30;
   let currentSession = readStoredSession();
   let menuOpen = false;
@@ -66,15 +66,15 @@
 
   function persistStoredSession(session) {
     try {
+      const raw = session ? JSON.stringify(session) : null;
+      document.cookie = buildCookie(raw);
+    } catch (_) {}
+    try {
       if (session) {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
       } else {
         localStorage.removeItem(STORAGE_KEY);
       }
-    } catch (_) {}
-    try {
-      const raw = session ? JSON.stringify(session) : null;
-      document.cookie = buildCookie(raw);
     } catch (_) {}
   }
 
@@ -137,6 +137,18 @@
     }
   }
 
+  function getHeaderElement(attrSuffix, ...fallbackIds) {
+    const selector = `[data-zeefe-header-${attrSuffix}]`;
+    let el = document.querySelector(selector);
+    if (el) return el;
+    for (const id of fallbackIds) {
+      if (!id) continue;
+      el = document.getElementById(id);
+      if (el) return el;
+    }
+    return null;
+  }
+
   function setupMenuEvents() {
     if (!domRefs) return;
     const { accountBtn, accountSection, portalBtn, logoutBtn } = domRefs;
@@ -146,7 +158,8 @@
     });
     document.addEventListener('click', (event) => {
       if (!menuOpen) return;
-      if (accountSection?.contains(event.target)) return;
+      if (accountBtn && (event.target === accountBtn || accountBtn.contains(event.target))) return;
+      if (accountSection && accountSection.contains(event.target)) return;
       setMenuState(false);
     });
     portalBtn?.addEventListener('click', () => {
@@ -170,15 +183,16 @@
   }
 
   async function hydrateSession() {
-    const hadLocalSession = Boolean(currentSession);
     const client = await fetchJson('/api/client_session.php');
     if (client?.success && client.client) {
       setHeaderState({
         type: 'client',
         name: client.client.name || client.client.login || 'Cliente'
       });
+      renderHeader();
       return;
     }
+
     const advertiser = await fetchJson('/api/advertiser_session.php');
     if (advertiser?.success && advertiser.advertiser) {
       setHeaderState({
@@ -188,11 +202,12 @@
           || advertiser.advertiser.email
           || 'Anunciante'
       });
+      renderHeader();
       return;
     }
-    if (!hadLocalSession) {
-      setHeaderState(null);
-    }
+
+    setHeaderState(currentSession, { skipStorage: true });
+    renderHeader();
   }
 
   async function performLogout() {
@@ -217,21 +232,23 @@
   }
 
   function initDom() {
-    const guestSection = document.getElementById('homeHeaderGuest');
-    const accountSection = document.getElementById('homeHeaderAccount');
+    const guestSection = getHeaderElement('guest', 'homeHeaderGuest', 'portalHeaderGuest', 'headerGuest', 'clientHeaderGuest', 'advHeaderGuest');
+    const accountSection = getHeaderElement('account', 'homeHeaderAccount', 'portalHeaderAccount', 'headerAccount', 'clientHeaderAccount', 'advHeaderAccount');
+
     if (!guestSection && !accountSection) {
       domRefs = null;
       return;
     }
+
     domRefs = {
       guestSection,
       accountSection,
-      accountBtn: document.getElementById('homeHeaderAccountBtn'),
-      accountMenu: document.getElementById('homeHeaderAccountMenu'),
-      accountLabel: document.getElementById('homeHeaderAccountLabel'),
-      userLabel: document.getElementById('homeHeaderUserLabel'),
-      portalBtn: document.getElementById('homeHeaderPortal'),
-      logoutBtn: document.getElementById('homeHeaderLogout')
+      accountBtn: getHeaderElement('account-btn', 'homeHeaderAccountBtn', 'portalHeaderAccountBtn', 'headerAccountBtn', 'accountMenuBtn', 'clientHeaderAccountBtn', 'advHeaderAccountBtn'),
+      accountMenu: getHeaderElement('account-menu', 'homeHeaderAccountMenu', 'portalHeaderAccountMenu', 'headerAccountMenu', 'clientHeaderAccountMenu', 'advHeaderAccountMenu'),
+      accountLabel: getHeaderElement('account-label', 'homeHeaderAccountLabel', 'portalHeaderAccountLabel', 'headerAccountLabel', 'clientHeaderAccountLabel', 'advHeaderAccountLabel'),
+      userLabel: getHeaderElement('user-label', 'homeHeaderUserLabel', 'portalHeaderUserLabel', 'headerUserLabel', 'clientHeaderUserLabel', 'advHeaderUserLabel'),
+      portalBtn: getHeaderElement('portal', 'homeHeaderPortal', 'portalHeaderPortal', 'headerPortal', 'clientHeaderPortal', 'advHeaderPortal'),
+      logoutBtn: getHeaderElement('logout', 'homeHeaderLogout', 'portalHeaderLogout', 'headerLogout', 'clientHeaderLogout', 'advHeaderLogout')
     };
   }
 
@@ -250,14 +267,11 @@
 
   window.ZEEFE_HEADER = api;
 
-  document.addEventListener('DOMContentLoaded', () => {
+  document.addEventListener('DOMContentLoaded', async () => {
     initDom();
-    if (domRefs) {
-      renderHeader();
-      setupMenuEvents();
-    } else {
-      setMenuState(false);
-    }
-    hydrateSession();
+    renderHeader();
+    setupMenuEvents();
+    await hydrateSession();
+    renderHeader();
   });
 })();

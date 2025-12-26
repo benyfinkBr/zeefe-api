@@ -25,17 +25,17 @@
       </div>
       <div class="site-header-actions">
         <a href="index.html#contato" class="site-link">Contato</a>
-        <div class="site-header-guest" id="homeHeaderGuest">
+        <div class="site-header-guest" id="homeHeaderGuest" data-zeefe-header-guest>
           <button class="btn btn-outline" type="button" id="openLoginChoice">Entrar</button>
         </div>
-        <div class="site-header-user" id="homeHeaderAccount" hidden>
-          <button class="user-menu-trigger" type="button" id="homeHeaderAccountBtn" aria-haspopup="true" aria-expanded="false">
-            <span id="homeHeaderAccountLabel">Minha Conta</span>
+        <div class="site-header-user" id="homeHeaderAccount" data-zeefe-header-account hidden>
+          <button class="user-menu-trigger" type="button" id="homeHeaderAccountBtn" data-zeefe-header-account-btn aria-haspopup="true" aria-expanded="false">
+            <span id="homeHeaderAccountLabel" data-zeefe-header-account-label>Minha Conta</span>
           </button>
-          <div class="user-menu-dropdown" id="homeHeaderAccountMenu" role="menu">
-            <p class="user-menu-label" id="homeHeaderUserLabel"></p>
-            <button type="button" class="user-menu-item" id="homeHeaderPortal">Ir para o portal</button>
-            <button type="button" class="user-menu-item user-menu-danger" id="homeHeaderLogout">Sair</button>
+          <div class="user-menu-dropdown" id="homeHeaderAccountMenu" data-zeefe-header-account-menu role="menu">
+            <p class="user-menu-label" id="homeHeaderUserLabel" data-zeefe-header-user-label></p>
+            <button type="button" class="user-menu-item" id="homeHeaderPortal" data-zeefe-header-portal>Ir para o portal</button>
+            <button type="button" class="user-menu-item user-menu-danger" id="homeHeaderLogout" data-zeefe-header-logout>Sair</button>
           </div>
         </div>
       </div>
