@@ -30,6 +30,8 @@ const modalGallery = document.getElementById('roomModalGallery');
 const modalAmenities = document.getElementById('roomModalAmenities');
 const modalReserve = document.getElementById('roomModalReserve');
 const openLoginChoiceBtn = document.getElementById('openLoginChoice');
+const entryChoiceModal = document.getElementById('entryChoiceModal');
+const entryChoiceClose = document.getElementById('entryChoiceClose');
 
 openLoginChoiceBtn?.addEventListener('click', () => {
   const session = window.ZEEFE_HEADER?.getSession?.();
@@ -38,7 +40,29 @@ openLoginChoiceBtn?.addEventListener('click', () => {
     window.location.href = destino;
     return;
   }
-  window.location.href = 'clientes.html';
+  if (!entryChoiceModal) return;
+  entryChoiceModal.classList.add('show');
+  entryChoiceModal.setAttribute('aria-hidden', 'false');
+});
+
+entryChoiceClose?.addEventListener('click', () => {
+  if (!entryChoiceModal) return;
+  entryChoiceModal.classList.remove('show');
+  entryChoiceModal.setAttribute('aria-hidden', 'true');
+});
+
+entryChoiceModal?.addEventListener('click', (event) => {
+  if (event.target === entryChoiceModal) {
+    entryChoiceModal.classList.remove('show');
+    entryChoiceModal.setAttribute('aria-hidden', 'true');
+  }
+});
+
+document.querySelectorAll('.entry-choice-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const destino = btn.getAttribute('data-destino');
+    if (destino) window.location.href = destino;
+  });
 });
 
 init();

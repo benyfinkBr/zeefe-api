@@ -186,6 +186,26 @@
     </div>
   </footer>
 
+  <!-- Modal de escolha de entrada -->
+  <div class="modal-overlay" id="entryChoiceModal" aria-hidden="true">
+    <div class="modal-dialog modal-small" role="dialog" aria-modal="true" aria-labelledby="entryChoiceTitle">
+      <button class="modal-close" type="button" id="entryChoiceClose" aria-label="Fechar">&times;</button>
+      <div class="modal-body">
+        <div class="modal-info">
+          <h2 id="entryChoiceTitle">Como você prefere entrar?</h2>
+          <div class="entry-choice-grid">
+            <button type="button" class="btn btn-primary entry-choice-btn" data-destino="clientes.html">
+              Sou cliente
+            </button>
+            <button type="button" class="btn btn-secondary entry-choice-btn" data-destino="anunciante.html">
+              Sou anunciante
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="" defer></script>
 <script src="scripts/components/carousel.js" defer></script>
 <script src="scripts/header-session.js" defer></script>
