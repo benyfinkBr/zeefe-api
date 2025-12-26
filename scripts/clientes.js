@@ -52,12 +52,21 @@ async function hydrateSessionFromServer() {
 
 function syncHeaderWithClientSession(cliente) {
   if (cliente) {
-    window.ZEEFE_HEADER?.persistSession?.({
+    const payload = {
       type: 'client',
       name: cliente.name || cliente.login || ''
-    });
+    };
+    window.ZEEFE_HEADER?.persistSession?.(payload);
+    try {
+      localStorage.setItem('zeefeHeaderSession', JSON.stringify(payload));
+    } catch (_) {}
+    try {
+      document.cookie = `ZEEFE_HEADER_SESSION=${encodeURIComponent(JSON.stringify(payload))}; path=/; max-age=${60 * 60 * 24 * 30}; SameSite=Lax`;
+    } catch (_) {}
   } else {
     window.ZEEFE_HEADER?.clearSession?.();
+    try { localStorage.removeItem('zeefeHeaderSession'); } catch (_) {}
+    try { document.cookie = 'ZEEFE_HEADER_SESSION=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'; } catch (_) {}
   }
 }
 

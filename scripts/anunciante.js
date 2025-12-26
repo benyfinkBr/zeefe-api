@@ -12,14 +12,34 @@ let chatPollTimer = null;
 let workshopSelectedDates = [];
 let advHeaderMenuOpen = false;
 
+function persistHeaderSessionLocal(session) {
+  try {
+    if (session) {
+      localStorage.setItem('zeefeHeaderSession', JSON.stringify(session));
+    } else {
+      localStorage.removeItem('zeefeHeaderSession');
+    }
+  } catch (_) {}
+  try {
+    if (session) {
+      document.cookie = `ZEEFE_HEADER_SESSION=${encodeURIComponent(JSON.stringify(session))}; path=/; max-age=${60 * 60 * 24 * 30}; SameSite=Lax`;
+    } else {
+      document.cookie = 'ZEEFE_HEADER_SESSION=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+    }
+  } catch (_) {}
+}
+
 function syncHeaderWithAdvertiserSession(advertiser) {
   if (advertiser) {
-    window.ZEEFE_HEADER?.persistSession?.({
+    const payload = {
       type: 'advertiser',
       name: advertiser.display_name || advertiser.full_name || advertiser.email || ''
-    });
+    };
+    window.ZEEFE_HEADER?.persistSession?.(payload);
+    persistHeaderSessionLocal(payload);
   } else {
     window.ZEEFE_HEADER?.clearSession?.();
+    persistHeaderSessionLocal(null);
   }
 }
 // Seletores
