@@ -1,5 +1,34 @@
 const API_BASE = '/api';
 const ADV_REMEMBER_KEY = 'advRememberToken';
+const HEADER_COOKIE_NAME = 'ZEEFE_HEADER_SESSION';
+const HEADER_COOKIE_MAX_AGE = 60 * 60 * 24 * 30;
+
+function isHttps() {
+  try {
+    return window.location?.protocol === 'https:';
+  } catch (_) {
+    return false;
+  }
+}
+
+function buildHeaderSessionCookie(value, ttlSeconds = HEADER_COOKIE_MAX_AGE) {
+  const parts = [
+    `${HEADER_COOKIE_NAME}=${value ? encodeURIComponent(value) : ''}`,
+    'Domain=.zeefe.com.br',
+    'Path=/',
+    'SameSite=Lax'
+  ];
+  if (value) {
+    parts.push(`Max-Age=${ttlSeconds}`);
+  } else {
+    parts.push('Expires=Thu, 01 Jan 1970 00:00:00 GMT');
+    parts.push('Max-Age=0');
+  }
+  if (isHttps()) {
+    parts.push('Secure');
+  }
+  return parts.join('; ');
+}
 
 // Estado
 let advClient = null; // dados do cliente logado
@@ -21,11 +50,8 @@ function persistHeaderSessionLocal(session) {
     }
   } catch (_) {}
   try {
-    if (session) {
-      document.cookie = `ZEEFE_HEADER_SESSION=${encodeURIComponent(JSON.stringify(session))}; path=/; max-age=${60 * 60 * 24 * 30}; SameSite=Lax`;
-    } else {
-      document.cookie = 'ZEEFE_HEADER_SESSION=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-    }
+    const raw = session ? JSON.stringify(session) : null;
+    document.cookie = buildHeaderSessionCookie(raw);
   } catch (_) {}
 }
 
@@ -43,6 +69,17 @@ function syncHeaderWithAdvertiserSession(advertiser) {
   }
 }
 
+function readHeaderCookie() {
+  try {
+    const entry = document.cookie.split('; ').find(part => part.startsWith(`${HEADER_COOKIE_NAME}=`));
+    if (!entry) return null;
+    const raw = decodeURIComponent(entry.split('=')[1]);
+    return JSON.parse(raw);
+  } catch (_) {
+    return null;
+  }
+}
+
 (async function hydrateHeaderFromSession() {
   try {
     const res = await fetch(`${API_BASE}/advertiser_session.php`, { credentials: 'include' });
@@ -52,6 +89,15 @@ function syncHeaderWithAdvertiserSession(advertiser) {
       if (!advClient) {
         advClient = json.advertiser;
       }
+      return;
+    }
+    const fallback = readHeaderCookie();
+    if (fallback) {
+      syncHeaderWithAdvertiserSession({
+        display_name: fallback.name || '',
+        full_name: fallback.name || '',
+        email: fallback.name || ''
+      });
     }
   } catch (_) {}
 })();
@@ -576,6 +622,7 @@ async function onLoginSubmit(e) {
     const res = await fetch(`${API_BASE}/advertiser_login.php`, {
       method:'POST',
       headers:{'Content-Type':'application/json'},
+      credentials:'include',
       body: JSON.stringify({ login: id, password: pw, remember: lembrar })
     });
     const json = await parseJsonSafe(res);
@@ -885,6 +932,7 @@ async function onAdvProfileSubmit(e) {
     const res = await fetch(`${API_BASE}/advertiser_update_profile.php`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify({
         id: myAdvertiser.id,
         display_name: display,
@@ -973,6 +1021,7 @@ async function onAdvPasswordSubmit(e) {
     const res = await fetch(`${API_BASE}/advertiser_change_password.php`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify({ id: myAdvertiser.id, current_password: cur, new_password: np })
     });
     const json = await parseJsonSafe(res);
@@ -1016,7 +1065,7 @@ async function loadThreads() {
   try {
     const advId = myAdvertiser?.id;
     if (!advId) { threadsContainer.innerHTML = '<div class="rooms-message">Sem anunciante vinculado.</div>'; return; }
-    const res = await fetch(`${API_BASE}/messages_list_threads.php?advertiser_id=${encodeURIComponent(advId)}`);
+    const res = await fetch(`${API_BASE}/messages_list_threads.php?advertiser_id=${encodeURIComponent(advId)}`, { credentials: 'include' });
     const json = await parseJsonSafe(res);
     let list = json.success ? (json.data || []) : [];
     const roomIds = new Set((myRooms || []).map(r => String(r.id)));
@@ -1076,7 +1125,7 @@ async function loadWorkshops() {
       workshopsContainer.innerHTML = '<div class="rooms-message">Sem anunciante vinculado.</div>';
       return;
     }
-    const res = await fetch(`${API_BASE}/workshops_list.php?advertiser_id=${encodeURIComponent(advId)}&status=&upcoming=0`);
+    const res = await fetch(`${API_BASE}/workshops_list.php?advertiser_id=${encodeURIComponent(advId)}&status=&upcoming=0`, { credentials: 'include' });
     const json = await parseJsonSafe(res);
     myWorkshops = json.success ? (json.data || []) : [];
     if (!myWorkshops.length) {
@@ -1141,7 +1190,7 @@ async function loadWorkshopEnrollments(workshopId) {
   }
   try {
     const advId = myAdvertiser.id;
-    const res = await fetch(`${API_BASE}/workshop_enrollments_list.php?advertiser_id=${encodeURIComponent(advId)}&workshop_id=${encodeURIComponent(workshopId)}`);
+    const res = await fetch(`${API_BASE}/workshop_enrollments_list.php?advertiser_id=${encodeURIComponent(advId)}&workshop_id=${encodeURIComponent(workshopId)}`, { credentials: 'include' });
     const json = await parseJsonSafe(res);
     const list = json.success ? (json.data || []) : [];
     if (!list.length) {
@@ -1392,6 +1441,7 @@ async function onWorkshopSubmit(e) {
     const res = await fetch(`${API_BASE}/apisave.php`, {
       method: 'POST',
       headers: { 'Content-Type':'application/json' },
+      credentials:'include',
       body: JSON.stringify({ table: 'workshops', record: payload })
     });
     const json = await parseJsonSafe(res);
@@ -1406,7 +1456,7 @@ async function onWorkshopSubmit(e) {
       fd.append('id', String(wsId));
       fd.append('file', fileInput.files[0]);
       try {
-        const upRes = await fetch(`${API_BASE}/upload_workshop_banner.php`, { method: 'POST', body: fd });
+        const upRes = await fetch(`${API_BASE}/upload_workshop_banner.php`, { method: 'POST', body: fd, credentials:'include' });
         const upJson = await parseJsonSafe(upRes);
         if (!upJson.success) {
           console.warn('Falha ao enviar banner do workshop:', upJson.error || 'erro');
@@ -1436,7 +1486,7 @@ async function openThread(threadId) {
 async function fetchMessagesOnce() {
   if (!currentThreadId) return;
   try {
-    const res = await fetch(`${API_BASE}/messages_list_messages.php?thread_id=${encodeURIComponent(currentThreadId)}`);
+    const res = await fetch(`${API_BASE}/messages_list_messages.php?thread_id=${encodeURIComponent(currentThreadId)}`, { credentials: 'include' });
     const json = await parseJsonSafe(res);
     const list = json.success ? (json.data || []) : [];
     if (!list.length) {
@@ -1450,7 +1500,7 @@ async function fetchMessagesOnce() {
     }).join('');
     chatMessages.scrollTop = chatMessages.scrollHeight;
     // marca como lida para o anunciante
-    try { await fetch(`${API_BASE}/messages_mark_read.php`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ thread_id: currentThreadId, who: 'advertiser' }) }); } catch (_) {}
+    try { await fetch(`${API_BASE}/messages_mark_read.php`, { method:'POST', headers:{'Content-Type':'application/json'}, credentials:'include', body: JSON.stringify({ thread_id: currentThreadId, who: 'advertiser' }) }); } catch (_) {}
     updateAdvMessagesBadge(false);
   } catch (e) {
     chatMessages.innerHTML = '<div class="rooms-message">Falha ao carregar mensagens.</div>';
@@ -1474,7 +1524,7 @@ chatForm?.addEventListener('submit', async (e) => {
   const text = (chatInput?.value || '').trim();
   if (!text || !currentThreadId) return;
   try {
-    const res = await fetch(`${API_BASE}/messages_send.php`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ thread_id: currentThreadId, sender_type: 'advertiser', body: text }) });
+    const res = await fetch(`${API_BASE}/messages_send.php`, { method:'POST', headers:{'Content-Type':'application/json'}, credentials:'include', body: JSON.stringify({ thread_id: currentThreadId, sender_type: 'advertiser', body: text }) });
     const json = await parseJsonSafe(res);
     if (!json.success) throw new Error(json.error || 'Falha ao enviar.');
     chatInput.value = '';
@@ -1532,6 +1582,7 @@ async function autoLoginWithTokenAdv(token) {
     const res = await fetch(`${API_BASE}/advertiser_auto_login.php`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify({ token })
     });
     const json = await parseJsonSafe(res);
@@ -1581,7 +1632,7 @@ savePayoutBtn?.addEventListener('click', async () => {
       account_number: accountNumberInput?.value || '',
       pix_key: pixKeyInput?.value || ''
     };
-    const res = await fetch(`${API_BASE}/advertiser_update_payment.php`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+    const res = await fetch(`${API_BASE}/advertiser_update_payment.php`, { method:'POST', headers:{'Content-Type':'application/json'}, credentials:'include', body: JSON.stringify(payload) });
     const json = await parseJsonSafe(res);
     if (!json.success) throw new Error(json.error || 'Falha ao salvar.');
     myAdvertiser = json.advertiser || myAdvertiser;
@@ -1806,7 +1857,7 @@ advRegisterForm?.addEventListener('submit', async (e) => {
   if (pw !== pw2) { advRegisterMessage.textContent='As senhas não conferem.'; return; }
   try {
     const publicName = (document.getElementById('advRegPublicName')?.value || '').trim() || name;
-    const res = await fetch(`${API_BASE}/advertiser_register.php`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ full_name: name, display_name: publicName, login_email: email, login_cpf: cpfDigits || null, phone: phoneDigits || null, password: pw }) });
+    const res = await fetch(`${API_BASE}/advertiser_register.php`, { method:'POST', headers:{'Content-Type':'application/json'}, credentials:'include', body: JSON.stringify({ full_name: name, display_name: publicName, login_email: email, login_cpf: cpfDigits || null, phone: phoneDigits || null, password: pw }) });
     const json = await parseJsonSafe(res);
     if (!json.success) throw new Error(json.error || 'Falha ao criar conta.');
     advRegisterMessage.textContent = 'Cadastro realizado! Enviamos um e‑mail para confirmação.';
@@ -1889,7 +1940,7 @@ async function updateReservationStatus(action){
   if (!advResCurrentId) return;
   advResMessage.textContent = '';
   try {
-    const res = await fetch(`${API_BASE}/update_reservation_status.php`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ id: advResCurrentId, action }) });
+    const res = await fetch(`${API_BASE}/update_reservation_status.php`, { method:'POST', headers:{'Content-Type':'application/json'}, credentials:'include', body: JSON.stringify({ id: advResCurrentId, action }) });
     const json = await parseJsonSafe(res);
     if (!json.success) throw new Error(json.error || 'Falha ao atualizar.');
     await loadReservations();
@@ -1965,7 +2016,7 @@ advRecoveryForm?.addEventListener('submit', async (e) => {
   const email = (advRecEmail?.value||'').trim();
   if (!email) { advRecoveryMessage.textContent='Informe o e‑mail.'; return; }
   try {
-    const res = await fetch(`${API_BASE}/advertiser_reset_password.php`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ email }) });
+    const res = await fetch(`${API_BASE}/advertiser_reset_password.php`, { method:'POST', headers:{'Content-Type':'application/json'}, credentials:'include', body: JSON.stringify({ email }) });
     const json = await parseJsonSafe(res);
     if (!json.success) throw new Error(json.error || 'Falha ao enviar e‑mail.');
     advRecoveryMessage.textContent = json.message || 'Enviamos um e‑mail com instruções.';
