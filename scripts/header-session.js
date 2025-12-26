@@ -117,6 +117,7 @@
   }
 
   async function hydrateSession() {
+    const hadLocalSession = Boolean(currentSession);
     const client = await fetchJson('/api/client_session.php');
     if (client?.success && client.client) {
       setHeaderState({
@@ -136,7 +137,9 @@
       });
       return;
     }
-    setHeaderState(null);
+    if (!hadLocalSession) {
+      setHeaderState(null);
+    }
   }
 
   async function performLogout() {
