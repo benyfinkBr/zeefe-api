@@ -42,6 +42,19 @@ function syncHeaderWithAdvertiserSession(advertiser) {
     persistHeaderSessionLocal(null);
   }
 }
+
+(async function hydrateHeaderFromSession() {
+  try {
+    const res = await fetch(`${API_BASE}/advertiser_session.php`, { credentials: 'include' });
+    const json = await res.json();
+    if (json?.success && json.advertiser) {
+      syncHeaderWithAdvertiserSession(json.advertiser);
+      if (!advClient) {
+        advClient = json.advertiser;
+      }
+    }
+  } catch (_) {}
+})();
 // Seletores
 const authContainer = document.getElementById('authContainer');
 const loginForm = document.getElementById('advLoginForm');
