@@ -1,17 +1,37 @@
-(() => {
+( () => {
   const STORAGE_KEY = 'zeefeHeaderSession';
+  const COOKIE_KEY = 'ZEEFE_HEADER_SESSION';
   let currentSession = readStoredSession();
   let menuOpen = false;
   let domRefs = null;
 
   function readStoredSession() {
+    let raw = null;
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return null;
+      raw = localStorage.getItem(STORAGE_KEY);
+    } catch (_) {
+      raw = null;
+    }
+    if (!raw) {
+      const cookieValue = readCookie(COOKIE_KEY);
+      raw = cookieValue || null;
+    }
+    if (!raw) return null;
+    try {
       const parsed = JSON.parse(raw);
       return normalizeSession(parsed);
     } catch (_) {
       return null;
+    }
+  }
+
+  function readCookie(name) {
+    try {
+      const entry = document.cookie.split('; ').find(item => item.startsWith(`${name}=`));
+      if (!entry) return '';
+      return decodeURIComponent(entry.split('=')[1]);
+    } catch (_) {
+      return '';
     }
   }
 
@@ -21,6 +41,13 @@
         localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
       } else {
         localStorage.removeItem(STORAGE_KEY);
+      }
+    } catch (_) {}
+    try {
+      if (session) {
+        document.cookie = `${COOKIE_KEY}=${encodeURIComponent(JSON.stringify(session))}; path=/; max-age=${60 * 60 * 24 * 30}; SameSite=Lax`;
+      } else {
+        document.cookie = `${COOKIE_KEY}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
       }
     } catch (_) {}
   }
