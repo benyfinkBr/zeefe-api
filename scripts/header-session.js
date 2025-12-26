@@ -92,10 +92,33 @@
 
   function renderHeader() {
     if (!domRefs) return;
-    const { guestSection, accountSection, accountLabel, userLabel, portalBtn } = domRefs;
+    const {
+      guestSection,
+      accountSection,
+      accountLabel,
+      userLabel,
+      portalBtn,
+      simpleLoginBtn
+    } = domRefs;
     const isLogged = Boolean(currentSession);
+
     if (guestSection) guestSection.hidden = isLogged;
     if (accountSection) accountSection.hidden = !isLogged;
+
+    if (simpleLoginBtn && !accountSection && !guestSection) {
+      if (!isLogged) {
+        if (simpleLoginBtn.tagName === 'A' || simpleLoginBtn.tagName === 'BUTTON') {
+          simpleLoginBtn.textContent = 'Entrar';
+        }
+        return;
+      }
+      const name = currentSession.name || 'Minha Conta';
+      if (simpleLoginBtn.tagName === 'A' || simpleLoginBtn.tagName === 'BUTTON') {
+        simpleLoginBtn.textContent = name;
+      }
+      return;
+    }
+
     if (!isLogged) {
       setMenuState(false);
       if (accountLabel) accountLabel.textContent = 'Minha Conta';
@@ -129,24 +152,70 @@
   function setMenuState(open) {
     menuOpen = Boolean(open);
     const { accountSection, accountBtn } = domRefs || {};
-    if (accountSection) {
-      accountSection.classList.toggle('open', menuOpen);
-    }
-    if (accountBtn) {
-      accountBtn.setAttribute('aria-expanded', menuOpen ? 'true' : 'false');
-    }
+    if (accountSection) accountSection.classList.toggle('open', menuOpen);
+    if (accountBtn) accountBtn.setAttribute('aria-expanded', menuOpen ? 'true' : 'false');
   }
 
-  function getHeaderElement(attrSuffix, ...fallbackIds) {
-    const selector = `[data-zeefe-header-${attrSuffix}]`;
-    let el = document.querySelector(selector);
-    if (el) return el;
-    for (const id of fallbackIds) {
-      if (!id) continue;
-      el = document.getElementById(id);
+  function _firstById(ids) {
+    for (const id of ids) {
+      const el = document.getElementById(id);
       if (el) return el;
     }
     return null;
+  }
+
+  function _firstBySel(sels) {
+    for (const sel of sels) {
+      const el = document.querySelector(sel);
+      if (el) return el;
+    }
+    return null;
+  }
+
+  function initDom() {
+    const guestSection =
+      _firstBySel(['[data-zeefe-header="guest"]'])
+      || _firstById(['homeHeaderGuest', 'headerGuest', 'siteHeaderGuest']);
+
+    const accountSection =
+      _firstBySel(['[data-zeefe-header="account"]'])
+      || _firstById(['homeHeaderAccount', 'headerAccount', 'siteHeaderAccount']);
+
+    const accountBtn =
+      _firstBySel(['[data-zeefe-header-btn="account"]'])
+      || _firstById(['homeHeaderAccountBtn', 'headerAccountBtn', 'siteHeaderAccountBtn']);
+
+    const accountLabel =
+      _firstBySel(['[data-zeefe-header-label="account"]'])
+      || _firstById(['homeHeaderAccountLabel', 'headerAccountLabel', 'siteHeaderAccountLabel']);
+
+    const userLabel =
+      _firstBySel(['[data-zeefe-header-label="user"]'])
+      || _firstById(['homeHeaderUserLabel', 'headerUserLabel', 'siteHeaderUserLabel']);
+
+    const portalBtn =
+      _firstBySel(['[data-zeefe-header-btn="portal"]'])
+      || _firstById(['homeHeaderPortal', 'headerPortal', 'siteHeaderPortal']);
+
+    const logoutBtn =
+      _firstBySel(['[data-zeefe-header-btn="logout"]'])
+      || _firstById(['homeHeaderLogout', 'headerLogout', 'siteHeaderLogout']);
+
+    const simpleLoginBtn =
+      _firstBySel(['[data-zeefe-header-btn="login"]'])
+      || _firstById(['headerLoginBtn', 'homeHeaderLoginBtn'])
+      || _firstBySel(['header a.btn-primary', 'header a.button-primary', 'header a[href*="login"]', 'header button']);
+
+    domRefs = {
+      guestSection,
+      accountSection,
+      accountBtn,
+      accountLabel,
+      userLabel,
+      portalBtn,
+      logoutBtn,
+      simpleLoginBtn
+    };
   }
 
   function setupMenuEvents() {
