@@ -156,65 +156,40 @@
     if (accountBtn) accountBtn.setAttribute('aria-expanded', menuOpen ? 'true' : 'false');
   }
 
-  function _firstById(ids) {
+  function getHeaderElement(kind, ...ids) {
+    const attrMap = {
+      guest: '[data-zeefe-header="guest"]',
+      account: '[data-zeefe-header="account"]',
+      accountBtn: '[data-zeefe-header-btn="account"]',
+      accountLabel: '[data-zeefe-header-label="account"]',
+      userLabel: '[data-zeefe-header-label="user"]',
+      portalBtn: '[data-zeefe-header-btn="portal"]',
+      logoutBtn: '[data-zeefe-header-btn="logout"]',
+      simpleLoginBtn: '[data-zeefe-header-btn="login"]'
+    };
+    const selector = attrMap[kind];
+    if (selector) {
+      const el = document.querySelector(selector);
+      if (el) return el;
+    }
     for (const id of ids) {
+      if (!id) continue;
       const el = document.getElementById(id);
       if (el) return el;
     }
     return null;
   }
 
-  function _firstBySel(sels) {
-    for (const sel of sels) {
-      const el = document.querySelector(sel);
-      if (el) return el;
-    }
-    return null;
-  }
-
   function initDom() {
-    const guestSection =
-      _firstBySel(['[data-zeefe-header="guest"]'])
-      || _firstById(['homeHeaderGuest', 'headerGuest', 'siteHeaderGuest']);
-
-    const accountSection =
-      _firstBySel(['[data-zeefe-header="account"]'])
-      || _firstById(['homeHeaderAccount', 'headerAccount', 'siteHeaderAccount']);
-
-    const accountBtn =
-      _firstBySel(['[data-zeefe-header-btn="account"]'])
-      || _firstById(['homeHeaderAccountBtn', 'headerAccountBtn', 'siteHeaderAccountBtn']);
-
-    const accountLabel =
-      _firstBySel(['[data-zeefe-header-label="account"]'])
-      || _firstById(['homeHeaderAccountLabel', 'headerAccountLabel', 'siteHeaderAccountLabel']);
-
-    const userLabel =
-      _firstBySel(['[data-zeefe-header-label="user"]'])
-      || _firstById(['homeHeaderUserLabel', 'headerUserLabel', 'siteHeaderUserLabel']);
-
-    const portalBtn =
-      _firstBySel(['[data-zeefe-header-btn="portal"]'])
-      || _firstById(['homeHeaderPortal', 'headerPortal', 'siteHeaderPortal']);
-
-    const logoutBtn =
-      _firstBySel(['[data-zeefe-header-btn="logout"]'])
-      || _firstById(['homeHeaderLogout', 'headerLogout', 'siteHeaderLogout']);
-
-    const simpleLoginBtn =
-      _firstBySel(['[data-zeefe-header-btn="login"]'])
-      || _firstById(['headerLoginBtn', 'homeHeaderLoginBtn'])
-      || _firstBySel(['header a.btn-primary', 'header a.button-primary', 'header a[href*="login"]', 'header button']);
-
     domRefs = {
-      guestSection,
-      accountSection,
-      accountBtn,
-      accountLabel,
-      userLabel,
-      portalBtn,
-      logoutBtn,
-      simpleLoginBtn
+      guestSection: getHeaderElement('guest', 'homeHeaderGuest', 'headerGuest', 'siteHeaderGuest', 'clientHeaderGuest', 'advHeaderGuest'),
+      accountSection: getHeaderElement('account', 'homeHeaderAccount', 'headerAccount', 'siteHeaderAccount', 'clientHeaderAccount', 'advHeaderAccount'),
+      accountBtn: getHeaderElement('accountBtn', 'homeHeaderAccountBtn', 'headerAccountBtn', 'siteHeaderAccountBtn', 'clientHeaderAccountBtn', 'advHeaderAccountBtn'),
+      accountLabel: getHeaderElement('accountLabel', 'homeHeaderAccountLabel', 'headerAccountLabel', 'siteHeaderAccountLabel', 'clientHeaderAccountLabel', 'advHeaderAccountLabel'),
+      userLabel: getHeaderElement('userLabel', 'homeHeaderUserLabel', 'headerUserLabel', 'siteHeaderUserLabel', 'clientHeaderUserLabel', 'advHeaderUserLabel'),
+      portalBtn: getHeaderElement('portalBtn', 'homeHeaderPortal', 'headerPortal', 'siteHeaderPortal', 'clientHeaderPortal', 'advHeaderPortal'),
+      logoutBtn: getHeaderElement('logoutBtn', 'homeHeaderLogout', 'headerLogout', 'siteHeaderLogout', 'clientHeaderLogout', 'advHeaderLogout'),
+      simpleLoginBtn: getHeaderElement('simpleLoginBtn', 'headerLoginBtn', 'homeHeaderLoginBtn')
     };
   }
 
