@@ -133,6 +133,9 @@ const cpfHintEl = document.getElementById('cpfHint');
 const loginIdentifierInput = document.getElementById('portalLoginIdentifier');
 const loginPasswordInput = document.getElementById('portalLoginPassword');
 const rememberMeCheckbox = document.getElementById('portalRememberMe');
+if (rememberMeCheckbox && !rememberMeCheckbox.checked) {
+  rememberMeCheckbox.checked = true;
+}
 // Auth scope toggle on login card
 const authScopePFBtn = document.getElementById('authScopePFBtn');
 const authScopeCompanyBtn = document.getElementById('authScopeCompanyBtn');
@@ -2858,7 +2861,7 @@ async function onPortalLoginSubmit(event) {
     authMessage.textContent = 'Informe login e senha.';
     return;
   }
-  const lembrar = rememberMeCheckbox?.checked;
+  const lembrar = rememberMeCheckbox ? !!rememberMeCheckbox.checked : true;
   try {
     if (window.DEBUG) console.debug('[Portal] Enviando login', { identifier, lembrar });
     const res = await fetch(`${API_BASE}/client_portal_login.php`, {

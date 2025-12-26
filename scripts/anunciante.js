@@ -44,6 +44,9 @@ const advRecoveryMessage = document.getElementById('advRecoveryMessage');
 const loginIdInput = document.getElementById('advLoginIdentifier');
 const loginPwInput = document.getElementById('advLoginPassword');
 const rememberMe = document.getElementById('advRememberMe');
+if (rememberMe && !rememberMe.checked) {
+  rememberMe.checked = true;
+}
 const authMsg = document.getElementById('advAuthMessage');
 
 const panelsWrap = document.getElementById('advPanels');
@@ -535,7 +538,7 @@ async function onLoginSubmit(e) {
   const id = (loginIdInput?.value || '').trim();
   const pw = loginPwInput?.value || '';
   if (!id || !pw) { authMsg.textContent = 'Informe login e senha.'; return; }
-  const lembrar = !!(rememberMe && rememberMe.checked);
+  const lembrar = rememberMe ? !!rememberMe.checked : true;
   try {
     const res = await fetch(`${API_BASE}/advertiser_login.php`, {
       method:'POST',
