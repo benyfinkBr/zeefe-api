@@ -22,19 +22,21 @@
         </nav>
       </div>
       <div class="site-header-actions">
-        <div class="site-header-guest">
-          <a href="index.html#contato" class="site-link">Contato</a>
+        <a href="index.html#contato" class="site-link">Contato</a>
+        <div class="site-header-guest" id="advHeaderGuest" data-zeefe-header-guest>
           <button class="btn btn-outline" type="button" onclick="window.location='clientes.html'">Entrar</button>
         </div>
-        <div class="site-header-user" id="advHeaderAccount">
-          <button class="user-menu-trigger" type="button" id="advHeaderAccountBtn" aria-haspopup="true" aria-expanded="false">
-            Minha Conta
+        <div class="site-header-user" id="advHeaderAccount" data-zeefe-header-account>
+          <button class="user-menu-trigger" type="button" id="advHeaderAccountBtn" data-zeefe-header-account-btn aria-haspopup="true" aria-expanded="false">
+            <span id="advHeaderAccountLabel" data-zeefe-header-account-label>Minha Conta</span>
           </button>
-          <div class="user-menu-dropdown" id="advHeaderAccountMenu" role="menu">
+          <div class="user-menu-dropdown" id="advHeaderAccountMenu" data-zeefe-header-account-menu role="menu">
+            <p class="user-menu-label" id="advHeaderUserLabel" data-zeefe-header-user-label></p>
+            <button type="button" class="user-menu-item" id="advHeaderPortal" data-zeefe-header-portal>Portal do Anunciante</button>
             <button type="button" class="user-menu-item" id="advHeaderReservations">Minhas Reservas</button>
             <button type="button" class="user-menu-item" id="advHeaderProfile">Meu Perfil</button>
             <button type="button" class="user-menu-item" id="advHeaderMessages">Mensagens</button>
-            <button type="button" class="user-menu-item user-menu-danger" id="advHeaderLogout">Sair</button>
+            <button type="button" class="user-menu-item user-menu-danger" id="advHeaderLogout" data-zeefe-header-logout>Sair</button>
           </div>
         </div>
       </div>
