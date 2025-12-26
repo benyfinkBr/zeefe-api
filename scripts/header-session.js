@@ -275,27 +275,6 @@
     setHeaderState(null);
   }
 
-  function initDom() {
-    const guestSection = getHeaderElement('guest', 'homeHeaderGuest', 'portalHeaderGuest', 'headerGuest', 'clientHeaderGuest', 'advHeaderGuest');
-    const accountSection = getHeaderElement('account', 'homeHeaderAccount', 'portalHeaderAccount', 'headerAccount', 'clientHeaderAccount', 'advHeaderAccount');
-
-    if (!guestSection && !accountSection) {
-      domRefs = null;
-      return;
-    }
-
-    domRefs = {
-      guestSection,
-      accountSection,
-      accountBtn: getHeaderElement('account-btn', 'homeHeaderAccountBtn', 'portalHeaderAccountBtn', 'headerAccountBtn', 'accountMenuBtn', 'clientHeaderAccountBtn', 'advHeaderAccountBtn'),
-      accountMenu: getHeaderElement('account-menu', 'homeHeaderAccountMenu', 'portalHeaderAccountMenu', 'headerAccountMenu', 'clientHeaderAccountMenu', 'advHeaderAccountMenu'),
-      accountLabel: getHeaderElement('account-label', 'homeHeaderAccountLabel', 'portalHeaderAccountLabel', 'headerAccountLabel', 'clientHeaderAccountLabel', 'advHeaderAccountLabel'),
-      userLabel: getHeaderElement('user-label', 'homeHeaderUserLabel', 'portalHeaderUserLabel', 'headerUserLabel', 'clientHeaderUserLabel', 'advHeaderUserLabel'),
-      portalBtn: getHeaderElement('portal', 'homeHeaderPortal', 'portalHeaderPortal', 'headerPortal', 'clientHeaderPortal', 'advHeaderPortal'),
-      logoutBtn: getHeaderElement('logout', 'homeHeaderLogout', 'portalHeaderLogout', 'headerLogout', 'clientHeaderLogout', 'advHeaderLogout')
-    };
-  }
-
   const api = {
     persistSession(data) {
       if (!data) return;
