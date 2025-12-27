@@ -1,55 +1,4 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Ze.EFE - Marca lá!</title>
-  <link rel="stylesheet" href="/style.css?v=20241222" />
-  <!-- Leaflet (mapa) -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
-</head>
-<body class="client-portal-page client-logged-out">
-  <header class="site-header">
-    <div class="site-header-inner">
-      <div class="site-header-left">
-        <a href="index.html" class="site-logo">
-          <img src="img/logo.jpg" alt="Ze.EFE" />
-        </a>
-        <nav class="site-nav">
-          <a href="salas.html">Salas</a>
-          <a href="workshops.html">Cursos</a>
-          <a href="conteudos.html">Conteúdos</a>
-          <a href="quemsomos.html">Quem somos</a>
-        </nav>
-      </div>
-      <div class="site-header-actions">
-        <a href="index.html#contato" class="site-link">Contato</a>
-        <div class="site-header-guest" id="clientHeaderGuest" data-zeefe-header="guest">
-          <button class="btn btn-outline" type="button" onclick="window.location='clientes.html'" data-zeefe-header-btn="login">Entrar</button>
-        </div>
-        <div class="site-header-user" id="clientHeaderAccount" data-zeefe-header="account" hidden>
-          <button class="user-menu-trigger" type="button" id="clientHeaderAccountBtn" data-zeefe-header-btn="account" aria-haspopup="true" aria-expanded="false">
-            <span id="clientHeaderAccountLabel" data-zeefe-header-label="account">Minha Conta</span>
-          </button>
-          <div class="user-menu-dropdown" id="clientHeaderAccountMenu" role="menu">
-            <p class="user-menu-label" id="clientHeaderUserLabel" data-zeefe-header-label="user"></p>
-            <button type="button" class="user-menu-item" id="clientHeaderPortal" data-zeefe-header-btn="portal">Portal do Cliente</button>
-            <div class="user-menu-section" id="clientHeaderLoginType">
-              <p class="user-menu-label">Tipo de login</p>
-              <div class="user-menu-pills">
-                <button type="button" class="user-menu-pill active" id="clientHeaderScopePF" data-scope="pf">Pessoa Física</button>
-                <button type="button" class="user-menu-pill" id="clientHeaderScopeCompany" data-scope="company" hidden>Empresa</button>
-              </div>
-            </div>
-            <button type="button" class="user-menu-item" id="clientHeaderReservations">Minhas Reservas</button>
-            <button type="button" class="user-menu-item" id="clientHeaderProfile">Meu Perfil</button>
-            <button type="button" class="user-menu-item" id="clientHeaderMessages">Mensagens</button>
-            <button type="button" class="user-menu-item user-menu-danger" id="clientHeaderLogout" data-zeefe-header-btn="logout">Sair</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </header>
+<?php require __DIR__ . '/includes/header.php'; ?>
 
   <main class="client-portal">
     <section id="authContainer" class="auth-container">
@@ -1158,19 +1107,19 @@
         <div class="footer-links-grid">
           <div>
             <h4>Salas</h4>
-            <a href="salas.html">Ver todas as salas</a>
+            <a href="/salas.php">Ver todas as salas</a>
           </div>
           <div>
             <h4>Cursos</h4>
-            <a href="workshops.html">Agenda de cursos e workshops</a>
+            <a href="/workshops.php">Agenda de cursos e workshops</a>
           </div>
           <div>
             <h4>Área do Cliente</h4>
-            <a href="clientes.html">Reservas e visitantes</a>
+            <a href="/clientes.php">Reservas e visitantes</a>
           </div>
           <div>
             <h4>Anunciante</h4>
-            <a href="anunciante.html">Cadastrar salas e cursos</a>
+            <a href="/anunciante.php">Cadastrar salas e cursos</a>
           </div>
         </div>
       </div>

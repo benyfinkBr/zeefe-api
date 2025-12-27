@@ -108,19 +108,19 @@
         <div class="footer-links-grid">
           <div>
             <h4>Salas</h4>
-            <a href="salas.html">Ver todas as salas</a>
+            <a href="/salas.php">Ver todas as salas</a>
           </div>
           <div>
             <h4>Cursos</h4>
-            <a href="workshops.html">Agenda de cursos e workshops</a>
+            <a href="/workshops.php">Agenda de cursos e workshops</a>
           </div>
           <div>
             <h4>Área do Cliente</h4>
-            <a href="clientes.html">Reservas e visitantes</a>
+            <a href="/clientes.php">Reservas e visitantes</a>
           </div>
           <div>
             <h4>Anunciante</h4>
-            <a href="anunciante.html">Cadastrar salas e cursos</a>
+            <a href="/anunciante.php">Cadastrar salas e cursos</a>
           </div>
         </div>
       </div>
