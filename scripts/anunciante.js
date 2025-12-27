@@ -633,9 +633,9 @@ async function onLoginSubmit(e) {
       registrarPreferenciaLoginAdv(false);
     }
     advClient = json.advertiser; // anunciante autenticado
-    // Marca header antes de redirecionar
+    // Marca header e entra no portal
     syncHeaderWithAdvertiserSession(advClient);
-    window.location.href = '/index.php';
+    await afterLogin();
     return;
   } catch (err) {
     authMsg.textContent = err.message || 'Erro ao autenticar.';
@@ -684,10 +684,7 @@ async function afterLogin() {
   advPasswordModal?.addEventListener('click', (e)=>{ if (e.target === advPasswordModal) closeAdvPasswordModal(); });
   advPasswordForm?.addEventListener('submit', onAdvPasswordSubmit);
 
-  // Redireciona para a home com header já logado
-  setTimeout(() => {
-    window.location.href = '/index.php';
-  }, 150);
+  // Mantem no portal do anunciante
 }
 
 async function loadAdvertiser() {
@@ -1606,10 +1603,23 @@ async function autoLoginWithTokenAdv(token) {
   }
 }
 
+async function hydrateAdvertiserSession() {
+  if (advClient) return;
+  try {
+    const res = await fetch(`${API_BASE}/advertiser_session.php`, { credentials: 'include' });
+    const json = await parseJsonSafe(res);
+    if (json?.success && json.advertiser) {
+      advClient = json.advertiser;
+      await afterLogin();
+    }
+  } catch (_) {}
+}
+
 // Eventos UI
 // Inicialização de remember-me
 aplicarLoginMemorizadoAdv();
 setupAdvHeaderMenu();
+hydrateAdvertiserSession();
 
 loginForm?.addEventListener('submit', onLoginSubmit);
 logoutBtn?.addEventListener('click', () => {

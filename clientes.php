@@ -104,7 +104,7 @@
     </div>
   </section>
 
-  <section id="portalPanels" hidden>
+  <section id="clientPanels" hidden>
     <div class="portal-layout">
       <aside class="portal-sidebar">
         <div class="portal-profile">
@@ -114,7 +114,7 @@
         </div>
         <div class="portal-nav">
           <div class="portal-nav-links">
-            <button type="button" data-panel="dashboard" class="active">Reservar</button>
+            <button type="button" data-panel="book" class="active">Reservar</button>
             <button type="button" data-panel="reservations">Minhas Reservas</button>
             <button type="button" data-panel="visitors">Visitantes</button>
             <button type="button" data-panel="company">Empresa</button>
@@ -126,7 +126,7 @@
       </aside>
 
       <div class="portal-main">
-        <section class="portal-section" id="panel-dashboard">
+        <section class="portal-section" id="panel-book">
           <h2>Reservar uma sala</h2>
           <p>Selecione um ou mais dias no calendário e depois escolha a sala.</p>
           <div id="calendarContainer" class="calendar-container"></div>
