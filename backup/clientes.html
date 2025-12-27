@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Ze.EFE - Marca lá!</title>
-  <link rel="stylesheet" href="/style.css?v=20241222" />
+  <link rel="stylesheet" href="style.css" />
   <!-- Leaflet (mapa) -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
 </head>
@@ -23,17 +23,15 @@
         </nav>
       </div>
       <div class="site-header-actions">
-        <a href="index.html#contato" class="site-link">Contato</a>
-        <div class="site-header-guest" id="clientHeaderGuest" data-zeefe-header="guest">
-          <button class="btn btn-outline" type="button" onclick="window.location='clientes.html'" data-zeefe-header-btn="login">Entrar</button>
+        <div class="site-header-guest">
+          <a href="index.html#contato" class="site-link">Contato</a>
+          <button class="btn btn-outline" type="button" onclick="window.location='clientes.html'">Entrar</button>
         </div>
-        <div class="site-header-user" id="clientHeaderAccount" data-zeefe-header="account" hidden>
-          <button class="user-menu-trigger" type="button" id="clientHeaderAccountBtn" data-zeefe-header-btn="account" aria-haspopup="true" aria-expanded="false">
-            <span id="clientHeaderAccountLabel" data-zeefe-header-label="account">Minha Conta</span>
+        <div class="site-header-user" id="clientHeaderAccount">
+          <button class="user-menu-trigger" type="button" id="clientHeaderAccountBtn" aria-haspopup="true" aria-expanded="false">
+            Minha Conta
           </button>
           <div class="user-menu-dropdown" id="clientHeaderAccountMenu" role="menu">
-            <p class="user-menu-label" id="clientHeaderUserLabel" data-zeefe-header-label="user"></p>
-            <button type="button" class="user-menu-item" id="clientHeaderPortal" data-zeefe-header-btn="portal">Portal do Cliente</button>
             <div class="user-menu-section" id="clientHeaderLoginType">
               <p class="user-menu-label">Tipo de login</p>
               <div class="user-menu-pills">
@@ -44,7 +42,7 @@
             <button type="button" class="user-menu-item" id="clientHeaderReservations">Minhas Reservas</button>
             <button type="button" class="user-menu-item" id="clientHeaderProfile">Meu Perfil</button>
             <button type="button" class="user-menu-item" id="clientHeaderMessages">Mensagens</button>
-            <button type="button" class="user-menu-item user-menu-danger" id="clientHeaderLogout" data-zeefe-header-btn="logout">Sair</button>
+            <button type="button" class="user-menu-item user-menu-danger" id="clientHeaderLogout">Sair</button>
           </div>
         </div>
       </div>
@@ -614,25 +612,6 @@
                 </div>
               </form>
             </article>
-
-            <article class="form-card payment-card" id="paymentCardSection">
-              <div class="section-headline">
-                <div>
-                  <h3>Cartões de pagamento</h3>
-                  <p class="form-help">Cadastre um cartão para agilizar reservas, assinaturas e cursos.</p>
-                </div>
-                <button type="button" class="btn btn-primary btn-sm" id="openCardModalBtn" data-open-card-modal>
-                  Cadastrar cartão
-                </button>
-              </div>
-              <div id="cardListSection" class="card-list-section" hidden>
-                <ul id="cardList" class="card-list"></ul>
-              </div>
-              <div id="cardListEmpty" class="rooms-message" hidden>
-                Nenhum cartão cadastrado ainda. Clique em &ldquo;Cadastrar cartão&rdquo; para adicionar um novo método.
-              </div>
-              <div id="cardListError" class="rooms-message state-error" hidden></div>
-            </article>
           </div>
 
           <div id="panel-courses" class="portal-section" hidden>
@@ -667,7 +646,7 @@
     <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="reservationActionsTitle">
       <button class="modal-close" type="button" id="reservationActionsClose" aria-label="Fechar">&times;</button>
       <div class="modal-body">
-        <div class="modal-info card-payment-modal" style="padding:24px; width:100%">
+        <div class="modal-info" style="padding:24px; width:100%">
           <h2 id="reservationActionsTitle" style="margin-top:0">Ações da reserva</h2>
           <p id="reservationActionsMeta" class="rooms-message"></p>
           <div id="reservationActionsButtons" class="actions-grid"></div>
@@ -984,84 +963,6 @@
     </div>
   </div>
 
-  <!-- Modal: Cartão de pagamento -->
-  <div class="modal-overlay" id="cardModal" aria-hidden="true">
-    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="cardModalTitle" style="max-width:560px;">
-      <button class="modal-close" type="button" id="cardModalClose" aria-label="Fechar">&times;</button>
-      <div class="modal-body">
-        <div class="modal-info" style="padding:24px; width:100%">
-          <h2 id="cardModalTitle" style="margin-top:0">Cadastrar cartão</h2>
-          <p class="rooms-message" style="margin-bottom:16px;">Os dados são enviados com segurança diretamente à Stripe.</p>
-          <form id="cardSaveForm" class="profile-edit-form">
-            <input type="hidden" id="cardClientId" name="client_id" />
-            <div class="form-row">
-              <label for="cardHolderName">Nome impresso no cartão</label>
-              <input type="text" id="cardHolderName" autocomplete="cc-name" required />
-            </div>
-            <div class="form-row">
-              <label for="stripeCardElement">Dados do cartão</label>
-              <div class="stripe-card-wrapper">
-                <div id="stripeCardElement" class="stripe-card-element"></div>
-              </div>
-            </div>
-            <div class="form-row billing-toggle-row">
-              <label class="checkbox-toggle" for="cardUseProfileData">
-                <input type="checkbox" id="cardUseProfileData" checked />
-                <span>Usar os dados do cadastro para faturamento</span>
-              </label>
-            </div>
-            <div id="cardBillingFields" class="billing-fields">
-              <div class="form-row">
-                <label for="cardBillingEmail">E-mail para recibos</label>
-                <input type="email" id="cardBillingEmail" autocomplete="email" />
-              </div>
-              <div class="form-grid-mini">
-                <div>
-                  <label for="cardBillingZip">CEP</label>
-                  <input type="text" id="cardBillingZip" autocomplete="postal-code" maxlength="20" />
-                </div>
-                <div>
-                  <label for="cardBillingState">Estado</label>
-                  <input type="text" id="cardBillingState" autocomplete="address-level1" maxlength="10" />
-                </div>
-              </div>
-              <div class="form-grid-mini">
-                <div>
-                  <label for="cardBillingCity">Cidade</label>
-                  <input type="text" id="cardBillingCity" autocomplete="address-level2" />
-                </div>
-                <div>
-                  <label for="cardBillingCountry">País</label>
-                  <input type="text" id="cardBillingCountry" autocomplete="country" maxlength="2" value="BR" />
-                </div>
-              </div>
-              <div class="form-grid-mini">
-                <div>
-                  <label for="cardBillingStreet">Endereço</label>
-                  <input type="text" id="cardBillingStreet" autocomplete="address-line1" />
-                </div>
-                <div>
-                  <label for="cardBillingNumber">Número</label>
-                  <input type="text" id="cardBillingNumber" autocomplete="address-line2" />
-                </div>
-              </div>
-              <div class="form-row">
-                <label for="cardBillingComplement">Complemento</label>
-                <input type="text" id="cardBillingComplement" />
-              </div>
-            </div>
-            <div id="cardErrors" class="rooms-message state-error" aria-live="polite"></div>
-            <div id="cardSaveMessage" class="rooms-message state-ok" aria-live="polite"></div>
-            <div class="modal-actions" style="display:flex; gap:12px; justify-content:flex-end; margin-top:12px;">
-              <button type="button" class="btn btn-secondary" id="cardModalCancel">Cancelar</button>
-              <button type="submit" class="btn btn-primary" id="cardSubmitBtn">Salvar cartão</button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <!-- Modal: Convites pendentes (inbox) -->
   <div class="modal-overlay" id="inviteInboxModal" aria-hidden="true">
     <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="inviteInboxTitle">
@@ -1074,25 +975,6 @@
           <div class="modal-actions" style="display:flex; gap:12px; justify-content:flex-end; margin-top:12px;">
             <button type="button" class="btn btn-secondary" id="inviteInboxDismiss">Fechar</button>
           </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal-overlay" id="emailVerifyModal" aria-hidden="true">
-    <div class="modal-dialog modal-small" role="dialog" aria-modal="true" aria-labelledby="emailVerifyTitle">
-      <button class="modal-close" type="button" id="emailVerifyClose" aria-label="Fechar">&times;</button>
-      <div class="modal-body">
-        <div class="modal-info" style="padding:24px;">
-          <h2 id="emailVerifyTitle">Confirme seu e-mail</h2>
-          <p id="emailVerifyMessage" class="rooms-message" style="margin:8px 0 16px;">
-            Encontramos seu cadastro, mas é necessário confirmar o e-mail antes de acessar o portal.
-          </p>
-          <div class="modal-actions" style="display:flex; gap:12px; justify-content:flex-end; flex-wrap:wrap;">
-            <button type="button" class="btn btn-secondary" id="emailVerifyDismiss">Fechar</button>
-            <button type="button" class="btn btn-primary" id="emailVerifyResend">Reenviar link de verificação</button>
-          </div>
-          <div id="emailVerifyFeedback" class="rooms-message" role="status" aria-live="polite" style="margin-top:12px;"></div>
         </div>
       </div>
     </div>
@@ -1201,8 +1083,6 @@
   </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="" defer></script>
-  <script src="https://js.stripe.com/v3/" defer></script>
-  <script src="scripts/header-session.js" defer></script>
   <script src="scripts/clientes.js" defer></script>
 </body>
 </html>

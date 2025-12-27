@@ -61,12 +61,23 @@ function syncHeaderWithClientSession(cliente) {
       localStorage.setItem('zeefeHeaderSession', JSON.stringify(payload));
     } catch (_) {}
     try {
-      document.cookie = `ZEEFE_HEADER_SESSION=${encodeURIComponent(JSON.stringify(payload))}; path=/; max-age=${60 * 60 * 24 * 30}; SameSite=Lax`;
+      const secure = window.location.protocol === 'https:';
+      const parts = [
+        `ZEEFE_HEADER_SESSION=${encodeURIComponent(JSON.stringify(payload))}`,
+        'Path=/',
+        'Domain=.zeefe.com.br',
+        'SameSite=Lax',
+        `Max-Age=${60 * 60 * 24 * 30}`
+      ];
+      if (secure) parts.push('Secure');
+      document.cookie = parts.join('; ');
     } catch (_) {}
   } else {
     window.ZEEFE_HEADER?.clearSession?.();
     try { localStorage.removeItem('zeefeHeaderSession'); } catch (_) {}
-    try { document.cookie = 'ZEEFE_HEADER_SESSION=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'; } catch (_) {}
+    try {
+      document.cookie = 'ZEEFE_HEADER_SESSION=; Path=/; Domain=.zeefe.com.br; Expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
+    } catch (_) {}
   }
 }
 
@@ -2895,7 +2906,12 @@ async function onPortalLoginSubmit(event) {
     } else if (!lembrar) {
       registrarPreferenciaLogin(false);
     }
-    aplicarClienteAtivo(json.client);
+    // Já marca header/session local antes de redirecionar
+    syncHeaderWithClientSession(json.client);
+    rememberActiveClientId(json.client?.id || null);
+    // Redireciona direto para a home com header logado
+    window.location.href = '/index.php';
+    return;
   } catch (err) {
     console.error('[Portal] Falha no login', err);
     const msg = err.message || 'Erro ao autenticar.';
@@ -3054,6 +3070,10 @@ function aplicarClienteAtivo(cliente) {
   // Checa convites pendentes na primeira entrada
   checkPendingCompanyInvites();
   startPortalAutoRefresh();
+  // Redireciona para a home com o header já logado
+  setTimeout(() => {
+    window.location.href = '/index.php';
+  }, 150);
 }
 
 function fazerLogout() {

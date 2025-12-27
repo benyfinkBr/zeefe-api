@@ -633,7 +633,10 @@ async function onLoginSubmit(e) {
       registrarPreferenciaLoginAdv(false);
     }
     advClient = json.advertiser; // anunciante autenticado
-    await afterLogin();
+    // Marca header antes de redirecionar
+    syncHeaderWithAdvertiserSession(advClient);
+    window.location.href = '/index.php';
+    return;
   } catch (err) {
     authMsg.textContent = err.message || 'Erro ao autenticar.';
   }
@@ -680,6 +683,11 @@ async function afterLogin() {
   advPasswordCancel?.addEventListener('click', closeAdvPasswordModal);
   advPasswordModal?.addEventListener('click', (e)=>{ if (e.target === advPasswordModal) closeAdvPasswordModal(); });
   advPasswordForm?.addEventListener('submit', onAdvPasswordSubmit);
+
+  // Redireciona para a home com header já logado
+  setTimeout(() => {
+    window.location.href = '/index.php';
+  }, 150);
 }
 
 async function loadAdvertiser() {

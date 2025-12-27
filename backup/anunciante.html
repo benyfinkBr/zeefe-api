@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Portal do Anunciante — Ze.EFE</title>
   <link rel="icon" href="favicon.ico" />
-  <link rel="stylesheet" href="/style.css?v=20241222" />
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body class="client-portal-page client-logged-out anunciante-page">
   <header class="site-header">
@@ -22,21 +22,19 @@
         </nav>
       </div>
       <div class="site-header-actions">
-        <a href="index.html#contato" class="site-link">Contato</a>
-        <div class="site-header-guest" id="advHeaderGuest" data-zeefe-header="guest">
-          <button class="btn btn-outline" type="button" onclick="window.location='clientes.html'" data-zeefe-header-btn="login">Entrar</button>
+        <div class="site-header-guest">
+          <a href="index.html#contato" class="site-link">Contato</a>
+          <button class="btn btn-outline" type="button" onclick="window.location='clientes.html'">Entrar</button>
         </div>
-        <div class="site-header-user" id="advHeaderAccount" data-zeefe-header="account" hidden>
-          <button class="user-menu-trigger" type="button" id="advHeaderAccountBtn" data-zeefe-header-btn="account" aria-haspopup="true" aria-expanded="false">
-            <span id="advHeaderAccountLabel" data-zeefe-header-label="account">Minha Conta</span>
+        <div class="site-header-user" id="advHeaderAccount">
+          <button class="user-menu-trigger" type="button" id="advHeaderAccountBtn" aria-haspopup="true" aria-expanded="false">
+            Minha Conta
           </button>
           <div class="user-menu-dropdown" id="advHeaderAccountMenu" role="menu">
-            <p class="user-menu-label" id="advHeaderUserLabel" data-zeefe-header-label="user"></p>
-            <button type="button" class="user-menu-item" id="advHeaderPortal" data-zeefe-header-btn="portal">Portal do Anunciante</button>
             <button type="button" class="user-menu-item" id="advHeaderReservations">Minhas Reservas</button>
             <button type="button" class="user-menu-item" id="advHeaderProfile">Meu Perfil</button>
             <button type="button" class="user-menu-item" id="advHeaderMessages">Mensagens</button>
-            <button type="button" class="user-menu-item user-menu-danger" id="advHeaderLogout" data-zeefe-header-btn="logout">Sair</button>
+            <button type="button" class="user-menu-item user-menu-danger" id="advHeaderLogout">Sair</button>
           </div>
         </div>
       </div>
@@ -698,11 +696,6 @@
                 <select id="portariaInteligente"><option value="Sim">Sim</option><option value="Não">Não</option></select>
               </div>
 
-              <div class="form-group">
-                <label for="cep">CEP</label>
-                <input type="text" id="cep" inputmode="numeric" maxlength="9" placeholder="00000-000" />
-                <small class="input-hint">Digite os 8 dígitos para preencher o endereço automaticamente.</small>
-              </div>
               <div class="form-group" style="grid-column: span 3">
                 <label for="street">Rua</label>
                 <input type="text" id="street" />
@@ -710,6 +703,10 @@
               <div class="form-group">
                 <label for="complement">Complemento</label>
                 <input type="text" id="complement" />
+              </div>
+              <div class="form-group">
+                <label for="cep">CEP</label>
+                <input type="text" id="cep" />
               </div>
               <div class="form-group">
                 <label for="roomState">Estado (UF)</label>
@@ -772,9 +769,6 @@
                 <label for="roomPhotos">Fotos da sala</label>
                 <input type="file" id="roomPhotos" accept="image/*" multiple />
                 <small class="input-hint">Envie imagens JPG/PNG/WEBP (até 8MB cada).</small>
-                <div id="roomPhotosPreview" class="room-photos-preview">
-                  <p class="input-hint">Nenhuma foto cadastrada.</p>
-                </div>
               </div>
               <div class="form-group" style="grid-column: span 4">
                 <label>Comodidades disponíveis</label>
@@ -782,6 +776,7 @@
               </div>
             </div>
             <div class="modal-actions" style="display:flex; gap:12px; justify-content:flex-end;">
+              <button type="button" class="btn btn-secondary" id="advRoomGeocode">Geocodificar</button>
               <button type="button" class="btn btn-secondary" id="advRoomCancel">Cancelar</button>
               <button type="submit" class="btn btn-primary">Salvar</button>
             </div>
@@ -911,7 +906,7 @@
       <p>© 2025 Ze.EFE - Todos os direitos reservados</p>
     </div>
   </footer>
-  <script src="scripts/header-session.js" defer></script>
+
   <script src="scripts/anunciante.js" defer></script>
 </body>
 </html>

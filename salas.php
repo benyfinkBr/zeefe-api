@@ -1,4 +1,5 @@
 
+<?php require __DIR__ . '/includes/bootstrap.php'; ?>
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -10,37 +11,7 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
 </head>
 <body>
-  <header class="site-header">
-    <div class="site-header-inner">
-      <div class="site-header-left">
-        <a href="index.html" class="site-logo">
-          <img src="img/logo.jpg" alt="Ze.EFE" />
-        </a>
-        <nav class="site-nav">
-          <a href="salas.html" aria-current="page">Salas</a>
-          <a href="workshops.html">Cursos</a>
-          <a href="conteudos.html">Conteúdos</a>
-          <a href="quemsomos.html">Quem somos</a>
-        </nav>
-      </div>
-      <div class="site-header-actions">
-        <a href="index.html#contato" class="site-link">Contato</a>
-        <div class="site-header-guest" id="homeHeaderGuest" data-zeefe-header="guest">
-          <button class="btn btn-outline" type="button" id="openLoginChoice" data-zeefe-header-btn="login">Entrar</button>
-        </div>
-        <div class="site-header-user" id="homeHeaderAccount" data-zeefe-header="account" hidden>
-          <button class="user-menu-trigger" type="button" id="homeHeaderAccountBtn" data-zeefe-header-btn="account" aria-haspopup="true" aria-expanded="false">
-            <span id="homeHeaderAccountLabel" data-zeefe-header-label="account">Minha Conta</span>
-          </button>
-          <div class="user-menu-dropdown" id="homeHeaderAccountMenu" role="menu">
-            <p class="user-menu-label" id="homeHeaderUserLabel" data-zeefe-header-label="user"></p>
-            <button type="button" class="user-menu-item" id="homeHeaderPortal" data-zeefe-header-btn="portal">Ir para o portal</button>
-            <button type="button" class="user-menu-item user-menu-danger" id="homeHeaderLogout" data-zeefe-header-btn="logout">Sair</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </header>
+<?php require __DIR__ . '/includes/header.php'; ?>
 
 <main>
   <section class="landing-section">
@@ -149,19 +120,19 @@
         <div class="footer-links-grid">
           <div>
             <h4>Salas</h4>
-            <a href="salas.html">Ver todas as salas</a>
+            <a href="/salas.php">Ver todas as salas</a>
           </div>
           <div>
             <h4>Cursos</h4>
-            <a href="workshops.html">Agenda de cursos e workshops</a>
+            <a href="/workshops.php">Agenda de cursos e workshops</a>
           </div>
           <div>
             <h4>Área do Cliente</h4>
-            <a href="clientes.html">Reservas e visitantes</a>
+            <a href="/clientes.php">Reservas e visitantes</a>
           </div>
           <div>
             <h4>Anunciante</h4>
-            <a href="anunciante.html">Cadastrar salas e cursos</a>
+            <a href="/anunciante.php">Cadastrar salas e cursos</a>
           </div>
         </div>
       </div>
@@ -194,10 +165,10 @@
         <div class="modal-info">
           <h2 id="entryChoiceTitle">Como você prefere entrar?</h2>
           <div class="entry-choice-grid">
-            <button type="button" class="btn btn-primary entry-choice-btn" data-destino="clientes.html">
+            <button type="button" class="btn btn-primary entry-choice-btn" data-destino="/clientes.php">
               Sou cliente
             </button>
-            <button type="button" class="btn btn-secondary entry-choice-btn" data-destino="anunciante.html">
+            <button type="button" class="btn btn-secondary entry-choice-btn" data-destino="/anunciante.php">
               Sou anunciante
             </button>
           </div>
@@ -207,9 +178,9 @@
   </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="" defer></script>
-<script src="scripts/components/carousel.js" defer></script>
-<script src="scripts/header-session.js" defer></script>
-<script src="scripts/salas.js" defer></script>
+<script src="/scripts/components/carousel.js" defer></script>
+<script src="/scripts/header-session.js" defer></script>
+<script src="/scripts/salas.js" defer></script>
 
 
 </body>
