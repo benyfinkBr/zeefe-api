@@ -1,45 +1,4 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Ze.EFE - Marca lá!</title>
-  <link rel="stylesheet" href="/style.css?v=20241222" />
-  <!-- Leaflet (mapa) -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
-</head>
-<body>
-  <header class="site-header">
-    <div class="site-header-inner">
-      <div class="site-header-left">
-        <a href="index.html" class="site-logo" aria-current="page">
-          <img src="img/logo.jpg" alt="Ze.EFE" />
-        </a>
-        <nav class="site-nav">
-          <a href="salas.html">Salas</a>
-          <a href="workshops.html">Cursos</a>
-          <a href="conteudos.html">Conteúdos</a>
-          <a href="quemsomos.html">Quem somos</a>
-        </nav>
-      </div>
-      <div class="site-header-actions">
-        <a href="#contato" class="site-link">Contato</a>
-        <div class="site-header-guest" id="homeHeaderGuest" data-zeefe-header="guest">
-          <button class="btn btn-outline" type="button" id="openLoginChoice" data-zeefe-header-btn="login">Entrar</button>
-        </div>
-        <div class="site-header-user" id="homeHeaderAccount" data-zeefe-header="account" hidden>
-          <button class="user-menu-trigger" type="button" id="homeHeaderAccountBtn" data-zeefe-header-btn="account" aria-haspopup="true" aria-expanded="false">
-            <span id="homeHeaderAccountLabel" data-zeefe-header-label="account">Minha Conta</span>
-          </button>
-          <div class="user-menu-dropdown" id="homeHeaderAccountMenu" role="menu">
-            <p class="user-menu-label" id="homeHeaderUserLabel" data-zeefe-header-label="user"></p>
-            <button type="button" class="user-menu-item" id="homeHeaderPortal" data-zeefe-header-btn="portal">Abrir portal</button>
-            <button type="button" class="user-menu-item user-menu-danger" id="homeHeaderLogout" data-zeefe-header-btn="logout">Sair</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </header>
+<?php require __DIR__ . '/includes/header.php'; ?>
   
   <main>
     <!-- Hero com card de busca -->
