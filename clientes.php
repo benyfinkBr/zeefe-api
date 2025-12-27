@@ -1,1157 +1,200 @@
 <?php require __DIR__ . '/includes/header.php'; ?>
 
-  <main class="client-portal">
-    <section id="authContainer" class="auth-container">
-      <div id="authLogin" class="auth-screen">
-        <div class="login-card">
-          <img src="img/logo.jpg" alt="Ze.EFE">
-          <h2>Portal do Cliente<br><span>Ze.EFE</span></h2>
-          <div class="scope-pill" style="display:flex; gap:8px; justify-content:center; margin:8px 0 12px;">
-            <button type="button" id="authScopePFBtn" class="btn btn-secondary btn-sm active" data-scope="pf">Pessoa Física</button>
-            <button type="button" id="authScopeCompanyBtn" class="btn btn-secondary btn-sm" data-scope="company">Empresa</button>
+<main class="client-portal">
+  <section id="authContainer" class="auth-container">
+    <div id="authLogin" class="auth-screen">
+      <div class="login-card">
+        <img src="/img/logo.jpg" alt="Ze.EFE">
+        <h2>Portal do Cliente<br><span>Ze.EFE</span></h2>
+        <div class="scope-pill" style="display:flex; gap:8px; justify-content:center; margin:8px 0 12px;">
+          <button type="button" id="authScopePFBtn" class="btn btn-secondary btn-sm active" data-scope="pf">Pessoa Física</button>
+          <button type="button" id="authScopeCompanyBtn" class="btn btn-secondary btn-sm" data-scope="company">Empresa</button>
+        </div>
+        <form id="portalLoginForm" autocomplete="on">
+          <input type="text" id="portalLoginIdentifier" name="identifier" placeholder="Login, e-mail ou CPF" required autocomplete="username" />
+          <input type="password" id="portalLoginPassword" name="password" placeholder="Senha" required autocomplete="current-password" />
+          <div class="remember-line">
+            <label class="remember">
+              <input type="checkbox" id="portalRememberMe" />
+              <span>Lembrar login neste computador</span>
+            </label>
           </div>
-          <form id="portalLoginForm" autocomplete="on">
-            <input type="text" id="portalLoginIdentifier" name="identifier" placeholder="Login, e-mail ou CPF" required autocomplete="username" />
-            <input type="password" id="portalLoginPassword" name="password" placeholder="Senha" required autocomplete="current-password" />
-            <div class="remember-line">
-              <label class="remember">
-                <input type="checkbox" id="portalRememberMe" />
-                <span>Lembrar login neste computador</span>
-              </label>
-            </div>
-            <button class="btn btn-primary" type="submit">Entrar</button>
-          </form>
-          <div class="auth-quick-actions" id="authActions">
-            <button type="button" class="ghost-btn" data-view="recovery">Esqueci minha senha</button>
-            <button type="button" class="ghost-btn" data-view="register">Quero me cadastrar</button>
-          </div>
+          <button class="btn btn-primary" type="submit">Entrar</button>
+        </form>
+        <div class="auth-quick-actions" id="authActions">
+          <button type="button" class="ghost-btn" data-view="recovery">Esqueci minha senha</button>
+          <button type="button" class="ghost-btn" data-view="register">Quero me cadastrar</button>
         </div>
       </div>
+    </div>
 
-      <div id="authRegister" class="auth-screen" hidden>
-        <div class="login-card register-card">
-          <div class="register-hero">
-            <img src="img/logo.jpg" alt="Ze.EFE">
-            <h2>Criar acesso<br><span>Portal do Cliente</span></h2>
+    <div id="authRegister" class="auth-screen" hidden>
+      <div class="login-card register-card">
+        <div class="register-hero">
+          <img src="/img/logo.jpg" alt="Ze.EFE">
+          <h2>Criar acesso<br><span>Portal do Cliente</span></h2>
+        </div>
+        <form id="portalRegisterForm" class="auth-form auth-form-grid" autocomplete="on">
+          <div class="form-field">
+            <label for="registerName">Nome completo</label>
+            <input type="text" id="registerName" name="name" required />
           </div>
-          <form id="portalRegisterForm" class="auth-form auth-form-grid" autocomplete="on">
-            <div class="form-field">
-              <label for="registerName">Nome completo</label>
-              <input type="text" id="registerName" name="name" required />
-            </div>
-            <div class="form-field">
-              <label for="registerEmail">E-mail</label>
-              <input type="email" id="registerEmail" name="email" required autocomplete="email" />
-              <small class="input-hint">Use este e-mail ou CPF para acessar o portal.</small>
-            </div>
-            <div class="form-field">
-              <label for="registerCpf">CPF</label>
-              <input type="text" id="registerCpf" name="cpf" maxlength="14" required autocomplete="off" />
-              <small class="input-hint" id="cpfHint">Informe os 11 dígitos do CPF.</small>
-            </div>
-            <div class="form-field">
-              <label for="registerPhone">Telefone (opcional)</label>
-              <input type="text" id="registerPhone" name="phone" maxlength="15" autocomplete="tel" />
-            </div>
-            <div class="form-field form-field-duo">
-              <label for="registerPassword">Senha</label>
-              <input type="password" id="registerPassword" name="password" required autocomplete="new-password" />
-            </div>
-            <div class="form-field form-field-duo">
-              <label for="registerPasswordConfirm">Confirmar senha</label>
-              <input type="password" id="registerPasswordConfirm" name="password_confirm" required autocomplete="new-password" />
-            </div>
-            <div class="form-field form-field-full password-indicators" id="passwordIndicators">
-              <span class="password-indicator state-neutral" data-password-strength>Força da senha: aguardando</span>
-              <span class="password-indicator state-neutral" data-password-match>Confirmação: aguardando</span>
-            </div>
-            <div class="form-field form-field-full">
-              <p class="password-hint" id="passwordHint">
-                A senha deve conter no mínimo 8 caracteres, incluindo letras, números e símbolos.
-              </p>
-            </div>
-            <div class="form-field form-field-full">
-              <button class="btn btn-primary" type="submit">Concluir cadastro</button>
-            </div>
-          </form>
-          <button type="button" class="ghost-btn" data-view="login">Voltar ao login</button>
-        </div>
+          <div class="form-field">
+            <label for="registerEmail">E-mail</label>
+            <input type="email" id="registerEmail" name="email" required autocomplete="email" />
+            <small class="input-hint">Use este e-mail ou CPF para acessar o portal.</small>
+          </div>
+          <div class="form-field">
+            <label for="registerCpf">CPF</label>
+            <input type="text" id="registerCpf" name="cpf" maxlength="14" required autocomplete="off" />
+            <small class="input-hint" id="cpfHint">Informe os 11 dígitos do CPF.</small>
+          </div>
+          <div class="form-field">
+            <label for="registerPhone">Telefone (opcional)</label>
+            <input type="text" id="registerPhone" name="phone" maxlength="15" autocomplete="tel" />
+          </div>
+          <div class="form-field form-field-duo">
+            <label for="registerPassword">Senha</label>
+            <input type="password" id="registerPassword" name="password" required autocomplete="new-password" />
+          </div>
+          <div class="form-field form-field-duo">
+            <label for="registerPasswordConfirm">Confirmar senha</label>
+            <input type="password" id="registerPasswordConfirm" name="password_confirm" required autocomplete="new-password" />
+          </div>
+          <div class="form-field form-field-full password-indicators" id="passwordIndicators">
+            <span class="password-indicator state-neutral" data-password-strength>Força da senha: aguardando</span>
+            <span class="password-indicator state-neutral" data-password-match>Confirmação: aguardando</span>
+          </div>
+          <div class="form-field form-field-full">
+            <p class="password-hint" id="passwordHint">
+              A senha deve conter no mínimo 8 caracteres, incluindo letras, números e símbolos.
+            </p>
+          </div>
+          <div class="form-field form-field-full">
+            <button class="btn btn-primary" type="submit">Concluir cadastro</button>
+          </div>
+        </form>
+        <button type="button" class="ghost-btn" data-view="login">Voltar ao login</button>
       </div>
+    </div>
 
-      <div id="authRecovery" class="auth-screen" hidden>
-        <div class="login-card">
-          <img src="img/logo.jpg" alt="Ze.EFE">
-          <h2>Recuperar acesso<br><span>Portal do Cliente</span></h2>
-          <form id="portalRecoveryForm" class="auth-form" autocomplete="on">
-            <div class="form-field">
-              <label for="recoveryLogin">Login ou e-mail cadastrado</label>
-              <input type="text" id="recoveryLogin" name="login" required autocomplete="username" />
-            </div>
-            <p class="rooms-message">Enviaremos uma senha temporária para o e-mail registrado.</p>
-            <button class="btn btn-primary" type="submit">Enviar nova senha</button>
-          </form>
-          <button type="button" class="ghost-btn" data-view="login">Voltar ao login</button>
-        </div>
+    <div id="authRecovery" class="auth-screen" hidden>
+      <div class="login-card">
+        <img src="/img/logo.jpg" alt="Ze.EFE">
+        <h2>Recuperar senha<br><span>Portal do Cliente</span></h2>
+        <form id="portalRecoveryForm">
+          <input type="email" id="recoveryEmail" name="email" placeholder="Seu e-mail" required autocomplete="email" />
+          <button class="btn btn-primary" type="submit">Enviar</button>
+        </form>
+        <div id="recoveryMessage" class="rooms-message" style="margin-top:10px"></div>
+        <button type="button" class="ghost-btn" data-view="login" style="margin-top:12px">Voltar ao login</button>
       </div>
+    </div>
+  </section>
 
-      <div id="authMessage" class="rooms-message auth-message"></div>
-    </section>
-
-    <section id="clientPanels" class="portal-shell" hidden>
-      <aside class="portal-nav">
-        <div class="portal-nav-brand">
-          <img src="img/logo.jpg" alt="Ze.EFE" />
-          <h2>Gestão do Cliente</h2>
+  <section id="portalPanels" hidden>
+    <div class="portal-layout">
+      <aside class="portal-sidebar">
+        <div class="portal-profile">
+          <div class="portal-avatar">Ze.EFE</div>
+          <div class="portal-owner" id="portalDisplay">Cliente pessoa física</div>
+          <div class="portal-owner-email" id="portalOwner"></div>
         </div>
-        <nav class="portal-nav-links">
-          <button type="button" data-panel="book" class="active">Reservar</button>
-          <button type="button" data-panel="reservations">Minhas Reservas</button>
-          <button type="button" data-panel="visitors">Visitantes</button>
-          <button type="button" data-panel="company" id="companyTab" hidden>Empresa</button>
-          <button type="button" data-panel="courses">Cursos</button>
-          <button type="button" data-panel="profile">Meu Perfil</button>
-        </nav>
-        <button type="button" id="logoutBtn" class="nav-logout">Sair</button>
+        <div class="portal-nav">
+          <div class="portal-nav-links">
+            <button type="button" data-panel="dashboard" class="active">Reservar</button>
+            <button type="button" data-panel="reservations">Minhas Reservas</button>
+            <button type="button" data-panel="visitors">Visitantes</button>
+            <button type="button" data-panel="company">Empresa</button>
+            <button type="button" data-panel="courses">Cursos</button>
+            <button type="button" data-panel="profile">Meu Perfil</button>
+          </div>
+        </div>
+        <button class="ghost-btn" id="portalLogoutBtn" type="button">Sair</button>
       </aside>
 
       <div class="portal-main">
-        <header class="portal-header">
-          <div>
-            <h2>Olá, <span id="clientName"></span></h2>
-            <div id="clientCompany" class="portal-subtitle"></div>
-          </div>
-          <div class="portal-scope-switch">
-            <div class="scope-pill">
-              <button type="button" id="scopePFBtn" class="btn btn-secondary btn-sm active" data-scope="pf">Pessoa Física</button>
-              <button type="button" id="scopeCompanyBtn" class="btn btn-secondary btn-sm" data-scope="company" hidden>Empresa</button>
-            </div>
-          </div>
-          <div class="portal-actions">
-            <button class="btn btn-secondary btn-with-badge" type="button" id="openSupportChatBtn">
-              <span>Mensagens</span>
-              <span id="clientMessagesBadge" class="badge-dot" hidden></span>
-            </button>
-            <button class="btn btn-secondary" type="button" id="refreshBtn">Atualizar</button>
-          </div>
-        </header>
+        <section class="portal-section" id="panel-dashboard">
+          <h2>Reservar uma sala</h2>
+          <p>Selecione um ou mais dias no calendário e depois escolha a sala.</p>
+          <div id="calendarContainer" class="calendar-container"></div>
+        </section>
 
-        <div class="portal-content">
-          <div id="panel-book" class="portal-section">
-            <article class="form-card booking-card">
-              <h3 id="bookingFormTitle">Reservar uma sala</h3>
-              <form id="reservationBookForm">
-                <input type="hidden" name="id" />
-                <input type="hidden" name="room_id" id="bookingRoomId" />
-                <input type="hidden" name="time_start" value="08:00" />
-                <input type="hidden" name="time_end" value="20:00" />
+        <section class="portal-section" id="panel-reservations" hidden>
+          <h2>Minhas Reservas</h2>
+          <div id="myReservations" class="rooms-grid"></div>
+        </section>
 
-                <div class="booking-mode-choice">
-                  <span class="booking-mode-label">Como você prefere buscar?</span>
-                  <div class="booking-mode-buttons">
-                    <button type="button" class="mode-btn active" id="bookingModeDate" data-mode="date">Buscar por Data</button>
-                    <button type="button" class="mode-btn" id="bookingModeRoom" data-mode="room">Buscar por Local</button>
-                  </div>
-                </div>
+        <section class="portal-section" id="panel-visitors" hidden>
+          <h2>Visitantes</h2>
+          <div id="visitorsContainer" class="rooms-grid"></div>
+        </section>
 
-                <div class="booking-stepper">
-                  <div class="booking-stepper-item active" data-step-index="0">
-                    <span>1</span>
-                    <strong>Data</strong>
-                  </div>
-                  <div class="booking-stepper-item" data-step-index="1">
-                    <span>2</span>
-                    <strong>Salas</strong>
-                  </div>
-                  <div class="booking-stepper-item" data-step-index="2">
-                    <span>3</span>
-                    <strong>Detalhes</strong>
-                  </div>
-                  <div class="booking-stepper-item" data-step-index="3">
-                    <span>4</span>
-                    <strong>Visitantes</strong>
-                  </div>
-                  <div class="booking-stepper-item" data-step-index="4">
-                    <span>5</span>
-                    <strong>Resumo</strong>
-                  </div>
-                </div>
+        <section class="portal-section" id="panel-company" hidden>
+          <h2>Empresa</h2>
+          <div id="companyContainer" class="rooms-grid"></div>
+        </section>
 
-                <p class="form-help booking-mode-hint" id="bookingModeHint">
-                  Datas primeiro: selecione um ou mais dias no calendário e depois escolha a sala.
-                </p>
+        <section class="portal-section" id="panel-courses" hidden>
+          <h2>Cursos</h2>
+          <div id="coursesContainer" class="rooms-grid"></div>
+        </section>
 
-                <section class="booking-step" data-step-index="0">
-                  <div class="booking-calendar">
-                    <header class="calendar-header">
-                      <button type="button" id="bookingPrevMonth" aria-label="Mês anterior">&#10094;</button>
-                      <div id="bookingCalendarLabel"></div>
-                      <button type="button" id="bookingNextMonth" aria-label="Próximo mês">&#10095;</button>
-                    </header>
-                    <div class="booking-date-mode">
-                      <span class="booking-date-mode-label">Período</span>
-                      <div class="booking-date-mode-buttons">
-                        <button type="button" class="mode-btn mode-btn-small active" id="dateModeSingle">Apenas um dia</button>
-                        <button type="button" class="mode-btn mode-btn-small" id="dateModeMulti">Vários dias</button>
-                      </div>
-                    </div>
-                    <div class="calendar-grid" id="bookingCalendarGrid" role="grid" aria-labelledby="bookingCalendarLabel"></div>
-                    <input type="hidden" id="bookingDateInput" name="date" required />
-                  </div>
-                  <p class="form-help fixed-schedule-note">Selecione um dia disponível. Reservas são diárias entre 08:00 e 20:00.</p>
-                  <p class="form-help" id="multiDateSummary" hidden>Você selecionou 0 dias.</p>
+        <section class="portal-section" id="panel-profile" hidden>
+          <h2>Meu Perfil</h2>
+          <div id="profileContainer" class="rooms-grid"></div>
+        </section>
+      </div>
+    </div>
+  </section>
+</main>
 
-                  <div id="roomPickerInline" class="booking-room-inline" hidden>
-                    <h4>Escolha a sala</h4>
-                    <p class="form-help">Comece escolhendo a sala. O calendário mostra as datas livres dessa sala.</p>
-                    <div id="bookingRoomOptionsInline" class="booking-room-options"></div>
-                    <div id="bookingRoomFeedbackInline" class="rooms-message"></div>
-                  </div>
-                </section>
-
-                <section class="booking-step" data-step-index="1" hidden>
-                  <h4>Salas disponíveis</h4>
-                  <p class="form-help">Selecione uma sala disponível para a data escolhida.</p>
-                  <div id="bookingRoomsMap" class="rooms-map booking-rooms-map" role="region" aria-label="Mapa de salas disponíveis"></div>
-                  <div id="bookingRoomOptions" class="booking-room-options"></div>
-                  <div id="bookingRoomFeedback" class="rooms-message"></div>
-                </section>
-
-                <section class="booking-step" data-step-index="2" hidden>
-                  <div class="form-row">
-                    <label for="bookingTitleInput">Título</label>
-                    <input type="text" id="bookingTitleInput" name="title" maxlength="120" required />
-                  </div>
-                  <div class="form-row" id="companyBookingRow" hidden>
-                    <label class="form-label" style="display:flex; align-items:center; gap:10px">
-                      <input type="checkbox" id="bookingCompanyToggle" />
-                      Reserva pela empresa
-                    </label>
-                  </div>
-                  <div class="form-row">
-                    <label for="bookingDescriptionInput">Descrição / Observações</label>
-                    <textarea id="bookingDescriptionInput" name="description" rows="3"></textarea>
-                  </div>
-                  <div class="form-row">
-                    <label for="bookingVoucherCode">Voucher (opcional)</label>
-                    <div style="display:flex; gap:8px; align-items:center; width:100%">
-                      <input type="text" id="bookingVoucherCode" placeholder="Código do voucher" style="flex:1" />
-                      <button type="button" class="btn btn-secondary btn-sm" id="bookingVoucherApply">Aplicar</button>
-                    </div>
-                    <small id="bookingVoucherResult" class="input-hint"></small>
-                  </div>
-                </section>
-
-                <section class="booking-step" data-step-index="3" hidden>
-                  <div class="form-row">
-                    <label class="form-label">Visitantes</label>
-                    <div class="visitor-multiselect" id="bookingVisitorSelector"></div>
-                  </div>
-                  <div class="form-row visitor-actions">
-                    <label>
-                      <input type="checkbox" name="send_invites" checked>
-                      Enviar convite por e-mail aos visitantes selecionados
-                    </label>
-                    <button type="button" class="btn btn-secondary btn-sm" id="openVisitorsPanel">Gerenciar visitantes</button>
-                  </div>
-                </section>
-
-                <section class="booking-step" data-step-index="4" hidden>
-                  <h4>Resumo da reserva</h4>
-                  <p class="form-help">Confira os dados antes de confirmar a solicitação.</p>
-                  <div id="bookingSummary" class="booking-summary"></div>
-                </section>
-
-                <div class="booking-navigation">
-                  <button type="button" class="btn btn-secondary" id="bookingPrevBtn" hidden>Voltar</button>
-                  <button type="button" class="btn btn-primary" id="bookingNextBtn">Avançar</button>
-                  <button class="btn btn-primary" type="submit" id="bookingSubmitBtn" hidden>Solicitar reserva</button>
-                  <button class="btn btn-secondary" type="button" id="cancelReservationEdit" hidden>Cancelar</button>
-                </div>
-                <div class="form-row">
-                  <div id="bookingMessage" class="rooms-message"></div>
-                </div>
-              </form>
-            </article>
-          </div>
-
-          <div id="panel-reservations" class="portal-section" hidden>
-            <section class="client-lists">
-              <article>
-                <div class="list-header">
-                  <h3>Minhas Reservas</h3>
-                  <button class="btn btn-secondary" type="button" id="newReservationBtn">Nova reserva</button>
-                </div>
-                <div id="reservationsContainer" class="responsive-table"></div>
-              </article>
-            </section>
-          </div>
-
-          <div id="panel-visitors" class="portal-section" hidden>
-            <section class="client-lists visitors-layout">
-              <article class="visitor-list-card">
-                <div class="list-header">
-                  <h3>Visitantes</h3>
-                  <button class="btn btn-secondary" type="button" id="newVisitorBtn">Novo</button>
-                </div>
-                <div id="visitorsContainer" class="responsive-table"></div>
-              </article>
-
-              <article class="form-card visitor-form-card is-collapsed" id="visitorFormWrapper" hidden>
-                <h3 id="visitorFormTitle">Novo Visitante</h3>
-                <form id="visitorForm">
-                  <input type="hidden" name="id" />
-                  <div class="form-row">
-                    <label>Nome completo</label>
-                    <input type="text" name="name" required />
-                  </div>
-                  <div class="form-grid-mini">
-                    <div>
-                      <label>CPF</label>
-                      <input type="text" name="cpf" maxlength="14" />
-                    </div>
-                    <div>
-                      <label>RG</label>
-                      <input type="text" name="rg" />
-                    </div>
-                  </div>
-                  <div class="form-grid-mini">
-                    <div>
-                      <label>E-mail</label>
-                      <input type="email" name="email" />
-                    </div>
-                    <div>
-                      <label>Telefone</label>
-                      <input type="text" name="phone" maxlength="15" />
-                    </div>
-                    <div>
-                      <label>WhatsApp</label>
-                      <input type="text" name="whatsapp" maxlength="15" />
-                    </div>
-                  </div>
-                  <div class="form-row">
-                    <label>Status</label>
-                    <select name="status">
-                      <option value="ativo">Ativo</option>
-                      <option value="inativo">Inativo</option>
-                    </select>
-                  </div>
-                  <div class="form-row">
-                    <button class="btn btn-primary" type="submit">Salvar</button>
-                    <button class="btn btn-secondary" type="button" id="cancelVisitorEdit" hidden>Cancelar</button>
-                  </div>
-                </form>
-              </article>
-            </section>
-          </div>
-
-          <div id="panel-company" class="portal-section" hidden>
-            <section class="client-lists">
-              <article class="form-card">
-                <div class="list-header" style="gap:8px; align-items:center">
-                  <h3 style="margin-right:auto">Empresa</h3>
-                  <div class="tabline" id="companyTabs" style="display:flex; gap:6px">
-                    <button class="btn btn-secondary btn-sm company-tab active" data-company-tab="overview">Visão Geral</button>
-                    <button class="btn btn-secondary btn-sm company-tab" data-company-tab="users">Membros</button>
-                    <button class="btn btn-secondary btn-sm company-tab" data-company-tab="reservations">Reservas</button>
-                    <button class="btn btn-secondary btn-sm company-tab" data-company-tab="finance">Financeiro</button>
-                  </div>
-                </div>
-
-                <div id="companyTab-overview" class="company-panel">
-                  <div class="grid-cards-3 stats-cards" id="companyOverview">
-                    <div class="stat-card">
-                      <div class="stat-icon" aria-hidden="true">📌</div>
-                      <div class="stat-text">
-                        <span class="stat-label">Reservas ativas</span>
-                        <span class="stat-value" id="coActive">—</span>
-                      </div>
-                    </div>
-                    <div class="stat-card">
-                      <div class="stat-icon" aria-hidden="true">📅</div>
-                      <div class="stat-text">
-                        <span class="stat-label">Próximos 7 dias</span>
-                        <span class="stat-value" id="coNext">—</span>
-                      </div>
-                    </div>
-                    <div class="stat-card">
-                      <div class="stat-icon" aria-hidden="true">💳</div>
-                      <div class="stat-text">
-                        <span class="stat-label">Pagamentos pendentes</span>
-                        <span class="stat-value" id="coPay">—</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="overview-split">
-                    <div class="overview-box">
-                      <h4>Próximas reservas</h4>
-                      <div id="companyOverviewNext" class="list-next"></div>
-                    </div>
-                    <div class="overview-box">
-                      <h4>Ações rápidas</h4>
-                      <div class="quick-actions">
-                        <button class="btn btn-secondary btn-sm" type="button" data-panel="reservations">Ver reservas</button>
-                        <button class="btn btn-secondary btn-sm" type="button" data-panel="users">Convidar membro</button>
-                        <button class="btn btn-secondary btn-sm" type="button" data-panel="finance">Financeiro</button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div id="companyTab-users" class="company-panel" hidden>
-                  <div class="member-actions" id="companyMembersActions">
-                    <div class="company-action-cards">
-                      <button type="button" class="action-card" id="openInviteModal">
-                        <span class="icon">🔍</span>
-                        <span class="label">Convidar membro</span>
-                      </button>
-                      <button type="button" class="action-card" id="openManualModal">
-                        <span class="icon">✍️</span>
-                        <span class="label">Adicionar manualmente</span>
-                      </button>
-                      <button type="button" class="action-card" id="openImportModal">
-                        <span class="icon">📥</span>
-                        <span class="label">Importar contatos</span>
-                      </button>
-                      <button type="button" class="action-card" id="openManageInvites">
-                        <span class="icon">🗂️</span>
-                        <span class="label">Gerenciar convites</span>
-                      </button>
-                    </div>
-                    <input type="file" id="companyXlsxInput" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden>
-                  </div>
-
-                  <section class="card-block">
-                    <h4>Membros</h4>
-                    <div id="companyUsersContainer" class="responsive-table"></div>
-                  </section>
-
-                  <section class="card-block" id="companyInvitesBlock" hidden>
-                    <div class="list-header" style="gap:8px; align-items:center">
-                      <h4 style="margin-right:auto">Convites</h4>
-                      <button class="btn btn-secondary btn-sm" type="button" id="companyInvitesClose">Fechar</button>
-                    </div>
-                    <div id="companyInvitesContainer" class="responsive-table"></div>
-                  </section>
-                </div>
-
-                <div id="companyTab-reservations" class="company-panel" hidden>
-                  <div id="companyReservationsContainer" class="responsive-table"></div>
-                </div>
-
-                <div id="companyTab-finance" class="company-panel" hidden>
-                  <div class="finance-filters">
-                    <div class="preset-row">
-                      <button type="button" class="btn btn-secondary btn-sm finance-preset" data-range="30">Últimos 30 dias</button>
-                      <button type="button" class="btn btn-secondary btn-sm finance-preset" data-range="60">60 dias</button>
-                      <button type="button" class="btn btn-secondary btn-sm finance-preset" data-range="90">90 dias</button>
-                      <span class="chip">ou</span>
-                      <label>De <input type="date" id="finFrom"></label>
-                      <label>Até <input type="date" id="finTo"></label>
-                      <button type="button" class="btn btn-secondary btn-sm" id="finApply">Aplicar</button>
-                    </div>
-                    <small class="form-help">Período personalizado com limite máximo de 6 meses.</small>
-                  </div>
-                  <div id="companyFinanceContainer" class="responsive-table"></div>
-                </div>
-              </article>
-            </section>
-          </div>
-
-          <!-- Modal de pré-visualização do XLSX -->
-          <div class="modal-overlay" id="xlsxPreviewModal" aria-hidden="true">
-            <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="xlsxPreviewTitle">
-              <button class="modal-close" type="button" id="xlsxPreviewClose" aria-label="Fechar">&times;</button>
-              <div class="modal-body">
-                <div class="modal-info" style="padding:24px; width:100%">
-                  <h2 id="xlsxPreviewTitle" style="margin-top:0">Pré‑visualização da importação</h2>
-                  <p class="rooms-message">Revise as linhas detectadas. Linhas inválidas aparecem destacadas e não serão importadas.</p>
-                  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                    <div class="rooms-message" style="margin:0;">Você pode editar os campos antes de importar.</div>
-                    <div style="display:flex; gap:8px;">
-                      <button type="button" class="btn btn-secondary btn-sm" id="xlsxPreviewAdd">Adicionar linha</button>
-                    </div>
-                  </div>
-                  <div id="xlsxPreviewTable" class="responsive-table"></div>
-                  <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:12px;">
-                    <button type="button" class="btn btn-secondary" id="xlsxPreviewCancel">Cancelar</button>
-                    <button type="button" class="btn btn-primary" id="xlsxPreviewConfirm">Importar selecionados</button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div id="panel-profile" class="portal-section" hidden>
-            <article class="form-card profile-card">
-              <h3>Dados do Cliente</h3>
-              <form id="profileForm" class="profile-form">
-                <div class="form-grid-mini">
-                  <div>
-                    <label for="profileNameInput">Nome completo</label>
-                    <input type="text" id="profileNameInput" name="name" required readonly />
-                  </div>
-                  <div>
-                    <label for="profileLoginInput">Login</label>
-                    <input type="text" id="profileLoginInput" name="login" required readonly />
-                  </div>
-                </div>
-                <div class="form-grid-mini">
-                  <div>
-                    <label for="profileEmailInput">E-mail</label>
-                    <input type="email" id="profileEmailInput" name="email" readonly data-immutable="true" />
-                  </div>
-                  <div>
-                    <label for="profileCpfInput">CPF</label>
-                    <input type="text" id="profileCpfInput" name="cpf" readonly data-immutable="true" />
-                  </div>
-                </div>
-                <div class="form-grid-mini">
-                  <div>
-                    <label for="profilePhoneInput">Telefone</label>
-                    <input type="text" id="profilePhoneInput" name="phone" maxlength="15" readonly />
-                  </div>
-                  <div>
-                    <label for="profileWhatsappInput">WhatsApp</label>
-                    <input type="text" id="profileWhatsappInput" name="whatsapp" maxlength="15" readonly />
-                  </div>
-                </div>
-                <div class="form-row">
-                  <label for="profileCompanyInput">Empresa</label>
-                  <input type="text" id="profileCompanyInput" class="input-readonly" readonly data-immutable="true" />
-                </div>
-                <div class="form-grid-mini">
-                  <div>
-                    <label for="profileZipInput">CEP</label>
-                    <input type="text" id="profileZipInput" name="zip_code" maxlength="20" readonly />
-                  </div>
-                  <div>
-                    <label for="profileStateInput">Estado</label>
-                    <input type="text" id="profileStateInput" name="state" maxlength="10" readonly />
-                  </div>
-                </div>
-                <div class="form-grid-mini">
-                  <div>
-                    <label for="profileCityInput">Cidade</label>
-                    <input type="text" id="profileCityInput" name="city" readonly />
-                  </div>
-                  <div>
-                    <label for="profileCountryInput">País</label>
-                    <input type="text" id="profileCountryInput" name="country" readonly value="BR" />
-                  </div>
-                </div>
-                <div class="form-grid-mini">
-                  <div>
-                    <label for="profileStreetInput">Endereço</label>
-                    <input type="text" id="profileStreetInput" name="street" readonly />
-                  </div>
-                  <div>
-                    <label for="profileNumberInput">Número</label>
-                    <input type="text" id="profileNumberInput" name="number" readonly />
-                  </div>
-                </div>
-                <div class="form-row">
-                  <label for="profileComplementInput">Complemento</label>
-                  <input type="text" id="profileComplementInput" name="complement" readonly />
-                </div>
-                <p class="form-help">E-mail e CPF são definidos no cadastro inicial e não podem ser alterados pelo portal.</p>
-                <div class="form-row profile-actions">
-                  <button type="button" class="btn btn-secondary" id="editProfileBtn">Editar Perfil</button>
-                  <button type="button" class="btn btn-secondary" id="cancelProfileEditBtn">Cancelar</button>
-                </div>
-                <div class="form-row">
-                  <div id="profileMessage" class="rooms-message"></div>
-                </div>
-              </form>
-            </article>
-
-            <article class="form-card payment-card" id="paymentCardSection">
-              <div class="section-headline">
-                <div>
-                  <h3>Cartões de pagamento</h3>
-                  <p class="form-help">Cadastre um cartão para agilizar reservas, assinaturas e cursos.</p>
-                </div>
-                <button type="button" class="btn btn-primary btn-sm" id="openCardModalBtn" data-open-card-modal>
-                  Cadastrar cartão
-                </button>
-              </div>
-              <div id="cardListSection" class="card-list-section" hidden>
-                <ul id="cardList" class="card-list"></ul>
-              </div>
-              <div id="cardListEmpty" class="rooms-message" hidden>
-                Nenhum cartão cadastrado ainda. Clique em &ldquo;Cadastrar cartão&rdquo; para adicionar um novo método.
-              </div>
-              <div id="cardListError" class="rooms-message state-error" hidden></div>
-            </article>
-          </div>
-
-          <div id="panel-courses" class="portal-section" hidden>
-            <article class="form-card">
-              <h3>Meus cursos</h3>
-              <p class="form-help">Pagamentos são confirmados somente quando o curso atinge o mínimo de participantes definido pelo anunciante.</p>
-              <div id="clientCoursesMessage" class="rooms-message"></div>
-              <div id="clientCoursesList" class="workshops-grid courses-grid"></div>
-            </article>
-            <article class="form-card">
-              <h3>Cursos disponíveis</h3>
-              <p class="form-help">Escolha um curso para se inscrever. Você receberá a confirmação assim que o pagamento for processado.</p>
-              <div id="coursesFeedback" class="rooms-message"></div>
-              <div id="availableCoursesMessage" class="rooms-message"></div>
-              <div id="availableCoursesGrid" class="workshops-grid courses-grid"></div>
-            </article>
-          </div>
+<footer class="site-footer">
+  <div class="site-footer-inner">
+    <div class="footer-column footer-map">
+      <h3>Mapa do site</h3>
+      <div class="footer-links-grid">
+        <div>
+          <h4>Salas</h4>
+          <a href="/salas.php">Ver todas as salas</a>
+        </div>
+        <div>
+          <h4>Cursos</h4>
+          <a href="/workshops.php">Agenda de cursos e workshops</a>
+        </div>
+        <div>
+          <h4>Área do Cliente</h4>
+          <a href="/clientes.php">Reservas e visitantes</a>
+        </div>
+        <div>
+          <h4>Anunciante</h4>
+          <a href="/anunciante.php">Cadastrar salas e cursos</a>
         </div>
       </div>
-    </section>
-  </main>
-
-  <footer>
-    <p>Contato: contato@zeefe.com | (11) 1234-5678</p>
-    <p>Endereço: Moema, São Paulo - SP</p>
-    <p><a href="#">Instagram</a> | <a href="#">LinkedIn</a></p>
+    </div>
+    <div class="footer-column footer-contact">
+      <h3>Contato</h3>
+      <p>contato@zeefe.com | (11) 9.6714-7377</p>
+      <p>Moema, São Paulo - SP</p>
+      <p><a href="#">Instagram</a> | <a href="#">LinkedIn</a></p>
+    </div>
+  </div>
+  <div class="site-footer-bottom">
+    <div class="footer-powered">
+      <span>Powered by</span>
+      <div class="footer-powered-logos">
+        <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='110' height='30'><text x='5' y='20' font-family='Arial' font-size='16' fill='%23005CAB'>HostGator</text></svg>" alt="HostGator" loading="lazy">
+        <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='130' height='30'><text x='5' y='20' font-family='Arial' font-size='16' fill='%2300317A'>Contabilizei</text></svg>" alt="Contabilizei" loading="lazy">
+        <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='80' height='30'><text x='5' y='20' font-family='Arial' font-size='16' fill='%23E10D5C'>cora</text></svg>" alt="Cora" loading="lazy">
+      </div>
+    </div>
     <p>© 2025 Ze.EFE - Todos os direitos reservados</p>
-  </footer>
-
-  <!-- Modal de ações da reserva -->
-  <div class="modal-overlay" id="reservationActionsModal" aria-hidden="true">
-    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="reservationActionsTitle">
-      <button class="modal-close" type="button" id="reservationActionsClose" aria-label="Fechar">&times;</button>
-      <div class="modal-body">
-        <div class="modal-info card-payment-modal" style="padding:24px; width:100%">
-          <h2 id="reservationActionsTitle" style="margin-top:0">Ações da reserva</h2>
-          <p id="reservationActionsMeta" class="rooms-message"></p>
-          <div id="reservationActionsButtons" class="actions-grid"></div>
-        </div>
-      </div>
-    </div>
   </div>
+</footer>
 
-  <!-- Modal: Chat com o anunciante (cliente) -->
-  <div class="modal-overlay chat-drawer" id="clientChatModal" aria-hidden="true">
-    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="clientChatTitle">
-      <button class="modal-close" type="button" id="clientChatClose" aria-label="Fechar">&times;</button>
-      <div class="modal-body">
-        <div class="modal-info chat-layout" style="padding:24px; width:100%">
-          <aside class="chat-sidebar">
-            <h2 id="clientChatTitle" style="margin-top:0">Mensagens</h2>
-            <div class="chat-sidebar-section">
-              <h4>Suporte</h4>
-              <button type="button" class="chat-thread-item" id="clientSupportThreadItem">Equipe Ze.EFE</button>
-            </div>
-            <div class="chat-sidebar-section">
-              <h4>Reservas</h4>
-              <div id="clientChatThreadsList"></div>
-            </div>
-          </aside>
-          <section class="chat-main">
-            <div id="clientChatHeader" class="rooms-message chat-header-line"></div>
-            <div id="clientChatMessages" class="chat-messages"></div>
-            <div class="chat-report-row">
-              <button type="button" class="btn btn-secondary btn-sm" id="openReportProblemBtn">Relatar problema</button>
-            </div>
-            <form id="clientChatForm" class="chat-form">
-              <input type="text" id="clientChatInput" placeholder="Digite uma mensagem" style="flex:1" />
-              <button class="btn btn-primary" type="submit">Enviar</button>
-            </form>
-          </section>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modal: Relatar problema -->
-  <div class="modal-overlay" id="reportProblemModal" aria-hidden="true">
-    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="reportProblemTitle">
-      <button class="modal-close" type="button" id="reportProblemClose" aria-label="Fechar">&times;</button>
-      <div class="modal-body">
-        <div class="modal-info" style="padding:24px; width:100%">
-          <h2 id="reportProblemTitle" style="margin-top:0">Relatar problema</h2>
-          <p class="rooms-message">Conte para a equipe Ze.EFE o que aconteceu. Suas mensagens desta conversa serão usadas como contexto.</p>
-          <form id="reportProblemForm" class="profile-edit-form">
-            <div class="form-row">
-              <label for="reportIssueType">Tipo de problema</label>
-              <select id="reportIssueType" required>
-                <option value="reserva">Reserva</option>
-                <option value="atendimento">Atendimento</option>
-                <option value="cancelamento">Cancelamento</option>
-                <option value="pagamento">Pagamento</option>
-                <option value="outro">Outro</option>
-              </select>
-            </div>
-            <div class="form-row">
-              <label for="reportIssueDescription">Descrição</label>
-              <textarea id="reportIssueDescription" rows="4" placeholder="Descreva o problema com o máximo de detalhes possível." required></textarea>
-            </div>
-            <div class="modal-actions" style="margin-top:12px; display:flex; gap:12px; justify-content:flex-end;">
-              <button type="button" class="btn btn-secondary" id="reportProblemCancel">Cancelar</button>
-              <button type="submit" class="btn btn-primary">Enviar relato</button>
-            </div>
-            <div class="form-row"><div id="reportProblemMessage" class="rooms-message"></div></div>
-          </form>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modal: Convidar membro -->
-  <div class="modal-overlay" id="inviteMemberModal" aria-hidden="true">
-    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="inviteMemberTitle">
-      <button class="modal-close" type="button" id="inviteMemberClose" aria-label="Fechar">&times;</button>
-      <div class="modal-body">
-        <div class="modal-info" style="padding:24px; width:100%">
-          <h2 id="inviteMemberTitle" style="margin-top:0">Convidar membro</h2>
-          <p class="rooms-message" style="margin-top:4px;margin-bottom:12px;">
-            A busca será realizada entre os usuários já cadastrados na plataforma Ze.EFE. Se não encontrado, enviaremos um convite de pré‑cadastro com os dados informados.
-          </p>
-          <div class="form-grid-mini">
-            <div>
-              <label for="inviteCpf">CPF</label>
-              <input type="text" id="inviteCpf" maxlength="14" placeholder="Somente números" />
-            </div>
-            <div>
-              <label for="inviteEmail">E-mail</label>
-              <input type="email" id="inviteEmail" placeholder="Opcional para reenviar" />
-            </div>
-            <div>
-              <label for="inviteRole">Papel</label>
-              <select id="inviteRole">
-                <option value="membro">Membro</option>
-                <option value="gestor">Gestor</option>
-                <option value="leitor">Leitor</option>
-                <option value="admin">Admin</option>
-              </select>
-            </div>
-          </div>
-          <div class="form-row" style="display:flex; gap:8px; align-items:center;">
-            <button class="btn btn-secondary" type="button" id="inviteLookupBtn">Buscar</button>
-            <span id="inviteLookupResult" class="rooms-message"></span>
-          </div>
-          <div class="modal-actions" style="margin-top:12px; display:flex; gap:12px; justify-content:flex-end;">
-            <button type="button" class="btn btn-secondary" id="inviteMemberCancel">Cancelar</button>
-            <button type="button" class="btn btn-primary" id="inviteMemberSend">Enviar convite</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modal: aviso sobre visitantes/invites -->
-  <div class="modal-overlay" id="bookingVisitorsModal" aria-hidden="true">
-    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="bookingVisitorsTitle">
-      <button class="modal-close" type="button" id="bookingVisitorsClose" aria-label="Fechar">&times;</button>
-      <div class="modal-body">
-        <div class="modal-info" style="padding:24px; width:100%">
-          <h2 id="bookingVisitorsTitle" style="margin-top:0">Visitantes</h2>
-          <p id="bookingVisitorsMessage" class="rooms-message" style="margin-bottom:16px"></p>
-          <div style="display:flex; gap:10px; justify-content:flex-end; flex-wrap:wrap">
-            <button type="button" class="btn btn-secondary" id="bookingVisitorsAddBtn">Adicionar convidados</button>
-            <button type="button" class="btn btn-primary" id="bookingVisitorsContinueBtn">Continuar assim mesmo</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modal: Adicionar manualmente -->
-  <div class="modal-overlay" id="manualMembersModal" aria-hidden="true">
-    <div class="modal-dialog wide" role="dialog" aria-modal="true" aria-labelledby="manualMembersTitle">
-      <button class="modal-close" type="button" id="manualMembersClose" aria-label="Fechar">&times;</button>
-      <div class="modal-body">
-        <div class="modal-info" style="padding:24px; width:100%">
-          <h2 id="manualMembersTitle" style="margin-top:0">Adicionar membros manualmente</h2>
-          <p class="rooms-message" style="margin-top:4px;margin-bottom:12px;">
-            Usuários já cadastrados na Ze.EFE serão adicionados à empresa. Para e‑mails/CPFs não encontrados, enviaremos um convite de pré‑cadastro para que concluam o registro e passem a fazer parte da empresa.
-          </p>
-          <div class="responsive-table manual-table-wrap">
-            <table class="table manual-members-table">
-              <thead>
-                <tr>
-                  <th>Nome</th>
-                  <th>E-mail</th>
-                  <th>CPF</th>
-                  <th>Papel</th>
-                </tr>
-              </thead>
-              <tbody id="manualMembersTBody"></tbody>
-            </table>
-          </div>
-          <div style="display:flex; gap:8px; justify-content:space-between; margin-top:10px;">
-            <button type="button" class="btn btn-secondary btn-sm" id="manualAddRow">Adicionar linha</button>
-            <div>
-              <button type="button" class="btn btn-secondary" id="manualMembersCancel">Cancelar</button>
-              <button type="button" class="btn btn-primary" id="manualMembersSubmit">Enviar convites</button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modal: Importar contatos -->
-  <div class="modal-overlay" id="importContactsModal" aria-hidden="true">
-    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="importContactsTitle">
-      <button class="modal-close" type="button" id="importContactsClose" aria-label="Fechar">&times;</button>
-      <div class="modal-body">
-        <div class="modal-info" style="padding:24px; width:100%">
-          <h2 id="importContactsTitle" style="margin-top:0">Importar contatos</h2>
-          <p class="rooms-message">Baixe o modelo, preencha até 50 linhas (Nome, E‑mail, CPF) e importe para revisar e enviar convites.</p>
-          <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-            <a class="btn btn-secondary" href="api/company_members_template_xlsx.php">Baixar modelo XLSX</a>
-            <button type="button" class="btn btn-primary" id="importPickFile">Selecionar arquivo</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modal de edição de perfil -->
-  <div class="modal-overlay" id="profileEditModal" aria-hidden="true">
-    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="profileEditTitle">
-      <button class="modal-close" type="button" id="profileEditClose" aria-label="Fechar">&times;</button>
-      <div class="modal-body">
-        <div class="modal-info" style="padding:24px; width:100%">
-          <h2 id="profileEditTitle" style="margin-top:0">Editar perfil</h2>
-          <form id="profileEditForm" class="profile-edit-form">
-            <div class="form-grid-mini">
-              <div>
-                <label for="editName">Nome completo</label>
-                <input type="text" id="editName" name="name" required />
-              </div>
-              <div>
-                <label for="editLogin">Login</label>
-                <input type="text" id="editLogin" name="login" required />
-              </div>
-            </div>
-            <div class="form-grid-mini">
-              <div>
-                <label for="editEmail">E-mail</label>
-                <input type="email" id="editEmail" name="email" readonly />
-              </div>
-              <div>
-                <label for="editCpf">CPF</label>
-                <input type="text" id="editCpf" name="cpf" readonly />
-              </div>
-            </div>
-            <div class="form-grid-mini">
-              <div>
-                <label for="editPhone">Telefone</label>
-                <input type="text" id="editPhone" name="phone" maxlength="15" />
-              </div>
-              <div>
-                <label for="editWhatsapp">WhatsApp</label>
-                <input type="text" id="editWhatsapp" name="whatsapp" maxlength="15" />
-              </div>
-            </div>
-            <div class="form-grid-mini">
-              <div>
-                <label for="editZip">CEP</label>
-                <input type="text" id="editZip" name="zip_code" maxlength="20" />
-              </div>
-              <div>
-                <label for="editState">Estado</label>
-                <input type="text" id="editState" name="state" maxlength="10" />
-              </div>
-            </div>
-            <div class="form-grid-mini">
-              <div>
-                <label for="editCity">Cidade</label>
-                <input type="text" id="editCity" name="city" />
-              </div>
-              <div>
-                <label for="editCountry">País</label>
-                <input type="text" id="editCountry" name="country" value="BR" />
-              </div>
-            </div>
-            <div class="form-grid-mini">
-              <div>
-                <label for="editStreet">Endereço</label>
-                <input type="text" id="editStreet" name="street" />
-              </div>
-              <div>
-                <label for="editNumber">Número</label>
-                <input type="text" id="editNumber" name="number" />
-              </div>
-            </div>
-            <div class="form-row">
-              <label for="editComplement">Complemento</label>
-              <input type="text" id="editComplement" name="complement" />
-            </div>
-
-            <div class="modal-actions" style="margin-top:12px; display:flex; gap:12px; justify-content:space-between; flex-wrap:wrap;">
-              <button type="button" class="btn btn-secondary" id="openPasswordModalBtn">Alterar senha</button>
-              <div>
-                <button type="button" class="btn btn-secondary" id="profileEditCancel">Cancelar</button>
-                <button type="submit" class="btn btn-primary">Salvar</button>
-              </div>
-            </div>
-            <div class="form-row"><div id="profileEditMessage" class="rooms-message"></div></div>
-          </form>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modal: Alterar senha -->
-  <div class="modal-overlay" id="passwordChangeModal" aria-hidden="true">
-    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="passwordChangeTitle">
-      <button class="modal-close" type="button" id="passwordChangeClose" aria-label="Fechar">&times;</button>
-      <div class="modal-body">
-        <div class="modal-info" style="padding:24px; width:100%">
-          <h2 id="passwordChangeTitle" style="margin-top:0">Alterar senha</h2>
-          <form id="passwordChangeForm" class="profile-edit-form">
-            <fieldset class="password-change">
-              <legend>Nova senha de acesso</legend>
-              <div class="form-grid-mini">
-                <div>
-                  <label for="currentPassword">Senha atual</label>
-                  <input type="password" id="currentPassword" autocomplete="current-password" />
-                </div>
-                <div>
-                  <label for="newPassword">Nova senha</label>
-                  <input type="password" id="newPassword" autocomplete="new-password" />
-                </div>
-              </div>
-              <div class="form-grid-mini">
-                <div>
-                  <label for="newPasswordConfirm">Confirmar nova senha</label>
-                  <input type="password" id="newPasswordConfirm" autocomplete="new-password" />
-                </div>
-                <div class="password-indicators inline">
-                  <span class="password-indicator state-neutral" id="pwdStrengthIndicator">Força da senha: aguardando</span>
-                  <span class="password-indicator state-neutral" id="pwdMatchIndicator">Confirmação: aguardando</span>
-                </div>
-              </div>
-              <p class="password-hint">A senha deve ter 8+ caracteres com letras, números e símbolos.</p>
-            </fieldset>
-            <div class="modal-actions" style="margin-top:12px; display:flex; gap:12px; justify-content:flex-end;">
-              <button type="button" class="btn btn-secondary" id="passwordChangeCancel">Cancelar</button>
-              <button type="submit" class="btn btn-primary">Salvar nova senha</button>
-            </div>
-            <div class="form-row"><div id="passwordChangeMessage" class="rooms-message"></div></div>
-          </form>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modal: Cartão de pagamento -->
-  <div class="modal-overlay" id="cardModal" aria-hidden="true">
-    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="cardModalTitle" style="max-width:560px;">
-      <button class="modal-close" type="button" id="cardModalClose" aria-label="Fechar">&times;</button>
-      <div class="modal-body">
-        <div class="modal-info" style="padding:24px; width:100%">
-          <h2 id="cardModalTitle" style="margin-top:0">Cadastrar cartão</h2>
-          <p class="rooms-message" style="margin-bottom:16px;">Os dados são enviados com segurança diretamente à Stripe.</p>
-          <form id="cardSaveForm" class="profile-edit-form">
-            <input type="hidden" id="cardClientId" name="client_id" />
-            <div class="form-row">
-              <label for="cardHolderName">Nome impresso no cartão</label>
-              <input type="text" id="cardHolderName" autocomplete="cc-name" required />
-            </div>
-            <div class="form-row">
-              <label for="stripeCardElement">Dados do cartão</label>
-              <div class="stripe-card-wrapper">
-                <div id="stripeCardElement" class="stripe-card-element"></div>
-              </div>
-            </div>
-            <div class="form-row billing-toggle-row">
-              <label class="checkbox-toggle" for="cardUseProfileData">
-                <input type="checkbox" id="cardUseProfileData" checked />
-                <span>Usar os dados do cadastro para faturamento</span>
-              </label>
-            </div>
-            <div id="cardBillingFields" class="billing-fields">
-              <div class="form-row">
-                <label for="cardBillingEmail">E-mail para recibos</label>
-                <input type="email" id="cardBillingEmail" autocomplete="email" />
-              </div>
-              <div class="form-grid-mini">
-                <div>
-                  <label for="cardBillingZip">CEP</label>
-                  <input type="text" id="cardBillingZip" autocomplete="postal-code" maxlength="20" />
-                </div>
-                <div>
-                  <label for="cardBillingState">Estado</label>
-                  <input type="text" id="cardBillingState" autocomplete="address-level1" maxlength="10" />
-                </div>
-              </div>
-              <div class="form-grid-mini">
-                <div>
-                  <label for="cardBillingCity">Cidade</label>
-                  <input type="text" id="cardBillingCity" autocomplete="address-level2" />
-                </div>
-                <div>
-                  <label for="cardBillingCountry">País</label>
-                  <input type="text" id="cardBillingCountry" autocomplete="country" maxlength="2" value="BR" />
-                </div>
-              </div>
-              <div class="form-grid-mini">
-                <div>
-                  <label for="cardBillingStreet">Endereço</label>
-                  <input type="text" id="cardBillingStreet" autocomplete="address-line1" />
-                </div>
-                <div>
-                  <label for="cardBillingNumber">Número</label>
-                  <input type="text" id="cardBillingNumber" autocomplete="address-line2" />
-                </div>
-              </div>
-              <div class="form-row">
-                <label for="cardBillingComplement">Complemento</label>
-                <input type="text" id="cardBillingComplement" />
-              </div>
-            </div>
-            <div id="cardErrors" class="rooms-message state-error" aria-live="polite"></div>
-            <div id="cardSaveMessage" class="rooms-message state-ok" aria-live="polite"></div>
-            <div class="modal-actions" style="display:flex; gap:12px; justify-content:flex-end; margin-top:12px;">
-              <button type="button" class="btn btn-secondary" id="cardModalCancel">Cancelar</button>
-              <button type="submit" class="btn btn-primary" id="cardSubmitBtn">Salvar cartão</button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modal: Convites pendentes (inbox) -->
-  <div class="modal-overlay" id="inviteInboxModal" aria-hidden="true">
-    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="inviteInboxTitle">
-      <button class="modal-close" type="button" id="inviteInboxClose" aria-label="Fechar">&times;</button>
-      <div class="modal-body">
-        <div class="modal-info" style="padding:24px; width:100%">
-          <h2 id="inviteInboxTitle" style="margin-top:0">Convites para empresas</h2>
-          <p class="rooms-message">Você recebeu convites para participar de empresas. Aceite para ter acesso às funcionalidades de gestão.</p>
-          <div id="inviteInboxList" class="inbox-list"></div>
-          <div class="modal-actions" style="display:flex; gap:12px; justify-content:flex-end; margin-top:12px;">
-            <button type="button" class="btn btn-secondary" id="inviteInboxDismiss">Fechar</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal-overlay" id="emailVerifyModal" aria-hidden="true">
-    <div class="modal-dialog modal-small" role="dialog" aria-modal="true" aria-labelledby="emailVerifyTitle">
-      <button class="modal-close" type="button" id="emailVerifyClose" aria-label="Fechar">&times;</button>
-      <div class="modal-body">
-        <div class="modal-info" style="padding:24px;">
-          <h2 id="emailVerifyTitle">Confirme seu e-mail</h2>
-          <p id="emailVerifyMessage" class="rooms-message" style="margin:8px 0 16px;">
-            Encontramos seu cadastro, mas é necessário confirmar o e-mail antes de acessar o portal.
-          </p>
-          <div class="modal-actions" style="display:flex; gap:12px; justify-content:flex-end; flex-wrap:wrap;">
-            <button type="button" class="btn btn-secondary" id="emailVerifyDismiss">Fechar</button>
-            <button type="button" class="btn btn-primary" id="emailVerifyResend">Reenviar link de verificação</button>
-          </div>
-          <div id="emailVerifyFeedback" class="rooms-message" role="status" aria-live="polite" style="margin-top:12px;"></div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modal: Detalhes do curso -->
-  <div class="modal-overlay" id="courseDetailsModal" aria-hidden="true">
-    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="courseDetailsTitle" style="width:920px; max-width:96vw;">
-      <button class="modal-close" type="button" id="courseDetailsClose" aria-label="Fechar">&times;</button>
-      <div class="modal-body">
-        <div class="modal-info course-modal-body">
-          <div class="course-details-header">
-            <div>
-              <h2 id="courseDetailsTitle">Curso</h2>
-              <p id="courseDetailsMeta" class="rooms-message"></p>
-            </div>
-            <div class="course-details-actions" id="courseDetailsActions"></div>
-          </div>
-          <div class="course-details-grid">
-            <div>
-              <div id="courseDetailsCoverWrapper" class="course-cover" hidden>
-                <img id="courseDetailsCover" alt="Capa do curso">
-              </div>
-              <div id="courseDetailsDescription" class="course-description"></div>
-            </div>
-            <aside class="course-summary">
-              <h4>Informações rápidas</h4>
-              <ul>
-                <li id="courseDetailsWhen"></li>
-                <li id="courseDetailsWhere"></li>
-                <li id="courseDetailsPrice"></li>
-                <li id="courseDetailsSeats"></li>
-              </ul>
-              <div id="courseDetailsStatus" class="rooms-message"></div>
-              <div id="courseEnrollArea">
-                <p class="rooms-message">Confirme sua participação para receber o ingresso.</p>
-                <label for="courseDetailsVoucher" class="course-label">Voucher (opcional)</label>
-                <div class="course-voucher-row">
-                  <input type="text" id="courseDetailsVoucher" placeholder="Código do voucher">
-                  <button type="button" class="btn btn-secondary btn-sm" id="courseDetailsVoucherApply">Aplicar</button>
-                </div>
-              <div id="courseDetailsVoucherResult" class="rooms-message"></div>
-              <button type="button" class="btn btn-primary" id="courseDetailsConfirm">Confirmar inscrição</button>
-              <button type="button" class="btn btn-secondary btn-sm" id="courseCheckoutOpen" style="margin-top:8px;" hidden>Abrir checkout de pagamento</button>
-            </div>
-            <div id="courseTicketSection" class="course-ticket" hidden>
-                <h4>Ingresso</h4>
-                <p id="courseTicketCode"></p>
-                <div id="courseTicketQr" class="course-ticket-qr"></div>
-                <p id="courseTicketInfo" class="rooms-message"></p>
-              </div>
-            </aside>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <footer class="site-footer">
-    <div class="site-footer-inner">
-      <div class="footer-column footer-map">
-        <h3>Mapa do site</h3>
-        <div class="footer-links-grid">
-          <div>
-            <h4>Salas</h4>
-            <a href="/salas.php">Ver todas as salas</a>
-          </div>
-          <div>
-            <h4>Cursos</h4>
-            <a href="/workshops.php">Agenda de cursos e workshops</a>
-          </div>
-          <div>
-            <h4>Área do Cliente</h4>
-            <a href="/clientes.php">Reservas e visitantes</a>
-          </div>
-          <div>
-            <h4>Anunciante</h4>
-            <a href="/anunciante.php">Cadastrar salas e cursos</a>
-          </div>
-        </div>
-      </div>
-      <div class="footer-column footer-contact">
-        <h3>Contato</h3>
-        <p>contato@zeefe.com | (11) 9.6714-7377</p>
-        <p>Moema, São Paulo - SP</p>
-        <p><a href="#">Instagram</a> | <a href="#">LinkedIn</a></p>
-      </div>
-    </div>
-    <div class="site-footer-bottom">
-      <div class="footer-powered">
-        <span>Powered by</span>
-        <div class="footer-powered-logos">
-          <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='110' height='30'><text x='5' y='20' font-family='Arial' font-size='16' fill='%23005CAB'>HostGator</text></svg>" alt="HostGator" loading="lazy">
-          <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='130' height='30'><text x='5' y='20' font-family='Arial' font-size='16' fill='%2300317A'>Contabilizei</text></svg>" alt="Contabilizei" loading="lazy">
-          <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='80' height='30'><text x='5' y='20' font-family='Arial' font-size='16' fill='%23E10D5C'>cora</text></svg>" alt="Cora" loading="lazy">
-        </div>
-      </div>
-      <p>© 2025 Ze.EFE - Todos os direitos reservados</p>
-    </div>
-  </footer>
-
-  <!-- Aviso de pagamentos -->
-  <div class="rooms-message" style="max-width:960px; margin:24px auto; text-align:center;">
-    <strong>Pagamentos online temporariamente indisponíveis.</strong> Você pode continuar navegando,
-    reservar salas e inscrever-se em cursos; entraremos em contato para combinar o pagamento.
-  </div>
-
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="" defer></script>
-  <script src="https://js.stripe.com/v3/" defer></script>
-  <script src="scripts/header-session.js" defer></script>
-  <script src="scripts/clientes.js" defer></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="" defer></script>
+<script src="https://js.stripe.com/v3/" defer></script>
+<script src="/scripts/header-session.js" defer></script>
+<script src="/scripts/clientes.js" defer></script>
 </body>
 </html>
