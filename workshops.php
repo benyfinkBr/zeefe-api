@@ -1,3 +1,13 @@
+<?php require __DIR__ . '/includes/bootstrap.php'; ?>
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Workshops e Cursos — Ze.EFE</title>
+  <link rel="stylesheet" href="/style.css?v=20241222" />
+</head>
+<body>
 <?php require __DIR__ . '/includes/header.php'; ?>
 
 <main>

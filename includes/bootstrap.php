@@ -1,8 +1,5 @@
 <?php
 // Session bootstrap for Ze.EFE
-// Ensures consistent cookie params and provides simple helpers for auth state.
-
-// Configure session cookie to work across the whole domain.
 $secure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off');
 session_set_cookie_params([
     'lifetime' => 0,
@@ -12,12 +9,11 @@ session_set_cookie_params([
     'httponly' => true,
     'samesite' => 'Lax',
 ]);
-
 if (session_status() !== PHP_SESSION_ACTIVE) {
     session_start();
 }
 
-// Optional debug: append ?debug_session=1 to log session info.
+// Optional debug
 if (!empty($_GET['debug_session'])) {
     error_log('[SESSION DEBUG] status=' . session_status());
     error_log('[SESSION DEBUG] name=' . session_name());
@@ -27,7 +23,7 @@ if (!empty($_GET['debug_session'])) {
     error_log('[SESSION DEBUG] auth=' . json_encode($_SESSION['auth'] ?? null));
 }
 
-// Helper to hydrate auth from existing JS cookie (backwards-compat with old front-end).
+// Back-compat: hydrate from JS cookie if available
 if (empty($_SESSION['auth']) && !empty($_COOKIE['ZEEFE_HEADER_SESSION'])) {
     $raw = urldecode($_COOKIE['ZEEFE_HEADER_SESSION']);
     $data = json_decode($raw, true);

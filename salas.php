@@ -1,4 +1,16 @@
 
+<?php require __DIR__ . '/includes/bootstrap.php'; ?>
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Ze.EFE - Marca lá!</title>
+  <link rel="stylesheet" href="/style.css?v=20241222" />
+  <!-- Leaflet (mapa) -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+</head>
+<body>
 <?php require __DIR__ . '/includes/header.php'; ?>
 
 <main>
@@ -153,10 +165,10 @@
         <div class="modal-info">
           <h2 id="entryChoiceTitle">Como você prefere entrar?</h2>
           <div class="entry-choice-grid">
-            <button type="button" class="btn btn-primary entry-choice-btn" data-destino="clientes.html">
+            <button type="button" class="btn btn-primary entry-choice-btn" data-destino="/clientes.php">
               Sou cliente
             </button>
-            <button type="button" class="btn btn-secondary entry-choice-btn" data-destino="anunciante.html">
+            <button type="button" class="btn btn-secondary entry-choice-btn" data-destino="/anunciante.php">
               Sou anunciante
             </button>
           </div>

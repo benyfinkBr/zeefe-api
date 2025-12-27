@@ -1,3 +1,14 @@
+<?php require __DIR__ . '/includes/bootstrap.php'; ?>
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Portal do Anunciante — Ze.EFE</title>
+  <link rel="icon" href="/favicon.ico" />
+  <link rel="stylesheet" href="/style.css?v=20241222" />
+</head>
+<body class="client-portal-page client-logged-out anunciante-page">
 <?php require __DIR__ . '/includes/header.php'; ?>
 
 <main class="client-portal">

@@ -1,3 +1,14 @@
+<?php require __DIR__ . '/includes/bootstrap.php'; ?>
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Portal do Cliente — Ze.EFE</title>
+  <link rel="stylesheet" href="/style.css?v=20241222" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+</head>
+<body class="client-portal-page client-logged-out">
 <?php require __DIR__ . '/includes/header.php'; ?>
 
 <main class="client-portal">
