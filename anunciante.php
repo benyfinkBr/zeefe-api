@@ -1,7 +1,7 @@
 <?php require __DIR__ . '/includes/header.php'; ?>
 
 <main class="client-portal">
-  <!-- Auth overlay (reutiliza estilo do portal do cliente) -->
+  <!-- Auth overlay (portal do anunciante) -->
   <section id="authContainer" class="auth-container">
     <div class="auth-screen" id="authLogin">
       <div class="login-card">
@@ -190,7 +190,49 @@
   </section>
 </main>
 
-<!-- Modais e scripts seguem o conteúdo original -->
+<footer class="site-footer">
+  <div class="site-footer-inner">
+    <div class="footer-column footer-map">
+      <h3>Mapa do site</h3>
+      <div class="footer-links-grid">
+        <div>
+          <h4>Salas</h4>
+          <a href="/salas.php">Ver todas as salas</a>
+        </div>
+        <div>
+          <h4>Cursos</h4>
+          <a href="/workshops.php">Agenda de cursos e workshops</a>
+        </div>
+        <div>
+          <h4>Área do Cliente</h4>
+          <a href="/clientes.php">Reservas e visitantes</a>
+        </div>
+        <div>
+          <h4>Anunciante</h4>
+          <a href="/anunciante.php">Cadastrar salas e cursos</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-column footer-contact">
+      <h3>Contato</h3>
+      <p>contato@zeefe.com | (11) 9.6714-7377</p>
+      <p>Moema, São Paulo - SP</p>
+      <p><a href="#">Instagram</a> | <a href="#">LinkedIn</a></p>
+    </div>
+  </div>
+  <div class="site-footer-bottom">
+    <div class="footer-powered">
+      <span>Powered by</span>
+      <div class="footer-powered-logos">
+        <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='110' height='30'><text x='5' y='20' font-family='Arial' font-size='16' fill='%23005CAB'>HostGator</text></svg>" alt="HostGator" loading="lazy">
+        <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='130' height='30'><text x='5' y='20' font-family='Arial' font-size='16' fill='%2300317A'>Contabilizei</text></svg>" alt="Contabilizei" loading="lazy">
+        <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='80' height='30'><text x='5' y='20' font-family='Arial' font-size='16' fill='%23E10D5C'>cora</text></svg>" alt="Cora" loading="lazy">
+      </div>
+    </div>
+    <p>© 2025 Ze.EFE - Todos os direitos reservados</p>
+  </div>
+</footer>
+
 <script src="/scripts/header-session.js" defer></script>
 <script src="/scripts/anunciante.js" defer></script>
 </body>
