@@ -35,7 +35,7 @@
               <input id="heroDate" type="date" />
             </div>
             <div class="field">
-              <label for="heroCapacity">Quantidade de pessoas (opcional)</label>
+              <label for="heroCapacity">Quantidade de pessoas? (opcional)</label>
               <input id="heroCapacity" type="number" min="1" placeholder="Ex: 12" />
             </div>
           </div>
