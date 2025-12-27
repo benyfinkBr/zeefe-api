@@ -22,6 +22,18 @@ try {
   $addrStmt->execute([':cid' => $clientId]);
   $address = $addrStmt->fetch(PDO::FETCH_ASSOC) ?: null;
 
+  // Garante que o header server-side veja o login na próxima requisição
+  if (empty($_SESSION['auth'])) {
+    $_SESSION['auth'] = [
+      'logged_in' => true,
+      'user_id'   => $client['id'],
+      'name'      => $client['name'],
+      'email'     => $client['email'],
+      'role'      => 'client',
+      'ts'        => time(),
+    ];
+  }
+
   echo json_encode([
     'success' => true,
     'client' => [
