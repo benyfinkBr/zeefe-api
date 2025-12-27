@@ -129,8 +129,17 @@ try {
     'remember' => $rememberPayload
   ]);
 
+  session_regenerate_id(true);
   $_SESSION['client_id'] = $client['id'];
   $_SESSION['client_name'] = $client['name'];
+  $_SESSION['auth'] = [
+    'logged_in' => true,
+    'user_id'   => (int)$client['id'],
+    'name'      => $client['name'],
+    'email'     => $client['email'],
+    'role'      => 'client',
+    'ts'        => time(),
+  ];
 } catch (Throwable $e) {
   http_response_code(500);
   echo json_encode(['success' => false, 'error' => 'Erro interno: ' . $e->getMessage()]);
