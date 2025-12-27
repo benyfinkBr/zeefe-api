@@ -61,12 +61,23 @@ function syncHeaderWithClientSession(cliente) {
       localStorage.setItem('zeefeHeaderSession', JSON.stringify(payload));
     } catch (_) {}
     try {
-      document.cookie = `ZEEFE_HEADER_SESSION=${encodeURIComponent(JSON.stringify(payload))}; path=/; max-age=${60 * 60 * 24 * 30}; SameSite=Lax`;
+      const secure = window.location.protocol === 'https:';
+      const parts = [
+        `ZEEFE_HEADER_SESSION=${encodeURIComponent(JSON.stringify(payload))}`,
+        'Path=/',
+        'Domain=.zeefe.com.br',
+        'SameSite=Lax',
+        `Max-Age=${60 * 60 * 24 * 30}`
+      ];
+      if (secure) parts.push('Secure');
+      document.cookie = parts.join('; ');
     } catch (_) {}
   } else {
     window.ZEEFE_HEADER?.clearSession?.();
     try { localStorage.removeItem('zeefeHeaderSession'); } catch (_) {}
-    try { document.cookie = 'ZEEFE_HEADER_SESSION=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'; } catch (_) {}
+    try {
+      document.cookie = 'ZEEFE_HEADER_SESSION=; Path=/; Domain=.zeefe.com.br; Expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
+    } catch (_) {}
   }
 }
 

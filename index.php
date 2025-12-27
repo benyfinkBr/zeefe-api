@@ -195,13 +195,15 @@
 
   <!-- Banner de cookies -->
   <div id="cookieBanner" class="cookie-banner" role="dialog" aria-labelledby="cookieTitle" aria-live="polite" hidden>
-    <div class="cookie-inner">
-      <p id="cookieTitle"><strong>Usamos cookies</strong> para melhorar sua experiência. Ao continuar, você concorda com nossa política.</p>
-      <div class="cookie-actions">
-        <button id="cookieAccept" class="btn btn-primary btn-sm">Aceitar</button>
-        <button id="cookieDismiss" class="btn btn-secondary btn-sm">Agora não</button>
-      </div>
+  <div class="cookie-inner">
+    <p id="cookieTitle"><strong>Usamos cookies</strong> para melhorar sua experiência. Ao continuar, você concorda com nossa política.</p>
+    <div class="cookie-actions">
+      <button id="cookieAccept" class="btn btn-primary btn-sm">Aceitar</button>
+      <button id="cookieDismiss" class="btn btn-secondary btn-sm">Agora não</button>
     </div>
   </div>
+</div>
+<script src="/scripts/header-session.js" defer></script>
+<script src="/scripts/index.js" defer></script>
 </body>
 </html>

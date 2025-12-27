@@ -59,6 +59,7 @@
   </div>
 </footer>
 
+<script src="/scripts/header-session.js" defer></script>
 <script src="/scripts/conteudos.js" defer></script>
 </body>
 </html>

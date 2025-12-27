@@ -112,6 +112,7 @@
   </div>
 </footer>
 
+<script src="/scripts/header-session.js" defer></script>
 <script src="/scripts/workshops.js" defer></script>
 </body>
 </html>

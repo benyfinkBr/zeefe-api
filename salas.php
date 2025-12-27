@@ -178,9 +178,9 @@
   </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="" defer></script>
-<script src="scripts/components/carousel.js" defer></script>
-<script src="scripts/header-session.js" defer></script>
-<script src="scripts/salas.js" defer></script>
+<script src="/scripts/components/carousel.js" defer></script>
+<script src="/scripts/header-session.js" defer></script>
+<script src="/scripts/salas.js" defer></script>
 
 
 </body>

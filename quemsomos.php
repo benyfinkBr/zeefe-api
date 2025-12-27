@@ -75,6 +75,7 @@
   </div>
 </footer>
 
+<script src="/scripts/header-session.js" defer></script>
 <script src="/scripts/quemsomos.js" defer></script>
 </body>
 </html>
