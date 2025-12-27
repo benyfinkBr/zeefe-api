@@ -3065,6 +3065,10 @@ function aplicarClienteAtivo(cliente) {
   // Checa convites pendentes na primeira entrada
   checkPendingCompanyInvites();
   startPortalAutoRefresh();
+  // Redireciona para a home com o header já logado
+  setTimeout(() => {
+    window.location.href = '/index.php';
+  }, 150);
 }
 
 function fazerLogout() {

@@ -680,6 +680,11 @@ async function afterLogin() {
   advPasswordCancel?.addEventListener('click', closeAdvPasswordModal);
   advPasswordModal?.addEventListener('click', (e)=>{ if (e.target === advPasswordModal) closeAdvPasswordModal(); });
   advPasswordForm?.addEventListener('submit', onAdvPasswordSubmit);
+
+  // Redireciona para a home com header já logado
+  setTimeout(() => {
+    window.location.href = '/index.php';
+  }, 150);
 }
 
 async function loadAdvertiser() {
