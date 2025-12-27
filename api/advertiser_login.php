@@ -100,11 +100,11 @@ try {
   $_SESSION['advertiser_name'] = $adv['display_name'] ?? $adv['full_name'] ?? ($adv['login_email'] ?? 'Anunciante');
   $_SESSION['auth'] = [
     'logged_in' => true,
-    'user_id'   => (int)$adv['id'],
-    'name'      => $_SESSION['advertiser_name'],
-    'email'     => $adv['login_email'] ?? '',
-    'role'      => 'advertiser',
-    'ts'        => time(),
+    'user_id' => (int) $adv['id'],
+    'name' => $_SESSION['advertiser_name'],
+    'email' => $adv['login_email'] ?? '',
+    'role' => 'advertiser',
+    'ts' => time(),
   ];
 
   echo json_encode(['success' => true, 'advertiser' => $payload, 'remember' => $rememberPayload]);

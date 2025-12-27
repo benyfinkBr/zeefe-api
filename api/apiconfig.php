@@ -41,7 +41,7 @@ if (!$ZEEFE_NO_SESSION) {
   session_set_cookie_params([
     'lifetime' => 0,
     'path'     => '/',
-    'domain'   => '',
+    'domain'   => '.zeefe.com.br',
     'secure'   => $secure,
     'httponly' => true,
     'samesite' => 'Lax'

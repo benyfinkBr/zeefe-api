@@ -134,11 +134,11 @@ try {
   $_SESSION['client_name'] = $client['name'];
   $_SESSION['auth'] = [
     'logged_in' => true,
-    'user_id'   => (int)$client['id'],
-    'name'      => $client['name'],
-    'email'     => $client['email'],
-    'role'      => 'client',
-    'ts'        => time(),
+    'user_id' => (int) $client['id'],
+    'name' => $client['name'],
+    'email' => $client['email'] ?? '',
+    'role' => 'client',
+    'ts' => time(),
   ];
 } catch (Throwable $e) {
   http_response_code(500);
