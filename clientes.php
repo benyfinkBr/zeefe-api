@@ -36,6 +36,7 @@
           <button type="button" class="ghost-btn" data-view="recovery">Esqueci minha senha</button>
           <button type="button" class="ghost-btn" data-view="register">Quero me cadastrar</button>
         </div>
+        <div id="authMessage" class="rooms-message auth-message"></div>
       </div>
     </div>
 
