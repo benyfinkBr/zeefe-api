@@ -1,0 +1,1 @@
+[2025-10-25 23:11:15] Erro: Failed opening required '/home1/benyfi15/public_html/api/db_connect.php' (include_path='.:/opt/cpanel/ea-php83/root/usr/share/pear')

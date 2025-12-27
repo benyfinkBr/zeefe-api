@@ -23,7 +23,7 @@
       <div class="site-header-actions">
         <a href="index.html#contato" class="site-link">Contato</a>
         <div class="site-header-guest" id="homeHeaderGuest" data-zeefe-header="guest">
-          <button class="btn btn-outline" type="button" onclick="window.location='clientes.html'" data-zeefe-header-btn="login">Entrar</button>
+          <button class="btn btn-outline" type="button" id="openLoginChoice" data-zeefe-header-btn="login">Entrar</button>
         </div>
         <div class="site-header-user" id="homeHeaderAccount" data-zeefe-header="account" hidden>
           <button class="user-menu-trigger" type="button" id="homeHeaderAccountBtn" data-zeefe-header-btn="account" aria-haspopup="true" aria-expanded="false">
@@ -121,6 +121,25 @@
       <p>© 2025 Ze.EFE - Todos os direitos reservados</p>
     </div>
   </footer>
+
+  <div class="modal-overlay" id="entryChoiceModal" aria-hidden="true">
+    <div class="modal-dialog modal-small" role="dialog" aria-modal="true" aria-labelledby="entryChoiceTitle">
+      <button class="modal-close" type="button" id="entryChoiceClose" aria-label="Fechar">&times;</button>
+      <div class="modal-body">
+        <div class="modal-info">
+          <h2 id="entryChoiceTitle">Como você prefere entrar?</h2>
+          <div class="entry-choice-grid">
+            <button type="button" class="btn btn-primary entry-choice-btn" data-destino="/clientes.php">
+              Sou cliente
+            </button>
+            <button type="button" class="btn btn-secondary entry-choice-btn" data-destino="/anunciante.php">
+              Sou anunciante
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <script>
     const f = document.getElementById('divulgueForm');

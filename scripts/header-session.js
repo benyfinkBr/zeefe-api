@@ -217,6 +217,37 @@
     });
   }
 
+  function setupEntryChoiceModal() {
+    const openBtn = document.getElementById('openLoginChoice');
+    const modal = document.getElementById('entryChoiceModal');
+    const closeBtn = document.getElementById('entryChoiceClose');
+    if (!modal || !openBtn) return;
+
+    const show = () => {
+      modal.classList.add('show');
+      modal.setAttribute('aria-hidden', 'false');
+    };
+    const hide = () => {
+      modal.classList.remove('show');
+      modal.setAttribute('aria-hidden', 'true');
+    };
+
+    openBtn.addEventListener('click', (event) => {
+      event.preventDefault();
+      show();
+    });
+    closeBtn?.addEventListener('click', hide);
+    modal.addEventListener('click', (event) => {
+      if (event.target === modal) hide();
+    });
+    document.querySelectorAll('.entry-choice-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const destino = btn.getAttribute('data-destino');
+        if (destino) window.location.href = destino;
+      });
+    });
+  }
+
   async function fetchJson(url) {
     try {
       const res = await fetch(url, { credentials: 'include' });
@@ -294,6 +325,7 @@
     initDom();
     renderHeader();
     setupMenuEvents();
+    setupEntryChoiceModal();
     await hydrateSession();
     renderHeader();
   });
