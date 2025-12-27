@@ -36,7 +36,7 @@ const entryChoiceClose = document.getElementById('entryChoiceClose');
 openLoginChoiceBtn?.addEventListener('click', () => {
   const session = window.ZEEFE_HEADER?.getSession?.();
   if (session) {
-    const destino = session.type === 'advertiser' ? 'anunciante.html' : 'clientes.html';
+    const destino = session.type === 'advertiser' ? '/anunciante.php' : '/clientes.php';
     window.location.href = destino;
     return;
   }
@@ -286,7 +286,7 @@ function createRoomCard(room) {
   const disabledCta = !availableToday;
   actions.innerHTML = `
     <button class="btn btn-secondary" type="button" data-room="${room.id}">Ver detalhes</button>
-    <a class="btn btn-primary${disabledCta ? ' disabled' : ''}" ${disabledCta ? 'aria-disabled=\"true\" tabindex=\"-1\"' : ''} href="${disabledCta ? '#' : `clientes.html`}">${disabledCta ? 'Indisponível' : 'Reservar diária'}</a>`;
+    <a class="btn btn-primary${disabledCta ? ' disabled' : ''}" ${disabledCta ? 'aria-disabled=\"true\" tabindex=\"-1\"' : ''} href="${disabledCta ? '#' : `/clientes.php`}">${disabledCta ? 'Indisponível' : 'Reservar diária'}</a>`;
   info.appendChild(actions);
 
   card.appendChild(info);
@@ -322,7 +322,7 @@ function renderMapMarkersSalas(rooms) {
       `<strong>${name}</strong><br>${city}${uf ? ' - ' + uf : ''}<br>` +
       `<div style="margin-top:6px;display:flex;gap:8px;flex-wrap:wrap">` +
       `<button type="button" class="btn btn-secondary btn-sm" data-room-popup="${room.id}">Ver detalhes</button>` +
-      `<a class="btn btn-primary btn-sm" href="clientes.html">Solicitar reserva</a>` +
+      `<a class="btn btn-primary btn-sm" href="/clientes.php">Solicitar reserva</a>` +
       `</div>`;
     marker.bindPopup(popupHtml);
     marker.addTo(salasMarkersLayer);
@@ -348,7 +348,7 @@ function openModal(room) {
   modalStatus.textContent = statusLabel(room.status);
   modalLocation.textContent = room.location || 'Não informado';
   modalRate.textContent = formatCurrency(room.daily_rate) || '--';
-  modalReserve.href = `clientes.html`;
+  modalReserve.href = `/clientes.php`;
   modalReserve.classList.toggle('disabled', ['manutencao', 'desativada', 'inativo'].includes((room.status || '').toLowerCase()));
   if (modalReserve.classList.contains('disabled')) {
     modalReserve.setAttribute('aria-disabled', 'true');

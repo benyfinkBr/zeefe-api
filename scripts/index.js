@@ -231,8 +231,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const actions = document.createElement('div');
         actions.className = 'room-actions';
         actions.innerHTML = `
-          <a class="btn btn-primary${available ? '' : ' disabled'}" ${available ? '' : 'aria-disabled="true" tabindex="-1"'} href="${available ? `clientes.html` : '#'}">${available ? 'Solicitar reserva' : 'Indisponível'}</a>
-          <a class="btn btn-secondary" href="salas.html#sala-${room.id}">Ver detalhes</a>
+          <a class="btn btn-primary${available ? '' : ' disabled'}" ${available ? '' : 'aria-disabled="true" tabindex="-1"'} href="${available ? `/clientes.php` : '#'}">${available ? 'Solicitar reserva' : 'Indisponível'}</a>
+          <a class="btn btn-secondary" href="/salas.php#sala-${room.id}">Ver detalhes</a>
         `;
         info.appendChild(actions);
         card.appendChild(info);
@@ -269,8 +269,8 @@ document.addEventListener('DOMContentLoaded', () => {
       const coursesInfo = hasWorkshops
         ? 'Há cursos presenciais nesta sala.'
         : 'Sem cursos futuros nesta sala.';
-      const detailsLink = `salas.html#${r.id}`;
-      const workshopsLink = `workshops.html?room_id=${r.id}`;
+      const detailsLink = `/salas.php#${r.id}`;
+      const workshopsLink = `/workshops.php?room_id=${r.id}`;
       const m = L.marker([lat, lon], { opacity: hasWorkshops ? 1 : 0.4 });
       m.bindPopup(
         `<strong>${name}</strong><br>${city}${uf ? ' - '+uf : ''}<br>`+
@@ -571,7 +571,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const city = (heroCourseCity?.value || heroLocation?.value || '').trim();
       if (topic) params.set('q', topic);
       if (city) params.set('city', city);
-      const url = params.toString() ? `workshops.html?${params.toString()}` : 'workshops.html';
+      const url = params.toString() ? `/workshops.php?${params.toString()}` : '/workshops.php';
       window.location.href = url;
     }
   });
@@ -580,7 +580,7 @@ document.addEventListener('DOMContentLoaded', () => {
   openLoginChoiceBtn?.addEventListener('click', () => {
     const session = window.ZEEFE_HEADER?.getSession?.();
     if (session) {
-      const destino = session.type === 'advertiser' ? 'anunciante.html' : 'clientes.html';
+      const destino = session.type === 'advertiser' ? '/anunciante.php' : '/clientes.php';
       window.location.href = destino;
       return;
     }
@@ -653,12 +653,12 @@ document.addEventListener('DOMContentLoaded', () => {
       const actions = document.createElement('div');
       actions.className = 'workshop-actions';
       const btnDetails = document.createElement('a');
-      btnDetails.href = 'workshops.html';
+      btnDetails.href = '/workshops.php';
       btnDetails.className = 'btn btn-secondary btn-sm';
       btnDetails.textContent = 'Ver detalhes';
       actions.appendChild(btnDetails);
       const btnParticipar = document.createElement('a');
-      btnParticipar.href = 'workshops.html';
+      btnParticipar.href = '/workshops.php';
       btnParticipar.className = 'btn btn-primary btn-sm';
       btnParticipar.textContent = 'Quero participar';
       actions.appendChild(btnParticipar);

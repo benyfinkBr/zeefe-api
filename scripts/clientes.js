@@ -2989,7 +2989,7 @@ async function onPortalRegisterSubmit(event) {
     authMessage.textContent = 'Cadastro realizado! Enviamos um e-mail para confirmação.' + (window.pendingInviteToken ? ' Convite aceito. Faça login para continuar.' : ' Você será redirecionado ao início.');
     setTimeout(() => {
       if (window.pendingInviteToken) {
-        window.location.href = 'clientes.html';
+        window.location.href = '/clientes.php';
       } else {
         window.location.href = 'index.html';
       }
