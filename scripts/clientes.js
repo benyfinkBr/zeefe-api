@@ -2906,7 +2906,12 @@ async function onPortalLoginSubmit(event) {
     } else if (!lembrar) {
       registrarPreferenciaLogin(false);
     }
-    aplicarClienteAtivo(json.client);
+    // Já marca header/session local antes de redirecionar
+    syncHeaderWithClientSession(json.client);
+    rememberActiveClientId(json.client?.id || null);
+    // Redireciona direto para a home com header logado
+    window.location.href = '/index.php';
+    return;
   } catch (err) {
     console.error('[Portal] Falha no login', err);
     const msg = err.message || 'Erro ao autenticar.';

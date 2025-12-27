@@ -633,7 +633,10 @@ async function onLoginSubmit(e) {
       registrarPreferenciaLoginAdv(false);
     }
     advClient = json.advertiser; // anunciante autenticado
-    await afterLogin();
+    // Marca header antes de redirecionar
+    syncHeaderWithAdvertiserSession(advClient);
+    window.location.href = '/index.php';
+    return;
   } catch (err) {
     authMsg.textContent = err.message || 'Erro ao autenticar.';
   }
