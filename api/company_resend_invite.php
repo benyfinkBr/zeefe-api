@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/apiconfig.php';
 require_once __DIR__ . '/lib/mailer.php';
+require_once __DIR__ . '/lib/company_access.php';
 header('Content-Type: application/json');
 
 try {
@@ -33,6 +34,9 @@ try {
 
   // Carrega dados de e-mail/empresa
   $companyId = (int)($inv['company_id'] ?? 0);
+  if (!zeefe_require_active_company($pdo, $companyId)) {
+    exit;
+  }
   $cstmt = $pdo->prepare('SELECT nome_fantasia, razao_social FROM companies WHERE id = :id LIMIT 1');
   $cstmt->execute([':id' => $companyId]);
   $company = $cstmt->fetch(PDO::FETCH_ASSOC) ?: [];

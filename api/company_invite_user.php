@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/apiconfig.php';
 require_once __DIR__ . '/lib/mailer.php';
+require_once __DIR__ . '/lib/company_access.php';
 header('Content-Type: application/json');
 
 try {
@@ -15,6 +16,9 @@ try {
   if ($companyId <= 0 || strlen($cpf) !== 11) {
     http_response_code(400);
     echo json_encode(['success' => false, 'error' => 'Parâmetros inválidos.']);
+    exit;
+  }
+  if (!zeefe_require_active_company($pdo, $companyId)) {
     exit;
   }
 

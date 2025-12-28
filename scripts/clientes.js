@@ -28,6 +28,9 @@ function hasCompanyAccess() {
   if (!Array.isArray(companiesCache) || !companiesCache.length) return false;
   const company = companiesCache.find(c => String(c.id) === String(activeClient.company_id));
   if (!company) return false;
+  if (Object.prototype.hasOwnProperty.call(company, 'is_active')) {
+    return Number(company.is_active) === 1;
+  }
   if (company.status && String(company.status).toLowerCase() !== 'ativo') return false;
   return true;
 }
