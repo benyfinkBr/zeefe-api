@@ -204,6 +204,425 @@
   </div>
 </footer>
 
+<div class="modal-overlay" id="courseDetailsModal" aria-hidden="true">
+  <div class="modal-dialog wide" role="dialog" aria-modal="true" aria-labelledby="courseDetailsTitle">
+    <button class="modal-close" type="button" id="courseDetailsClose" aria-label="Fechar">&times;</button>
+    <div class="modal-body course-modal-body">
+      <div class="modal-gallery" id="courseDetailsCoverWrapper" hidden>
+        <img id="courseDetailsCover" alt="Banner do curso" loading="lazy">
+      </div>
+      <div class="modal-info">
+        <h2 id="courseDetailsTitle">Curso</h2>
+        <p class="modal-intro" id="courseDetailsMeta"></p>
+        <div id="courseDetailsDescription"></div>
+        <div class="modal-details">
+          <p id="courseDetailsWhen"></p>
+          <p id="courseDetailsWhere"></p>
+          <p id="courseDetailsPrice"></p>
+          <p id="courseDetailsSeats"></p>
+        </div>
+        <p id="courseDetailsStatus" class="modal-intro"></p>
+        <div id="courseDetailsActions"></div>
+        <button type="button" class="btn btn-secondary btn-sm" id="courseCheckoutOpen" hidden>Abrir checkout de pagamento</button>
+        <div id="courseEnrollArea">
+          <div class="form-row">
+            <label for="courseDetailsVoucher">Voucher</label>
+            <div style="display:flex; gap:8px; align-items:center;">
+              <input type="text" id="courseDetailsVoucher" placeholder="Digite o codigo" />
+              <button type="button" class="btn btn-secondary btn-sm" id="courseDetailsVoucherApply">Aplicar</button>
+            </div>
+            <small id="courseDetailsVoucherResult"></small>
+          </div>
+          <button type="button" class="btn btn-primary" id="courseDetailsConfirm">Confirmar inscricao</button>
+        </div>
+        <div id="courseTicketSection" hidden>
+          <p id="courseTicketCode"></p>
+          <div id="courseTicketQr"></div>
+          <p id="courseTicketInfo"></p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="emailVerifyModal" aria-hidden="true">
+  <div class="modal-dialog modal-small" role="dialog" aria-modal="true" aria-labelledby="emailVerifyTitle">
+    <button class="modal-close" type="button" id="emailVerifyClose" aria-label="Fechar">&times;</button>
+    <div class="modal-body">
+      <div class="modal-info">
+        <h2 id="emailVerifyTitle">Verifique seu e-mail</h2>
+        <p id="emailVerifyMessage"></p>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" type="button" id="emailVerifyResend">Reenviar link</button>
+          <button class="btn btn-primary" type="button" id="emailVerifyDismiss">Entendi</button>
+        </div>
+        <div class="rooms-message" id="emailVerifyFeedback"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="reservationActionsModal" aria-hidden="true">
+  <div class="modal-dialog modal-small" role="dialog" aria-modal="true" aria-labelledby="reservationActionsTitle">
+    <button class="modal-close" type="button" id="reservationActionsClose" aria-label="Fechar">&times;</button>
+    <div class="modal-body">
+      <div class="modal-info">
+        <h2 id="reservationActionsTitle">Acoes da reserva</h2>
+        <p id="reservationActionsMeta"></p>
+        <div id="reservationActionsButtons"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="bookingVisitorsModal" aria-hidden="true">
+  <div class="modal-dialog modal-small" role="dialog" aria-modal="true" aria-labelledby="bookingVisitorsTitle">
+    <button class="modal-close" type="button" id="bookingVisitorsClose" aria-label="Fechar">&times;</button>
+    <div class="modal-body">
+      <div class="modal-info">
+        <h2 id="bookingVisitorsTitle">Visitantes</h2>
+        <p id="bookingVisitorsMessage"></p>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" type="button" id="bookingVisitorsAddBtn">Adicionar visitantes</button>
+          <button class="btn btn-primary" type="button" id="bookingVisitorsContinueBtn">Continuar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="profileEditModal" aria-hidden="true">
+  <div class="modal-dialog wide" role="dialog" aria-modal="true" aria-labelledby="profileEditTitle">
+    <button class="modal-close" type="button" id="profileEditClose" aria-label="Fechar">&times;</button>
+    <div class="modal-body">
+      <div class="modal-info" style="width:100%;">
+        <h2 id="profileEditTitle">Editar perfil</h2>
+        <form id="profileEditForm" class="auth-form auth-form-grid">
+          <div class="form-field">
+            <label for="editName">Nome completo</label>
+            <input type="text" id="editName" required />
+          </div>
+          <div class="form-field">
+            <label for="editLogin">Login</label>
+            <input type="text" id="editLogin" required />
+          </div>
+          <div class="form-field">
+            <label for="editEmail">E-mail</label>
+            <input type="email" id="editEmail" required />
+          </div>
+          <div class="form-field">
+            <label for="editCpf">CPF</label>
+            <input type="text" id="editCpf" />
+          </div>
+          <div class="form-field">
+            <label for="editPhone">Telefone</label>
+            <input type="text" id="editPhone" />
+          </div>
+          <div class="form-field">
+            <label for="editWhatsapp">WhatsApp</label>
+            <input type="text" id="editWhatsapp" />
+          </div>
+          <div class="form-field">
+            <label for="editZip">CEP</label>
+            <input type="text" id="editZip" />
+          </div>
+          <div class="form-field">
+            <label for="editStreet">Rua</label>
+            <input type="text" id="editStreet" />
+          </div>
+          <div class="form-field">
+            <label for="editNumber">Numero</label>
+            <input type="text" id="editNumber" />
+          </div>
+          <div class="form-field">
+            <label for="editComplement">Complemento</label>
+            <input type="text" id="editComplement" />
+          </div>
+          <div class="form-field">
+            <label for="editCity">Cidade</label>
+            <input type="text" id="editCity" />
+          </div>
+          <div class="form-field">
+            <label for="editState">Estado</label>
+            <input type="text" id="editState" />
+          </div>
+          <div class="form-field">
+            <label for="editCountry">Pais</label>
+            <input type="text" id="editCountry" />
+          </div>
+          <div class="form-field form-field-full">
+            <div class="modal-footer">
+              <button class="btn btn-secondary" type="button" id="profileEditCancel">Cancelar</button>
+              <button class="btn btn-primary" type="submit">Salvar</button>
+            </div>
+          </div>
+        </form>
+        <div class="rooms-message" id="profileEditMessage"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="passwordChangeModal" aria-hidden="true">
+  <div class="modal-dialog modal-small" role="dialog" aria-modal="true" aria-labelledby="passwordChangeTitle">
+    <button class="modal-close" type="button" id="passwordChangeClose" aria-label="Fechar">&times;</button>
+    <div class="modal-body">
+      <div class="modal-info" style="width:100%;">
+        <h2 id="passwordChangeTitle">Alterar senha</h2>
+        <form id="passwordChangeForm" class="auth-form">
+          <div class="form-field">
+            <label for="currentPassword">Senha atual</label>
+            <input type="password" id="currentPassword" required />
+          </div>
+          <div class="form-field">
+            <label for="newPassword">Nova senha</label>
+            <input type="password" id="newPassword" required />
+            <div class="password-indicator" id="pwdStrengthIndicator">Forca da senha: aguardando</div>
+          </div>
+          <div class="form-field">
+            <label for="newPasswordConfirm">Confirmar nova senha</label>
+            <input type="password" id="newPasswordConfirm" required />
+            <div class="password-indicator" id="pwdMatchIndicator">Confirmacao: aguardando</div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary" type="button" id="passwordChangeCancel">Cancelar</button>
+            <button class="btn btn-primary" type="submit">Atualizar senha</button>
+          </div>
+        </form>
+        <div class="rooms-message" id="passwordChangeMessage"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay chat-drawer" id="clientChatModal" aria-hidden="true">
+  <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="clientChatTitle">
+    <button class="modal-close" type="button" id="clientChatClose" aria-label="Fechar">&times;</button>
+    <div class="modal-body">
+      <div class="chat-layout" id="clientChatArea">
+        <aside class="chat-sidebar">
+          <div class="chat-sidebar-section">
+            <h4 id="clientChatTitle">Mensagens</h4>
+          </div>
+          <div id="clientChatThreadsList"></div>
+          <div class="chat-report-row">
+            <button type="button" class="btn btn-secondary btn-sm" id="openReportProblemBtn">Reportar problema</button>
+          </div>
+        </aside>
+        <div class="chat-main">
+          <div class="chat-header-line" id="clientChatHeader"></div>
+          <div class="chat-messages" id="clientChatMessages"></div>
+          <form id="clientChatForm" class="chat-form">
+            <input type="text" id="clientChatInput" placeholder="Digite sua mensagem" />
+            <button class="btn btn-primary" type="submit">Enviar</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="reportProblemModal" aria-hidden="true">
+  <div class="modal-dialog modal-small" role="dialog" aria-modal="true" aria-labelledby="reportProblemTitle">
+    <button class="modal-close" type="button" id="reportProblemClose" aria-label="Fechar">&times;</button>
+    <div class="modal-body">
+      <div class="modal-info" style="width:100%;">
+        <h2 id="reportProblemTitle">Reportar problema</h2>
+        <form id="reportProblemForm">
+          <div class="form-field">
+            <label for="reportIssueType">Tipo</label>
+            <select id="reportIssueType" required>
+              <option value="">Selecione</option>
+              <option value="reserva">Reserva</option>
+              <option value="pagamento">Pagamento</option>
+              <option value="acesso">Acesso</option>
+              <option value="outro">Outro</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label for="reportIssueDescription">Descricao</label>
+            <textarea id="reportIssueDescription" rows="4" required></textarea>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary" type="button" id="reportProblemCancel">Cancelar</button>
+            <button class="btn btn-primary" type="submit">Enviar</button>
+          </div>
+        </form>
+        <div class="rooms-message" id="reportProblemMessage"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="inviteMemberModal" aria-hidden="true">
+  <div class="modal-dialog modal-small" role="dialog" aria-modal="true" aria-labelledby="inviteMemberTitle">
+    <button class="modal-close" type="button" id="inviteMemberClose" aria-label="Fechar">&times;</button>
+    <div class="modal-body">
+      <div class="modal-info" style="width:100%;">
+        <h2 id="inviteMemberTitle">Convidar membro</h2>
+        <div class="form-field">
+          <label for="inviteCpf">CPF</label>
+          <input type="text" id="inviteCpf" placeholder="000.000.000-00" />
+        </div>
+        <div class="form-field">
+          <label for="inviteEmail">E-mail</label>
+          <input type="email" id="inviteEmail" placeholder="email@exemplo.com" />
+        </div>
+        <div class="form-field">
+          <label for="inviteRole">Perfil</label>
+          <select id="inviteRole">
+            <option value="membro">Membro</option>
+            <option value="gestor">Gestor</option>
+            <option value="leitor">Leitor</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
+        <div class="form-row" style="display:flex; gap:8px; align-items:center;">
+          <button class="btn btn-secondary btn-sm" type="button" id="inviteLookupBtn">Verificar cadastro</button>
+          <span id="inviteLookupResult"></span>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" type="button" id="inviteMemberCancel">Cancelar</button>
+          <button class="btn btn-primary" type="button" id="inviteMemberSend">Enviar convite</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="manualMembersModal" aria-hidden="true">
+  <div class="modal-dialog wide" role="dialog" aria-modal="true" aria-labelledby="manualMembersTitle">
+    <button class="modal-close" type="button" id="manualMembersClose" aria-label="Fechar">&times;</button>
+    <div class="modal-body">
+      <div class="modal-info" style="width:100%;">
+        <h2 id="manualMembersTitle">Adicionar membros manualmente</h2>
+        <div class="manual-table-wrap">
+          <table class="manual-members-table">
+            <thead>
+              <tr>
+                <th>Nome</th>
+                <th>E-mail</th>
+                <th>CPF</th>
+                <th>Perfil</th>
+              </tr>
+            </thead>
+            <tbody id="manualMembersTBody"></tbody>
+          </table>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" type="button" id="manualMembersCancel">Cancelar</button>
+          <button class="btn btn-primary" type="button" id="manualMembersSubmit">Enviar convites</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="importContactsModal" aria-hidden="true">
+  <div class="modal-dialog modal-small" role="dialog" aria-modal="true" aria-labelledby="importContactsTitle">
+    <button class="modal-close" type="button" id="importContactsClose" aria-label="Fechar">&times;</button>
+    <div class="modal-body">
+      <div class="modal-info">
+        <h2 id="importContactsTitle">Importar contatos</h2>
+        <p>Use as opcoes de CSV/XLSX na area da empresa para carregar contatos em lote.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="xlsxPreviewModal" aria-hidden="true">
+  <div class="modal-dialog wide" role="dialog" aria-modal="true" aria-labelledby="xlsxPreviewTitle">
+    <button class="modal-close" type="button" id="xlsxPreviewClose" aria-label="Fechar">&times;</button>
+    <div class="modal-body">
+      <div class="modal-info" style="width:100%;">
+        <h2 id="xlsxPreviewTitle">Pre-visualizacao do XLSX</h2>
+        <div id="xlsxPreviewTable"></div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" type="button" id="xlsxPreviewAdd">Adicionar linha</button>
+          <button class="btn btn-secondary" type="button" id="xlsxPreviewCancel">Cancelar</button>
+          <button class="btn btn-primary" type="button" id="xlsxPreviewConfirm">Importar selecionados</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay card-payment-modal" id="cardModal" aria-hidden="true">
+  <div class="modal-dialog wide card-payment-modal" role="dialog" aria-modal="true" aria-labelledby="cardModalTitle">
+    <button class="modal-close" type="button" id="cardModalClose" aria-label="Fechar">&times;</button>
+    <div class="modal-body">
+      <div class="modal-info" style="width:100%;">
+        <h2 id="cardModalTitle">Salvar cartao</h2>
+        <form id="cardSaveForm" class="card-payment-form">
+          <input type="hidden" id="cardClientId" />
+          <div class="form-field">
+            <label for="cardHolderName">Nome impresso no cartao</label>
+            <input type="text" id="cardHolderName" required />
+          </div>
+          <div class="form-field">
+            <label>Dados do cartao</label>
+            <div class="stripe-card-wrapper">
+              <div id="stripeCardElement" class="StripeElement"></div>
+            </div>
+          </div>
+          <div class="form-field billing-toggle-row">
+            <label>
+              <input type="checkbox" id="cardUseProfileData" checked />
+              Usar dados do perfil
+            </label>
+          </div>
+          <div id="cardBillingFields" class="billing-fields">
+            <div class="form-field">
+              <label for="cardBillingEmail">E-mail de cobranca</label>
+              <input type="email" id="cardBillingEmail" />
+            </div>
+            <div class="form-field">
+              <label for="cardBillingZip">CEP</label>
+              <input type="text" id="cardBillingZip" />
+            </div>
+            <div class="form-field">
+              <label for="cardBillingState">Estado</label>
+              <input type="text" id="cardBillingState" />
+            </div>
+            <div class="form-field">
+              <label for="cardBillingCity">Cidade</label>
+              <input type="text" id="cardBillingCity" />
+            </div>
+            <div class="form-field">
+              <label for="cardBillingCountry">Pais</label>
+              <input type="text" id="cardBillingCountry" />
+            </div>
+            <div class="form-field">
+              <label for="cardBillingStreet">Rua</label>
+              <input type="text" id="cardBillingStreet" />
+            </div>
+            <div class="form-field">
+              <label for="cardBillingNumber">Numero</label>
+              <input type="text" id="cardBillingNumber" />
+            </div>
+            <div class="form-field">
+              <label for="cardBillingComplement">Complemento</label>
+              <input type="text" id="cardBillingComplement" />
+            </div>
+          </div>
+          <div class="rooms-message" id="cardErrors" hidden></div>
+          <div class="rooms-message" id="cardSaveMessage" hidden></div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary" type="button" id="cardModalCancel">Cancelar</button>
+            <button class="btn btn-primary" type="submit" id="cardSubmitBtn">Salvar cartao</button>
+          </div>
+        </form>
+        <div id="cardListEmpty" class="rooms-message"></div>
+        <div id="cardListError" class="rooms-message" hidden></div>
+        <section id="cardListSection" hidden>
+          <h3>Cartoes salvos</h3>
+          <ul id="cardList" class="card-list"></ul>
+        </section>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="" defer></script>
 <script src="https://js.stripe.com/v3/" defer></script>
 <script src="/scripts/header-session.js" defer></script>

@@ -244,6 +244,413 @@
   </div>
 </footer>
 
+<div class="modal-overlay" id="advProfileModal" aria-hidden="true">
+  <div class="modal-dialog modal-small" role="dialog" aria-modal="true" aria-labelledby="advProfileTitle">
+    <button class="modal-close" type="button" id="advProfileClose" aria-label="Fechar">&times;</button>
+    <div class="modal-body">
+      <div class="modal-info" style="width:100%;">
+        <h2 id="advProfileTitle">Editar perfil</h2>
+        <form id="advProfileForm">
+          <div class="form-field">
+            <label for="advProfileDisplay">Nome publico</label>
+            <input type="text" id="advProfileDisplay" />
+          </div>
+          <div class="form-field">
+            <label for="advProfilePhone">Telefone</label>
+            <input type="text" id="advProfilePhone" />
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary" type="button" id="advProfileCancelBtn">Cancelar</button>
+            <button class="btn btn-primary" type="submit">Salvar</button>
+          </div>
+        </form>
+        <div class="rooms-message" id="advProfileMsg"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="advPasswordModal" aria-hidden="true">
+  <div class="modal-dialog modal-small" role="dialog" aria-modal="true" aria-labelledby="advPasswordTitle">
+    <button class="modal-close" type="button" id="advPasswordClose" aria-label="Fechar">&times;</button>
+    <div class="modal-body">
+      <div class="modal-info" style="width:100%;">
+        <h2 id="advPasswordTitle">Alterar senha</h2>
+        <form id="advPasswordForm">
+          <div class="form-field">
+            <label for="advCurrentPassword">Senha atual</label>
+            <input type="password" id="advCurrentPassword" required />
+          </div>
+          <div class="form-field">
+            <label for="advNewPassword">Nova senha</label>
+            <input type="password" id="advNewPassword" required />
+            <div class="password-indicator" id="advPwdStrengthIndicator">Forca da senha: aguardando</div>
+          </div>
+          <div class="form-field">
+            <label for="advNewPasswordConfirm">Confirmar nova senha</label>
+            <input type="password" id="advNewPasswordConfirm" required />
+            <div class="password-indicator" id="advPwdMatchIndicator">Confirmacao: aguardando</div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary" type="button" id="advPasswordCancel">Cancelar</button>
+            <button class="btn btn-primary" type="submit">Atualizar senha</button>
+          </div>
+        </form>
+        <div class="rooms-message" id="advPasswordMsg"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="advWorkshopModal" aria-hidden="true">
+  <div class="modal-dialog wide" role="dialog" aria-modal="true" aria-labelledby="advWorkshopTitle">
+    <button class="modal-close" type="button" id="advWorkshopClose" aria-label="Fechar">&times;</button>
+    <div class="modal-body">
+      <div class="modal-info" style="width:100%;">
+        <h2 id="advWorkshopTitle">Workshop</h2>
+        <form id="advWorkshopForm" class="auth-form auth-form-grid">
+          <input type="hidden" id="advWorkshopId" />
+          <input type="hidden" id="advWorkshopDatesJson" />
+          <div class="form-field">
+            <label for="advWorkshopTitleInput">Titulo</label>
+            <input type="text" id="advWorkshopTitleInput" />
+          </div>
+          <div class="form-field">
+            <label for="advWorkshopSubtitle">Subtitulo</label>
+            <input type="text" id="advWorkshopSubtitle" />
+          </div>
+          <div class="form-field">
+            <label for="advWorkshopRoom">Sala</label>
+            <select id="advWorkshopRoom"></select>
+          </div>
+          <div class="form-field">
+            <label for="advWorkshopCategory">Categoria</label>
+            <select id="advWorkshopCategory">
+              <option value="">Selecione</option>
+              <option value="Desenvolvimento pessoal">Desenvolvimento pessoal</option>
+              <option value="Saude e bem-estar">Saude e bem-estar</option>
+              <option value="Psicologia / Terapia">Psicologia / Terapia</option>
+              <option value="Negocios e carreira">Negocios e carreira</option>
+              <option value="Tecnologia e inovacao">Tecnologia e inovacao</option>
+              <option value="Financas e investimentos">Financas e investimentos</option>
+              <option value="Arte e criatividade">Arte e criatividade</option>
+              <option value="Outros">Outros</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label for="advWorkshopCategoryOther">Outra categoria</label>
+            <input type="text" id="advWorkshopCategoryOther" />
+          </div>
+          <div class="form-field">
+            <label>Datas</label>
+            <div style="display:flex; gap:10px; flex-wrap:wrap;">
+              <label><input type="radio" name="advWorkshopDateMode" id="advWorkshopDateSingle" checked /> Data unica</label>
+              <label><input type="radio" name="advWorkshopDateMode" id="advWorkshopDateMulti" /> Datas multiplas</label>
+            </div>
+          </div>
+          <div class="form-field" id="advWorkshopAddDateWrap">
+            <label for="advWorkshopDate">Data</label>
+            <div style="display:flex; gap:8px;">
+              <input type="date" id="advWorkshopDate" />
+              <button class="btn btn-secondary btn-sm" type="button" id="advWorkshopAddDateBtn">Adicionar data</button>
+            </div>
+          </div>
+          <div class="form-field">
+            <label for="advWorkshopEndDate">Data final</label>
+            <input type="date" id="advWorkshopEndDate" />
+          </div>
+          <div class="form-field" id="advWorkshopTimeStartWrap">
+            <label for="advWorkshopTimeStart">Horario inicio</label>
+            <input type="time" id="advWorkshopTimeStart" />
+          </div>
+          <div class="form-field" id="advWorkshopTimeEndWrap">
+            <label for="advWorkshopTimeEnd">Horario fim</label>
+            <input type="time" id="advWorkshopTimeEnd" />
+          </div>
+          <div class="form-field">
+            <label>Horario por lista</label>
+            <div style="display:flex; gap:8px;">
+              <select id="advWorkshopStartHour"></select>
+              <select id="advWorkshopStartMinute"></select>
+              <select id="advWorkshopEndHour"></select>
+              <select id="advWorkshopEndMinute"></select>
+            </div>
+          </div>
+          <div class="form-field">
+            <label><input type="checkbox" id="advWorkshopSameTime" checked /> Manter o mesmo horario em todas as datas</label>
+          </div>
+          <div class="form-field form-field-full" id="advWorkshopDatesMultiWrap" hidden>
+            <h4 class="modal-section-title">Datas adicionadas</h4>
+            <div id="advWorkshopDatesList"></div>
+            <div id="advWorkshopDatesSummary"></div>
+          </div>
+          <div class="form-field form-field-full" id="advWorkshopPerDayTimes" hidden></div>
+          <div class="form-field">
+            <label for="advWorkshopPrice">Preco</label>
+            <input type="text" id="advWorkshopPrice" />
+          </div>
+          <div class="form-field">
+            <label for="advWorkshopMinSeats">Minimo de vagas</label>
+            <input type="number" id="advWorkshopMinSeats" />
+          </div>
+          <div class="form-field">
+            <label for="advWorkshopMaxSeats">Maximo de vagas</label>
+            <input type="number" id="advWorkshopMaxSeats" />
+          </div>
+          <div class="form-field">
+            <label for="advWorkshopShowBar">Exibir no site</label>
+            <select id="advWorkshopShowBar">
+              <option value="1">Sim</option>
+              <option value="0">Nao</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label for="advWorkshopStatus">Status</label>
+            <select id="advWorkshopStatus">
+              <option value="rascunho">Rascunho</option>
+              <option value="publicado">Publicado</option>
+              <option value="oculto">Oculto</option>
+            </select>
+          </div>
+          <div class="form-field form-field-full">
+            <label>Descricao</label>
+            <div id="advWorkshopDescToolbar" class="modal-toolbar">
+              <button type="button" data-tag="b">B</button>
+              <button type="button" data-tag="i">I</button>
+              <button type="button" data-tag="u">U</button>
+              <button type="button" data-tag="br">Quebra</button>
+            </div>
+            <div id="advWorkshopDescriptionEditor" contenteditable="true" class="rich-editor"></div>
+            <input type="hidden" id="advWorkshopDescription" />
+          </div>
+          <div class="form-field form-field-full">
+            <label for="advWorkshopBanner">Banner</label>
+            <input type="file" id="advWorkshopBanner" accept="image/*" />
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary" type="button" id="advWorkshopCancelBtn">Cancelar</button>
+            <button class="btn btn-primary" type="submit">Salvar workshop</button>
+          </div>
+        </form>
+        <div class="rooms-message" id="advWorkshopMsg"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay chat-drawer" id="advChatModal" aria-hidden="true">
+  <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="advChatTitle">
+    <button class="modal-close" type="button" id="advChatClose" aria-label="Fechar">&times;</button>
+    <div class="modal-body">
+      <div class="chat-layout" id="advChatArea">
+        <aside class="chat-sidebar">
+          <div class="chat-sidebar-section">
+            <h4 id="advChatTitle">Mensagens</h4>
+          </div>
+        </aside>
+        <div class="chat-main">
+          <div class="chat-header-line" id="advChatHeader"></div>
+          <div class="chat-messages" id="advChatMessages"></div>
+          <form id="advChatForm" class="chat-form">
+            <input type="text" id="advChatInput" placeholder="Digite sua mensagem" />
+            <button class="btn btn-primary" type="submit">Enviar</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="advReservationModal" aria-hidden="true">
+  <div class="modal-dialog modal-small" role="dialog" aria-modal="true" aria-labelledby="advReservationTitle">
+    <button class="modal-close" type="button" id="advResClose" aria-label="Fechar">&times;</button>
+    <div class="modal-body">
+      <div class="modal-info" style="width:100%;">
+        <h2 id="advReservationTitle">Reserva</h2>
+        <div id="advResContent"></div>
+        <div class="rooms-message" id="advResMessage"></div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" type="button" id="advResOpenChat">Abrir chat</button>
+          <button class="btn btn-secondary" type="button" id="advResCancel">Cancelar reserva</button>
+          <button class="btn btn-secondary" type="button" id="advResDeny">Recusar</button>
+          <button class="btn btn-primary" type="button" id="advResConfirm">Confirmar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="advRoomDetailsModal" aria-hidden="true">
+  <div class="modal-dialog modal-small" role="dialog" aria-modal="true" aria-labelledby="advRoomDetTitle">
+    <button class="modal-close" type="button" id="advRoomDetClose" aria-label="Fechar">&times;</button>
+    <div class="modal-body">
+      <div class="modal-info" style="width:100%;">
+        <h2 id="advRoomDetTitle">Detalhes da sala</h2>
+        <form id="advRoomDetailsForm">
+          <input type="hidden" id="advRoomDetId" />
+          <div class="form-field">
+            <label for="advRoomDetName">Nome</label>
+            <input type="text" id="advRoomDetName" />
+          </div>
+          <div class="form-field">
+            <label for="advRoomDetRate">Valor diario</label>
+            <input type="text" id="advRoomDetRate" />
+          </div>
+          <div class="form-field">
+            <label for="advRoomDetStatus">Status</label>
+            <input type="text" id="advRoomDetStatus" />
+          </div>
+          <div class="form-field">
+            <label for="advRoomDetCityUf">Cidade/UF</label>
+            <input type="text" id="advRoomDetCityUf" />
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary" type="button" id="advRoomDetCancel">Cancelar</button>
+            <button class="btn btn-primary" type="submit">Salvar</button>
+          </div>
+        </form>
+        <div class="rooms-message" id="advRoomDetMsg"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="advRoomModal" aria-hidden="true">
+  <div class="modal-dialog wide" role="dialog" aria-modal="true" aria-labelledby="advRoomTitle">
+    <button class="modal-close" type="button" id="advRoomClose" aria-label="Fechar">&times;</button>
+    <div class="modal-body">
+      <div class="modal-info" style="width:100%;">
+        <h2 id="advRoomTitle">Sala</h2>
+        <form id="advRoomForm" class="auth-form auth-form-grid">
+          <input type="hidden" id="roomIdHidden" />
+          <div class="form-field">
+            <label for="roomName">Nome da sala</label>
+            <input type="text" id="roomName" required />
+          </div>
+          <div class="form-field">
+            <label for="roomCapacity">Capacidade</label>
+            <input type="number" id="roomCapacity" />
+          </div>
+          <div class="form-field">
+            <label for="roomCity">Cidade</label>
+            <input type="text" id="roomCity" />
+          </div>
+          <div class="form-field">
+            <label for="roomState">Estado (UF)</label>
+            <input type="text" id="roomState" />
+          </div>
+          <div class="form-field">
+            <label for="roomPrice">Valor diario</label>
+            <input type="text" id="roomPrice" />
+          </div>
+          <div class="form-field">
+            <label for="roomStatus">Status</label>
+            <select id="roomStatus">
+              <option value="ativo">Ativo</option>
+              <option value="manutencao">Manutencao</option>
+              <option value="desativada">Desativada</option>
+            </select>
+          </div>
+          <div class="form-field form-field-full">
+            <label for="roomDescription">Descricao</label>
+            <textarea id="roomDescription" rows="4"></textarea>
+          </div>
+          <div class="form-field form-field-full">
+            <label>Comodidades</label>
+            <div id="advAmenitiesGrid" class="modal-amenities"></div>
+          </div>
+          <div class="form-field form-field-full">
+            <label for="roomPhotos">Fotos</label>
+            <input type="file" id="roomPhotos" multiple accept="image/*" />
+            <div id="roomPhotosPreview"></div>
+          </div>
+          <div class="form-field">
+            <label for="dailyRate">Valor diario (admin)</label>
+            <input type="text" id="dailyRate" />
+          </div>
+          <div class="form-field">
+            <label for="facilitatedAccess">Acesso facilitado</label>
+            <input type="text" id="facilitatedAccess" />
+          </div>
+          <div class="form-field">
+            <label for="portariaInteligente">Portaria inteligente</label>
+            <input type="text" id="portariaInteligente" />
+          </div>
+          <div class="form-field">
+            <label for="street">Rua</label>
+            <input type="text" id="street" />
+          </div>
+          <div class="form-field">
+            <label for="complement">Complemento</label>
+            <input type="text" id="complement" />
+          </div>
+          <div class="form-field">
+            <label for="cep">CEP</label>
+            <input type="text" id="cep" />
+          </div>
+          <div class="form-field">
+            <label for="responsavelNome">Responsavel</label>
+            <input type="text" id="responsavelNome" />
+          </div>
+          <div class="form-field">
+            <label for="responsavelTelefone">Telefone responsavel</label>
+            <input type="text" id="responsavelTelefone" />
+          </div>
+          <div class="form-field">
+            <label for="responsavelEmail">E-mail responsavel</label>
+            <input type="email" id="responsavelEmail" />
+          </div>
+          <div class="form-field">
+            <label for="portariaTelefone">Telefone portaria</label>
+            <input type="text" id="portariaTelefone" />
+          </div>
+          <div class="form-field">
+            <label for="portariaEmail">E-mail portaria</label>
+            <input type="email" id="portariaEmail" />
+          </div>
+          <div class="form-field">
+            <label for="locationInternal">Localizacao interna</label>
+            <input type="text" id="locationInternal" />
+          </div>
+          <div class="form-field">
+            <label for="maintenanceStart">Inicio manutencao</label>
+            <input type="date" id="maintenanceStart" />
+          </div>
+          <div class="form-field">
+            <label for="maintenanceEnd">Fim manutencao</label>
+            <input type="date" id="maintenanceEnd" />
+          </div>
+          <div class="form-field">
+            <label for="deactivatedFrom">Desativada a partir de</label>
+            <input type="date" id="deactivatedFrom" />
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary" type="button" id="advRoomCancel">Cancelar</button>
+            <button class="btn btn-primary" type="submit">Salvar sala</button>
+          </div>
+        </form>
+        <div class="rooms-message" id="advRoomMessage"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="advStatusNoticeModal" aria-hidden="true">
+  <div class="modal-dialog modal-small" role="dialog" aria-modal="true" aria-labelledby="advStatusNoticeTitle">
+    <button class="modal-close" type="button" id="advStatusNoticeClose" aria-label="Fechar">&times;</button>
+    <div class="modal-body">
+      <div class="modal-info">
+        <h2 id="advStatusNoticeTitle">Atualizacao de status</h2>
+        <p id="advStatusNoticeText"></p>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" type="button" id="advStatusNoticeReservations">Ver reservas</button>
+          <button class="btn btn-primary" type="button" id="advStatusNoticeOk">Ok</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script src="/scripts/header-session.js" defer></script>
 <script src="/scripts/anunciante.js" defer></script>
 </body>
