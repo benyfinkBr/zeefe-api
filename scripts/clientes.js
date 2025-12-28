@@ -23,6 +23,15 @@ const shouldAutoLoginFromParams = Boolean(autoLoginIdentifier && autoLoginPasswo
 let autoLoginAlreadyTriggered = false;
 let cardPaymentsFeature = null;
 
+function hasCompanyAccess() {
+  if (!activeClient?.company_id) return false;
+  if (!Array.isArray(companiesCache) || !companiesCache.length) return false;
+  const company = companiesCache.find(c => String(c.id) === String(activeClient.company_id));
+  if (!company) return false;
+  if (company.status && String(company.status).toLowerCase() !== 'ativo') return false;
+  return true;
+}
+
 
 
 // teste de atualização
@@ -972,7 +981,7 @@ function syncHeaderScopeButtons() {
     headerScopePFHeaderBtn.classList.toggle('active', currentScope === 'pf');
   }
   if (headerScopeCompanyBtn) {
-    const canUseCompany = Boolean(activeClient?.company_id);
+    const canUseCompany = hasCompanyAccess();
     headerScopeCompanyBtn.hidden = !canUseCompany;
     headerScopeCompanyBtn.disabled = !canUseCompany;
     headerScopeCompanyBtn.classList.toggle('active', canUseCompany && currentScope === 'company');
@@ -1393,7 +1402,7 @@ function setActivePanel(panelName = 'book') {
   } else if (target === 'profile') {
     renderProfile();
   } else if (target === 'company' && activeClient) {
-    if (!activeClient.company_id) {
+    if (!hasCompanyAccess()) {
       // fallback caso alguém force via hash/URL
       setPortalScope('pf');
       return;
@@ -1405,7 +1414,8 @@ function setActivePanel(panelName = 'book') {
 }
 
 function setPortalScope(scope) {
-  currentScope = scope === 'company' ? 'company' : 'pf';
+  const allowCompany = hasCompanyAccess();
+  currentScope = (scope === 'company' && allowCompany) ? 'company' : 'pf';
   if (scopePFBtn) scopePFBtn.classList.toggle('active', currentScope === 'pf');
   if (scopeCompanyBtn) scopeCompanyBtn.classList.toggle('active', currentScope === 'company');
   if (currentScope === 'company') {
@@ -1419,6 +1429,7 @@ function setPortalScope(scope) {
 
 async function carregarEmpresaOverview() {
   // Placeholder simples: computa métricas básicas das reservas do cliente.
+  if (!hasCompanyAccess()) return;
   try {
     const ativas = (currentReservations || []).filter(r => ['confirmada','pagamento_pendente','pagamento_confirmado','em_andamento'].includes(String(r.status||'').toLowerCase())).length;
     const proximos7 = (currentReservations || []).filter(r => {
@@ -3032,30 +3043,32 @@ function aplicarClienteAtivo(cliente) {
     clientNameEl.textContent = activeClient.name || activeClient.login || 'Cliente';
   }
   if (clientCompanyEl) {
-    clientCompanyEl.textContent = obterNomeEmpresa(activeClient.company_id) || (activeClient.company_id ? 'Empresa não localizada' : 'Cliente pessoa física');
+    clientCompanyEl.textContent = hasCompanyAccess()
+      ? (obterNomeEmpresa(activeClient.company_id) || 'Empresa')
+      : 'Cliente pessoa física';
   }
   const paymentClientIdInput = document.getElementById('clientId');
   if (paymentClientIdInput) paymentClientIdInput.value = activeClient.id || '';
   // Exibe a aba Empresa para qualquer usuário que pertença a uma empresa
   if (companyTabButton) {
-    const showCompany = Boolean(activeClient.company_id);
+    const showCompany = hasCompanyAccess();
     companyTabButton.hidden = !showCompany;
     if (!showCompany && portalSections.company) portalSections.company.hidden = true;
   }
   // Toggle scope switch buttons visibility
   if (scopeCompanyBtn) {
-    const showCompany = Boolean(activeClient.company_id);
+    const showCompany = hasCompanyAccess();
     scopeCompanyBtn.hidden = !showCompany;
   }
   // Exibe checkbox "Reserva pela empresa" para qualquer usuário com company_id
   if (companyBookingRow) {
-    companyBookingRow.hidden = !Boolean(activeClient.company_id);
+    companyBookingRow.hidden = !hasCompanyAccess();
   }
   renderProfile();
   cardPaymentsFeature?.setClient(activeClient);
   resetBookingForm();
   // Apply desired scope after login (fallback to PF if no company)
-  const scopeToApply = (desiredScope === 'company' && activeClient.company_id) ? 'company' : 'pf';
+  const scopeToApply = (desiredScope === 'company' && hasCompanyAccess()) ? 'company' : 'pf';
   setPortalScope(scopeToApply);
   if (scopeToApply === 'company') setActivePanel('company'); else setActivePanel('book');
   atualizarPainel();
@@ -3532,6 +3545,7 @@ async function openClientChatByThreadId(threadId) {
       el.classList.toggle('active', el.dataset.threadId === String(clientChatThreadId));
     });
   }
+  updateMessagesBadge(false);
   await fetchClientChatMessages();
   startClientChatPolling();
 }
@@ -3569,7 +3583,13 @@ async function fetchClientChatMessages(){
     }).join('');
     clientChatMessages.scrollTop = clientChatMessages.scrollHeight;
     try { await fetch(`${API_BASE}/messages_mark_read.php`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ thread_id: clientChatThreadId, who: 'client' }) }); } catch (_) {}
-    updateMessagesBadge(false);
+    if (clientChatThreadsCache) {
+      const thread = clientChatThreadsCache.find(x => Number(x.id) === Number(clientChatThreadId));
+      if (thread) thread.unread_for_client = 0;
+      updateMessagesBadge(clientChatThreadsCache.some(t => Number(t.unread_for_client || 0) > 0));
+    } else {
+      updateMessagesBadge(false);
+    }
   } catch (_) {
     clientChatMessages.innerHTML = '<div class="rooms-message">Falha ao carregar mensagens.</div>';
     updateMessagesBadge(false);
@@ -4498,7 +4518,9 @@ function renderProfile() {
   profileInputs.cpf.value = formatCPF(activeClient.cpf) || '';
   profileInputs.phone.value = formatPhone(activeClient.phone) || '';
   profileInputs.whatsapp.value = formatPhone(activeClient.whatsapp) || '';
-  profileInputs.company.value = obterNomeEmpresa(activeClient.company_id) || (activeClient.company_id ? 'Empresa não localizada' : 'Cliente pessoa física');
+  profileInputs.company.value = hasCompanyAccess()
+    ? (obterNomeEmpresa(activeClient.company_id) || 'Empresa')
+    : 'Cliente pessoa física';
   const addr = getActiveAddress();
   if (profileInputs.street) profileInputs.street.value = addr.street || '';
   if (profileInputs.number) profileInputs.number.value = addr.number || '';
@@ -4685,7 +4707,11 @@ async function onProfileSubmit(event) {
     if (!json.success) throw new Error(json.error || 'Erro ao atualizar cadastro.');
     activeClient = { ...activeClient, ...json.client, address: { ...(activeClient.address || {}), ...addr } };
     if (clientNameEl) clientNameEl.textContent = activeClient.name || activeClient.login || 'Cliente';
-    if (clientCompanyEl) clientCompanyEl.textContent = obterNomeEmpresa(activeClient.company_id) || (activeClient.company_id ? 'Empresa não localizada' : 'Cliente pessoa física');
+    if (clientCompanyEl) {
+      clientCompanyEl.textContent = hasCompanyAccess()
+        ? (obterNomeEmpresa(activeClient.company_id) || 'Empresa')
+        : 'Cliente pessoa física';
+    }
     renderProfile();
     if (profileMessageEl) profileMessageEl.textContent = json.message || 'Dados atualizados.';
   } catch (err) {

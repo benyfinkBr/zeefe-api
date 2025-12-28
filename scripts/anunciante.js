@@ -1484,6 +1484,7 @@ async function openThread(threadId) {
   chatHeader.textContent = 'Conversando';
   chatMessages.innerHTML = '<div class="rooms-message">Carregando mensagens…</div>';
   chatForm.hidden = false;
+  updateAdvMessagesBadge(false);
   await fetchMessagesOnce();
   startChatPolling();
 }
