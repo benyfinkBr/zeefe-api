@@ -30,6 +30,7 @@
         <div class="auth-quick-actions" style="margin-top:10px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
           <button type="button" class="ghost-btn" id="advShowRecovery">Esqueci minha senha</button>
           <button type="button" class="ghost-btn" id="advShowRegister">Criar acesso</button>
+          <button type="button" class="ghost-btn" id="advQuickRegisterBtn">Cadastro rápido</button>
         </div>
       </div>
     </div>
@@ -112,7 +113,7 @@
           <button type="button" data-panel="workshops">Workshops</button>
           <button type="button" data-panel="reservations">Reservas</button>
           <button type="button" data-panel="finance">Financeiro</button>
-          <button type="button" data-panel="messages" id="openAdvChatBtn">Mensagens</button>
+          <button type="button" data-panel="messages" id="openAdvChatBtn">Mensagens <span id="advMessagesBadge" hidden>•</span></button>
           <button type="button" data-panel="reviews">Avaliações</button>
           <button type="button" data-panel="profile">Editar perfil</button>
         </div>
@@ -149,9 +150,9 @@
         <section class="portal-section" id="panel-rooms" hidden>
           <div class="panel-header">
             <h2>Minhas Salas</h2>
-            <button class="btn btn-primary" id="newRoomBtn" type="button">Nova sala</button>
+            <button class="btn btn-primary" id="advNewRoomBtn" type="button">Nova sala</button>
           </div>
-          <div id="roomsContainer" class="rooms-grid"></div>
+          <div id="advRoomsContainer" class="rooms-grid"></div>
         </section>
 
         <section class="portal-section" id="panel-workshops" hidden>
@@ -159,27 +160,99 @@
             <h2>Workshops</h2>
             <button class="btn btn-primary" id="advNewWorkshopBtn" type="button">Novo workshop</button>
           </div>
-          <div id="advWorkshopsList" class="rooms-grid"></div>
+          <div id="advWorkshopsContainer" class="rooms-grid"></div>
+          <h3 id="advEnrollmentsTitle">Inscrições recentes</h3>
+          <div id="advEnrollmentsContainer" class="rooms-grid"></div>
         </section>
 
         <section class="portal-section" id="panel-reservations" hidden>
           <h2>Reservas</h2>
-          <div id="reservationsContainer" class="rooms-grid"></div>
+          <div class="filters-wrap">
+            <select id="advResStatusFilter" aria-label="Status">
+              <option value="">Status (todos)</option>
+              <option value="confirmada">Confirmada</option>
+              <option value="pendente">Pendente</option>
+              <option value="cancelada">Cancelada</option>
+            </select>
+            <select id="advResPaymentFilter" aria-label="Pagamento">
+              <option value="">Pagamento (todos)</option>
+              <option value="pago">Pago</option>
+              <option value="pendente">Pendente</option>
+            </select>
+            <select id="advResOrder" aria-label="Ordenacao">
+              <option value="desc">Mais recentes</option>
+              <option value="asc">Mais antigas</option>
+            </select>
+          </div>
+          <div id="advReservationsContainer" class="rooms-grid"></div>
         </section>
 
         <section class="portal-section" id="panel-finance" hidden>
           <h2>Financeiro</h2>
-          <div class="panel-box" id="finContainer"></div>
+          <div class="panel-box">
+            <div class="form-grid-mini">
+              <div>
+                <label for="advFinFrom">De</label>
+                <input type="date" id="advFinFrom" />
+              </div>
+              <div>
+                <label for="advFinTo">Até</label>
+                <input type="date" id="advFinTo" />
+              </div>
+            </div>
+            <div class="portal-actions">
+              <button type="button" class="btn btn-secondary" id="advFinApply">Aplicar</button>
+              <button type="button" class="btn btn-secondary" id="advFinExport">Exportar</button>
+            </div>
+            <div id="advFinanceContainer"></div>
+          </div>
+          <div class="panel-box">
+            <h3>Dados de repasse</h3>
+            <div class="form-grid-mini">
+              <div>
+                <label for="bankCode">Banco</label>
+                <input type="text" id="bankCode" />
+              </div>
+              <div>
+                <label for="bankName">Nome do banco</label>
+                <input type="text" id="bankName" />
+              </div>
+            </div>
+            <div class="form-grid-mini">
+              <div>
+                <label for="accountType">Tipo de conta</label>
+                <input type="text" id="accountType" />
+              </div>
+              <div>
+                <label for="agencyNumber">Agencia</label>
+                <input type="text" id="agencyNumber" />
+              </div>
+            </div>
+            <div class="form-grid-mini">
+              <div>
+                <label for="accountNumber">Conta</label>
+                <input type="text" id="accountNumber" />
+              </div>
+              <div>
+                <label for="pixKey">Chave Pix</label>
+                <input type="text" id="pixKey" />
+              </div>
+            </div>
+            <div class="portal-actions">
+              <button type="button" class="btn btn-primary" id="savePayoutBtn">Salvar repasse</button>
+            </div>
+            <div id="payoutMessage" class="rooms-message"></div>
+          </div>
         </section>
 
         <section class="portal-section" id="panel-messages" hidden>
           <h2>Mensagens</h2>
-          <div id="messagesContainer" class="rooms-grid"></div>
+          <div id="advThreadsContainer" class="rooms-grid"></div>
         </section>
 
         <section class="portal-section" id="panel-reviews" hidden>
           <h2>Avaliações</h2>
-          <div id="reviewsContainer" class="rooms-grid"></div>
+          <div id="advReviewsContainer" class="rooms-grid"></div>
         </section>
 
         <section class="portal-section" id="panel-profile" hidden>
@@ -190,7 +263,10 @@
             <p id="advProfilePhoneView" class="input-view"></p>
             <p id="advProfileFeeView" class="input-view"></p>
             <div class="panel-actions">
+              <button class="btn btn-secondary" id="advEditProfileBtn" type="button">Editar perfil</button>
+              <button class="btn btn-secondary" id="advEditProfileSideBtn" type="button">Editar dados</button>
               <button class="btn btn-secondary" id="advProfileOpenEditBtn" type="button">Editar Perfil</button>
+              <button class="btn btn-secondary" id="advProfileCancelViewBtn" type="button">Voltar</button>
               <button class="btn ghost-btn" id="advOpenPasswordModalBtn" type="button">Alterar senha</button>
             </div>
             <div id="advProfileViewMsg" class="rooms-message"></div>

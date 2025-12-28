@@ -95,6 +95,7 @@
         <img src="/img/logo.jpg" alt="Ze.EFE">
         <h2>Recuperar senha<br><span>Portal do Cliente</span></h2>
         <form id="portalRecoveryForm">
+          <input type="text" id="recoveryLogin" name="login" placeholder="Login ou e-mail" />
           <input type="email" id="recoveryEmail" name="email" placeholder="Seu e-mail" required autocomplete="email" />
           <button class="btn btn-primary" type="submit">Enviar</button>
         </form>
@@ -110,51 +111,398 @@
         <div class="portal-nav-brand">
           <img src="/img/logo.jpg" alt="Ze.EFE">
           <div>
-            <h2 id="portalDisplay">Cliente pessoa física</h2>
-            <p id="portalOwner" class="portal-subtitle"></p>
+            <h2 id="clientName">Cliente</h2>
+            <p id="clientCompany" class="portal-subtitle">Cliente pessoa física</p>
           </div>
         </div>
         <div class="portal-nav-links">
           <button type="button" data-panel="book" class="active">Reservar</button>
           <button type="button" data-panel="reservations">Minhas Reservas</button>
           <button type="button" data-panel="visitors">Visitantes</button>
-          <button type="button" data-panel="company">Empresa</button>
+          <button type="button" data-panel="company" id="companyTab">Empresa</button>
           <button type="button" data-panel="courses">Cursos</button>
-          <button type="button" data-panel="profile">Meu Perfil</button>
+          <button type="button" data-panel="profile">
+            Meu Perfil <span id="clientMessagesBadge" hidden>•</span>
+          </button>
         </div>
-        <button class="nav-logout" id="portalLogoutBtn" type="button">Sair</button>
+        <button class="nav-logout" id="logoutBtn" type="button">Sair</button>
       </aside>
 
       <div class="portal-main">
         <section class="portal-section" id="panel-book">
-          <h2>Reservar uma sala</h2>
-          <p>Selecione um ou mais dias no calendário e depois escolha a sala.</p>
-          <div id="calendarContainer" class="calendar-container"></div>
+          <div class="portal-header">
+            <div>
+              <h2 id="bookingFormTitle">Reservar uma sala</h2>
+              <p class="portal-subtitle" id="bookingModeHint">Buscar por Data: selecione um ou mais dias no calendário e depois escolha a sala.</p>
+            </div>
+            <div class="portal-actions">
+              <button type="button" class="btn btn-secondary" id="refreshBtn">Atualizar</button>
+              <button type="button" class="btn btn-secondary" id="openSupportChatBtn">Mensagens</button>
+              <button type="button" class="btn btn-secondary" id="clientSupportThreadItem">Falar com suporte</button>
+            </div>
+          </div>
+
+          <div class="portal-actions" style="justify-content:flex-start;">
+            <button type="button" class="btn btn-secondary btn-sm active" id="bookingModeDate">Buscar por data</button>
+            <button type="button" class="btn btn-secondary btn-sm" id="bookingModeRoom">Buscar por sala</button>
+            <button type="button" class="btn btn-secondary btn-sm" id="scopePFBtn">Pessoa física</button>
+            <button type="button" class="btn btn-secondary btn-sm" id="scopeCompanyBtn">Empresa</button>
+          </div>
+
+          <form id="reservationBookForm" class="booking-card">
+            <input type="hidden" name="id" />
+            <input type="hidden" name="room_id" id="bookingRoomId" />
+            <div class="booking-stepper">
+              <div class="booking-stepper-item"><span>1</span><strong>Data</strong></div>
+              <div class="booking-stepper-item"><span>2</span><strong>Sala</strong></div>
+              <div class="booking-stepper-item"><span>3</span><strong>Detalhes</strong></div>
+              <div class="booking-stepper-item"><span>4</span><strong>Visitantes</strong></div>
+              <div class="booking-stepper-item"><span>5</span><strong>Resumo</strong></div>
+            </div>
+
+            <section class="booking-step">
+              <div class="form-row">
+                <label for="bookingDateInput">Data</label>
+                <input type="date" id="bookingDateInput" />
+              </div>
+              <div class="form-row">
+                <button type="button" class="btn btn-secondary btn-sm" id="dateModeSingle">Data única</button>
+                <button type="button" class="btn btn-secondary btn-sm" id="dateModeMulti">Datas múltiplas</button>
+                <span id="multiDateSummary"></span>
+              </div>
+              <div class="form-row" style="display:flex; align-items:center; gap:10px;">
+                <button type="button" class="btn btn-secondary btn-sm" id="bookingPrevMonth">Anterior</button>
+                <strong id="bookingCalendarLabel"></strong>
+                <button type="button" class="btn btn-secondary btn-sm" id="bookingNextMonth">Próximo</button>
+              </div>
+              <div id="bookingCalendarGrid" class="calendar-container"></div>
+            </section>
+
+            <section class="booking-step" hidden>
+              <div id="bookingRoomFeedback" class="rooms-message"></div>
+              <div id="bookingRoomOptions" class="rooms-grid"></div>
+              <div id="bookingRoomsMap" class="rooms-map"></div>
+            </section>
+
+            <section class="booking-step" hidden>
+              <div class="form-row">
+                <label for="bookingTitle">Título da reserva</label>
+                <input type="text" id="bookingTitle" name="title" required />
+              </div>
+              <div class="form-row">
+                <label for="bookingDescription">Descrição</label>
+                <textarea id="bookingDescription" name="description" rows="4"></textarea>
+              </div>
+              <div class="form-grid-mini">
+                <div>
+                  <label for="bookingTimeStart">Horário de início</label>
+                  <input type="time" id="bookingTimeStart" name="time_start" />
+                </div>
+                <div>
+                  <label for="bookingTimeEnd">Horário de fim</label>
+                  <input type="time" id="bookingTimeEnd" name="time_end" />
+                </div>
+              </div>
+              <div class="form-row" id="companyBookingRow">
+                <label>
+                  <input type="checkbox" id="bookingCompanyToggle" />
+                  Reservar pela empresa
+                </label>
+              </div>
+              <div class="form-row">
+                <label for="bookingVoucherCode">Voucher</label>
+                <div style="display:flex; gap:8px;">
+                  <input type="text" id="bookingVoucherCode" />
+                  <button type="button" class="btn btn-secondary btn-sm" id="bookingVoucherApply">Aplicar</button>
+                </div>
+                <small id="bookingVoucherResult"></small>
+              </div>
+            </section>
+
+            <section class="booking-step" hidden>
+              <div id="bookingVisitorSelector"></div>
+              <div class="form-row">
+                <label>
+                  <input type="checkbox" name="send_invites" value="1" checked />
+                  Enviar convites por e-mail
+                </label>
+              </div>
+              <div class="form-row">
+                <button type="button" class="btn btn-secondary btn-sm" id="openVisitorsPanel">Gerenciar visitantes</button>
+              </div>
+            </section>
+
+            <section class="booking-step" hidden>
+              <div id="bookingSummary"></div>
+            </section>
+
+            <div class="portal-actions">
+              <button type="button" class="btn btn-secondary" id="bookingPrevBtn">Voltar</button>
+              <button type="button" class="btn btn-secondary" id="bookingNextBtn">Avançar</button>
+              <button type="submit" class="btn btn-primary" id="bookingSubmitBtn">Confirmar reserva</button>
+              <button type="button" class="btn btn-secondary" id="cancelReservationEdit">Cancelar</button>
+            </div>
+            <div id="bookingMessage" class="rooms-message"></div>
+          </form>
         </section>
 
         <section class="portal-section" id="panel-reservations" hidden>
-          <h2>Minhas Reservas</h2>
-          <div id="myReservations" class="rooms-grid"></div>
+          <div class="panel-header">
+            <h2>Minhas Reservas</h2>
+            <button type="button" class="btn btn-secondary" id="newReservationBtn">Nova reserva</button>
+          </div>
+          <div id="reservationsContainer"></div>
         </section>
 
         <section class="portal-section" id="panel-visitors" hidden>
-          <h2>Visitantes</h2>
-          <div id="visitorsContainer" class="rooms-grid"></div>
+          <div class="panel-header">
+            <h2>Visitantes</h2>
+            <button type="button" class="btn btn-primary" id="newVisitorBtn">Novo visitante</button>
+          </div>
+          <div id="visitorFormWrapper" hidden>
+            <h3 id="visitorFormTitle">Novo Visitante</h3>
+            <form id="visitorForm" class="auth-form auth-form-grid">
+              <input type="hidden" name="id" />
+              <div class="form-field">
+                <label>Nome</label>
+                <input type="text" name="name" required />
+              </div>
+              <div class="form-field">
+                <label>CPF</label>
+                <input type="text" name="cpf" />
+              </div>
+              <div class="form-field">
+                <label>RG</label>
+                <input type="text" name="rg" />
+              </div>
+              <div class="form-field">
+                <label>E-mail</label>
+                <input type="email" name="email" />
+              </div>
+              <div class="form-field">
+                <label>Telefone</label>
+                <input type="text" name="phone" />
+              </div>
+              <div class="form-field">
+                <label>WhatsApp</label>
+                <input type="text" name="whatsapp" />
+              </div>
+              <div class="form-field">
+                <label>Status</label>
+                <select name="status">
+                  <option value="ativo">Ativo</option>
+                  <option value="inativo">Inativo</option>
+                </select>
+              </div>
+              <div class="form-field form-field-full">
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-secondary" id="cancelVisitorEdit">Cancelar</button>
+                  <button type="submit" class="btn btn-primary">Salvar visitante</button>
+                </div>
+              </div>
+            </form>
+          </div>
+          <div id="visitorsContainer"></div>
         </section>
 
         <section class="portal-section" id="panel-company" hidden>
-          <h2>Empresa</h2>
-          <div id="companyContainer" class="rooms-grid"></div>
+          <div class="panel-header">
+            <h2>Empresa</h2>
+            <div class="portal-actions">
+              <button type="button" class="btn btn-secondary btn-sm" id="openInviteModal">Convidar membro</button>
+              <button type="button" class="btn btn-secondary btn-sm" id="openManualModal">Adicionar manualmente</button>
+              <button type="button" class="btn btn-secondary btn-sm" id="openImportModal">Importar</button>
+            </div>
+          </div>
+
+          <div class="portal-actions">
+            <button type="button" class="btn btn-secondary btn-sm company-tab active" data-company-tab="overview">Visão geral</button>
+            <button type="button" class="btn btn-secondary btn-sm company-tab" data-company-tab="users">Usuários</button>
+            <button type="button" class="btn btn-secondary btn-sm company-tab" data-company-tab="reservations">Reservas</button>
+            <button type="button" class="btn btn-secondary btn-sm company-tab" data-company-tab="finance">Financeiro</button>
+          </div>
+
+          <div id="companyTab-overview">
+            <div class="panel-box">
+              <h3>Resumo</h3>
+              <div class="quick-actions">
+                <button type="button" class="btn btn-secondary btn-sm" data-panel="reservations">Ver reservas</button>
+                <button type="button" class="btn btn-secondary btn-sm" data-panel="finance">Ver financeiro</button>
+              </div>
+              <div id="companyOverviewNext"></div>
+            </div>
+          </div>
+
+          <div id="companyTab-users" hidden>
+            <div class="panel-box">
+              <h3>Usuários da empresa</h3>
+              <div id="companyUsersContainer"></div>
+            </div>
+            <div class="panel-box">
+              <h3>Convidar usuário</h3>
+              <div class="form-grid-mini">
+                <div>
+                  <label for="companyInviteCpf">CPF</label>
+                  <input type="text" id="companyInviteCpf" />
+                </div>
+                <div>
+                  <label for="companyInviteEmail">E-mail</label>
+                  <input type="email" id="companyInviteEmail" />
+                </div>
+              </div>
+              <div class="form-grid-mini">
+                <div>
+                  <label for="companyInviteRole">Perfil</label>
+                  <select id="companyInviteRole">
+                    <option value="membro">Membro</option>
+                    <option value="gestor">Gestor</option>
+                    <option value="leitor">Leitor</option>
+                    <option value="admin">Admin</option>
+                  </select>
+                </div>
+                <div style="display:flex; gap:8px; align-items:flex-end;">
+                  <button type="button" class="btn btn-primary" id="companyInviteBtn">Enviar convite</button>
+                  <button type="button" class="btn btn-secondary" id="companyResendBtn">Reenviar</button>
+                </div>
+              </div>
+              <div class="portal-actions">
+                <button type="button" class="btn btn-secondary btn-sm" id="companyManualBtn">Adicionar manualmente</button>
+                <button type="button" class="btn btn-secondary btn-sm" id="importPickFile">Importar XLSX</button>
+                <input type="file" id="companyCsvInput" accept=".csv" hidden />
+                <input type="file" id="companyXlsxInput" accept=".xlsx" hidden />
+              </div>
+            </div>
+
+            <div class="panel-box" id="companyInvitesBlock">
+              <div class="panel-header">
+                <h3>Convites enviados</h3>
+                <button type="button" class="btn btn-secondary btn-sm" id="companyInvitesClose">Fechar</button>
+              </div>
+              <div id="companyInvitesContainer"></div>
+              <div class="portal-actions">
+                <button type="button" class="btn btn-secondary btn-sm" id="openManageInvites">Gerenciar convites</button>
+              </div>
+            </div>
+          </div>
+
+          <div id="companyTab-reservations" hidden>
+            <div class="panel-box">
+              <h3>Reservas da empresa</h3>
+              <div id="companyReservationsContainer"></div>
+            </div>
+          </div>
+
+          <div id="companyTab-finance" hidden>
+            <div class="panel-box">
+              <h3>Financeiro</h3>
+              <div class="form-grid-mini">
+                <div>
+                  <label for="finFrom">De</label>
+                  <input type="date" id="finFrom" />
+                </div>
+                <div>
+                  <label for="finTo">Até</label>
+                  <input type="date" id="finTo" />
+                </div>
+              </div>
+              <div class="portal-actions">
+                <button type="button" class="btn btn-secondary" id="finApply">Aplicar</button>
+                <button type="button" class="btn btn-secondary" id="finExport">Exportar</button>
+              </div>
+              <div id="companyFinanceContainer"></div>
+            </div>
+          </div>
         </section>
 
         <section class="portal-section" id="panel-courses" hidden>
-          <h2>Cursos</h2>
-          <div id="coursesContainer" class="rooms-grid"></div>
+          <div class="panel-header">
+            <h2>Cursos e Workshops</h2>
+          </div>
+          <div class="panel-box">
+            <h3>Próximos cursos</h3>
+            <div id="availableCoursesMessage" class="rooms-message"></div>
+            <div id="availableCoursesGrid" class="rooms-grid"></div>
+          </div>
+          <div class="panel-box">
+            <h3>Minhas inscrições</h3>
+            <div id="clientCoursesMessage" class="rooms-message"></div>
+            <div id="clientCoursesList" class="rooms-grid"></div>
+            <div id="coursesFeedback" class="rooms-message"></div>
+          </div>
         </section>
 
         <section class="portal-section" id="panel-profile" hidden>
-          <h2>Meu Perfil</h2>
-          <div id="profileContainer" class="rooms-grid"></div>
+          <div class="panel-header">
+            <h2>Meu Perfil</h2>
+            <div class="portal-actions">
+              <button type="button" class="btn btn-secondary" id="editProfileBtn">Editar</button>
+              <button type="button" class="btn btn-secondary" id="cancelProfileEditBtn" hidden>Cancelar</button>
+              <button type="button" class="btn btn-secondary" id="openPasswordModalBtn">Alterar senha</button>
+            </div>
+          </div>
+          <form id="profileForm" class="auth-form auth-form-grid">
+            <input type="hidden" id="clientId" />
+            <div class="form-field">
+              <label for="profileNameInput">Nome</label>
+              <input type="text" id="profileNameInput" />
+            </div>
+            <div class="form-field">
+              <label for="profileLoginInput">Login</label>
+              <input type="text" id="profileLoginInput" />
+            </div>
+            <div class="form-field">
+              <label for="profileEmailInput">E-mail</label>
+              <input type="email" id="profileEmailInput" />
+            </div>
+            <div class="form-field">
+              <label for="profileCpfInput">CPF</label>
+              <input type="text" id="profileCpfInput" />
+            </div>
+            <div class="form-field">
+              <label for="profilePhoneInput">Telefone</label>
+              <input type="text" id="profilePhoneInput" />
+            </div>
+            <div class="form-field">
+              <label for="profileWhatsappInput">WhatsApp</label>
+              <input type="text" id="profileWhatsappInput" />
+            </div>
+            <div class="form-field">
+              <label for="profileCompanyInput">Empresa</label>
+              <input type="text" id="profileCompanyInput" />
+            </div>
+            <div class="form-field">
+              <label for="profileZipInput">CEP</label>
+              <input type="text" id="profileZipInput" />
+            </div>
+            <div class="form-field">
+              <label for="profileStreetInput">Rua</label>
+              <input type="text" id="profileStreetInput" />
+            </div>
+            <div class="form-field">
+              <label for="profileNumberInput">Número</label>
+              <input type="text" id="profileNumberInput" />
+            </div>
+            <div class="form-field">
+              <label for="profileComplementInput">Complemento</label>
+              <input type="text" id="profileComplementInput" />
+            </div>
+            <div class="form-field">
+              <label for="profileCityInput">Cidade</label>
+              <input type="text" id="profileCityInput" />
+            </div>
+            <div class="form-field">
+              <label for="profileStateInput">Estado</label>
+              <input type="text" id="profileStateInput" />
+            </div>
+            <div class="form-field">
+              <label for="profileCountryInput">País</label>
+              <input type="text" id="profileCountryInput" />
+            </div>
+            <div class="form-field form-field-full">
+              <button type="submit" class="btn btn-primary" id="saveProfileBtn">Salvar alterações</button>
+            </div>
+          </form>
+          <div id="profileMessage" class="rooms-message"></div>
         </section>
       </div>
     </div>
@@ -510,6 +858,7 @@
           </table>
         </div>
         <div class="modal-footer">
+          <button class="btn btn-secondary" type="button" id="manualAddRow">Adicionar linha</button>
           <button class="btn btn-secondary" type="button" id="manualMembersCancel">Cancelar</button>
           <button class="btn btn-primary" type="button" id="manualMembersSubmit">Enviar convites</button>
         </div>
