@@ -76,7 +76,7 @@ function current_user(): ?array
 function require_login(): void
 {
     if (!is_logged_in()) {
-        header('Location: /clientes.php');
+        header('Location: /clientes.html');
         exit;
     }
 }

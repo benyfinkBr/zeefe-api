@@ -19,7 +19,7 @@ if ($identifier && $password) {
         'role' => $role === 'advertiser' ? 'advertiser' : 'client',
         'ts' => time(),
     ];
-    header('Location: ' . (($role === 'advertiser') ? '/anunciante.php' : '/clientes.php'));
+    header('Location: ' . (($role === 'advertiser') ? '/anunciante.html' : '/clientes.html'));
     exit;
 }
 
