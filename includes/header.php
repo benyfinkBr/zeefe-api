@@ -8,18 +8,18 @@ $role = $user['role'] ?? '';
 <header class="site-header">
   <div class="site-header-inner">
     <div class="site-header-left">
-      <a href="/index.php" class="site-logo">
+      <a href="/index.html" class="site-logo">
         <img src="/img/logo.jpg" alt="Ze.EFE" />
       </a>
       <nav class="site-nav">
-        <a href="/salas.php">Salas</a>
-        <a href="/workshops.php">Cursos</a>
-        <a href="/conteudos.php">Conteúdos</a>
-        <a href="/quemsomos.php">Quem somos</a>
+        <a href="/salas.html">Salas</a>
+        <a href="/workshops.html">Cursos</a>
+        <a href="/conteudos.html">Conteúdos</a>
+        <a href="/quemsomos.html">Quem somos</a>
       </nav>
     </div>
     <div class="site-header-actions">
-      <a href="/index.php#contato" class="site-link">Contato</a>
+      <a href="/index.html#contato" class="site-link">Contato</a>
       <div class="site-header-guest" data-zeefe-header="guest" <?php echo $logged ? 'hidden' : ''; ?>>
         <button class="btn btn-outline" type="button" id="openLoginChoice" data-zeefe-header-btn="login">Entrar</button>
       </div>
@@ -31,7 +31,7 @@ $role = $user['role'] ?? '';
           <p class="user-menu-label" data-zeefe-header-label="user">
             <?php echo htmlspecialchars($logged ? (($role === 'advertiser') ? 'Portal do Anunciante' : 'Portal do Cliente') : ''); ?>
           </p>
-          <button type="button" class="user-menu-item" data-zeefe-header-btn="portal" onclick="window.location.href='<?php echo ($role === 'advertiser') ? '/anunciante.php' : '/clientes.php'; ?>'">Ir para o portal</button>
+          <button type="button" class="user-menu-item" data-zeefe-header-btn="portal" onclick="window.location.href='<?php echo ($role === 'advertiser') ? '/anunciante.html' : '/clientes.html'; ?>'">Ir para o portal</button>
           <button type="button" class="user-menu-item user-menu-danger" data-zeefe-header-btn="logout" onclick="window.location.href='/logout.php'">Sair</button>
         </div>
       </div>
@@ -46,10 +46,10 @@ $role = $user['role'] ?? '';
       <div class="modal-info">
         <h2 id="entryChoiceTitle">Como você prefere entrar?</h2>
         <div class="entry-choice-grid">
-          <button type="button" class="btn btn-primary entry-choice-btn" data-destino="/clientes.php">
+          <button type="button" class="btn btn-primary entry-choice-btn" data-destino="/clientes.html">
             Sou cliente
           </button>
-          <button type="button" class="btn btn-secondary entry-choice-btn" data-destino="/anunciante.php">
+          <button type="button" class="btn btn-secondary entry-choice-btn" data-destino="/anunciante.html">
             Sou anunciante
           </button>
         </div>
