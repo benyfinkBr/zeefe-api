@@ -2909,8 +2909,8 @@ async function onPortalLoginSubmit(event) {
     // Já marca header/session local antes de redirecionar
     syncHeaderWithClientSession(json.client);
     rememberActiveClientId(json.client?.id || null);
-    // Redireciona direto para a home com header logado
-    window.location.href = '/index.php';
+    // Permanece no portal após login
+    await hydrateSessionFromServer();
     return;
   } catch (err) {
     console.error('[Portal] Falha no login', err);
@@ -3070,10 +3070,7 @@ function aplicarClienteAtivo(cliente) {
   // Checa convites pendentes na primeira entrada
   checkPendingCompanyInvites();
   startPortalAutoRefresh();
-  // Redireciona para a home com o header já logado
-  setTimeout(() => {
-    window.location.href = '/index.php';
-  }, 150);
+  // Permanece no portal após login
 }
 
 function fazerLogout() {
