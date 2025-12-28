@@ -32,6 +32,32 @@ function hasCompanyAccess() {
   return true;
 }
 
+function updateCompanyAccessUi() {
+  const canUseCompany = hasCompanyAccess();
+  if (authScopeCompanyBtn) {
+    authScopeCompanyBtn.hidden = !canUseCompany;
+    authScopeCompanyBtn.disabled = !canUseCompany;
+    authScopeCompanyBtn.classList.toggle('active', canUseCompany && desiredScope === 'company');
+  }
+  if (headerScopeCompanyBtn) {
+    headerScopeCompanyBtn.hidden = !canUseCompany;
+    headerScopeCompanyBtn.disabled = !canUseCompany;
+    headerScopeCompanyBtn.classList.toggle('active', canUseCompany && currentScope === 'company');
+  }
+  if (scopeCompanyBtn) {
+    scopeCompanyBtn.hidden = !canUseCompany;
+    scopeCompanyBtn.disabled = !canUseCompany;
+    scopeCompanyBtn.classList.toggle('active', canUseCompany && currentScope === 'company');
+  }
+  if (companyTabButton) {
+    companyTabButton.hidden = !canUseCompany;
+    if (!canUseCompany && portalSections.company) portalSections.company.hidden = true;
+  }
+  if (companyBookingRow) {
+    companyBookingRow.hidden = !canUseCompany;
+  }
+}
+
 
 
 // teste de atualização
@@ -578,6 +604,7 @@ async function initialize() {
   // Auth scope buttons
   authScopePFBtn?.addEventListener('click', () => setAuthScope('pf'));
   authScopeCompanyBtn?.addEventListener('click', () => setAuthScope('company'));
+  updateCompanyAccessUi();
 
   courseModalClose?.addEventListener('click', closeCourseModal);
   courseModal?.addEventListener('click', (event) => { if (event.target === courseModal) closeCourseModal(); });
@@ -1316,9 +1343,10 @@ async function submitCourseEnrollment() {
 }
 
 function setAuthScope(scope) {
-  desiredScope = scope === 'company' ? 'company' : 'pf';
+  desiredScope = (scope === 'company' && hasCompanyAccess()) ? 'company' : 'pf';
   authScopePFBtn?.classList.toggle('active', desiredScope === 'pf');
   authScopeCompanyBtn?.classList.toggle('active', desiredScope === 'company');
+  updateCompanyAccessUi();
 }
 
 function hideAuthOverlay() {
@@ -1425,6 +1453,7 @@ function setPortalScope(scope) {
     setActivePanel('book');
   }
   syncHeaderScopeButtons();
+  updateCompanyAccessUi();
 }
 
 async function carregarEmpresaOverview() {
@@ -3049,21 +3078,7 @@ function aplicarClienteAtivo(cliente) {
   }
   const paymentClientIdInput = document.getElementById('clientId');
   if (paymentClientIdInput) paymentClientIdInput.value = activeClient.id || '';
-  // Exibe a aba Empresa para qualquer usuário que pertença a uma empresa
-  if (companyTabButton) {
-    const showCompany = hasCompanyAccess();
-    companyTabButton.hidden = !showCompany;
-    if (!showCompany && portalSections.company) portalSections.company.hidden = true;
-  }
-  // Toggle scope switch buttons visibility
-  if (scopeCompanyBtn) {
-    const showCompany = hasCompanyAccess();
-    scopeCompanyBtn.hidden = !showCompany;
-  }
-  // Exibe checkbox "Reserva pela empresa" para qualquer usuário com company_id
-  if (companyBookingRow) {
-    companyBookingRow.hidden = !hasCompanyAccess();
-  }
+  updateCompanyAccessUi();
   renderProfile();
   cardPaymentsFeature?.setClient(activeClient);
   resetBookingForm();
@@ -3091,6 +3106,7 @@ function fazerLogout() {
     if (paymentClientIdInput) paymentClientIdInput.value = '';
     closeHeaderMenu();
     setPortalScope('pf');
+    updateCompanyAccessUi();
     if (clientPanels) clientPanels.hidden = true;
     setBodyAuthState(false);
     setAuthView('login');
