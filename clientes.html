@@ -1033,6 +1033,82 @@
     </div>
   </div>
 
+  <div class="modal-overlay card-payment-modal" id="cardModal" aria-hidden="true">
+    <div class="modal-dialog wide card-payment-modal" role="dialog" aria-modal="true" aria-labelledby="cardModalTitle">
+      <button class="modal-close" type="button" id="cardModalClose" aria-label="Fechar">&times;</button>
+      <div class="modal-body">
+        <div class="modal-info" style="width:100%;">
+          <h2 id="cardModalTitle">Salvar cartao</h2>
+          <form id="cardSaveForm" class="card-payment-form">
+            <input type="hidden" id="cardClientId" />
+            <div class="form-field">
+              <label for="cardHolderName">Nome impresso no cartao</label>
+              <input type="text" id="cardHolderName" required />
+            </div>
+            <div class="form-field">
+              <label>Dados do cartao</label>
+              <div class="stripe-card-wrapper">
+                <div id="stripeCardElement" class="StripeElement"></div>
+              </div>
+            </div>
+            <div class="form-field billing-toggle-row">
+              <label>
+                <input type="checkbox" id="cardUseProfileData" checked />
+                Usar dados do perfil
+              </label>
+            </div>
+            <div id="cardBillingFields" class="billing-fields">
+              <div class="form-field">
+                <label for="cardBillingEmail">E-mail de cobranca</label>
+                <input type="email" id="cardBillingEmail" />
+              </div>
+              <div class="form-field">
+                <label for="cardBillingZip">CEP</label>
+                <input type="text" id="cardBillingZip" />
+              </div>
+              <div class="form-field">
+                <label for="cardBillingState">Estado</label>
+                <input type="text" id="cardBillingState" />
+              </div>
+              <div class="form-field">
+                <label for="cardBillingCity">Cidade</label>
+                <input type="text" id="cardBillingCity" />
+              </div>
+              <div class="form-field">
+                <label for="cardBillingCountry">Pais</label>
+                <input type="text" id="cardBillingCountry" />
+              </div>
+              <div class="form-field">
+                <label for="cardBillingStreet">Rua</label>
+                <input type="text" id="cardBillingStreet" />
+              </div>
+              <div class="form-field">
+                <label for="cardBillingNumber">Numero</label>
+                <input type="text" id="cardBillingNumber" />
+              </div>
+              <div class="form-field">
+                <label for="cardBillingComplement">Complemento</label>
+                <input type="text" id="cardBillingComplement" />
+              </div>
+            </div>
+            <div class="rooms-message" id="cardErrors" hidden></div>
+            <div class="rooms-message" id="cardSaveMessage" hidden></div>
+            <div class="modal-footer">
+              <button class="btn btn-secondary" type="button" id="cardModalCancel">Cancelar</button>
+              <button class="btn btn-primary" type="submit" id="cardSubmitBtn">Salvar cartao</button>
+            </div>
+          </form>
+          <div id="cardListEmpty" class="rooms-message"></div>
+          <div id="cardListError" class="rooms-message" hidden></div>
+          <section id="cardListSection" hidden>
+            <h3>Cartoes salvos</h3>
+            <ul id="cardList" class="card-list"></ul>
+          </section>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <footer class="site-footer">
     <div class="site-footer-inner">
       <div class="footer-column footer-map">
@@ -1076,13 +1152,8 @@
     </div>
   </footer>
 
-  <!-- Aviso de pagamentos -->
-  <div class="rooms-message" style="max-width:960px; margin:24px auto; text-align:center;">
-    <strong>Pagamentos online temporariamente indisponíveis.</strong> Você pode continuar navegando,
-    reservar salas e inscrever-se em cursos; entraremos em contato para combinar o pagamento.
-  </div>
-
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="" defer></script>
+  <script src="https://js.stripe.com/v3/" defer></script>
   <script src="scripts/clientes.js" defer></script>
 </body>
 </html>
