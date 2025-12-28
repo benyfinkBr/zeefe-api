@@ -2986,14 +2986,7 @@ async function onPortalRegisterSubmit(event) {
         await fetch(`${API_BASE}/company_accept_invite_json.php?token=${encodeURIComponent(window.pendingInviteToken)}`);
       } catch (_) {}
     }
-    authMessage.textContent = 'Cadastro realizado! Enviamos um e-mail para confirmação.' + (window.pendingInviteToken ? ' Convite aceito. Faça login para continuar.' : ' Você será redirecionado ao início.');
-    setTimeout(() => {
-      if (window.pendingInviteToken) {
-        window.location.href = '/clientes.php';
-      } else {
-        window.location.href = 'index.html';
-      }
-    }, 2200);
+    authMessage.textContent = 'Cadastro realizado! Enviamos um e-mail para confirmação.' + (window.pendingInviteToken ? ' Convite aceito. Faça login para continuar.' : ' Faça login para continuar.');
   } catch (err) {
     authMessage.textContent = err.message || 'Erro ao criar conta.';
   }
@@ -3918,8 +3911,6 @@ function mostrarAcoesPosReserva(message) {
     const logoutBtnEl = document.getElementById('logoutBtn');
     if (logoutBtnEl) {
       logoutBtnEl.click();
-    } else {
-      window.location.href = 'index.html';
     }
   });
 

@@ -728,6 +728,6 @@
 </div>
 
 <script src="/scripts/header-session.js" defer></script>
-<script src="/scripts/anunciante.js" defer></script>
+<script src="/scripts/anunciante.js?v=20250102" defer></script>
 </body>
 </html>
