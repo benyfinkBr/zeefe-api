@@ -97,26 +97,26 @@
   </section>
 
   <section id="advPanels" hidden>
-    <div class="portal-layout">
-      <aside class="portal-sidebar">
-        <div class="portal-profile">
-          <div class="portal-avatar">Ze.EFE</div>
-          <div class="portal-owner" id="advDisplay">Anunciante</div>
-          <div class="portal-owner-email" id="advOwner"></div>
-        </div>
-        <div class="portal-nav">
-          <div class="portal-nav-links">
-            <button type="button" data-panel="overview" class="active">Visão Geral</button>
-            <button type="button" data-panel="rooms">Minhas Salas</button>
-            <button type="button" data-panel="workshops">Workshops</button>
-            <button type="button" data-panel="reservations">Reservas</button>
-            <button type="button" data-panel="finance">Financeiro</button>
-            <button type="button" data-panel="messages" id="openAdvChatBtn">Mensagens</button>
-            <button type="button" data-panel="reviews">Avaliações</button>
-            <button type="button" data-panel="profile">Editar perfil</button>
+    <div class="portal-shell">
+      <aside class="portal-nav">
+        <div class="portal-nav-brand">
+          <img src="/img/logo.jpg" alt="Ze.EFE">
+          <div>
+            <h2 id="advDisplay">Anunciante</h2>
+            <p id="advOwner" class="portal-subtitle"></p>
           </div>
         </div>
-        <button class="ghost-btn" id="advLogoutBtn" type="button">Sair</button>
+        <div class="portal-nav-links">
+          <button type="button" data-panel="overview" class="active">Visão Geral</button>
+          <button type="button" data-panel="rooms">Minhas Salas</button>
+          <button type="button" data-panel="workshops">Workshops</button>
+          <button type="button" data-panel="reservations">Reservas</button>
+          <button type="button" data-panel="finance">Financeiro</button>
+          <button type="button" data-panel="messages" id="openAdvChatBtn">Mensagens</button>
+          <button type="button" data-panel="reviews">Avaliações</button>
+          <button type="button" data-panel="profile">Editar perfil</button>
+        </div>
+        <button class="nav-logout" id="advLogoutBtn" type="button">Sair</button>
       </aside>
 
       <div class="portal-main">

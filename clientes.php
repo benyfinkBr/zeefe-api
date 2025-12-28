@@ -105,24 +105,24 @@
   </section>
 
   <section id="clientPanels" hidden>
-    <div class="portal-layout">
-      <aside class="portal-sidebar">
-        <div class="portal-profile">
-          <div class="portal-avatar">Ze.EFE</div>
-          <div class="portal-owner" id="portalDisplay">Cliente pessoa física</div>
-          <div class="portal-owner-email" id="portalOwner"></div>
-        </div>
-        <div class="portal-nav">
-          <div class="portal-nav-links">
-            <button type="button" data-panel="book" class="active">Reservar</button>
-            <button type="button" data-panel="reservations">Minhas Reservas</button>
-            <button type="button" data-panel="visitors">Visitantes</button>
-            <button type="button" data-panel="company">Empresa</button>
-            <button type="button" data-panel="courses">Cursos</button>
-            <button type="button" data-panel="profile">Meu Perfil</button>
+    <div class="portal-shell">
+      <aside class="portal-nav">
+        <div class="portal-nav-brand">
+          <img src="/img/logo.jpg" alt="Ze.EFE">
+          <div>
+            <h2 id="portalDisplay">Cliente pessoa física</h2>
+            <p id="portalOwner" class="portal-subtitle"></p>
           </div>
         </div>
-        <button class="ghost-btn" id="portalLogoutBtn" type="button">Sair</button>
+        <div class="portal-nav-links">
+          <button type="button" data-panel="book" class="active">Reservar</button>
+          <button type="button" data-panel="reservations">Minhas Reservas</button>
+          <button type="button" data-panel="visitors">Visitantes</button>
+          <button type="button" data-panel="company">Empresa</button>
+          <button type="button" data-panel="courses">Cursos</button>
+          <button type="button" data-panel="profile">Meu Perfil</button>
+        </div>
+        <button class="nav-logout" id="portalLogoutBtn" type="button">Sair</button>
       </aside>
 
       <div class="portal-main">
