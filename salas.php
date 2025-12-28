@@ -1,17 +1,34 @@
 
-<?php require __DIR__ . '/includes/bootstrap.php'; ?>
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Ze.EFE - Marca lá!</title>
-  <link rel="stylesheet" href="/style.css?v=20241222" />
+  <link rel="stylesheet" href="style.css" />
   <!-- Leaflet (mapa) -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
 </head>
 <body>
-<?php require __DIR__ . '/includes/header.php'; ?>
+  <header class="site-header">
+    <div class="site-header-inner">
+      <div class="site-header-left">
+        <a href="index.html" class="site-logo">
+          <img src="img/logo.jpg" alt="Ze.EFE" />
+        </a>
+        <nav class="site-nav">
+          <a href="salas.html" aria-current="page">Salas</a>
+          <a href="workshops.html">Cursos</a>
+          <a href="conteudos.html">Conteúdos</a>
+          <a href="quemsomos.html">Quem somos</a>
+        </nav>
+      </div>
+      <div class="site-header-actions">
+        <a href="index.html#contato" class="site-link">Contato</a>
+        <button class="btn btn-outline" type="button" onclick="window.location='clientes.html'">Entrar</button>
+      </div>
+    </div>
+  </header>
 
 <main>
   <section class="landing-section">
@@ -120,19 +137,19 @@
         <div class="footer-links-grid">
           <div>
             <h4>Salas</h4>
-            <a href="/salas.php">Ver todas as salas</a>
+            <a href="salas.html">Ver todas as salas</a>
           </div>
           <div>
             <h4>Cursos</h4>
-            <a href="/workshops.php">Agenda de cursos e workshops</a>
+            <a href="workshops.html">Agenda de cursos e workshops</a>
           </div>
           <div>
             <h4>Área do Cliente</h4>
-            <a href="/clientes.php">Reservas e visitantes</a>
+            <a href="clientes.html">Reservas e visitantes</a>
           </div>
           <div>
             <h4>Anunciante</h4>
-            <a href="/anunciante.php">Cadastrar salas e cursos</a>
+            <a href="anunciante.html">Cadastrar salas e cursos</a>
           </div>
         </div>
       </div>
@@ -158,9 +175,8 @@
   </footer>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="" defer></script>
-<script src="/scripts/components/carousel.js" defer></script>
-<script src="/scripts/header-session.js" defer></script>
-<script src="/scripts/salas.js" defer></script>
+<script src="scripts/components/carousel.js" defer></script>
+<script src="scripts/salas.js" defer></script>
 
 
 </body>
