@@ -5209,7 +5209,10 @@ function initCardPaymentsFeature() {
       }
       stripe = Stripe(publishableKey);
       const elements = stripe.elements();
-      cardElement = elements.create('card', { hidePostalCode: true });
+      cardElement = elements.create('card', {
+        hidePostalCode: true,
+        disableLink: true
+      });
       cardElement.mount(cardElementContainer);
       const wrapper = cardElementContainer?.closest('.stripe-card-wrapper');
       cardElement.on('focus', () => {
