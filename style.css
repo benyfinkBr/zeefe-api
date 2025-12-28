@@ -4255,7 +4255,13 @@ body.anunciante-page #advChatMessages.chat-messages {
   width: 16px;
   height: 16px;
   border-radius: 4px;
+  background: rgba(29, 65, 58, 0.06);
+  border: 1px solid rgba(29, 65, 58, 0.12);
 }
+.calendar-dot.available { background: rgba(29, 65, 58, 0.12); }
+.calendar-dot.partial { background: rgba(217, 122, 28, 0.35); }
+.calendar-dot.full { background: rgba(181, 74, 58, 0.35); }
+.calendar-dot.selected { background: var(--brand-green); }
 
 .room-card.selected {
   box-shadow: 0 12px 24px rgba(29, 65, 58, 0.18);

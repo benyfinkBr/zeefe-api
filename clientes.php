@@ -170,12 +170,20 @@
                 <button type="button" class="btn btn-secondary btn-sm" id="dateModeMulti">Datas múltiplas</button>
                 <span id="multiDateSummary"></span>
               </div>
-              <div class="form-row" style="display:flex; align-items:center; gap:10px;">
-                <button type="button" class="btn btn-secondary btn-sm" id="bookingPrevMonth">Anterior</button>
-                <strong id="bookingCalendarLabel"></strong>
-                <button type="button" class="btn btn-secondary btn-sm" id="bookingNextMonth">Próximo</button>
+              <div class="booking-calendar">
+                <div class="calendar-header">
+                  <button type="button" id="bookingPrevMonth" aria-label="Mês anterior">&lsaquo;</button>
+                  <strong id="bookingCalendarLabel"></strong>
+                  <button type="button" id="bookingNextMonth" aria-label="Próximo mês">&rsaquo;</button>
+                </div>
+                <div id="bookingCalendarGrid" class="calendar-grid"></div>
+                <div class="calendar-legend">
+                  <span><span class="calendar-dot available"></span>Disponível</span>
+                  <span><span class="calendar-dot partial"></span>Parcial</span>
+                  <span><span class="calendar-dot full"></span>Lotado</span>
+                  <span><span class="calendar-dot selected"></span>Selecionado</span>
+                </div>
               </div>
-              <div id="bookingCalendarGrid" class="calendar-container"></div>
             </section>
 
             <section class="booking-step" hidden>
