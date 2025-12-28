@@ -65,7 +65,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (json.success) {
         loginSuccess.textContent = 'Login realizado com sucesso! Redirecionando...';
         setTimeout(() => {
-          window.location.href = '/clientes.php';
+          window.location.href = '/clientes.html';
         }, 1500);
       } else {
         loginError.textContent = json.error || 'Erro no login';

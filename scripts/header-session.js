@@ -208,7 +208,7 @@
     });
     portalBtn?.addEventListener('click', () => {
       if (!currentSession) return;
-      const destino = currentSession.type === 'advertiser' ? '/anunciante.php' : '/clientes.php';
+      const destino = currentSession.type === 'advertiser' ? '/anunciante.html' : '/clientes.html';
       window.location.href = destino;
     });
     logoutBtn?.addEventListener('click', async () => {
