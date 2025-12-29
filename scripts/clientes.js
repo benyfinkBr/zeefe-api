@@ -220,10 +220,6 @@ function getBookingPrimaryDate() {
 function getPolicyPriceForDate(policy, date) {
   if (!policy) return null;
   if (typeof policy.base_price === 'number') return policy.base_price;
-  if (date && Array.isArray(policy.prices)) {
-    const match = policy.prices.find(item => item.date === date);
-    if (match && typeof match.price === 'number') return match.price;
-  }
   return null;
 }
 

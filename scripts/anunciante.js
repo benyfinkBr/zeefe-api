@@ -680,7 +680,7 @@ async function saveRoomPolicies(roomId) {
       label: 'Pagamento no momento da Reserva (Sem cancelamento)',
       charge_timing: 'confirm',
       base_price: policyImmediateBasePrice?.value ? Number(policyImmediateBasePrice.value) : null,
-      prices: roomPoliciesState.immediate.prices || []
+      prices: []
     });
   }
   if (roomPoliciesState.cancel_window.enabled) {
@@ -691,7 +691,7 @@ async function saveRoomPolicies(roomId) {
       cancel_days: policyCancelDays?.value ? Number(policyCancelDays.value) : 0,
       cancel_fee_pct: policyCancelFee?.value ? Number(policyCancelFee.value) : 0,
       charge_timing: 'cancel_window',
-      prices: roomPoliciesState.cancel_window.prices || []
+      prices: []
     });
   }
   if (roomPoliciesState.free_cancel.enabled) {
@@ -700,7 +700,7 @@ async function saveRoomPolicies(roomId) {
       label: 'Sem taxa de cancelamento',
       charge_timing: 'day_before',
       base_price: policyFreeBasePrice?.value ? Number(policyFreeBasePrice.value) : null,
-      prices: roomPoliciesState.free_cancel.prices || []
+      prices: []
     });
   }
   const res = await fetch(`${API_BASE}/room_policies_save.php`, {
@@ -2082,6 +2082,7 @@ async function onRoomFormSubmit(e){
   roomPoliciesState.cancel_window.cancel_fee_pct = policyCancelFee?.value ? Number(policyCancelFee.value) : 0;
   if (!roomPoliciesState.immediate.enabled && !roomPoliciesState.cancel_window.enabled && !roomPoliciesState.free_cancel.enabled) {
     roomMsg.textContent = 'Selecione pelo menos uma opção de pagamento/cancelamento.';
+    if (policyOptionsWarning) policyOptionsWarning.hidden = false;
     return;
   }
   const missingPrices = [];
