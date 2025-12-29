@@ -645,9 +645,21 @@ function updateRoomStatusFields(statusValue) {
   const status = (statusValue || '').toLowerCase();
   const showMaintenance = status === 'manutencao';
   const showDeactivated = status === 'desativada';
-  if (maintenanceStartGroup) maintenanceStartGroup.hidden = !showMaintenance;
-  if (maintenanceEndGroup) maintenanceEndGroup.hidden = !showMaintenance;
-  if (deactivatedFromGroup) deactivatedFromGroup.hidden = !showDeactivated;
+  const toggleGroup = (el, visible) => {
+    if (!el) return;
+    if (visible) {
+      el.hidden = false;
+      el.removeAttribute('hidden');
+      el.style.display = '';
+    } else {
+      el.hidden = true;
+      el.setAttribute('hidden', '');
+      el.style.display = 'none';
+    }
+  };
+  toggleGroup(maintenanceStartGroup, showMaintenance);
+  toggleGroup(maintenanceEndGroup, showMaintenance);
+  toggleGroup(deactivatedFromGroup, showDeactivated);
   if (!showMaintenance) {
     if (maintenanceStart) maintenanceStart.value = '';
     if (maintenanceEnd) maintenanceEnd.value = '';
