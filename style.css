@@ -4343,6 +4343,10 @@ body.anunciante-page #advChatMessages.chat-messages {
   gap: 6px;
 }
 
+.form-group[hidden] {
+  display: none !important;
+}
+
 @media (max-width: 900px) {
   .form-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
