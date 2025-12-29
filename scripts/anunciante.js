@@ -286,6 +286,26 @@ const roomDescToolbar = document.getElementById('advRoomDescToolbar');
 const roomAmenitiesGrid = document.getElementById('advAmenitiesGrid');
 const roomPhotosInput = document.getElementById('roomPhotos');
 const roomPhotosPreview = document.getElementById('roomPhotosPreview');
+const policyImmediateToggle = document.getElementById('policyImmediateToggle');
+const policyImmediateGrid = document.getElementById('policyImmediateGrid');
+const policyImmediateDate = document.getElementById('policyImmediateDate');
+const policyImmediatePrice = document.getElementById('policyImmediatePrice');
+const policyImmediateAdd = document.getElementById('policyImmediateAdd');
+const policyImmediateList = document.getElementById('policyImmediateList');
+const policyCancelToggle = document.getElementById('policyCancelToggle');
+const policyCancelGrid = document.getElementById('policyCancelGrid');
+const policyCancelDays = document.getElementById('policyCancelDays');
+const policyCancelFee = document.getElementById('policyCancelFee');
+const policyCancelDate = document.getElementById('policyCancelDate');
+const policyCancelPrice = document.getElementById('policyCancelPrice');
+const policyCancelAdd = document.getElementById('policyCancelAdd');
+const policyCancelList = document.getElementById('policyCancelList');
+const policyFreeToggle = document.getElementById('policyFreeToggle');
+const policyFreeGrid = document.getElementById('policyFreeGrid');
+const policyFreeDate = document.getElementById('policyFreeDate');
+const policyFreePrice = document.getElementById('policyFreePrice');
+const policyFreeAdd = document.getElementById('policyFreeAdd');
+const policyFreeList = document.getElementById('policyFreeList');
 // extra admin-like fields
 const dailyRate = document.getElementById('dailyRate');
 const facilitatedAccess = document.getElementById('facilitatedAccess');
@@ -321,6 +341,11 @@ const advStatusNoticeReservations = document.getElementById('advStatusNoticeRese
 let amenitiesCache = null;
 let amenitiesRequest = null;
 let currentRoomPhotoList = [];
+let roomPoliciesState = {
+  immediate: { enabled: false, prices: [] },
+  cancel_window: { enabled: false, cancel_days: null, cancel_fee_pct: null, prices: [] },
+  free_cancel: { enabled: false, prices: [] }
+};
 const REQUIRED_ROOM_FIELDS = [
   { el: roomName, label: 'Nome da sala' },
   { el: roomCap, label: 'Capacidade' },
@@ -497,6 +522,154 @@ function renderRoomPhotosPreview(photoPathValue, options = {}) {
   });
   roomPhotosPreview.innerHTML = '';
   roomPhotosPreview.appendChild(fragment);
+}
+
+function resetRoomPoliciesState() {
+  roomPoliciesState = {
+    immediate: { enabled: false, prices: [] },
+    cancel_window: { enabled: false, cancel_days: null, cancel_fee_pct: null, prices: [] },
+    free_cancel: { enabled: false, prices: [] }
+  };
+  if (policyImmediateToggle) policyImmediateToggle.checked = false;
+  if (policyCancelToggle) policyCancelToggle.checked = false;
+  if (policyFreeToggle) policyFreeToggle.checked = false;
+  if (policyCancelDays) policyCancelDays.value = '';
+  if (policyCancelFee) policyCancelFee.value = '';
+  if (policyImmediateList) policyImmediateList.innerHTML = '';
+  if (policyCancelList) policyCancelList.innerHTML = '';
+  if (policyFreeList) policyFreeList.innerHTML = '';
+  if (policyImmediateGrid) policyImmediateGrid.hidden = true;
+  if (policyCancelGrid) policyCancelGrid.hidden = true;
+  if (policyFreeGrid) policyFreeGrid.hidden = true;
+}
+
+function renderPolicyGrid(policyKey, listEl) {
+  if (!listEl) return;
+  const items = roomPoliciesState[policyKey]?.prices || [];
+  if (!items.length) {
+    listEl.innerHTML = '<div class="input-hint">Nenhuma data configurada.</div>';
+    return;
+  }
+  listEl.innerHTML = items.map((item, idx) => `
+    <div class="policy-grid-item">
+      <div>${escapeHtml(item.date)} · R$ ${Number(item.price || 0).toFixed(2)}</div>
+      <button type="button" class="btn btn-secondary btn-sm" data-policy="${policyKey}" data-index="${idx}">Remover</button>
+    </div>
+  `).join('');
+  listEl.querySelectorAll('button[data-policy]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const key = btn.getAttribute('data-policy');
+      const index = Number(btn.getAttribute('data-index'));
+      if (!roomPoliciesState[key]) return;
+      roomPoliciesState[key].prices.splice(index, 1);
+      renderPolicyGrid(key, listEl);
+    });
+  });
+}
+
+function addPolicyPrice(policyKey, dateInput, priceInput, listEl) {
+  const date = (dateInput?.value || '').trim();
+  const price = priceInput?.value ? Number(priceInput.value) : null;
+  if (!date || !price || price <= 0) {
+    roomMsg.textContent = 'Informe data e preço válidos para o grid.';
+    return;
+  }
+  roomMsg.textContent = '';
+  if (!roomPoliciesState[policyKey]) return;
+  const existing = roomPoliciesState[policyKey].prices.find(item => item.date === date);
+  if (existing) {
+    existing.price = price;
+  } else {
+    roomPoliciesState[policyKey].prices.push({ date, price });
+    roomPoliciesState[policyKey].prices.sort((a, b) => a.date.localeCompare(b.date));
+  }
+  if (dateInput) dateInput.value = '';
+  if (priceInput) priceInput.value = '';
+  renderPolicyGrid(policyKey, listEl);
+}
+
+function applyPoliciesToUi() {
+  if (policyImmediateToggle) policyImmediateToggle.checked = roomPoliciesState.immediate.enabled;
+  if (policyCancelToggle) policyCancelToggle.checked = roomPoliciesState.cancel_window.enabled;
+  if (policyFreeToggle) policyFreeToggle.checked = roomPoliciesState.free_cancel.enabled;
+  if (policyCancelDays) policyCancelDays.value = roomPoliciesState.cancel_window.cancel_days ?? '';
+  if (policyCancelFee) policyCancelFee.value = roomPoliciesState.cancel_window.cancel_fee_pct ?? '';
+  if (policyImmediateGrid) policyImmediateGrid.hidden = !roomPoliciesState.immediate.enabled;
+  if (policyCancelGrid) policyCancelGrid.hidden = !roomPoliciesState.cancel_window.enabled;
+  if (policyFreeGrid) policyFreeGrid.hidden = !roomPoliciesState.free_cancel.enabled;
+  renderPolicyGrid('immediate', policyImmediateList);
+  renderPolicyGrid('cancel_window', policyCancelList);
+  renderPolicyGrid('free_cancel', policyFreeList);
+}
+
+async function loadRoomPolicies(roomId) {
+  if (!roomId) {
+    resetRoomPoliciesState();
+    return;
+  }
+  try {
+    const res = await fetch(`${API_BASE}/room_policies_list.php?room_id=${encodeURIComponent(roomId)}`, { credentials: 'include' });
+    const json = await parseJsonSafe(res);
+    resetRoomPoliciesState();
+    const policies = json.success ? (json.policies || []) : [];
+    policies.forEach(policy => {
+      if (policy.option_key === 'immediate') {
+        roomPoliciesState.immediate.enabled = true;
+        roomPoliciesState.immediate.prices = policy.prices || [];
+      }
+      if (policy.option_key === 'cancel_window') {
+        roomPoliciesState.cancel_window.enabled = true;
+        roomPoliciesState.cancel_window.cancel_days = policy.cancel_days;
+        roomPoliciesState.cancel_window.cancel_fee_pct = policy.cancel_fee_pct;
+        roomPoliciesState.cancel_window.prices = policy.prices || [];
+      }
+      if (policy.option_key === 'free_cancel') {
+        roomPoliciesState.free_cancel.enabled = true;
+        roomPoliciesState.free_cancel.prices = policy.prices || [];
+      }
+    });
+    applyPoliciesToUi();
+  } catch (_) {
+    resetRoomPoliciesState();
+  }
+}
+
+async function saveRoomPolicies(roomId) {
+  const policies = [];
+  if (roomPoliciesState.immediate.enabled) {
+    policies.push({
+      option_key: 'immediate',
+      label: 'Reservas com pagamento imediato',
+      charge_timing: 'confirm',
+      prices: roomPoliciesState.immediate.prices || []
+    });
+  }
+  if (roomPoliciesState.cancel_window.enabled) {
+    policies.push({
+      option_key: 'cancel_window',
+      label: `Cancelamento sem taxa em ${policyCancelDays?.value || 0} dias anteriores à reserva (Taxa de Cancelamento: ${policyCancelFee?.value || 0}%)`,
+      cancel_days: policyCancelDays?.value ? Number(policyCancelDays.value) : 0,
+      cancel_fee_pct: policyCancelFee?.value ? Number(policyCancelFee.value) : 0,
+      charge_timing: 'cancel_window',
+      prices: roomPoliciesState.cancel_window.prices || []
+    });
+  }
+  if (roomPoliciesState.free_cancel.enabled) {
+    policies.push({
+      option_key: 'free_cancel',
+      label: 'Sem taxa de cancelamento',
+      charge_timing: 'day_before',
+      prices: roomPoliciesState.free_cancel.prices || []
+    });
+  }
+  const res = await fetch(`${API_BASE}/room_policies_save.php`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ room_id: roomId, policies })
+  });
+  const json = await parseJsonSafe(res);
+  if (!json.success) throw new Error(json.error || 'Falha ao salvar políticas.');
 }
 
 async function uploadRoomPhotos(roomId) {
@@ -1094,10 +1267,17 @@ async function loadOverview() {
       if (['cancelada', 'negada', 'recusada'].includes(status)) return false;
       return new Date(r.date) >= new Date(today.toDateString());
     });
-    const last30 = new Date();
-    last30.setDate(last30.getDate() - 30);
-    const recentReservations = (myReservations || []).filter(r => r.date && new Date(r.date) >= last30);
-    ovViews.textContent = recentReservations.length;
+    try {
+      const resViews = await fetch(`${API_BASE}/room_views_count.php?advertiser_id=${encodeURIComponent(myAdvertiser?.id || '')}`, { credentials: 'include' });
+      const jsonViews = await parseJsonSafe(resViews);
+      if (jsonViews?.success && ovViews) {
+        ovViews.textContent = jsonViews.count ?? '0';
+      } else if (ovViews) {
+        ovViews.textContent = '—';
+      }
+    } catch (_) {
+      ovViews.textContent = '—';
+    }
     ovUpcoming.textContent = upcomingReservations.length;
     // saldo disponível = ledger status 'disponivel'
     let bal = 0;
@@ -1722,17 +1902,32 @@ setAuthVisible(true);
 
 // Modal Nova sala
 newRoomBtn?.addEventListener('click', () => { openRoomModal(null); });
-document.getElementById('advQuickRegisterBtn')?.addEventListener('click', ()=>{
-  // manda para a tela de registro direto
-  document.getElementById('authLogin').hidden = true;
-  document.getElementById('advRegister').hidden = false;
-  setAuthVisible(true);
-});
 roomClose?.addEventListener('click', () => { closeRoomModal(); });
 roomCancel?.addEventListener('click', () => { closeRoomModal(); });
 roomModal?.addEventListener('click', (e)=> { if (e.target === roomModal) closeRoomModal(); });
 roomForm?.addEventListener('submit', onRoomFormSubmit);
 cepInput?.addEventListener('input', handleCepInput);
+policyImmediateToggle?.addEventListener('change', () => {
+  roomPoliciesState.immediate.enabled = !!policyImmediateToggle.checked;
+  if (policyImmediateGrid) policyImmediateGrid.hidden = !policyImmediateToggle.checked;
+});
+policyCancelToggle?.addEventListener('change', () => {
+  roomPoliciesState.cancel_window.enabled = !!policyCancelToggle.checked;
+  if (policyCancelGrid) policyCancelGrid.hidden = !policyCancelToggle.checked;
+});
+policyFreeToggle?.addEventListener('change', () => {
+  roomPoliciesState.free_cancel.enabled = !!policyFreeToggle.checked;
+  if (policyFreeGrid) policyFreeGrid.hidden = !policyFreeToggle.checked;
+});
+policyCancelDays?.addEventListener('input', () => {
+  roomPoliciesState.cancel_window.cancel_days = policyCancelDays.value ? Number(policyCancelDays.value) : 0;
+});
+policyCancelFee?.addEventListener('input', () => {
+  roomPoliciesState.cancel_window.cancel_fee_pct = policyCancelFee.value ? Number(policyCancelFee.value) : 0;
+});
+policyImmediateAdd?.addEventListener('click', () => addPolicyPrice('immediate', policyImmediateDate, policyImmediatePrice, policyImmediateList));
+policyCancelAdd?.addEventListener('click', () => addPolicyPrice('cancel_window', policyCancelDate, policyCancelPrice, policyCancelList));
+policyFreeAdd?.addEventListener('click', () => addPolicyPrice('free_cancel', policyFreeDate, policyFreePrice, policyFreeList));
 cepInput?.addEventListener('blur', () => autoFillRoomAddressFromCep(cepInput?.value || ''));
 
 async function removeRoomPhoto(roomId, photoPath, thumbEl) {
@@ -1762,6 +1957,7 @@ async function openRoomModal(roomData){
   await renderRoomAmenities(selectedAmenities);
   const currentId = roomData?.id || null;
   renderRoomPhotosPreview(roomData?.photo_path || '', { roomId: currentId, allowDelete: Boolean(currentId) });
+  await loadRoomPolicies(currentId);
 
   const isEdit = !!roomData;
   if (isEdit) {
@@ -1831,6 +2027,25 @@ async function onRoomFormSubmit(e){
   if (roomDesc) {
     roomDesc.value = descHtml;
   }
+  roomPoliciesState.immediate.enabled = !!policyImmediateToggle?.checked;
+  roomPoliciesState.cancel_window.enabled = !!policyCancelToggle?.checked;
+  roomPoliciesState.free_cancel.enabled = !!policyFreeToggle?.checked;
+  roomPoliciesState.cancel_window.cancel_days = policyCancelDays?.value ? Number(policyCancelDays.value) : 0;
+  roomPoliciesState.cancel_window.cancel_fee_pct = policyCancelFee?.value ? Number(policyCancelFee.value) : 0;
+  const missingPrices = [];
+  if (roomPoliciesState.immediate.enabled && !(roomPoliciesState.immediate.prices || []).length) {
+    missingPrices.push('Pagamento imediato');
+  }
+  if (roomPoliciesState.cancel_window.enabled && !(roomPoliciesState.cancel_window.prices || []).length) {
+    missingPrices.push('Cancelamento com prazo');
+  }
+  if (roomPoliciesState.free_cancel.enabled && !(roomPoliciesState.free_cancel.prices || []).length) {
+    missingPrices.push('Sem taxa de cancelamento');
+  }
+  if (missingPrices.length) {
+    roomMsg.textContent = `Configure pelo menos uma data de preço para: ${missingPrices.join(', ')}.`;
+    return;
+  }
   const record = {
     name: (roomName?.value||'').trim(),
     description: descHtml,
@@ -1884,6 +2099,14 @@ async function onRoomFormSubmit(e){
       } catch (uploadErr) {
         console.error('[Sala] Erro ao enviar fotos', uploadErr);
         roomMsg.textContent = 'Sala salva, mas houve erro ao enviar as fotos.';
+      }
+    }
+    if (savedId) {
+      try {
+        await saveRoomPolicies(savedId);
+      } catch (policyErr) {
+        console.error('[Sala] Erro ao salvar políticas', policyErr);
+        roomMsg.textContent = policyErr.message || 'Sala salva, mas houve erro ao salvar políticas.';
       }
     }
     if (savedId) {
@@ -1989,8 +2212,10 @@ function openReservationModal(id){
   const statusLower = (r?.status || '').toLowerCase();
   if (['confirmada', 'concluida'].includes(statusLower)) {
     setAdvResConfirmMode('close');
+    if (advResDeny) advResDeny.hidden = true;
   } else {
     setAdvResConfirmMode('confirm');
+    if (advResDeny) advResDeny.hidden = false;
   }
   advResModal?.classList.add('show'); advResModal?.setAttribute('aria-hidden','false');
 }

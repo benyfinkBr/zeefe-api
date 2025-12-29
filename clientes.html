@@ -280,6 +280,17 @@
                     <label for="bookingDescriptionInput">Descrição / Observações</label>
                     <textarea id="bookingDescriptionInput" name="description" rows="3"></textarea>
                   </div>
+                  <div class="form-row" id="bookingPolicyRow" hidden>
+                    <label>Opção de pagamento/cancelamento</label>
+                    <div id="bookingPolicyOptions" class="policy-select"></div>
+                    <small id="bookingPolicyHint" class="input-hint"></small>
+                    <input type="hidden" id="bookingPolicyId" name="policy_id" />
+                    <input type="hidden" id="bookingPolicyKey" name="policy_key" />
+                    <input type="hidden" id="bookingPolicyLabel" name="policy_label" />
+                    <input type="hidden" id="bookingPolicyCancelDays" name="policy_cancel_days" />
+                    <input type="hidden" id="bookingPolicyCancelFee" name="policy_cancel_fee_pct" />
+                    <input type="hidden" id="bookingPolicyChargeTiming" name="policy_charge_timing" />
+                  </div>
                   <div class="form-row">
                     <label for="bookingVoucherCode">Voucher (opcional)</label>
                     <div style="display:flex; gap:8px; align-items:center; width:100%">
@@ -308,6 +319,15 @@
                   <h4>Resumo da reserva</h4>
                   <p class="form-help">Confira os dados antes de confirmar a solicitação.</p>
                   <div id="bookingSummary" class="booking-summary"></div>
+                  <div class="form-row" style="margin-top:12px">
+                    <label for="bookingCardSelect">Cartão para pagamento</label>
+                    <div class="card-select-row">
+                      <select id="bookingCardSelect"></select>
+                      <button type="button" class="btn btn-secondary btn-sm" id="bookingCardManage" data-open-card-modal>Gerenciar cartões</button>
+                    </div>
+                    <small id="bookingCardHint" class="input-hint"></small>
+                    <input type="hidden" id="bookingCardInput" name="stripe_payment_method_id" />
+                  </div>
                 </section>
 
                 <div class="booking-navigation">
@@ -612,6 +632,16 @@
                 </div>
               </form>
             </article>
+            <article class="form-card profile-card" style="margin-top:16px">
+              <h3>Opções de pagamento</h3>
+              <p class="form-help">Gerencie os cartões usados nas reservas.</p>
+              <div class="form-row" style="display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-start;">
+                <button type="button" class="btn btn-secondary btn-sm" data-open-card-modal>Adicionar cartão</button>
+                <button type="button" class="btn btn-secondary btn-sm" data-open-card-modal>Gerenciar cartões</button>
+              </div>
+              <div id="profileCardsMessage" class="rooms-message"></div>
+              <ul id="profileCardsList" class="card-list"></ul>
+            </article>
           </div>
 
           <div id="panel-courses" class="portal-section" hidden>
@@ -650,6 +680,23 @@
           <h2 id="reservationActionsTitle" style="margin-top:0">Ações da reserva</h2>
           <p id="reservationActionsMeta" class="rooms-message"></p>
           <div id="reservationActionsButtons" class="actions-grid"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Confirmar cancelamento de reserva -->
+  <div class="modal-overlay" id="reservationCancelModal" aria-hidden="true">
+    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="reservationCancelTitle">
+      <button class="modal-close" type="button" id="reservationCancelClose" aria-label="Fechar">&times;</button>
+      <div class="modal-body">
+        <div class="modal-info" style="padding:24px; width:100%">
+          <h2 id="reservationCancelTitle" style="margin-top:0">Cancelar reserva</h2>
+          <p id="reservationCancelText" class="rooms-message">Tem certeza de que deseja cancelar esta reserva? Essa ação ficará registrada no seu perfil e cancelamentos recorrentes podem resultar em suspensão ou cancelamento da conta.</p>
+          <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:16px;">
+            <button type="button" class="btn btn-secondary btn-sm" id="reservationCancelBack">Voltar</button>
+            <button type="button" class="btn btn-primary btn-sm" id="reservationCancelConfirm">Confirmar cancelamento</button>
+          </div>
         </div>
       </div>
     </div>

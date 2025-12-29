@@ -161,7 +161,6 @@
           <div class="portal-actions">
             <button class="btn btn-secondary btn-sm btn-with-badge" type="button" id="openAdvChatBtn">
               <span>Mensagens</span>
-              <span id="advMessagesBadge" class="badge-dot" hidden></span>
             </button>
             <button class="btn btn-secondary btn-sm" id="advEditProfileBtn">Editar perfil</button>
             <button class="btn btn-secondary btn-sm" id="advRefreshBtn">Atualizar</button>
@@ -194,7 +193,6 @@
             <h4>Ações rápidas</h4>
             <div class="quick-actions">
               <button class="btn btn-secondary btn-sm" type="button" id="advNewRoomBtn">Cadastrar sala</button>
-              <button class="btn btn-secondary btn-sm" type="button" id="advQuickRegisterBtn">Cadastre-se para anunciar</button>
               <button class="btn btn-secondary btn-sm" data-panel="rooms">Minhas salas</button>
               <button class="btn btn-secondary btn-sm" data-panel="finance">Ver extrato</button>
             </div>
@@ -603,7 +601,7 @@
       <div class="modal-body">
         <div class="modal-info" style="padding:24px; width:100%;">
           <h2 id="advResCancelTitle" style="margin:0 0 10px;">Cancelar reserva</h2>
-          <p class="rooms-message" style="margin-top:0;">Tem certeza de que deseja cancelar esta reserva? O cliente será avisado por e-mail.</p>
+          <p class="rooms-message" style="margin-top:0;">Tem certeza de que deseja cancelar esta reserva? Essa ação ficará registrada no seu perfil e cancelamentos recorrentes podem resultar em suspensão ou cancelamento da conta. O cliente será avisado por e‑mail.</p>
           <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:16px;">
             <button type="button" class="btn btn-secondary btn-sm" id="advResCancelBack">Voltar</button>
             <button type="button" class="btn btn-primary btn-sm" id="advResCancelConfirm">Confirmar cancelamento</button>
@@ -792,10 +790,61 @@
                 <label for="roomPhotos">Fotos da sala</label>
                 <input type="file" id="roomPhotos" accept="image/*" multiple />
                 <small class="input-hint">Envie imagens JPG/PNG/WEBP (até 8MB cada).</small>
+                <div id="roomPhotosPreview" class="room-photos-preview"></div>
               </div>
               <div class="form-group" style="grid-column: span 4">
                 <label>Comodidades disponíveis</label>
                 <div id="advAmenitiesGrid" class="checkbox-grid"></div>
+              </div>
+              <div class="form-group" style="grid-column: span 4">
+                <label>Opções de pagamento/cancelamento</label>
+                <div class="policy-block">
+                  <label class="policy-option">
+                    <input type="checkbox" id="policyImmediateToggle" />
+                    <span>Reservas com pagamento imediato</span>
+                  </label>
+                  <div class="policy-grid" id="policyImmediateGrid" hidden>
+                    <div class="policy-grid-actions">
+                      <input type="date" id="policyImmediateDate" />
+                      <input type="number" id="policyImmediatePrice" min="0" step="0.01" placeholder="Preço (R$)" />
+                      <button type="button" class="btn btn-secondary btn-sm" id="policyImmediateAdd">Adicionar data</button>
+                    </div>
+                    <div id="policyImmediateList" class="policy-grid-list"></div>
+                    <small class="input-hint">Opcional: preços específicos por data.</small>
+                  </div>
+
+                  <label class="policy-option">
+                    <input type="checkbox" id="policyCancelToggle" />
+                    <span>Cancelamento sem taxa em</span>
+                    <input type="number" id="policyCancelDays" min="0" placeholder="xx" style="max-width:90px" />
+                    <span>dias anteriores à reserva (Taxa de Cancelamento:</span>
+                    <input type="number" id="policyCancelFee" min="0" max="100" step="0.01" placeholder="XX" style="max-width:90px" />
+                    <span>%)</span>
+                  </label>
+                  <div class="policy-grid" id="policyCancelGrid" hidden>
+                    <div class="policy-grid-actions">
+                      <input type="date" id="policyCancelDate" />
+                      <input type="number" id="policyCancelPrice" min="0" step="0.01" placeholder="Preço (R$)" />
+                      <button type="button" class="btn btn-secondary btn-sm" id="policyCancelAdd">Adicionar data</button>
+                    </div>
+                    <div id="policyCancelList" class="policy-grid-list"></div>
+                    <small class="input-hint">Opcional: preços específicos por data.</small>
+                  </div>
+
+                  <label class="policy-option">
+                    <input type="checkbox" id="policyFreeToggle" />
+                    <span>Sem taxa de cancelamento</span>
+                  </label>
+                  <div class="policy-grid" id="policyFreeGrid" hidden>
+                    <div class="policy-grid-actions">
+                      <input type="date" id="policyFreeDate" />
+                      <input type="number" id="policyFreePrice" min="0" step="0.01" placeholder="Preço (R$)" />
+                      <button type="button" class="btn btn-secondary btn-sm" id="policyFreeAdd">Adicionar data</button>
+                    </div>
+                    <div id="policyFreeList" class="policy-grid-list"></div>
+                    <small class="input-hint">Opcional: preços específicos por data.</small>
+                  </div>
+                </div>
               </div>
             </div>
             <div class="modal-actions" style="display:flex; gap:12px; justify-content:flex-end;">

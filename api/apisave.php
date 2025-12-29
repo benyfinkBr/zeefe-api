@@ -17,6 +17,7 @@ require_once 'apiconfig.php';
 require_once __DIR__ . '/lib/mailer.php';
 require_once __DIR__ . '/lib/reservations.php';
 require_once __DIR__ . '/lib/geocode.php';
+require_once __DIR__ . '/lib/stripe_helpers.php';
 
 
 $payload = json_decode(file_get_contents('php://input'), true);
@@ -68,6 +69,9 @@ if (!in_array($table, $allowed)) {
 }
 
 try {
+  if ($table === 'reservations' && array_key_exists('stripe_payment_method_id', $rawRecord)) {
+    zeefe_stripe_ensure_schema($pdo);
+  }
   // Normalizações específicas de posts (slug amigável e único)
   if ($table === 'posts') {
     $currentId = isset($rawRecord['id']) && $rawRecord['id'] !== '' ? (int)$rawRecord['id'] : null;
@@ -201,6 +205,39 @@ if ($table === 'reservations') {
       http_response_code(400);
       echo json_encode(['error' => 'Já existe uma reserva para esta sala na data selecionada.']);
       exit;
+    }
+  }
+
+  if (!empty($record['policy_charge_timing']) && !empty($date)) {
+    try {
+      $reservationDate = new DateTime($date);
+      $timeStart = $record['time_start'] ?? null;
+      if ($timeStart) {
+        $parts = explode(':', (string) $timeStart);
+        $hour = isset($parts[0]) ? (int) $parts[0] : 0;
+        $minute = isset($parts[1]) ? (int) $parts[1] : 0;
+        $second = isset($parts[2]) ? (int) $parts[2] : 0;
+        $reservationDate->setTime($hour, $minute, $second);
+      } else {
+        $reservationDate->setTime(0, 0, 0);
+      }
+      $chargeAt = clone $reservationDate;
+      $timing = $record['policy_charge_timing'];
+      if ($timing === 'confirm') {
+        $chargeAt = new DateTime();
+      } elseif ($timing === 'cancel_window') {
+        $days = isset($record['policy_cancel_days']) ? (int) $record['policy_cancel_days'] : 0;
+        $chargeAt->modify('-' . max($days, 0) . ' days');
+        $latest = (clone $reservationDate)->modify('-1 day');
+        if ($chargeAt > $latest) {
+          $chargeAt = $latest;
+        }
+      } elseif ($timing === 'day_before') {
+        $chargeAt->modify('-1 day');
+      }
+      $record['policy_charge_at'] = $chargeAt->format('Y-m-d H:i:s');
+    } catch (Throwable $e) {
+      // mantém sem ajuste se houver erro
     }
   }
 

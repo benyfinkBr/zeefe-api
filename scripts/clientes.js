@@ -7,6 +7,7 @@ let companiesCache = [];
 let currentReservations = [];
 let currentVisitors = [];
 let activeClient = null;
+let pendingCancelReservationId = null;
 let bookingVisitorIds = [];
 let allReservationsCache = [];
 let bookingStepIndex = 0;
@@ -17,6 +18,8 @@ const ACTIVE_CLIENT_STORAGE_KEY = 'zeefeActiveClientId';
 const currentUrl = new URL(window.location.href);
 const hasPaymentToken = currentUrl.searchParams.has('pagarmetoken') || currentUrl.searchParams.has('token');
 const isPaymentReturn = hasPaymentToken;
+const preselectRoomId = currentUrl.searchParams.get('room_id');
+const preselectPolicyId = currentUrl.searchParams.get('policy_id');
 const autoLoginIdentifier = currentUrl.searchParams.get('identifier') || '';
 const autoLoginPassword = currentUrl.searchParams.get('password') || '';
 const shouldAutoLoginFromParams = Boolean(autoLoginIdentifier && autoLoginPassword);
@@ -59,6 +62,236 @@ function updateCompanyAccessUi() {
   if (companyBookingRow) {
     companyBookingRow.hidden = !canUseCompany;
   }
+  if (!canUseCompany && bookingCompanyToggle) {
+    bookingCompanyToggle.checked = false;
+  }
+}
+
+async function loadClientCards(force = false) {
+  if (!activeClient?.id) {
+    clientCardsCache = [];
+    renderBookingCardOptions();
+    renderProfileCards();
+    return [];
+  }
+  if (clientCardsCache.length && !force) {
+    renderBookingCardOptions();
+    renderProfileCards();
+    return clientCardsCache;
+  }
+  try {
+    const res = await fetch(`${API_BASE}/customer_cards_list.php`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ client_id: activeClient.id })
+    });
+    const json = await parseJsonSafe(res);
+    clientCardsCache = Array.isArray(json.cards) ? json.cards : [];
+  } catch (err) {
+    clientCardsCache = [];
+  }
+  renderBookingCardOptions();
+  renderProfileCards();
+  return clientCardsCache;
+}
+
+function getStripeCards() {
+  return (clientCardsCache || []).filter(card => card.stripe_payment_method_id);
+}
+
+function formatCardLabel(card) {
+  const brand = (card.brand || 'Cartão').toUpperCase();
+  const last4 = card.last4 ? `•••• ${card.last4}` : 'Sem final';
+  const expMonth = card.exp_month ? String(card.exp_month).padStart(2, '0') : '--';
+  const expYear = card.exp_year ? String(card.exp_year) : '--';
+  return `${brand} ${last4} · ${expMonth}/${expYear}`;
+}
+
+function renderBookingCardOptions(preferredId = null) {
+  if (!bookingCardSelect || !bookingCardInput) return;
+  const cards = getStripeCards();
+  bookingCardSelect.innerHTML = '';
+  if (!cards.length) {
+    bookingCardSelect.disabled = true;
+    bookingCardSelect.innerHTML = '<option value="">Nenhum cartão cadastrado</option>';
+    bookingCardInput.value = '';
+    if (bookingCardHint) {
+      bookingCardHint.textContent = 'Cadastre um cartão para confirmar a reserva.';
+    }
+    updateBookingNavigation();
+    return;
+  }
+  bookingCardSelect.disabled = false;
+  cards.forEach(card => {
+    const option = document.createElement('option');
+    option.value = card.stripe_payment_method_id;
+    option.textContent = formatCardLabel(card);
+    bookingCardSelect.appendChild(option);
+  });
+  const desiredValue = preferredId || bookingCardInput.value || bookingCardSelect.value;
+  const hasDesired = cards.some(card => card.stripe_payment_method_id === desiredValue);
+  bookingCardSelect.value = hasDesired ? desiredValue : bookingCardSelect.options[0]?.value || '';
+  bookingCardInput.value = bookingCardSelect.value || '';
+  if (bookingCardHint) {
+    bookingCardHint.textContent = 'Selecione o cartão que será usado na confirmação.';
+  }
+  updateBookingNavigation();
+}
+
+async function renderProfileCards() {
+  if (!profileCardsList || !profileCardsMessage) return;
+  const cards = getStripeCards();
+  profileCardsList.innerHTML = '';
+  if (!activeClient) {
+    profileCardsMessage.textContent = 'Faça login para gerenciar seus cartões.';
+    return;
+  }
+  if (!cards.length) {
+    profileCardsMessage.textContent = 'Nenhum cartão cadastrado.';
+    return;
+  }
+  profileCardsMessage.textContent = '';
+  cards.forEach(card => {
+    const li = document.createElement('li');
+    li.className = 'card-item';
+    const info = document.createElement('div');
+    info.className = 'card-info';
+    info.innerHTML = `
+      <span class="card-brand">${escapeHtml(formatCardLabel(card))}</span>
+      <span class="card-provider">${escapeHtml(card.provider === 'stripe' ? 'Stripe' : 'Legado')}</span>
+    `;
+    const actions = document.createElement('div');
+    actions.className = 'card-actions';
+    const removeBtn = document.createElement('button');
+    removeBtn.type = 'button';
+    removeBtn.className = 'card-remove-btn';
+    removeBtn.textContent = 'Remover';
+    removeBtn.addEventListener('click', () => requestProfileCardDeletion(card));
+    actions.appendChild(removeBtn);
+    li.appendChild(info);
+    li.appendChild(actions);
+    profileCardsList.appendChild(li);
+  });
+}
+
+async function requestProfileCardDeletion(card) {
+  if (!activeClient) return;
+  const confirmMsg = `Remover o cartão ${card.brand || ''} ${card.last4 ? '•••• ' + card.last4 : ''}?`;
+  if (!confirm(confirmMsg)) return;
+  try {
+    const response = await fetch(`${API_BASE}/customer_delete_card.php`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        card_id: card.id,
+        payment_method_id: card.stripe_payment_method_id || ''
+      })
+    });
+    const json = await parseJsonSafe(response);
+    if (!json.success) throw new Error(json.error || 'Não foi possível remover o cartão.');
+    await loadClientCards(true);
+  } catch (err) {
+    alert(err.message || 'Falha ao remover o cartão.');
+  }
+}
+
+function buildPolicyLabel(policy) {
+  if (policy.label) return policy.label;
+  if (policy.option_key === 'immediate') return 'Reservas com pagamento imediato';
+  if (policy.option_key === 'cancel_window') {
+    const days = policy.cancel_days ?? 0;
+    const fee = policy.cancel_fee_pct ?? 0;
+    return `Cancelamento sem taxa em ${days} dias anteriores à reserva (Taxa de Cancelamento: ${fee}%)`;
+  }
+  if (policy.option_key === 'free_cancel') return 'Sem taxa de cancelamento';
+  return 'Opção de pagamento/cancelamento';
+}
+
+async function loadRoomPolicies(roomId) {
+  currentRoomPolicies = [];
+  if (!roomId) {
+    renderBookingPolicyOptions();
+    return;
+  }
+  try {
+    const res = await fetch(`${API_BASE}/room_policies_list.php?room_id=${encodeURIComponent(roomId)}`, { credentials: 'include' });
+    const json = await parseJsonSafe(res);
+    currentRoomPolicies = json.success ? (json.policies || []) : [];
+  } catch (_) {
+    currentRoomPolicies = [];
+  }
+  renderBookingPolicyOptions();
+}
+
+function renderBookingPolicyOptions(preselectId = null) {
+  if (!bookingPolicyRow || !bookingPolicyOptions) return;
+  const policies = currentRoomPolicies || [];
+  if (!policies.length) {
+    bookingPolicyRow.hidden = false;
+    bookingPolicyOptions.innerHTML = '<div class="rooms-message">Sala sem opções de pagamento/cancelamento configuradas.</div>';
+    if (bookingPolicyHint) bookingPolicyHint.textContent = 'Escolha outra sala para continuar.';
+    if (bookingPolicyIdInput) bookingPolicyIdInput.value = '';
+    if (bookingPolicyKeyInput) bookingPolicyKeyInput.value = '';
+    if (bookingPolicyLabelInput) bookingPolicyLabelInput.value = '';
+    if (bookingPolicyCancelDaysInput) bookingPolicyCancelDaysInput.value = '';
+    if (bookingPolicyCancelFeeInput) bookingPolicyCancelFeeInput.value = '';
+    if (bookingPolicyChargeTimingInput) bookingPolicyChargeTimingInput.value = '';
+    updateBookingNavigation();
+    return;
+  }
+  bookingPolicyRow.hidden = false;
+  bookingPolicyOptions.innerHTML = '';
+  const desired = preselectId || bookingPolicyIdInput?.value || '';
+  policies.forEach(policy => {
+    const label = buildPolicyLabel(policy);
+    const id = String(policy.id || '');
+    const item = document.createElement('label');
+    item.className = 'policy-select-item';
+    item.innerHTML = `
+      <input type="radio" name="bookingPolicyChoice" value="${escapeHtml(id)}" />
+      <div>
+        <div style="font-weight:600">${escapeHtml(label)}</div>
+        <div class="input-hint">Cobrança: ${escapeHtml(policy.charge_timing || 'confirm')}</div>
+      </div>
+    `;
+    bookingPolicyOptions.appendChild(item);
+  });
+  const radioEls = bookingPolicyOptions.querySelectorAll('input[type="radio"]');
+  let selected = null;
+  radioEls.forEach(radio => {
+    if (desired && radio.value === String(desired)) {
+      radio.checked = true;
+      selected = radio.value;
+    }
+    radio.addEventListener('change', () => {
+      applySelectedPolicy(radio.value);
+    });
+  });
+  if (selected) {
+    applySelectedPolicy(selected);
+  } else if (radioEls[0]) {
+    radioEls[0].checked = true;
+    applySelectedPolicy(radioEls[0].value);
+  }
+  if (bookingPolicyHint) {
+    bookingPolicyHint.textContent = 'Selecione uma opção para continuar.';
+  }
+  updateBookingNavigation();
+}
+
+function applySelectedPolicy(policyId) {
+  const policy = (currentRoomPolicies || []).find(p => String(p.id) === String(policyId));
+  if (!policy) return;
+  if (bookingPolicyIdInput) bookingPolicyIdInput.value = String(policy.id);
+  if (bookingPolicyKeyInput) bookingPolicyKeyInput.value = policy.option_key || '';
+  if (bookingPolicyLabelInput) bookingPolicyLabelInput.value = buildPolicyLabel(policy);
+  if (bookingPolicyCancelDaysInput) bookingPolicyCancelDaysInput.value = policy.cancel_days ?? '';
+  if (bookingPolicyCancelFeeInput) bookingPolicyCancelFeeInput.value = policy.cancel_fee_pct ?? '';
+  if (bookingPolicyChargeTimingInput) bookingPolicyChargeTimingInput.value = policy.charge_timing || '';
+  updateBookingNavigation();
+  if (bookingStepIndex === 4) renderBookingSummary();
 }
 
 
@@ -269,6 +502,15 @@ const bookingPrevMonthBtn = document.getElementById('bookingPrevMonth');
 const bookingNextMonthBtn = document.getElementById('bookingNextMonth');
 const bookingCompanyToggle = document.getElementById('bookingCompanyToggle');
 const companyBookingRow = document.getElementById('companyBookingRow');
+const bookingPolicyRow = document.getElementById('bookingPolicyRow');
+const bookingPolicyOptions = document.getElementById('bookingPolicyOptions');
+const bookingPolicyHint = document.getElementById('bookingPolicyHint');
+const bookingPolicyIdInput = document.getElementById('bookingPolicyId');
+const bookingPolicyKeyInput = document.getElementById('bookingPolicyKey');
+const bookingPolicyLabelInput = document.getElementById('bookingPolicyLabel');
+const bookingPolicyCancelDaysInput = document.getElementById('bookingPolicyCancelDays');
+const bookingPolicyCancelFeeInput = document.getElementById('bookingPolicyCancelFee');
+const bookingPolicyChargeTimingInput = document.getElementById('bookingPolicyChargeTiming');
 // Filtros removidos do portal para simplificação
 const bookingRoomSearchInput = null;
 const bookingCityFilterInput = null;
@@ -284,6 +526,8 @@ const bookingVoucherResult = document.getElementById('bookingVoucherResult');
 let bookingVoucherApplied = null; // { code, discount, payable }
 let bookingSelectedDates = [];
 let bookingDateMulti = false;
+let clientCardsCache = [];
+let currentRoomPolicies = [];
 let availableCoursesCache = [];
 let clientCoursesCache = [];
 const workshopDetailsCache = new Map();
@@ -324,6 +568,11 @@ const reportIssueDescription = document.getElementById('reportIssueDescription')
 const reportProblemMessage = document.getElementById('reportProblemMessage');
 // Modal de ações da reserva
 const reservationActionsModal = document.getElementById('reservationActionsModal');
+const reservationCancelModal = document.getElementById('reservationCancelModal');
+const reservationCancelClose = document.getElementById('reservationCancelClose');
+const reservationCancelBack = document.getElementById('reservationCancelBack');
+const reservationCancelConfirm = document.getElementById('reservationCancelConfirm');
+const reservationCancelText = document.getElementById('reservationCancelText');
 // Empresa/Membros modais
 const inviteMemberModal = document.getElementById('inviteMemberModal');
 const inviteMemberClose = document.getElementById('inviteMemberClose');
@@ -349,6 +598,9 @@ const reservationActionsClose = document.getElementById('reservationActionsClose
 const reservationActionsTitle = document.getElementById('reservationActionsTitle');
 const reservationActionsMeta = document.getElementById('reservationActionsMeta');
 const reservationActionsButtons = document.getElementById('reservationActionsButtons');
+const cardModalCloseBtn = document.getElementById('cardModalClose');
+const cardModalCancelBtn = document.getElementById('cardModalCancel');
+const cardSaveForm = document.getElementById('cardSaveForm');
 
 const visitorForm = document.getElementById('visitorForm');
 const visitorFormTitle = document.getElementById('visitorFormTitle');
@@ -389,6 +641,8 @@ const courseTicketInfo = document.getElementById('courseTicketInfo');
 
 const profileForm = document.getElementById('profileForm');
 const profileMessageEl = document.getElementById('profileMessage');
+const profileCardsList = document.getElementById('profileCardsList');
+const profileCardsMessage = document.getElementById('profileCardsMessage');
 const editProfileBtn = document.getElementById('editProfileBtn');
 const saveProfileBtn = document.getElementById('saveProfileBtn');
 const cancelProfileEditBtn = document.getElementById('cancelProfileEditBtn');
@@ -487,6 +741,9 @@ const dateModeSingleBtn = document.getElementById('dateModeSingle');
 const dateModeMultiBtn = document.getElementById('dateModeMulti');
 const multiDateSummaryEl = document.getElementById('multiDateSummary');
 const bookingSummaryEl = document.getElementById('bookingSummary');
+const bookingCardSelect = document.getElementById('bookingCardSelect');
+const bookingCardHint = document.getElementById('bookingCardHint');
+const bookingCardInput = document.getElementById('bookingCardInput');
 
 // Stepper labels (Data/Salas) para ajustar conforme o fluxo
 const bookingStepperItemsEls = Array.from(document.querySelectorAll('.booking-stepper-item'));
@@ -561,8 +818,21 @@ async function handleEmailVerifyResend() {
   } catch (err) {
     emailVerifyFeedback.textContent = 'Erro ao reenviar link. Tente novamente.';
   } finally {
-    emailVerifyResend.disabled = false;
+  emailVerifyResend.disabled = false;
   }
+}
+
+function applyRoomSelectionFromQuery() {
+  if (!preselectRoomId || !bookingRoomHiddenInput) return;
+  bookingRoomHiddenInput.value = preselectRoomId;
+  renderRoomOptions(bookingDateInput?.value || '');
+  selectRoomOption(preselectRoomId);
+  if (preselectPolicyId) {
+    loadRoomPolicies(preselectRoomId).then(() => {
+      renderBookingPolicyOptions(preselectPolicyId);
+    });
+  }
+  setActivePanel('book');
 }
 
 if (document.readyState === 'loading') {
@@ -653,6 +923,8 @@ async function initialize() {
     if (activeClient) atualizarPainel();
   });
 
+  applyRoomSelectionFromQuery();
+
   if (bookingForm) {
     bookingForm.addEventListener('submit', onBookingSubmit);
     const startInput = bookingForm.querySelector('input[name="time_start"]');
@@ -676,6 +948,11 @@ async function initialize() {
   // Sem filtros no portal
   bookingTitleInput?.addEventListener('input', onBookingDetailsChange);
   bookingDescriptionInput?.addEventListener('input', onBookingDetailsChange);
+  bookingCardSelect?.addEventListener('change', () => {
+    if (bookingCardInput) bookingCardInput.value = bookingCardSelect.value || '';
+    updateBookingNavigation();
+    if (bookingStepIndex === 4) renderBookingSummary();
+  });
   bookingVoucherInput?.addEventListener('input', () => { if (bookingVoucherResult) bookingVoucherResult.textContent=''; bookingVoucherApplied = null; });
   bookingVoucherApplyBtn?.addEventListener('click', onApplyVoucherClick);
 
@@ -761,6 +1038,15 @@ async function initialize() {
   // Modal actions listeners
   reservationActionsClose?.addEventListener('click', closeReservationActions);
   reservationActionsModal?.addEventListener('click', (e) => { if (e.target === reservationActionsModal) closeReservationActions(); });
+  reservationCancelClose?.addEventListener('click', closeReservationCancelModal);
+  reservationCancelBack?.addEventListener('click', closeReservationCancelModal);
+  reservationCancelConfirm?.addEventListener('click', confirmReservationCancel);
+  reservationCancelModal?.addEventListener('click', (e) => { if (e.target === reservationCancelModal) closeReservationCancelModal(); });
+  cardModalCloseBtn?.addEventListener('click', () => loadClientCards(true));
+  cardModalCancelBtn?.addEventListener('click', () => loadClientCards(true));
+  cardSaveForm?.addEventListener('submit', () => {
+    setTimeout(() => loadClientCards(true), 1200);
+  }, true);
 
   visitorForm?.addEventListener('submit', onVisitorSubmit);
   cancelVisitorEditBtn?.addEventListener('click', resetVisitorForm);
@@ -2388,6 +2674,7 @@ function setBookingStep(index) {
   }
   if (bookingStepIndex === 4) {
     renderBookingSummary();
+    loadClientCards();
   }
 }
 
@@ -2433,8 +2720,15 @@ function isStepComplete(step) {
       // Datas primeiro: aqui exige sala
       return Boolean(bookingRoomHiddenInput?.value);
     case 2:
-      return Boolean(bookingTitleInput && bookingTitleInput.value.trim());
+      if (!bookingTitleInput || !bookingTitleInput.value.trim()) return false;
+      if (bookingPolicyRow && !bookingPolicyRow.hidden) {
+        return Boolean(bookingPolicyIdInput?.value);
+      }
+      return true;
     case 3:
+      return true;
+    case 4:
+      return Boolean(bookingCardInput?.value);
     default:
       return true;
   }
@@ -2470,6 +2764,10 @@ function validateBookingStep(step) {
   } else if (step === 2) {
     if (!bookingTitleInput || !bookingTitleInput.value.trim()) {
       bookingMessage.textContent = 'Informe um título para a reserva.';
+      return false;
+    }
+    if (bookingPolicyRow && !bookingPolicyRow.hidden && !bookingPolicyIdInput?.value) {
+      bookingMessage.textContent = 'Selecione uma opção de pagamento/cancelamento.';
       return false;
     }
   }
@@ -2790,6 +3088,7 @@ function selectRoomOption(roomId) {
   if (bookingCalendarGrid) {
     renderBookingCalendar(bookingCurrentMonth);
   }
+  loadRoomPolicies(roomId);
   updateBookingNavigation();
 }
 
@@ -3084,6 +3383,7 @@ function aplicarClienteAtivo(cliente) {
   updateCompanyAccessUi();
   renderProfile();
   cardPaymentsFeature?.setClient(activeClient);
+  loadClientCards(true);
   resetBookingForm();
   // Apply desired scope after login (fallback to PF if no company)
   const scopeToApply = (desiredScope === 'company' && hasCompanyAccess()) ? 'company' : 'pf';
@@ -3105,6 +3405,9 @@ function fazerLogout() {
     currentReservations = [];
     currentVisitors = [];
     bookingVisitorIds = [];
+    clientCardsCache = [];
+    renderBookingCardOptions();
+    renderProfileCards();
     const paymentClientIdInput = document.getElementById('clientId');
     if (paymentClientIdInput) paymentClientIdInput.value = '';
     closeHeaderMenu();
@@ -3407,7 +3710,7 @@ function openReservationActions(id) {
   // Ajustes: Editar e Cancelar
   cards.push(mkCard('Editar', ()=> { tratarAcaoReserva(reserva.id,'edit'); closeReservationActions(); }));
   if (showCancel) {
-    cards.push(mkCard('Cancelar', ()=> { tratarAcaoReserva(reserva.id,'cancel'); closeReservationActions(); }, 'danger'));
+    cards.push(mkCard('Cancelar reserva', ()=> { tratarAcaoReserva(reserva.id,'cancel'); closeReservationActions(); }, 'danger'));
   }
 
   // Render em grid único (duas linhas auto-fit)
@@ -3422,6 +3725,42 @@ function closeReservationActions(){
   reservationActionsModal?.setAttribute('aria-hidden','true');
 }
 
+function openReservationCancelModal(reserva) {
+  if (!reserva || !reservationCancelModal) return;
+  pendingCancelReservationId = reserva.id;
+  if (reservationCancelText) {
+    reservationCancelText.textContent = 'Tem certeza de que deseja cancelar esta reserva? Essa ação ficará registrada no seu perfil e cancelamentos recorrentes podem resultar em suspensão ou cancelamento da conta. Se houver multa de cancelamento, ela será cobrada no momento da confirmação.';
+  }
+  reservationCancelModal.classList.add('show');
+  reservationCancelModal.setAttribute('aria-hidden','false');
+}
+
+function closeReservationCancelModal() {
+  reservationCancelModal?.classList.remove('show');
+  reservationCancelModal?.setAttribute('aria-hidden','true');
+  pendingCancelReservationId = null;
+}
+
+async function confirmReservationCancel() {
+  if (!pendingCancelReservationId) return;
+  const id = pendingCancelReservationId;
+  closeReservationCancelModal();
+  try {
+    const res = await fetch(`${API_BASE}/update_reservation_status.php`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ id, action: 'cancel' })
+    });
+    const json = await res.json();
+    if (!json.success) throw new Error(json.error || 'Erro ao atualizar status.');
+    atualizarPainel();
+  } catch (err) {
+    console.error(err);
+    alert(err.message || 'Não foi possível atualizar o status.');
+  }
+}
+
 function getActionIconSVG(label){
   const green = '#2F6F55';
   const stroke = `stroke=\"${green}\" fill=\"none\" stroke-width=\"2\"`;
@@ -3430,6 +3769,7 @@ function getActionIconSVG(label){
     'Baixar convite': `<svg viewBox='0 0 24 24'><path d='M12 3v12' ${stroke}/><path d='M7 10l5 5 5-5' ${stroke}/><path d='M5 19h14' ${stroke}/></svg>`,
     'Enviar convite': `<svg viewBox='0 0 24 24'><path d='M22 2L11 13' ${stroke}/><path d='M22 2l-7 20-4-9-9-4 20-7z' ${stroke}/></svg>`,
     'Cancelar': `<svg viewBox='0 0 24 24'><path d='M6 6l12 12M18 6L6 18' ${stroke}/></svg>`,
+    'Cancelar reserva': `<svg viewBox='0 0 24 24'><path d='M6 6l12 12M18 6L6 18' ${stroke}/></svg>`,
     'Editar': `<svg viewBox='0 0 24 24'><path d='M3 21h6l12-12-6-6L3 15v6z' ${stroke}/></svg>`,
     'Solicitar NF': `<svg viewBox='0 0 24 24'><path d='M6 3h12v18H6z' ${stroke}/><path d='M9 7h6M9 11h6M9 15h6' ${stroke}/></svg>`
   };
@@ -3753,7 +4093,8 @@ async function tratarAcaoReserva(id, action) {
       alert('Cancelamento permitido apenas com 24 horas de antecedência.');
       return;
     }
-    if (!confirm('Deseja cancelar esta reserva?')) return;
+    openReservationCancelModal(reserva);
+    return;
   }
   try {
     const res = await fetch(`${API_BASE}/update_reservation_status.php`, {
@@ -3791,6 +4132,11 @@ function preencherFormReserva(reserva) {
   renderRoomOptions(bookingDateInput?.value || '');
   bookingStepIndex = 3;
   setBookingStep(bookingStepIndex);
+  loadRoomPolicies(reserva.room_id);
+  renderBookingPolicyOptions(reserva.policy_id || '');
+  loadClientCards(true).then(() => {
+    renderBookingCardOptions(reserva.stripe_payment_method_id || '');
+  });
   cancelReservationEditBtn.hidden = false;
   bookingForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
   if (bookingMessage) bookingMessage.textContent = '';
@@ -3804,6 +4150,16 @@ async function onBookingSubmit(event) {
   const formData = new FormData(bookingForm);
   const record = Object.fromEntries(formData.entries());
   record.client_id = activeClient.id;
+  const selectedCardId = bookingCardInput?.value || bookingCardSelect?.value || '';
+  if (!selectedCardId) {
+    bookingMessage.textContent = 'Selecione um cartão para pagamento.';
+    return;
+  }
+  if (bookingPolicyRow && !bookingPolicyRow.hidden && !bookingPolicyIdInput?.value) {
+    bookingMessage.textContent = 'Selecione uma opção de pagamento/cancelamento.';
+    return;
+  }
+  record.stripe_payment_method_id = selectedCardId;
   // Se usuário pertence a uma empresa e marcou o toggle, salva company_id
   if (activeClient.company_id && bookingCompanyToggle && bookingCompanyToggle.checked) {
     record.company_id = activeClient.company_id;
@@ -4005,6 +4361,10 @@ function resetBookingForm(preserveMessage = false) {
   updateMultiDateSummary();
   bookingSelectedDates = [];
   if (bookingRoomHiddenInput) bookingRoomHiddenInput.value = '';
+  currentRoomPolicies = [];
+  renderBookingPolicyOptions();
+  if (bookingCardInput) bookingCardInput.value = '';
+  if (bookingCardSelect) bookingCardSelect.value = '';
   bookingStepIndex = 0;
   setBookingStep(bookingStepIndex);
   bookingVisitorIds = [];
@@ -4013,6 +4373,7 @@ function resetBookingForm(preserveMessage = false) {
   if (bookingMessage && !preserveMessage) bookingMessage.textContent = '';
   bookingCurrentMonth = new Date();
   if (bookingCalendarGrid) renderBookingCalendar(bookingCurrentMonth);
+  renderBookingCardOptions();
 }
 
 function updateMultiDateSummary() {
@@ -4069,6 +4430,10 @@ function renderBookingSummary() {
   const voucherInfo = bookingVoucherApplied
     ? `Voucher ${bookingVoucherApplied.code} aplicado. Desconto: ${formatCurrency(bookingVoucherApplied.discount || 0)}. Previsto: ${formatCurrency(bookingVoucherApplied.payable || 0)}.`
     : 'Nenhum voucher aplicado.';
+  const selectedCardId = bookingCardInput?.value || bookingCardSelect?.value || '';
+  const selectedCard = selectedCardId ? getStripeCards().find(card => card.stripe_payment_method_id === selectedCardId) : null;
+  const selectedCardLabel = selectedCard ? formatCardLabel(selectedCard) : 'Não selecionado';
+  const selectedPolicyLabel = bookingPolicyLabelInput?.value || 'Não selecionado';
 
   // Cálculo simples de custo total previsto
   let totalPrevisto = null;
@@ -4099,6 +4464,8 @@ function renderBookingSummary() {
         <li><strong>Observações:</strong> ${escapeHtml(desc)}</li>
         <li><strong>Voucher:</strong> ${escapeHtml(voucherInfo)}</li>
         <li><strong>Valor total previsto:</strong> ${totalPrevisto != null ? formatCurrency(totalPrevisto) : '—'}</li>
+        <li><strong>Cartão:</strong> ${escapeHtml(selectedCardLabel)}</li>
+        <li><strong>Política:</strong> ${escapeHtml(selectedPolicyLabel)}</li>
       </ul>
       <h5>Visitantes</h5>
       <ul>
@@ -4556,6 +4923,7 @@ function renderProfile() {
   if (profileInputs.state) profileInputs.state.value = addr.state || '';
   if (profileInputs.country) profileInputs.country.value = addr.country || 'BR';
   setProfileEditing(false);
+  renderProfileCards();
 }
 
 function openProfileEditModal() {

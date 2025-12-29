@@ -17,6 +17,81 @@ const roomsMapEl = document.getElementById('rooms-map-salas');
 let salasMap = null;
 let salasMarkersLayer = null;
 let selectedAmenities = new Set();
+
+function getRoomViewSessionId() {
+  const key = 'zeefeRoomViewSession';
+  try {
+    const existing = localStorage.getItem(key);
+    if (existing) return existing;
+    const id = `rv_${Math.random().toString(36).slice(2)}_${Date.now().toString(36)}`;
+    localStorage.setItem(key, id);
+    return id;
+  } catch (_) {
+    return `rv_${Date.now().toString(36)}`;
+  }
+}
+
+async function trackRoomView(roomId) {
+  if (!roomId) return;
+  try {
+    await fetch(`${API_BASE}/room_view_track.php`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ room_id: roomId, session_id: getRoomViewSessionId() })
+    });
+  } catch (_) {}
+}
+
+function buildPolicyLabel(policy) {
+  if (policy.label) return policy.label;
+  if (policy.option_key === 'immediate') return 'Reservas com pagamento imediato';
+  if (policy.option_key === 'cancel_window') {
+    const days = policy.cancel_days ?? 0;
+    const fee = policy.cancel_fee_pct ?? 0;
+    return `Cancelamento sem taxa em ${days} dias anteriores à reserva (Taxa de Cancelamento: ${fee}%)`;
+  }
+  if (policy.option_key === 'free_cancel') return 'Sem taxa de cancelamento';
+  return 'Opção de pagamento/cancelamento';
+}
+
+async function renderModalPolicies(roomId, reserveDisabled = false) {
+  if (!modalPolicies) return;
+  if (!reserveDisabled) {
+    modalReserve.classList.remove('disabled');
+    modalReserve.removeAttribute('aria-disabled');
+  }
+  modalPolicies.innerHTML = '<div class="rooms-message">Carregando opções de pagamento...</div>';
+  try {
+    const res = await fetch(`${API_BASE}/room_policies_list.php?room_id=${encodeURIComponent(roomId)}`, { credentials: 'include' });
+    const json = await res.json();
+    const policies = json.success ? (json.policies || []) : [];
+    if (!policies.length) {
+      modalPolicies.innerHTML = '<div class="rooms-message">Sala sem opções de pagamento/cancelamento configuradas.</div>';
+      modalReserve.classList.add('disabled');
+      modalReserve.setAttribute('aria-disabled', 'true');
+      modalReserve.href = '/clientes.html';
+      return;
+    }
+    modalPolicies.innerHTML = '<strong>Opções de pagamento/cancelamento</strong>';
+    policies.forEach((policy, idx) => {
+      const label = buildPolicyLabel(policy);
+      const item = document.createElement('label');
+      item.className = 'policy-select-item';
+      item.innerHTML = `
+        <input type="radio" name="modalPolicyChoice" value="${policy.id}" ${idx === 0 ? 'checked' : ''} />
+        <div>${label}</div>
+      `;
+      item.querySelector('input')?.addEventListener('change', () => {
+        modalReserve.href = `/clientes.html?room_id=${encodeURIComponent(roomId)}&policy_id=${encodeURIComponent(policy.id)}`;
+      });
+      modalPolicies.appendChild(item);
+    });
+    modalReserve.href = `/clientes.html?room_id=${encodeURIComponent(roomId)}&policy_id=${encodeURIComponent(policies[0].id)}`;
+  } catch (_) {
+    modalPolicies.innerHTML = '<div class="rooms-message">Não foi possível carregar opções de pagamento.</div>';
+  }
+}
 const modalOverlay = document.getElementById('roomModal');
 const modalCloseTop = document.getElementById('roomModalClose');
 const modalCloseFooter = document.getElementById('roomModalCloseFooter');
@@ -28,6 +103,7 @@ const modalLocation = document.getElementById('roomModalLocation');
 const modalRate = document.getElementById('roomModalRate');
 const modalGallery = document.getElementById('roomModalGallery');
 const modalAmenities = document.getElementById('roomModalAmenities');
+const modalPolicies = document.getElementById('roomModalPolicies');
 const modalReserve = document.getElementById('roomModalReserve');
 const openLoginChoiceBtn = document.getElementById('openLoginChoice');
 const entryChoiceModal = document.getElementById('entryChoiceModal');
@@ -358,6 +434,8 @@ function openModal(room) {
 
   renderGallery(room.photo_path);
   renderAmenities(room.amenities);
+  renderModalPolicies(room.id, modalReserve.classList.contains('disabled'));
+  trackRoomView(room.id);
 
   modalOverlay.classList.add('show');
   modalOverlay.setAttribute('aria-hidden', 'false');

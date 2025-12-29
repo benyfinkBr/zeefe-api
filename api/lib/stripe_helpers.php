@@ -73,6 +73,11 @@ function zeefe_stripe_ensure_schema(PDO $pdo): void {
     error_log('[Stripe] Falha ao garantir coluna reservations.stripe_payment_intent_id: ' . $e->getMessage());
   }
   try {
+    ensureColumn($pdo, 'reservations', 'stripe_payment_method_id', 'VARCHAR(80) NULL', 'stripe_payment_intent_id');
+  } catch (Throwable $e) {
+    error_log('[Stripe] Falha ao garantir coluna reservations.stripe_payment_method_id: ' . $e->getMessage());
+  }
+  try {
     ensureColumn($pdo, 'reservations', 'stripe_charge_id', 'VARCHAR(80) NULL', null);
   } catch (Throwable $e) {
     error_log('[Stripe] Falha ao garantir coluna reservations.stripe_charge_id: ' . $e->getMessage());
