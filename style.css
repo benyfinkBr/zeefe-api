@@ -4436,7 +4436,10 @@ body.anunciante-page #advChatMessages.chat-messages {
 }
 
 .policy-sub-row {
-  margin-left: 0;
+  display: grid;
+  grid-template-columns: auto 90px auto 180px;
+  column-gap: 8px;
+  align-items: center;
 }
 
 .policy-sep {
@@ -4447,6 +4450,10 @@ body.anunciante-page #advChatMessages.chat-messages {
 @media (max-width: 900px) {
   .policy-option {
     grid-template-columns: 20px 1fr;
+  }
+  .policy-sub-row {
+    grid-template-columns: 1fr;
+    row-gap: 8px;
   }
   .policy-row {
     flex-wrap: wrap;
