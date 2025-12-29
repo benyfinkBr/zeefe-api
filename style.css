@@ -4437,7 +4437,7 @@ body.anunciante-page #advChatMessages.chat-messages {
 
 .policy-sub-row {
   display: grid;
-  grid-template-columns: auto 90px auto 180px;
+  grid-template-columns: auto 90px auto 220px;
   column-gap: 8px;
   align-items: center;
 }
