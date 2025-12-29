@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/apiconfig.php';
+require_once __DIR__ . '/lib/company_access.php';
 header('Content-Type: application/json');
 
 try {
@@ -12,6 +13,7 @@ try {
   if (!$inv) { http_response_code(404); echo json_encode(['success'=>false,'error'=>'Convite não encontrado']); exit; }
   if ($inv['status'] !== 'pendente') { http_response_code(400); echo json_encode(['success'=>false,'error'=>'Convite indisponível']); exit; }
   if (new DateTime($inv['expires_at']) < new DateTime()) { http_response_code(400); echo json_encode(['success'=>false,'error'=>'Convite expirado']); exit; }
+  if (!zeefe_require_active_company($pdo, (int)($inv['company_id'] ?? 0))) { exit; }
 
   $linked = false; $clientId = null;
   try {
@@ -42,4 +44,3 @@ try {
   http_response_code(500);
   echo json_encode(['success'=>false,'error'=>'Erro interno: '.$e->getMessage()]);
 }
-

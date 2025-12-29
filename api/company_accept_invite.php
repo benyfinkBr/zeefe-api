@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/apiconfig.php';
+require_once __DIR__ . '/lib/company_access.php';
 header('Content-Type: text/html; charset=utf-8');
 
 function h($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
@@ -16,6 +17,9 @@ try {
   if (!$inv) throw new Exception('Convite não encontrado.');
   if ($inv['status'] !== 'pendente') throw new Exception('Este convite não está mais disponível.');
   if (new DateTime($inv['expires_at']) < new DateTime()) throw new Exception('Convite expirado.');
+  if (!zeefe_require_active_company($pdo, (int)($inv['company_id'] ?? 0))) {
+    exit;
+  }
 
   // Se já existir cliente com o e-mail/CPF, vincula; caso contrário apenas marca aceito e orienta cadastro
   $linked = false;
