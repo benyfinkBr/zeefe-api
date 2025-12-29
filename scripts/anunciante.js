@@ -650,7 +650,7 @@ function updateRoomStatusFields(statusValue) {
     if (visible) {
       el.hidden = false;
       el.removeAttribute('hidden');
-      el.style.display = '';
+      el.style.display = 'flex';
     } else {
       el.hidden = true;
       el.setAttribute('hidden', '');
@@ -2030,6 +2030,9 @@ deactivatedFrom?.addEventListener('change', () => {
 roomStatus?.addEventListener('change', () => {
   updateRoomStatusFields(roomStatus.value);
   updateFutureReservationsWarning(roomIdHidden?.value || null, deactivatedFrom?.value || null);
+});
+roomStatus?.addEventListener('input', () => {
+  updateRoomStatusFields(roomStatus.value);
 });
 policyCancelDays?.addEventListener('input', () => {
   roomPoliciesState.cancel_window.cancel_days = policyCancelDays.value ? Number(policyCancelDays.value) : 0;
