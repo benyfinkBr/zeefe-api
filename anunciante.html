@@ -195,7 +195,7 @@
             <div class="quick-actions">
               <button class="btn btn-secondary btn-sm" type="button" id="advNewRoomBtn">Cadastrar sala</button>
               <button class="btn btn-secondary btn-sm" type="button" id="advQuickRegisterBtn">Cadastre-se para anunciar</button>
-              <button class="btn btn-secondary btn-sm" data-panel="rooms">Gerir salas</button>
+              <button class="btn btn-secondary btn-sm" data-panel="rooms">Minhas salas</button>
               <button class="btn btn-secondary btn-sm" data-panel="finance">Ver extrato</button>
             </div>
           </div>
@@ -239,47 +239,6 @@
           </div>
         </div>
         <div id="advFinanceContainer" class="responsive-table"></div>
-
-        <article class="form-card" style="margin-top:16px">
-          <h4>Dados para repasse (D+30)</h4>
-          <p class="rooms-message">Informe como deseja receber seus pagamentos. Esses dados serão usados nos repasses agendados.</p>
-          <form id="advPayoutForm" class="auth-form" autocomplete="on">
-            <div class="form-grid-mini">
-              <div>
-                <label for="bankCode">Banco</label>
-                <input type="text" id="bankCode" name="bank_code" placeholder="Cód." style="max-width:100px" />
-                <input type="text" id="bankName" name="bank_name" placeholder="Nome do banco" />
-              </div>
-              <div>
-                <label for="accountType">Tipo de conta</label>
-                <select id="accountType" name="account_type">
-                  <option value="">Selecione</option>
-                  <option value="corrente">Corrente</option>
-                  <option value="poupanca">Poupança</option>
-                  <option value="pix">PIX</option>
-                </select>
-              </div>
-            </div>
-            <div class="form-grid-mini">
-              <div>
-                <label for="agencyNumber">Agência</label>
-                <input type="text" id="agencyNumber" name="agency_number" placeholder="Agência" />
-              </div>
-              <div>
-                <label for="accountNumber">Conta</label>
-                <input type="text" id="accountNumber" name="account_number" placeholder="Conta" />
-              </div>
-              <div>
-                <label for="pixKey">Chave PIX (opcional)</label>
-                <input type="text" id="pixKey" name="pix_key" placeholder="CPF/CNPJ/E-mail/Telefone ou aleatória" />
-              </div>
-            </div>
-            <div class="form-row" style="display:flex; gap:10px; justify-content:flex-end;">
-              <button type="button" class="btn btn-primary" id="savePayoutBtn">Salvar</button>
-            </div>
-            <div id="payoutMessage" class="rooms-message"></div>
-          </form>
-        </article>
       </div>
 
       <div id="panel-messages" class="portal-section" hidden>
@@ -325,6 +284,46 @@
             <div class="form-row">
               <div id="advProfileViewMsg" class="rooms-message"></div>
             </div>
+          </form>
+        </article>
+        <article class="form-card profile-card" style="margin-top:16px">
+          <h3>Dados para repasse (D+30)</h3>
+          <p class="rooms-message">Informe como deseja receber seus pagamentos. Esses dados serão usados nos repasses agendados.</p>
+          <form id="advPayoutForm" class="auth-form" autocomplete="on">
+            <div class="form-grid-mini">
+              <div>
+                <label for="bankCode">Banco</label>
+                <input type="text" id="bankCode" name="bank_code" placeholder="Cód." style="max-width:100px" />
+                <input type="text" id="bankName" name="bank_name" placeholder="Nome do banco" />
+              </div>
+              <div>
+                <label for="accountType">Tipo de conta</label>
+                <select id="accountType" name="account_type">
+                  <option value="">Selecione</option>
+                  <option value="corrente">Corrente</option>
+                  <option value="poupanca">Poupança</option>
+                  <option value="pix">PIX</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-grid-mini">
+              <div>
+                <label for="agencyNumber">Agência</label>
+                <input type="text" id="agencyNumber" name="agency_number" placeholder="Agência" />
+              </div>
+              <div>
+                <label for="accountNumber">Conta</label>
+                <input type="text" id="accountNumber" name="account_number" placeholder="Conta" />
+              </div>
+              <div>
+                <label for="pixKey">Chave PIX (opcional)</label>
+                <input type="text" id="pixKey" name="pix_key" placeholder="CPF/CNPJ/E-mail/Telefone ou aleatória" />
+              </div>
+            </div>
+            <div class="form-row" style="display:flex; gap:10px; justify-content:flex-end;">
+              <button type="button" class="btn btn-primary" id="savePayoutBtn">Salvar</button>
+            </div>
+            <div id="payoutMessage" class="rooms-message"></div>
           </form>
         </article>
       </div>
@@ -597,6 +596,23 @@
     </div>
   </div>
 
+  <!-- Modal: Confirmar cancelamento de reserva -->
+  <div class="modal-overlay" id="advResCancelModal" aria-hidden="true">
+    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="advResCancelTitle" style="width:420px; max-width:96vw;">
+      <button class="modal-close" type="button" id="advResCancelClose" aria-label="Fechar">&times;</button>
+      <div class="modal-body">
+        <div class="modal-info" style="padding:24px; width:100%;">
+          <h2 id="advResCancelTitle" style="margin:0 0 10px;">Cancelar reserva</h2>
+          <p class="rooms-message" style="margin-top:0;">Tem certeza de que deseja cancelar esta reserva? O cliente será avisado por e-mail.</p>
+          <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:16px;">
+            <button type="button" class="btn btn-secondary btn-sm" id="advResCancelBack">Voltar</button>
+            <button type="button" class="btn btn-primary btn-sm" id="advResCancelConfirm">Confirmar cancelamento</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Modal: Detalhes da Sala (edição rápida) -->
   <div class="modal-overlay" id="advRoomDetailsModal" aria-hidden="true">
     <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="advRoomDetTitle" style="width:720px; max-width:96vw;">
@@ -676,7 +692,14 @@
               </div>
               <div class="form-group" style="grid-column: span 4">
                 <label for="roomDescription">Descrição</label>
-                <textarea id="roomDescription" rows="3" placeholder="Breve descrição"></textarea>
+                <div class="editor-toolbar" id="advRoomDescToolbar">
+                  <button type="button" class="editor-btn" data-tag="b" title="Negrito"><span>B</span></button>
+                  <button type="button" class="editor-btn" data-tag="i" title="Itálico"><span>I</span></button>
+                  <button type="button" class="editor-btn" data-tag="u" title="Sublinhado"><span>U</span></button>
+                  <button type="button" class="editor-btn" data-tag="br" title="Quebra de linha"><span>A▾</span></button>
+                </div>
+                <div id="advRoomDescriptionEditor" class="rich-editor" contenteditable="true"></div>
+                <textarea id="roomDescription" rows="3" hidden></textarea>
               </div>
 
               <div class="form-group">
@@ -776,7 +799,6 @@
               </div>
             </div>
             <div class="modal-actions" style="display:flex; gap:12px; justify-content:flex-end;">
-              <button type="button" class="btn btn-secondary" id="advRoomGeocode">Geocodificar</button>
               <button type="button" class="btn btn-secondary" id="advRoomCancel">Cancelar</button>
               <button type="submit" class="btn btn-primary">Salvar</button>
             </div>

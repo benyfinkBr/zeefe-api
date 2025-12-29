@@ -40,6 +40,8 @@ let currentThreadId = null;
 let chatPollTimer = null;
 let workshopSelectedDates = [];
 let advHeaderMenuOpen = false;
+let advEventsBound = false;
+let advAutoRefreshTimer = null;
 
 function persistHeaderSessionLocal(session) {
   try {
@@ -248,6 +250,10 @@ const advResConfirm = document.getElementById('advResConfirm');
 const advResDeny = document.getElementById('advResDeny');
 const advResCancel = document.getElementById('advResCancel');
 const advResOpenChat = document.getElementById('advResOpenChat');
+const advResCancelModal = document.getElementById('advResCancelModal');
+const advResCancelClose = document.getElementById('advResCancelClose');
+const advResCancelBack = document.getElementById('advResCancelBack');
+const advResCancelConfirm = document.getElementById('advResCancelConfirm');
 let advResCurrentId = null;
 // Room details modal
 const advRoomDetModal = document.getElementById('advRoomDetailsModal');
@@ -275,6 +281,8 @@ const roomState = document.getElementById('roomState');
 const roomPrice = document.getElementById('roomPrice');
 const roomStatus = document.getElementById('roomStatus');
 const roomDesc = document.getElementById('roomDescription');
+const roomDescEditor = document.getElementById('advRoomDescriptionEditor');
+const roomDescToolbar = document.getElementById('advRoomDescToolbar');
 const roomAmenitiesGrid = document.getElementById('advAmenitiesGrid');
 const roomPhotosInput = document.getElementById('roomPhotos');
 const roomPhotosPreview = document.getElementById('roomPhotosPreview');
@@ -439,12 +447,19 @@ function collectSelectedAmenities() {
 
 function parseRoomPhotoPaths(photoPathValue) {
   if (Array.isArray(photoPathValue)) {
-    return photoPathValue.map(p => String(p || '').trim()).filter(Boolean);
+    return photoPathValue.map(p => String(p || '').trim()).filter(Boolean).map(normalizePhotoPath);
   }
   if (typeof photoPathValue === 'string' && photoPathValue.length) {
-    return photoPathValue.split(',').map(p => p.trim()).filter(Boolean);
+    return photoPathValue.split(',').map(p => p.trim()).filter(Boolean).map(normalizePhotoPath);
   }
   return [];
+}
+
+function normalizePhotoPath(path) {
+  const cleaned = String(path || '').trim();
+  if (!cleaned) return '';
+  if (cleaned.startsWith('http') || cleaned.startsWith('/')) return cleaned;
+  return `/${cleaned}`;
 }
 
 function getRoomPrimaryPhoto(room) {
@@ -642,6 +657,30 @@ async function onLoginSubmit(e) {
   }
 }
 
+async function refreshPortalData() {
+  if (!myAdvertiser) return;
+  await loadRooms();
+  await loadReservations();
+  await loadOverview();
+  await Promise.all([loadFinance(), loadReviews(), loadThreads(), loadWorkshops()]);
+}
+
+function startAdvAutoRefresh() {
+  stopAdvAutoRefresh();
+  advAutoRefreshTimer = setInterval(() => {
+    if (advClient) {
+      refreshPortalData();
+    }
+  }, 60000);
+}
+
+function stopAdvAutoRefresh() {
+  if (advAutoRefreshTimer) {
+    clearInterval(advAutoRefreshTimer);
+    advAutoRefreshTimer = null;
+  }
+}
+
 async function afterLogin() {
   setAuthVisible(false);
   if (panelsWrap) panelsWrap.hidden = false;
@@ -662,27 +701,31 @@ async function afterLogin() {
   accountNumberInput && (accountNumberInput.value = myAdvertiser?.account_number || '');
   pixKeyInput && (pixKeyInput.value = myAdvertiser?.pix_key || '');
 
-  await Promise.all([loadRooms(), loadReservations(), loadFinance(), loadOverview(), loadReviews(), loadThreads(), loadWorkshops()]);
+  await refreshPortalData();
   setActivePanel('overview');
+  startAdvAutoRefresh();
 
-  // Eventos de perfil (somente após login)
-  const goToProfile = () => {
-    renderAdvProfileView();
-    setActivePanel('profile');
-  };
-  advEditProfileBtn?.addEventListener('click', goToProfile);
-  advEditProfileSideBtn?.addEventListener('click', goToProfile);
-  advProfileOpenEditBtn?.addEventListener('click', openAdvProfileModal);
-  advProfileCancelViewBtn?.addEventListener('click', () => setActivePanel('overview'));
-  advProfileClose?.addEventListener('click', closeAdvProfileModal);
-  advProfileCancelBtn?.addEventListener('click', closeAdvProfileModal);
-  advProfileModal?.addEventListener('click', (e)=>{ if (e.target === advProfileModal) closeAdvProfileModal(); });
-  advProfileForm?.addEventListener('submit', onAdvProfileSubmit);
-  advOpenPasswordModalBtn?.addEventListener('click', openAdvPasswordModal);
-  advPasswordClose?.addEventListener('click', closeAdvPasswordModal);
-  advPasswordCancel?.addEventListener('click', closeAdvPasswordModal);
-  advPasswordModal?.addEventListener('click', (e)=>{ if (e.target === advPasswordModal) closeAdvPasswordModal(); });
-  advPasswordForm?.addEventListener('submit', onAdvPasswordSubmit);
+  if (!advEventsBound) {
+    advEventsBound = true;
+    // Eventos de perfil (somente após login)
+    const goToProfile = () => {
+      renderAdvProfileView();
+      setActivePanel('profile');
+    };
+    advEditProfileBtn?.addEventListener('click', goToProfile);
+    advEditProfileSideBtn?.addEventListener('click', goToProfile);
+    advProfileOpenEditBtn?.addEventListener('click', openAdvProfileModal);
+    advProfileCancelViewBtn?.addEventListener('click', () => setActivePanel('overview'));
+    advProfileClose?.addEventListener('click', closeAdvProfileModal);
+    advProfileCancelBtn?.addEventListener('click', closeAdvProfileModal);
+    advProfileModal?.addEventListener('click', (e)=>{ if (e.target === advProfileModal) closeAdvProfileModal(); });
+    advProfileForm?.addEventListener('submit', onAdvProfileSubmit);
+    advOpenPasswordModalBtn?.addEventListener('click', openAdvPasswordModal);
+    advPasswordClose?.addEventListener('click', closeAdvPasswordModal);
+    advPasswordCancel?.addEventListener('click', closeAdvPasswordModal);
+    advPasswordModal?.addEventListener('click', (e)=>{ if (e.target === advPasswordModal) closeAdvPasswordModal(); });
+    advPasswordForm?.addEventListener('submit', onAdvPasswordSubmit);
+  }
 
   // Mantem no portal do anunciante
 }
@@ -898,6 +941,7 @@ async function loadFinance() {
         <span class="chip">Pago: ${formatMoney(sum.pago)}</span>
       </div>
       <div style="display:flex; gap:10px; justify-content:flex-end; margin-bottom:6px">
+        <button type="button" class="btn btn-secondary btn-sm" id="advFinTransfer">Transferir</button>
         <button type="button" class="btn btn-secondary btn-sm" id="advFinExport">Exportar CSV</button>
       </div>`;
 
@@ -908,6 +952,9 @@ async function loadFinance() {
       </table>`;
 
     document.getElementById('advFinExport')?.addEventListener('click', ()=> exportCSV(filtered));
+    document.getElementById('advFinTransfer')?.addEventListener('click', () => {
+      finContainer.insertAdjacentHTML('afterbegin', '<div class="rooms-message" style="margin-bottom:8px;">Solicitações de transferência estarão disponíveis em breve.</div>');
+    });
 
     // Hook presets
     document.querySelectorAll('.adv-finance-preset').forEach(btn => {
@@ -1039,10 +1086,19 @@ async function onAdvPasswordSubmit(e) {
 }
 
 async function loadOverview() {
-  // placeholders simples baseados em dados já carregados
   try {
-    ovViews.textContent = '—'; // quando tracking estiver habilitado, calcular a partir de events
-    ovUpcoming.textContent = (myReservations || []).filter(r => r.date && new Date(r.date) >= new Date()).length;
+    const today = new Date();
+    const upcomingReservations = (myReservations || []).filter(r => {
+      if (!r.date) return false;
+      const status = String(r.status || '').toLowerCase();
+      if (['cancelada', 'negada', 'recusada'].includes(status)) return false;
+      return new Date(r.date) >= new Date(today.toDateString());
+    });
+    const last30 = new Date();
+    last30.setDate(last30.getDate() - 30);
+    const recentReservations = (myReservations || []).filter(r => r.date && new Date(r.date) >= last30);
+    ovViews.textContent = recentReservations.length;
+    ovUpcoming.textContent = upcomingReservations.length;
     // saldo disponível = ledger status 'disponivel'
     let bal = 0;
     try {
@@ -1055,7 +1111,7 @@ async function loadOverview() {
     } catch (_) {}
     ovBalance.textContent = 'R$ ' + bal.toFixed(2);
 
-    const upcoming = (myReservations || []).filter(r => r.date && new Date(r.date) >= new Date())
+    const upcoming = upcomingReservations
       .sort((a,b)=> new Date(a.date) - new Date(b.date)).slice(0,5);
     if (!upcoming.length) {
       ovNext.innerHTML = '<div class="rooms-message">Sem reservas futuras.</div>';
@@ -1484,7 +1540,6 @@ async function openThread(threadId) {
   chatHeader.textContent = 'Conversando';
   chatMessages.innerHTML = '<div class="rooms-message">Carregando mensagens…</div>';
   chatForm.hidden = false;
-  updateAdvMessagesBadge(false);
   await fetchMessagesOnce();
   startChatPolling();
 }
@@ -1497,7 +1552,7 @@ async function fetchMessagesOnce() {
     const list = json.success ? (json.data || []) : [];
     if (!list.length) {
       chatMessages.innerHTML = '<div class="rooms-message">Nenhuma mensagem.</div>';
-      updateAdvMessagesBadge(false);
+      await loadThreads();
       return;
     }
     chatMessages.innerHTML = list.map(m => {
@@ -1507,10 +1562,10 @@ async function fetchMessagesOnce() {
     chatMessages.scrollTop = chatMessages.scrollHeight;
     // marca como lida para o anunciante
     try { await fetch(`${API_BASE}/messages_mark_read.php`, { method:'POST', headers:{'Content-Type':'application/json'}, credentials:'include', body: JSON.stringify({ thread_id: currentThreadId, who: 'advertiser' }) }); } catch (_) {}
-    updateAdvMessagesBadge(false);
+    await loadThreads();
   } catch (e) {
     chatMessages.innerHTML = '<div class="rooms-message">Falha ao carregar mensagens.</div>';
-    updateAdvMessagesBadge(false);
+    await loadThreads();
   }
 }
 
@@ -1629,13 +1684,14 @@ logoutBtn?.addEventListener('click', () => {
     advClient = null; myAdvertiser = null; myRooms = []; myReservations = [];
     syncHeaderWithAdvertiserSession(null);
     registrarPreferenciaLoginAdv(false);
+    stopAdvAutoRefresh();
     setAuthVisible(true);
   };
   fetch(`${API_BASE}/advertiser_logout.php`, { credentials: 'include' })
     .catch(() => {})
     .finally(cleanup);
 });
-refreshBtn?.addEventListener('click', () => { if (advClient) afterLogin(); });
+refreshBtn?.addEventListener('click', () => { if (advClient) refreshPortalData(); });
 navButtons.forEach(btn => btn.addEventListener('click', () => setActivePanel(btn.dataset.panel)));
 savePayoutBtn?.addEventListener('click', async () => {
   payoutMessage.textContent = '';
@@ -1712,6 +1768,7 @@ async function openRoomModal(roomData){
     if (roomIdHidden) roomIdHidden.value = roomData.id;
     if (roomName) roomName.value = roomData.name || '';
     if (roomDesc) roomDesc.value = roomData.description || '';
+    if (roomDescEditor) roomDescEditor.innerHTML = roomData.description || '';
     if (roomCap) roomCap.value = roomData.capacity != null ? String(roomData.capacity) : '';
     if (dailyRate) dailyRate.value = roomData.daily_rate != null ? String(roomData.daily_rate) : '';
     if (facilitatedAccess) facilitatedAccess.value = roomData.facilitated_access != null ? String(roomData.facilitated_access) : '0';
@@ -1735,6 +1792,7 @@ async function openRoomModal(roomData){
     if (roomIdHidden) roomIdHidden.value = '';
     if (roomName) roomName.value = '';
     if (roomDesc) roomDesc.value = '';
+    if (roomDescEditor) roomDescEditor.innerHTML = '';
     if (roomCap) roomCap.value = '';
     if (dailyRate) dailyRate.value = '';
     if (facilitatedAccess) facilitatedAccess.value = '0';
@@ -1767,9 +1825,15 @@ async function onRoomFormSubmit(e){
   e.preventDefault(); roomMsg.textContent = '';
   if (!myAdvertiser?.id) { roomMsg.textContent = 'Sem anunciante vinculado.'; return; }
   const isEdit = !!(roomIdHidden && roomIdHidden.value);
+  const descHtml = roomDescEditor
+    ? (roomDescEditor.innerHTML || '').trim()
+    : (roomDesc?.value || '').trim();
+  if (roomDesc) {
+    roomDesc.value = descHtml;
+  }
   const record = {
     name: (roomName?.value||'').trim(),
-    description: (roomDesc?.value||'').trim(),
+    description: descHtml,
     capacity: roomCap?.value ? parseInt(roomCap.value,10) : null,
     daily_rate: dailyRate?.value ? Number(dailyRate.value) : null,
     facilitated_access: facilitatedAccess?.value || null,
@@ -1932,7 +1996,11 @@ function openReservationModal(id){
 }
 function closeReservationModal(){ advResModal?.classList.remove('show'); advResModal?.setAttribute('aria-hidden','true'); advResCurrentId=null; }
 advResClose?.addEventListener('click', closeReservationModal);
-advResCancel?.addEventListener('click', () => updateReservationStatus('cancel'));
+advResCancel?.addEventListener('click', () => {
+  if (!advResCurrentId) return;
+  advResCancelModal?.classList.add('show');
+  advResCancelModal?.setAttribute('aria-hidden','false');
+});
 advResDeny?.addEventListener('click', () => updateReservationStatus('deny'));
 function setAdvResConfirmMode(mode){
   if (!advResConfirm) return;
@@ -1954,6 +2022,18 @@ advResConfirm?.addEventListener('click', () => {
   updateReservationStatus('confirm');
 });
 advResOpenChat?.addEventListener('click', () => { closeReservationModal(); openAdvChatDrawer(); });
+
+function closeAdvResCancelModal() {
+  advResCancelModal?.classList.remove('show');
+  advResCancelModal?.setAttribute('aria-hidden','true');
+}
+advResCancelClose?.addEventListener('click', closeAdvResCancelModal);
+advResCancelBack?.addEventListener('click', closeAdvResCancelModal);
+advResCancelModal?.addEventListener('click', (e) => { if (e.target === advResCancelModal) closeAdvResCancelModal(); });
+advResCancelConfirm?.addEventListener('click', () => {
+  closeAdvResCancelModal();
+  updateReservationStatus('cancel');
+});
 
 async function updateReservationStatus(action){
   if (!advResCurrentId) return;
@@ -2285,4 +2365,58 @@ advWorkshopDescToolbar?.addEventListener('mousedown', (e) => {
   if (advWorkshopDescriptionInput) {
     advWorkshopDescriptionInput.value = advWorkshopDescriptionEditor.innerHTML || '';
   }
+});
+
+roomDescToolbar?.addEventListener('mousedown', (e) => {
+  const btn = e.target.closest('[data-tag]');
+  if (!btn || !roomDescEditor) return;
+  const tag = btn.getAttribute('data-tag');
+  if (!tag) return;
+  e.preventDefault();
+  roomDescEditor.focus();
+
+  const sel = window.getSelection();
+  if (!sel || !sel.rangeCount) return;
+  const range = sel.getRangeAt(0);
+  if (!roomDescEditor.contains(range.commonAncestorContainer)) {
+    const node = roomDescEditor;
+    const lastChild = node.lastChild;
+    const newRange = document.createRange();
+    if (lastChild && lastChild.nodeType === Node.TEXT_NODE) {
+      newRange.setStart(lastChild, lastChild.textContent.length);
+    } else {
+      newRange.selectNodeContents(node);
+      newRange.collapse(false);
+    }
+    sel.removeAllRanges();
+    sel.addRange(newRange);
+  }
+
+  if (tag === 'b') {
+    document.execCommand('bold', false, null);
+  } else if (tag === 'i') {
+    document.execCommand('italic', false, null);
+  } else if (tag === 'u') {
+    document.execCommand('underline', false, null);
+  } else if (tag === 'br') {
+    document.execCommand('insertLineBreak', false, null);
+  }
+
+  if (roomDesc) {
+    roomDesc.value = roomDescEditor.innerHTML || '';
+  }
+});
+
+document.addEventListener('keydown', (event) => {
+  if (event.key !== 'Escape') return;
+  const openModals = Array.from(document.querySelectorAll('.modal-overlay.show'));
+  if (!openModals.length) return;
+  const topModal = openModals[openModals.length - 1];
+  const closeBtn = topModal.querySelector('.modal-close');
+  if (closeBtn) {
+    closeBtn.click();
+    return;
+  }
+  topModal.classList.remove('show');
+  topModal.setAttribute('aria-hidden', 'true');
 });

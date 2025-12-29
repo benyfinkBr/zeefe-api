@@ -3564,7 +3564,6 @@ async function openClientChatByThreadId(threadId) {
       el.classList.toggle('active', el.dataset.threadId === String(clientChatThreadId));
     });
   }
-  updateMessagesBadge(false);
   await fetchClientChatMessages();
   startClientChatPolling();
 }
@@ -3593,7 +3592,11 @@ async function fetchClientChatMessages(){
     const list = json.success ? (json.data || []) : [];
     if (!list.length) {
       clientChatMessages.innerHTML = '<div class="rooms-message">Nenhuma mensagem.</div>';
-      updateMessagesBadge(false);
+      if (clientChatThreadsCache) {
+        updateMessagesBadge(clientChatThreadsCache.some(t => Number(t.unread_for_client || 0) > 0));
+      } else {
+        updateMessagesBadge(false);
+      }
       return;
     }
     clientChatMessages.innerHTML = list.map(m => {
@@ -3611,7 +3614,11 @@ async function fetchClientChatMessages(){
     }
   } catch (_) {
     clientChatMessages.innerHTML = '<div class="rooms-message">Falha ao carregar mensagens.</div>';
-    updateMessagesBadge(false);
+    if (clientChatThreadsCache) {
+      updateMessagesBadge(clientChatThreadsCache.some(t => Number(t.unread_for_client || 0) > 0));
+    } else {
+      updateMessagesBadge(false);
+    }
   }
 }
 
@@ -5625,3 +5632,17 @@ function initCardPaymentsFeature() {
 
 cardPaymentsFeature = initCardPaymentsFeature();
 cardPaymentsFeature?.setClient(null);
+
+document.addEventListener('keydown', (event) => {
+  if (event.key !== 'Escape') return;
+  const openModals = Array.from(document.querySelectorAll('.modal-overlay.show'));
+  if (!openModals.length) return;
+  const topModal = openModals[openModals.length - 1];
+  const closeBtn = topModal.querySelector('.modal-close');
+  if (closeBtn) {
+    closeBtn.click();
+    return;
+  }
+  topModal.classList.remove('show');
+  topModal.setAttribute('aria-hidden', 'true');
+});

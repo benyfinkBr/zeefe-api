@@ -4331,6 +4331,30 @@ body.anunciante-page #advChatMessages.chat-messages {
   margin-bottom: 24px;
 }
 
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px 14px;
+}
+
+.form-grid .form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+@media (max-width: 900px) {
+  .form-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .form-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 .auth-form-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   column-gap: 18px;

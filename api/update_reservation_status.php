@@ -121,6 +121,13 @@ function enviarEmailStatusReserva(PDO $pdo, int $reservationId, string $action, 
       $detalhes['motivo'] = 'Reserva cancelada a pedido do organizador.';
       $html = mailer_render('reservation_cancelled.php', $detalhes);
       mailer_send($dados['client_email'], 'Ze.EFE - Reserva cancelada', $html);
+      $adminHtml = '<p>Uma reserva foi cancelada pelo anunciante.</p>'
+        . '<p><strong>Reserva:</strong> #' . (int) $reservationId . '</p>'
+        . '<p><strong>Cliente:</strong> ' . htmlspecialchars($detalhes['cliente_nome']) . '</p>'
+        . '<p><strong>Sala:</strong> ' . htmlspecialchars($detalhes['sala_nome']) . '</p>'
+        . '<p><strong>Data:</strong> ' . htmlspecialchars($detalhes['data_formatada']) . '</p>'
+        . '<p><strong>Horário:</strong> ' . htmlspecialchars(trim($detalhes['hora_inicio'] . ' - ' . $detalhes['hora_fim'])) . '</p>';
+      mailer_send(MAIL_FROM_ADDRESS, 'Ze.EFE - Reserva cancelada (aviso interno)', $adminHtml);
       break;
   }
 }
