@@ -4389,20 +4389,27 @@ body.anunciante-page #advChatMessages.chat-messages {
   align-items: center;
   font-weight: 600;
   color: #1d413a;
+  font-size: 0.9rem;
+  white-space: nowrap;
 }
 
 .policy-price-input {
   max-width: 140px;
 }
 
-#policyCancelDays,
-#policyCancelFee {
+.policy-mini-input {
   max-width: 70px;
+}
+
+.policy-sep {
+  color: #8a7766;
+  font-weight: 400;
 }
 
 @media (max-width: 900px) {
   .policy-option {
     flex-wrap: wrap;
+    white-space: normal;
   }
 }
 

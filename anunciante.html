@@ -819,7 +819,8 @@
                 <div class="policy-block">
                   <label class="policy-option">
                     <input type="checkbox" id="policyImmediateToggle" />
-                    <span>Reservas com pagamento imediato</span>
+                    <span>Pagamento imediato</span>
+                    <span class="policy-sep">·</span>
                     <input type="number" id="policyImmediateBasePrice" min="0" step="0.01" placeholder="Preço base (R$)" class="policy-price-input" />
                   </label>
                   <div class="policy-grid" id="policyImmediateGrid" hidden>
@@ -834,11 +835,14 @@
 
                   <label class="policy-option">
                     <input type="checkbox" id="policyCancelToggle" />
-                    <span>Cancelamento sem taxa em</span>
-                    <input type="number" id="policyCancelDays" min="0" placeholder="xx" style="max-width:90px" />
-                    <span>dias anteriores à reserva (Taxa de Cancelamento:</span>
-                    <input type="number" id="policyCancelFee" min="0" max="100" step="0.01" placeholder="XX" style="max-width:90px" />
-                    <span>%)</span>
+                    <span>Cancelamento:</span>
+                    <input type="number" id="policyCancelDays" min="0" placeholder="xx" class="policy-mini-input" />
+                    <span>dias</span>
+                    <span class="policy-sep">·</span>
+                    <span>Taxa:</span>
+                    <input type="number" id="policyCancelFee" min="0" max="100" step="0.01" placeholder="XX" class="policy-mini-input" />
+                    <span>%</span>
+                    <span class="policy-sep">·</span>
                     <input type="number" id="policyCancelBasePrice" min="0" step="0.01" placeholder="Preço base (R$)" class="policy-price-input" />
                   </label>
                   <div class="policy-grid" id="policyCancelGrid" hidden>
@@ -854,6 +858,7 @@
                   <label class="policy-option">
                     <input type="checkbox" id="policyFreeToggle" />
                     <span>Sem taxa de cancelamento</span>
+                    <span class="policy-sep">·</span>
                     <input type="number" id="policyFreeBasePrice" min="0" step="0.01" placeholder="Preço base (R$)" class="policy-price-input" />
                   </label>
                   <div class="policy-grid" id="policyFreeGrid" hidden>
