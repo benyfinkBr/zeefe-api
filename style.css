@@ -4384,13 +4384,13 @@ body.anunciante-page #advChatMessages.chat-messages {
 
 .policy-option {
   display: flex;
-  flex-wrap: nowrap;
+  flex-direction: column;
   gap: 8px;
-  align-items: center;
+  align-items: flex-start;
   font-weight: 600;
   color: #1d413a;
   font-size: 0.9rem;
-  white-space: nowrap;
+  white-space: normal;
 }
 
 .calculated-field {
@@ -4409,6 +4409,7 @@ body.anunciante-page #advChatMessages.chat-messages {
   color: #8a6d3b;
   font-weight: 600;
   border: 1px solid rgba(138, 109, 59, 0.25);
+  margin-bottom: 6px;
 }
 
 .policy-price-input {
@@ -4419,15 +4420,21 @@ body.anunciante-page #advChatMessages.chat-messages {
   max-width: 70px;
 }
 
+.policy-line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
 .policy-sep {
   color: #8a7766;
   font-weight: 400;
 }
 
 @media (max-width: 900px) {
-  .policy-option {
+  .policy-line {
     flex-wrap: wrap;
-    white-space: normal;
   }
 }
 

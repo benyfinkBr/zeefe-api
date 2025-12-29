@@ -704,13 +704,10 @@
                 <label for="roomCapacity">Capacidade</label>
                 <input type="number" id="roomCapacity" min="1" step="1" />
               </div>
-              <div class="form-group">
-                <label>Valor Diário (calculado automaticamente)</label>
-                <div id="dailyRateDisplay" class="calculated-field">—</div>
-                <input type="number" id="dailyRate" min="0" step="0.01" readonly hidden />
-              </div>
+              <input type="number" id="dailyRate" min="0" step="0.01" readonly hidden />
               <div class="form-group" style="grid-column: span 3">
                 <label>Opções de pagamento/cancelamento</label>
+                <p class="input-hint">Valor diário apresentado será o menor entre as opções selecionadas abaixo.</p>
                 <div class="policy-block">
                   <div id="policyOptionsWarning" class="policy-warning" hidden>Selecione pelo menos uma opção.</div>
                   <label class="policy-option">
@@ -722,15 +719,23 @@
 
                   <label class="policy-option">
                     <input type="checkbox" id="policyCancelToggle" />
-                    <span>Cancelamento da Reserva:</span>
-                    <input type="number" id="policyCancelDays" min="0" placeholder="xx" class="policy-mini-input" />
-                    <span>dias</span>
-                    <span class="policy-sep">·</span>
-                    <span>Taxa:</span>
-                    <input type="number" id="policyCancelFee" min="0" max="100" step="0.01" placeholder="XX" class="policy-mini-input" />
-                    <span>%</span>
-                    <span class="policy-sep">·</span>
-                    <input type="number" id="policyCancelBasePrice" min="0" step="0.01" placeholder="Valor (R$)" class="policy-price-input" />
+                    <div class="policy-line">
+                      <span>Cancelamento da Reserva</span>
+                      <span class="policy-sep">·</span>
+                      <span>possível em até</span>
+                      <input type="number" id="policyCancelDays" min="0" class="policy-mini-input" />
+                      <span>dias</span>
+                      <span class="policy-sep">·</span>
+                      <span>antes da reserva</span>
+                    </div>
+                    <div class="policy-line">
+                      <span>Taxa</span>
+                      <input type="number" id="policyCancelFee" min="0" max="100" step="0.01" class="policy-mini-input" />
+                      <span>%</span>
+                      <span class="policy-sep">·</span>
+                      <span>valor diário de:</span>
+                      <input type="number" id="policyCancelBasePrice" min="0" step="0.01" placeholder="Valor (R$)" class="policy-price-input" />
+                    </div>
                   </label>
 
                   <label class="policy-option">
