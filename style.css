@@ -4424,7 +4424,7 @@ body.anunciante-page #advChatMessages.chat-messages {
   max-width: 90px;
 }
 
-.policy-line {
+.policy-row {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
@@ -4437,7 +4437,7 @@ body.anunciante-page #advChatMessages.chat-messages {
 }
 
 @media (max-width: 900px) {
-  .policy-line {
+  .policy-row {
     flex-wrap: wrap;
   }
 }
