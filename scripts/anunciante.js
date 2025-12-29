@@ -308,6 +308,8 @@ const policyFreeAdd = document.getElementById('policyFreeAdd');
 const policyFreeList = document.getElementById('policyFreeList');
 // extra admin-like fields
 const dailyRate = document.getElementById('dailyRate');
+const dailyRateDisplay = document.getElementById('dailyRateDisplay');
+const policyOptionsWarning = document.getElementById('policyOptionsWarning');
 const facilitatedAccess = document.getElementById('facilitatedAccess');
 const portariaInteligente = document.getElementById('portariaInteligente');
 const streetInput = document.getElementById('street');
@@ -624,6 +626,15 @@ function updateDailyRateFromPolicies() {
   if (!dailyRate) return;
   const minValue = computeDailyRateFromPolicies();
   dailyRate.value = minValue != null ? String(minValue) : '';
+  if (dailyRateDisplay) {
+    dailyRateDisplay.textContent = minValue != null
+      ? `R$ ${Number(minValue).toFixed(2).replace('.', ',')}`
+      : '—';
+  }
+  if (policyOptionsWarning) {
+    const anyEnabled = roomPoliciesState.immediate.enabled || roomPoliciesState.cancel_window.enabled || roomPoliciesState.free_cancel.enabled;
+    policyOptionsWarning.hidden = anyEnabled;
+  }
 }
 
 async function loadRoomPolicies(roomId) {
