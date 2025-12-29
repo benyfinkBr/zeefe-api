@@ -4387,10 +4387,10 @@ body.anunciante-page #advChatMessages.chat-messages {
 }
 
 .policy-option {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: 20px 1fr;
   gap: 8px;
-  align-items: flex-start;
+  align-items: start;
   font-weight: 600;
   color: #1d413a;
   font-size: 0.9rem;
@@ -4431,12 +4431,23 @@ body.anunciante-page #advChatMessages.chat-messages {
   align-items: center;
 }
 
+.policy-main-row {
+  align-items: center;
+}
+
+.policy-sub-row {
+  margin-left: 0;
+}
+
 .policy-sep {
   color: #8a7766;
   font-weight: 400;
 }
 
 @media (max-width: 900px) {
+  .policy-option {
+    grid-template-columns: 20px 1fr;
+  }
   .policy-row {
     flex-wrap: wrap;
   }
