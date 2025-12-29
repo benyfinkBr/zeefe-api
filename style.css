@@ -4413,11 +4413,11 @@ body.anunciante-page #advChatMessages.chat-messages {
 }
 
 .policy-price-input {
-  max-width: 140px;
+  max-width: 200px;
 }
 
 .policy-mini-input {
-  max-width: 70px;
+  max-width: 90px;
 }
 
 .policy-line {
