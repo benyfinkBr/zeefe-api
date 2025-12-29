@@ -700,13 +700,71 @@
                 <div id="advRoomDescriptionEditor" class="rich-editor" contenteditable="true"></div>
                 <textarea id="roomDescription" rows="3" hidden></textarea>
               </div>
-              <div class="form-group">
+              <div class="form-group" style="grid-column: span 4">
                 <label for="roomCapacity">Capacidade</label>
                 <input type="number" id="roomCapacity" min="1" step="1" />
               </div>
               <div class="form-group">
                 <label for="dailyRate">Valor Diário (R$)</label>
                 <input type="number" id="dailyRate" min="0" step="0.01" />
+              </div>
+              <div class="form-group" style="grid-column: span 3">
+                <label>Opções de pagamento/cancelamento</label>
+                <div class="policy-block">
+                  <label class="policy-option">
+                    <input type="checkbox" id="policyImmediateToggle" />
+                    <span>Pagamento imediato</span>
+                    <span class="policy-sep">·</span>
+                    <input type="number" id="policyImmediateBasePrice" min="0" step="0.01" placeholder="Preço base (R$)" class="policy-price-input" />
+                  </label>
+                  <div class="policy-grid" id="policyImmediateGrid" hidden>
+                    <div class="policy-grid-actions">
+                      <input type="date" id="policyImmediateDate" />
+                      <input type="number" id="policyImmediatePrice" min="0" step="0.01" placeholder="Preço (R$)" />
+                      <button type="button" class="btn btn-secondary btn-sm" id="policyImmediateAdd">Adicionar data</button>
+                    </div>
+                    <div id="policyImmediateList" class="policy-grid-list"></div>
+                    <small class="input-hint">Opcional: preços específicos por data.</small>
+                  </div>
+
+                  <label class="policy-option">
+                    <input type="checkbox" id="policyCancelToggle" />
+                    <span>Cancelamento:</span>
+                    <input type="number" id="policyCancelDays" min="0" placeholder="xx" class="policy-mini-input" />
+                    <span>dias</span>
+                    <span class="policy-sep">·</span>
+                    <span>Taxa:</span>
+                    <input type="number" id="policyCancelFee" min="0" max="100" step="0.01" placeholder="XX" class="policy-mini-input" />
+                    <span>%</span>
+                    <span class="policy-sep">·</span>
+                    <input type="number" id="policyCancelBasePrice" min="0" step="0.01" placeholder="Preço base (R$)" class="policy-price-input" />
+                  </label>
+                  <div class="policy-grid" id="policyCancelGrid" hidden>
+                    <div class="policy-grid-actions">
+                      <input type="date" id="policyCancelDate" />
+                      <input type="number" id="policyCancelPrice" min="0" step="0.01" placeholder="Preço (R$)" />
+                      <button type="button" class="btn btn-secondary btn-sm" id="policyCancelAdd">Adicionar data</button>
+                    </div>
+                    <div id="policyCancelList" class="policy-grid-list"></div>
+                    <small class="input-hint">Opcional: preços específicos por data.</small>
+                  </div>
+
+                  <label class="policy-option">
+                    <input type="checkbox" id="policyFreeToggle" />
+                    <span>Sem taxa de cancelamento</span>
+                    <span class="policy-sep">·</span>
+                    <input type="number" id="policyFreeBasePrice" min="0" step="0.01" placeholder="Preço base (R$)" class="policy-price-input" />
+                  </label>
+                  <div class="policy-grid" id="policyFreeGrid" hidden>
+                    <div class="policy-grid-actions">
+                      <input type="date" id="policyFreeDate" />
+                      <input type="number" id="policyFreePrice" min="0" step="0.01" placeholder="Preço (R$)" />
+                      <button type="button" class="btn btn-secondary btn-sm" id="policyFreeAdd">Adicionar data</button>
+                    </div>
+                    <div id="policyFreeList" class="policy-grid-list"></div>
+                    <small class="input-hint">Opcional: preços específicos por data.</small>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -813,66 +871,6 @@
               </div>
             </div>
 
-            <h4 class="modal-section-title">Opções de pagamento/cancelamento</h4>
-            <div class="form-grid">
-              <div class="form-group" style="grid-column: span 4">
-                <div class="policy-block">
-                  <label class="policy-option">
-                    <input type="checkbox" id="policyImmediateToggle" />
-                    <span>Pagamento imediato</span>
-                    <span class="policy-sep">·</span>
-                    <input type="number" id="policyImmediateBasePrice" min="0" step="0.01" placeholder="Preço base (R$)" class="policy-price-input" />
-                  </label>
-                  <div class="policy-grid" id="policyImmediateGrid" hidden>
-                    <div class="policy-grid-actions">
-                      <input type="date" id="policyImmediateDate" />
-                      <input type="number" id="policyImmediatePrice" min="0" step="0.01" placeholder="Preço (R$)" />
-                      <button type="button" class="btn btn-secondary btn-sm" id="policyImmediateAdd">Adicionar data</button>
-                    </div>
-                    <div id="policyImmediateList" class="policy-grid-list"></div>
-                    <small class="input-hint">Opcional: preços específicos por data.</small>
-                  </div>
-
-                  <label class="policy-option">
-                    <input type="checkbox" id="policyCancelToggle" />
-                    <span>Cancelamento:</span>
-                    <input type="number" id="policyCancelDays" min="0" placeholder="xx" class="policy-mini-input" />
-                    <span>dias</span>
-                    <span class="policy-sep">·</span>
-                    <span>Taxa:</span>
-                    <input type="number" id="policyCancelFee" min="0" max="100" step="0.01" placeholder="XX" class="policy-mini-input" />
-                    <span>%</span>
-                    <span class="policy-sep">·</span>
-                    <input type="number" id="policyCancelBasePrice" min="0" step="0.01" placeholder="Preço base (R$)" class="policy-price-input" />
-                  </label>
-                  <div class="policy-grid" id="policyCancelGrid" hidden>
-                    <div class="policy-grid-actions">
-                      <input type="date" id="policyCancelDate" />
-                      <input type="number" id="policyCancelPrice" min="0" step="0.01" placeholder="Preço (R$)" />
-                      <button type="button" class="btn btn-secondary btn-sm" id="policyCancelAdd">Adicionar data</button>
-                    </div>
-                    <div id="policyCancelList" class="policy-grid-list"></div>
-                    <small class="input-hint">Opcional: preços específicos por data.</small>
-                  </div>
-
-                  <label class="policy-option">
-                    <input type="checkbox" id="policyFreeToggle" />
-                    <span>Sem taxa de cancelamento</span>
-                    <span class="policy-sep">·</span>
-                    <input type="number" id="policyFreeBasePrice" min="0" step="0.01" placeholder="Preço base (R$)" class="policy-price-input" />
-                  </label>
-                  <div class="policy-grid" id="policyFreeGrid" hidden>
-                    <div class="policy-grid-actions">
-                      <input type="date" id="policyFreeDate" />
-                      <input type="number" id="policyFreePrice" min="0" step="0.01" placeholder="Preço (R$)" />
-                      <button type="button" class="btn btn-secondary btn-sm" id="policyFreeAdd">Adicionar data</button>
-                    </div>
-                    <div id="policyFreeList" class="policy-grid-list"></div>
-                    <small class="input-hint">Opcional: preços específicos por data.</small>
-                  </div>
-                </div>
-              </div>
-            </div>
             <div class="modal-actions" style="display:flex; gap:12px; justify-content:flex-end;">
               <button type="button" class="btn btn-secondary" id="advRoomCancel">Cancelar</button>
               <button type="submit" class="btn btn-primary">Salvar</button>
