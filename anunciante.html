@@ -683,6 +683,7 @@
           <p class="modal-intro">Preencha os dados da sala que será usada nas reservas e workshops. Essas informações também serão exibidas na vitrine pública.</p>
           <form id="advRoomForm" class="auth-form">
             <input type="hidden" id="roomIdHidden" />
+            <h4 class="modal-section-title">Informações da sala</h4>
             <div class="form-grid">
               <div class="form-group" style="grid-column: span 4">
                 <label for="roomName">Nome da Sala</label>
@@ -699,7 +700,6 @@
                 <div id="advRoomDescriptionEditor" class="rich-editor" contenteditable="true"></div>
                 <textarea id="roomDescription" rows="3" hidden></textarea>
               </div>
-
               <div class="form-group">
                 <label for="roomCapacity">Capacidade</label>
                 <input type="number" id="roomCapacity" min="1" step="1" />
@@ -708,6 +708,10 @@
                 <label for="dailyRate">Valor Diário (R$)</label>
                 <input type="number" id="dailyRate" min="0" step="0.01" />
               </div>
+            </div>
+
+            <h4 class="modal-section-title">Características</h4>
+            <div class="form-grid">
               <div class="form-group">
                 <label for="facilitatedAccess">Acesso Facilitado</label>
                 <select id="facilitatedAccess"><option value="1">Sim</option><option value="0">Não</option></select>
@@ -716,7 +720,18 @@
                 <label for="portariaInteligente">Portaria Inteligente</label>
                 <select id="portariaInteligente"><option value="Sim">Sim</option><option value="Não">Não</option></select>
               </div>
+              <div class="form-group" style="grid-column: span 4">
+                <label>Comodidades disponíveis</label>
+                <div id="advAmenitiesGrid" class="checkbox-grid"></div>
+              </div>
+            </div>
 
+            <h4 class="modal-section-title">Endereço</h4>
+            <div class="form-grid">
+              <div class="form-group">
+                <label for="cep">CEP</label>
+                <input type="text" id="cep" />
+              </div>
               <div class="form-group" style="grid-column: span 3">
                 <label for="street">Rua</label>
                 <input type="text" id="street" />
@@ -725,19 +740,22 @@
                 <label for="complement">Complemento</label>
                 <input type="text" id="complement" />
               </div>
-              <div class="form-group">
-                <label for="cep">CEP</label>
-                <input type="text" id="cep" />
+              <div class="form-group" style="grid-column: span 2">
+                <label for="roomCity">Cidade</label>
+                <input type="text" id="roomCity" />
               </div>
               <div class="form-group">
                 <label for="roomState">Estado (UF)</label>
                 <input type="text" id="roomState" maxlength="2" />
               </div>
-              <div class="form-group" style="grid-column: span 2">
-                <label for="roomCity">Cidade</label>
-                <input type="text" id="roomCity" />
+              <div class="form-group" style="grid-column: span 4">
+                <label for="locationInternal">Localização Interna (andar, bloco...)</label>
+                <input type="text" id="locationInternal" />
               </div>
+            </div>
 
+            <h4 class="modal-section-title">Contatos operacionais</h4>
+            <div class="form-grid">
               <div class="form-group" style="grid-column: span 2">
                 <label for="responsavelNome">Nome do Responsável</label>
                 <input type="text" id="responsavelNome" />
@@ -758,12 +776,10 @@
                 <label for="portariaEmail">E‑mail Portaria</label>
                 <input type="email" id="portariaEmail" />
               </div>
+            </div>
 
-              <div class="form-group" style="grid-column: span 4">
-                <label for="locationInternal">Localização Interna (andar, bloco...)</label>
-                <input type="text" id="locationInternal" />
-              </div>
-
+            <h4 class="modal-section-title">Operação da sala</h4>
+            <div class="form-grid">
               <div class="form-group">
                 <label for="roomStatus">Status</label>
                 <select id="roomStatus">
@@ -785,19 +801,21 @@
                 <label for="deactivatedFrom">Desativada a partir de</label>
                 <input type="date" id="deactivatedFrom" />
               </div>
+            </div>
 
+            <h4 class="modal-section-title">Fotos</h4>
+            <div class="form-grid">
               <div class="form-group" style="grid-column: span 4">
                 <label for="roomPhotos">Fotos da sala</label>
                 <input type="file" id="roomPhotos" accept="image/*" multiple />
                 <small class="input-hint">Envie imagens JPG/PNG/WEBP (até 8MB cada).</small>
                 <div id="roomPhotosPreview" class="room-photos-preview"></div>
               </div>
+            </div>
+
+            <h4 class="modal-section-title">Opções de pagamento/cancelamento</h4>
+            <div class="form-grid">
               <div class="form-group" style="grid-column: span 4">
-                <label>Comodidades disponíveis</label>
-                <div id="advAmenitiesGrid" class="checkbox-grid"></div>
-              </div>
-              <div class="form-group" style="grid-column: span 4">
-                <label>Opções de pagamento/cancelamento</label>
                 <div class="policy-block">
                   <label class="policy-option">
                     <input type="checkbox" id="policyImmediateToggle" />

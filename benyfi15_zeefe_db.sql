@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Tempo de geração: 28/12/2025 às 20:02
+-- Tempo de geração: 29/12/2025 às 08:03
 -- Versão do servidor: 5.7.23-23
 -- Versão do PHP: 8.1.34
 
@@ -91,7 +91,7 @@ CREATE TABLE `advertisers` (
 --
 
 INSERT INTO `advertisers` (`id`, `owner_type`, `owner_id`, `bank_code`, `display_name`, `full_name`, `login_email`, `login_cpf`, `contact_phone`, `password_hash`, `email_verified_at`, `verification_token`, `verification_token_expires`, `last_login`, `status`, `fee_pct`, `bank_name`, `account_type`, `agency_number`, `account_number`, `pix_key`, `created_at`, `updated_at`) VALUES
-(1, 'client', 0, NULL, 'MZF', 'Mira Zlotnik', 'benyfinkelstein@gmail.com', '41836484836', NULL, '$2y$10$coY86ax3NyQXEr1DAE4Q4uX6JMCV6LAI.gAHpLTdZ2Q7MdCTO.nW6', '2025-11-16 22:46:54', NULL, NULL, '2025-12-28 09:55:37', 'ativo', NULL, NULL, NULL, NULL, NULL, NULL, '2025-11-16 22:46:39', '2025-11-16 22:46:54');
+(1, 'client', 0, NULL, 'MZF', 'Mira Zlotnik', 'benyfinkelstein@gmail.com', '41836484836', NULL, '$2y$10$coY86ax3NyQXEr1DAE4Q4uX6JMCV6LAI.gAHpLTdZ2Q7MdCTO.nW6', '2025-11-16 22:46:54', NULL, NULL, '2025-12-28 21:15:18', 'ativo', NULL, NULL, NULL, NULL, NULL, NULL, '2025-11-16 22:46:39', '2025-11-16 22:46:54');
 
 -- --------------------------------------------------------
 
@@ -131,7 +131,8 @@ INSERT INTO `advertiser_remember_tokens` (`id`, `advertiser_id`, `token_hash`, `
 (27, 1, 'c2540c5bd7ca7e7e43d27d0b2bde5a2008834b8a2a9bde3e47b35ac9558276b6', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', '2025-12-27 09:33:17', '2025-12-28 09:33:17'),
 (28, 1, '6f58e26fbaf8ce204719fffa9ec5bf5cfafcaad6c363be28f222230352e42615', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', '2025-12-27 21:47:50', '2025-12-28 21:47:50'),
 (29, 1, '5ba6c6617ee3e95533767963c285ce386bcc18ac3aa88f3e1ea2e7ce8464b088', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', '2025-12-28 09:52:55', '2025-12-29 09:52:55'),
-(30, 1, '22006e3e0e4ac5a80ee6a3be56e1447492f159becc301ad057d8dc5096dea987', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', '2025-12-28 09:55:37', '2025-12-29 09:55:37');
+(30, 1, '22006e3e0e4ac5a80ee6a3be56e1447492f159becc301ad057d8dc5096dea987', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', '2025-12-28 09:55:37', '2025-12-29 09:55:37'),
+(31, 1, '03e7b21ba936ba018b40c4dddf518634fd5bcba443d019d64df635c7311a3221', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', '2025-12-28 21:15:18', '2025-12-29 21:15:18');
 
 -- --------------------------------------------------------
 
@@ -608,7 +609,8 @@ CREATE TABLE `payments` (
 --
 
 INSERT INTO `payments` (`id`, `reservation_id`, `method`, `amount`, `status`, `transaction_code`, `paid_at`, `created_at`, `updated_at`, `provider`, `currency`, `amount_cents`, `stripe_payment_intent_id`, `stripe_charge_id`, `stripe_customer_id`, `stripe_payment_method_id`, `failure_code`, `failure_message`) VALUES
-(6, 72, 'cartao', 1100.00, 'pago', 'pi_3SjKEtRGALXK8tGE1rHL86s1', '2025-12-28 10:42:31', '2025-12-28 10:42:31', '2025-12-28 10:42:31', 'stripe', 'BRL', 110000, 'pi_3SjKEtRGALXK8tGE1rHL86s1', NULL, 'cus_TgQBcUNKCm1KcV', 'pm_1SjKDSRGALXK8tGEOh0QmBPs', NULL, NULL);
+(6, 72, 'cartao', 1100.00, 'pago', 'pi_3SjKEtRGALXK8tGE1rHL86s1', '2025-12-28 10:42:31', '2025-12-28 10:42:31', '2025-12-28 10:42:31', 'stripe', 'BRL', 110000, 'pi_3SjKEtRGALXK8tGE1rHL86s1', NULL, 'cus_TgQBcUNKCm1KcV', 'pm_1SjKDSRGALXK8tGEOh0QmBPs', NULL, NULL),
+(7, 73, 'cartao', 1100.00, 'pago', 'pi_3SjVLDRGALXK8tGE1KWTsipc', '2025-12-28 22:33:48', '2025-12-28 22:33:48', '2025-12-28 22:33:48', 'stripe', 'BRL', 110000, 'pi_3SjVLDRGALXK8tGE1KWTsipc', NULL, 'cus_TgQBcUNKCm1KcV', 'pm_1SjKDSRGALXK8tGEOh0QmBPs', NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -769,15 +771,24 @@ CREATE TABLE `reservations` (
   `public_code` varchar(32) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `stripe_payment_intent_id` varchar(80) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `stripe_charge_id` varchar(80) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `payment_confirmed_at` datetime DEFAULT NULL
+  `payment_confirmed_at` datetime DEFAULT NULL,
+  `policy_id` bigint(20) DEFAULT NULL,
+  `policy_key` varchar(40) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `policy_label` varchar(120) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `policy_cancel_days` int(11) DEFAULT NULL,
+  `policy_cancel_fee_pct` decimal(5,2) DEFAULT NULL,
+  `policy_charge_timing` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `policy_charge_at` datetime DEFAULT NULL,
+  `stripe_payment_method_id` varchar(80) COLLATE utf8mb4_unicode_ci DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Despejando dados para a tabela `reservations`
 --
 
-INSERT INTO `reservations` (`id`, `room_id`, `client_id`, `participants`, `price`, `company_id`, `title`, `description`, `date`, `time_start`, `time_end`, `total_price`, `amount_gross`, `voucher_code`, `voucher_amount`, `fee_pct_at_time`, `fee_amount`, `amount_net`, `attendees_count`, `requirements`, `observations`, `status`, `payment_status`, `hold_expires_at`, `notes`, `created_at`, `updated_at`, `public_code`, `stripe_payment_intent_id`, `stripe_charge_id`, `payment_confirmed_at`) VALUES
-(72, 6, 27, 1, 1100.00, NULL, '123', '', '2025-12-29', '08:00:00', '20:00:00', 1100.00, 1100.00, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, 'confirmada', 'confirmado', NULL, NULL, NULL, '2025-12-28 10:42:31', 'ZF-28UH-M599NN', 'pi_3SjKEtRGALXK8tGE1rHL86s1', NULL, '2025-12-28 10:42:31');
+INSERT INTO `reservations` (`id`, `room_id`, `client_id`, `participants`, `price`, `company_id`, `title`, `description`, `date`, `time_start`, `time_end`, `total_price`, `amount_gross`, `voucher_code`, `voucher_amount`, `fee_pct_at_time`, `fee_amount`, `amount_net`, `attendees_count`, `requirements`, `observations`, `status`, `payment_status`, `hold_expires_at`, `notes`, `created_at`, `updated_at`, `public_code`, `stripe_payment_intent_id`, `stripe_charge_id`, `payment_confirmed_at`, `policy_id`, `policy_key`, `policy_label`, `policy_cancel_days`, `policy_cancel_fee_pct`, `policy_charge_timing`, `policy_charge_at`, `stripe_payment_method_id`) VALUES
+(72, 6, 27, 1, 1100.00, NULL, '123', '', '2025-12-29', '08:00:00', '20:00:00', 1100.00, 1100.00, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, 'cancelada', 'confirmado', NULL, NULL, NULL, '2025-12-28 21:27:11', 'ZF-28UH-M599NN', 'pi_3SjKEtRGALXK8tGE1rHL86s1', NULL, '2025-12-28 10:42:31', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
+(73, 6, 27, 1, 1100.00, NULL, 'teste123', '', '2025-12-28', '08:00:00', '20:00:00', 1100.00, 1100.00, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, 'cancelada', 'confirmado', NULL, NULL, NULL, '2025-12-28 22:34:47', 'ZF-J4CN-ZEZN2H', 'pi_3SjVLDRGALXK8tGE1KWTsipc', NULL, '2025-12-28 22:33:48', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -891,6 +902,40 @@ CREATE TABLE `room_photos` (
 -- --------------------------------------------------------
 
 --
+-- Estrutura para tabela `room_policies`
+--
+
+CREATE TABLE `room_policies` (
+  `id` bigint(20) NOT NULL,
+  `room_id` bigint(20) NOT NULL,
+  `option_key` varchar(40) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `label` varchar(120) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `cancel_days` int(11) DEFAULT NULL,
+  `cancel_fee_pct` decimal(5,2) DEFAULT NULL,
+  `charge_timing` enum('confirm','cancel_window','day_before') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'confirm',
+  `active` tinyint(1) NOT NULL DEFAULT '1',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Estrutura para tabela `room_policy_prices`
+--
+
+CREATE TABLE `room_policy_prices` (
+  `id` bigint(20) NOT NULL,
+  `policy_id` bigint(20) NOT NULL,
+  `date` date NOT NULL,
+  `price` decimal(10,2) NOT NULL DEFAULT '0.00',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Estrutura para tabela `room_ratings`
 --
 
@@ -902,6 +947,21 @@ CREATE TABLE `room_ratings` (
   `avg_ease` decimal(3,2) NOT NULL DEFAULT '0.00',
   `reviews_count` int(11) NOT NULL DEFAULT '0',
   `last_calculated_at` datetime DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Estrutura para tabela `room_views`
+--
+
+CREATE TABLE `room_views` (
+  `id` bigint(20) NOT NULL,
+  `room_id` bigint(20) NOT NULL,
+  `session_id` varchar(64) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `user_agent` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `ip` varchar(45) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `viewed_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -1375,10 +1435,33 @@ ALTER TABLE `room_photos`
   ADD KEY `room_id` (`room_id`);
 
 --
+-- Índices de tabela `room_policies`
+--
+ALTER TABLE `room_policies`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_room_policies_room` (`room_id`);
+
+--
+-- Índices de tabela `room_policy_prices`
+--
+ALTER TABLE `room_policy_prices`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `uniq_policy_date` (`policy_id`,`date`),
+  ADD KEY `idx_policy_prices_policy` (`policy_id`);
+
+--
 -- Índices de tabela `room_ratings`
 --
 ALTER TABLE `room_ratings`
   ADD PRIMARY KEY (`room_id`);
+
+--
+-- Índices de tabela `room_views`
+--
+ALTER TABLE `room_views`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_room_views_room` (`room_id`),
+  ADD KEY `idx_room_views_date` (`viewed_at`);
 
 --
 -- Índices de tabela `stripe_events`
@@ -1471,7 +1554,7 @@ ALTER TABLE `advertisers`
 -- AUTO_INCREMENT de tabela `advertiser_remember_tokens`
 --
 ALTER TABLE `advertiser_remember_tokens`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=31;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=32;
 
 --
 -- AUTO_INCREMENT de tabela `amenities`
@@ -1567,7 +1650,7 @@ ALTER TABLE `panel_users`
 -- AUTO_INCREMENT de tabela `payments`
 --
 ALTER TABLE `payments`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
 -- AUTO_INCREMENT de tabela `payment_intents`
@@ -1597,7 +1680,7 @@ ALTER TABLE `pre_reservations`
 -- AUTO_INCREMENT de tabela `reservations`
 --
 ALTER TABLE `reservations`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=73;
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=74;
 
 --
 -- AUTO_INCREMENT de tabela `reviews`
@@ -1616,6 +1699,24 @@ ALTER TABLE `rooms`
 --
 ALTER TABLE `room_photos`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT de tabela `room_policies`
+--
+ALTER TABLE `room_policies`
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT de tabela `room_policy_prices`
+--
+ALTER TABLE `room_policy_prices`
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT de tabela `room_views`
+--
+ALTER TABLE `room_views`
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT de tabela `stripe_events`
@@ -1804,6 +1905,12 @@ ALTER TABLE `room_amenities`
 --
 ALTER TABLE `room_photos`
   ADD CONSTRAINT `room_photos_ibfk_1` FOREIGN KEY (`room_id`) REFERENCES `rooms` (`id`) ON DELETE CASCADE;
+
+--
+-- Restrições para tabelas `room_policy_prices`
+--
+ALTER TABLE `room_policy_prices`
+  ADD CONSTRAINT `fk_policy_prices_policy` FOREIGN KEY (`policy_id`) REFERENCES `room_policies` (`id`) ON DELETE CASCADE;
 
 --
 -- Restrições para tabelas `room_ratings`
