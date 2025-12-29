@@ -8,6 +8,7 @@ function zeefe_policies_ensure_schema(PDO $pdo): void {
         room_id BIGINT NOT NULL,
         option_key VARCHAR(40) NOT NULL,
         label VARCHAR(120) NOT NULL,
+        base_price DECIMAL(10,2) NULL,
         cancel_days INT NULL,
         cancel_fee_pct DECIMAL(5,2) NULL,
         charge_timing ENUM('confirm','cancel_window','day_before') NOT NULL DEFAULT 'confirm',
@@ -19,6 +20,16 @@ function zeefe_policies_ensure_schema(PDO $pdo): void {
     );
   } catch (Throwable $e) {
     error_log('[Policies] Falha ao garantir tabela room_policies: ' . $e->getMessage());
+  }
+
+  try {
+    $stmt = $pdo->prepare("SHOW COLUMNS FROM room_policies LIKE 'base_price'");
+    $stmt->execute();
+    if (!$stmt->fetch(PDO::FETCH_ASSOC)) {
+      $pdo->exec("ALTER TABLE room_policies ADD COLUMN base_price DECIMAL(10,2) NULL AFTER label");
+    }
+  } catch (Throwable $e) {
+    error_log('[Policies] Falha ao garantir coluna room_policies.base_price: ' . $e->getMessage());
   }
 
   try {

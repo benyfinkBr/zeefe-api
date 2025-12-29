@@ -28,8 +28,8 @@ try {
   }
 
   $insertPolicy = $pdo->prepare(
-    'INSERT INTO room_policies (room_id, option_key, label, cancel_days, cancel_fee_pct, charge_timing, active)
-     VALUES (:room_id, :option_key, :label, :cancel_days, :cancel_fee_pct, :charge_timing, 1)'
+    'INSERT INTO room_policies (room_id, option_key, label, base_price, cancel_days, cancel_fee_pct, charge_timing, active)
+     VALUES (:room_id, :option_key, :label, :base_price, :cancel_days, :cancel_fee_pct, :charge_timing, 1)'
   );
   $insertPrice = $pdo->prepare(
     'INSERT INTO room_policy_prices (policy_id, date, price) VALUES (:policy_id, :date, :price)'
@@ -41,12 +41,14 @@ try {
     $label = trim((string) ($policy['label'] ?? ''));
     $chargeTiming = trim((string) ($policy['charge_timing'] ?? 'confirm'));
     if ($optionKey === '' || $label === '') continue;
+    $basePrice = isset($policy['base_price']) ? (float) $policy['base_price'] : null;
     $cancelDays = isset($policy['cancel_days']) ? (int) $policy['cancel_days'] : null;
     $cancelFee = isset($policy['cancel_fee_pct']) ? (float) $policy['cancel_fee_pct'] : null;
     $insertPolicy->execute([
       ':room_id' => $roomId,
       ':option_key' => $optionKey,
       ':label' => $label,
+      ':base_price' => $basePrice,
       ':cancel_days' => $cancelDays,
       ':cancel_fee_pct' => $cancelFee,
       ':charge_timing' => $chargeTiming

@@ -4,6 +4,7 @@ CREATE TABLE IF NOT EXISTS room_policies (
   room_id BIGINT NOT NULL,
   option_key VARCHAR(40) NOT NULL,
   label VARCHAR(120) NOT NULL,
+  base_price DECIMAL(10,2) NULL,
   cancel_days INT NULL,
   cancel_fee_pct DECIMAL(5,2) NULL,
   charge_timing ENUM('confirm','cancel_window','day_before') NOT NULL DEFAULT 'confirm',
@@ -12,6 +13,8 @@ CREATE TABLE IF NOT EXISTS room_policies (
   updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   INDEX idx_room_policies_room (room_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+ALTER TABLE room_policies ADD COLUMN base_price DECIMAL(10,2) NULL;
 
 CREATE TABLE IF NOT EXISTS room_policy_prices (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,

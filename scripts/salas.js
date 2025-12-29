@@ -76,11 +76,13 @@ async function renderModalPolicies(roomId, reserveDisabled = false) {
     modalPolicies.innerHTML = '<strong>Opções de pagamento/cancelamento</strong>';
     policies.forEach((policy, idx) => {
       const label = buildPolicyLabel(policy);
+      const priceLabel = policy.base_price ? formatCurrency(policy.base_price) : '';
+      const priceHtml = priceLabel ? `<div class="input-hint">Preço: ${escapeHtml(priceLabel)}</div>` : '';
       const item = document.createElement('label');
       item.className = 'policy-select-item';
       item.innerHTML = `
         <input type="radio" name="modalPolicyChoice" value="${policy.id}" ${idx === 0 ? 'checked' : ''} />
-        <div>${label}</div>
+        <div>${label}${priceHtml}</div>
       `;
       item.querySelector('input')?.addEventListener('change', () => {
         modalReserve.href = `/clientes.html?room_id=${encodeURIComponent(roomId)}&policy_id=${encodeURIComponent(policy.id)}`;

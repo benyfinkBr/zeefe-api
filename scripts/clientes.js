@@ -209,6 +209,29 @@ function buildPolicyLabel(policy) {
   return 'Opção de pagamento/cancelamento';
 }
 
+function getBookingPrimaryDate() {
+  if (bookingDateInput?.value) return bookingDateInput.value;
+  if (Array.isArray(bookingSelectedDates) && bookingSelectedDates.length) {
+    return bookingSelectedDates[0];
+  }
+  return null;
+}
+
+function getPolicyPriceForDate(policy, date) {
+  if (!policy) return null;
+  if (date && Array.isArray(policy.prices)) {
+    const match = policy.prices.find(item => item.date === date);
+    if (match && typeof match.price === 'number') return match.price;
+  }
+  if (typeof policy.base_price === 'number') return policy.base_price;
+  return null;
+}
+
+function getSelectedPolicy() {
+  const policyId = bookingPolicyIdInput?.value || '';
+  return (currentRoomPolicies || []).find(p => String(p.id) === String(policyId)) || null;
+}
+
 async function loadRoomPolicies(roomId) {
   currentRoomPolicies = [];
   if (!roomId) {
@@ -244,8 +267,11 @@ function renderBookingPolicyOptions(preselectId = null) {
   bookingPolicyRow.hidden = false;
   bookingPolicyOptions.innerHTML = '';
   const desired = preselectId || bookingPolicyIdInput?.value || '';
+  const primaryDate = getBookingPrimaryDate();
   policies.forEach(policy => {
     const label = buildPolicyLabel(policy);
+    const price = getPolicyPriceForDate(policy, primaryDate);
+    const priceLabel = price ? formatCurrency(price) : 'Preço não definido';
     const id = String(policy.id || '');
     const item = document.createElement('label');
     item.className = 'policy-select-item';
@@ -253,7 +279,7 @@ function renderBookingPolicyOptions(preselectId = null) {
       <input type="radio" name="bookingPolicyChoice" value="${escapeHtml(id)}" />
       <div>
         <div style="font-weight:600">${escapeHtml(label)}</div>
-        <div class="input-hint">Cobrança: ${escapeHtml(policy.charge_timing || 'confirm')}</div>
+        <div class="input-hint">Preço: ${escapeHtml(priceLabel)} · Cobrança: ${escapeHtml(policy.charge_timing || 'confirm')}</div>
       </div>
     `;
     bookingPolicyOptions.appendChild(item);
@@ -2602,6 +2628,9 @@ function onBookingDateChange() {
   }
   renderRoomOptions(selected);
   renderBookingCalendar(bookingCurrentMonth);
+  if (currentRoomPolicies && currentRoomPolicies.length) {
+    renderBookingPolicyOptions(bookingPolicyIdInput?.value || '');
+  }
   updateBookingNavigation();
 }
 
@@ -4209,6 +4238,9 @@ async function finalizeBookingSubmission(record, formData) {
     const datesToCreate = isMultiDate
       ? Array.from(new Set(bookingSelectedDates)).sort()
       : [record.date];
+    const selectedPolicy = getSelectedPolicy();
+    const roomId = bookingRoomHiddenInput?.value ? String(bookingRoomHiddenInput.value) : null;
+    const room = roomId ? roomsCache.find(r => String(r.id) === roomId) : null;
 
     // Confirmação amigável para múltiplas reservas
     if (datesToCreate.length > 1) {
@@ -4225,6 +4257,16 @@ async function finalizeBookingSubmission(record, formData) {
 
     for (const date of datesToCreate) {
       const payloadRecord = { ...record, date };
+      const policyPrice = getPolicyPriceForDate(selectedPolicy, date);
+      const basePrice = (typeof policyPrice === 'number' && policyPrice > 0)
+        ? policyPrice
+        : (room && room.daily_rate ? Number(room.daily_rate) : 0);
+      if (basePrice > 0) {
+        const formatted = Number(basePrice.toFixed(2));
+        payloadRecord.total_price = formatted;
+        payloadRecord.amount_gross = formatted;
+        payloadRecord.price = formatted;
+      }
       const res = await fetch(`${API_BASE}/apisave.php`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -4327,7 +4369,12 @@ async function onApplyVoucherClick() {
   const roomId = bookingRoomHiddenInput?.value ? Number(bookingRoomHiddenInput.value) : 0;
   if (!roomId) { if (bookingVoucherResult) bookingVoucherResult.textContent = 'Selecione a sala antes de aplicar o voucher.'; return; }
   const room = roomsCache.find(r => String(r.id) === String(roomId));
-  const amount = room && room.daily_rate ? Number(room.daily_rate) : 0;
+  const selectedPolicy = getSelectedPolicy();
+  const primaryDate = getBookingPrimaryDate();
+  const policyAmount = getPolicyPriceForDate(selectedPolicy, primaryDate);
+  const amount = typeof policyAmount === 'number'
+    ? policyAmount
+    : (room && room.daily_rate ? Number(room.daily_rate) : 0);
   try {
     const payload = { code, room_id: roomId, advertiser_id: room?.advertiser_id || null, amount };
     const res = await fetch(`${API_BASE}/validate_voucher.php`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify(payload) });
@@ -4439,14 +4486,21 @@ function renderBookingSummary() {
   let totalPrevisto = null;
   const dias = dates.length || 0;
   if (dias > 0) {
-    let valorDia = 0;
+    const selectedPolicy = getSelectedPolicy();
     if (bookingVoucherApplied && typeof bookingVoucherApplied.payable === 'number') {
-      valorDia = bookingVoucherApplied.payable;
-    } else if (room && room.daily_rate) {
-      valorDia = Number(room.daily_rate) || 0;
-    }
-    if (valorDia > 0) {
-      totalPrevisto = valorDia * dias;
+      const valorDia = bookingVoucherApplied.payable;
+      if (valorDia > 0) totalPrevisto = valorDia * dias;
+    } else {
+      let totalCalc = 0;
+      dates.forEach(date => {
+        const policyPrice = getPolicyPriceForDate(selectedPolicy, date);
+        if (typeof policyPrice === 'number' && policyPrice > 0) {
+          totalCalc += policyPrice;
+        } else if (room && room.daily_rate) {
+          totalCalc += Number(room.daily_rate) || 0;
+        }
+      });
+      if (totalCalc > 0) totalPrevisto = totalCalc;
     }
   }
 

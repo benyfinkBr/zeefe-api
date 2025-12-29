@@ -43,6 +43,7 @@ try {
       'room_id' => (int) $row['room_id'],
       'option_key' => $row['option_key'],
       'label' => $row['label'],
+      'base_price' => $row['base_price'] !== null ? (float) $row['base_price'] : null,
       'cancel_days' => $row['cancel_days'] !== null ? (int) $row['cancel_days'] : null,
       'cancel_fee_pct' => $row['cancel_fee_pct'] !== null ? (float) $row['cancel_fee_pct'] : null,
       'charge_timing' => $row['charge_timing'],

@@ -820,6 +820,7 @@
                   <label class="policy-option">
                     <input type="checkbox" id="policyImmediateToggle" />
                     <span>Reservas com pagamento imediato</span>
+                    <input type="number" id="policyImmediateBasePrice" min="0" step="0.01" placeholder="Preço base (R$)" class="policy-price-input" />
                   </label>
                   <div class="policy-grid" id="policyImmediateGrid" hidden>
                     <div class="policy-grid-actions">
@@ -838,6 +839,7 @@
                     <span>dias anteriores à reserva (Taxa de Cancelamento:</span>
                     <input type="number" id="policyCancelFee" min="0" max="100" step="0.01" placeholder="XX" style="max-width:90px" />
                     <span>%)</span>
+                    <input type="number" id="policyCancelBasePrice" min="0" step="0.01" placeholder="Preço base (R$)" class="policy-price-input" />
                   </label>
                   <div class="policy-grid" id="policyCancelGrid" hidden>
                     <div class="policy-grid-actions">
@@ -852,6 +854,7 @@
                   <label class="policy-option">
                     <input type="checkbox" id="policyFreeToggle" />
                     <span>Sem taxa de cancelamento</span>
+                    <input type="number" id="policyFreeBasePrice" min="0" step="0.01" placeholder="Preço base (R$)" class="policy-price-input" />
                   </label>
                   <div class="policy-grid" id="policyFreeGrid" hidden>
                     <div class="policy-grid-actions">
