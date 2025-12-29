@@ -324,6 +324,9 @@ const locationInternal = document.getElementById('locationInternal');
 const maintenanceStart = document.getElementById('maintenanceStart');
 const maintenanceEnd = document.getElementById('maintenanceEnd');
 const deactivatedFrom = document.getElementById('deactivatedFrom');
+const maintenanceStartGroup = document.getElementById('maintenanceStartGroup');
+const maintenanceEndGroup = document.getElementById('maintenanceEndGroup');
+const deactivatedFromGroup = document.getElementById('deactivatedFromGroup');
 // payout form
 const bankCodeInput = document.getElementById('bankCode');
 const bankNameInput = document.getElementById('bankName');
@@ -635,6 +638,46 @@ function updateDailyRateFromPolicies() {
     const anyEnabled = roomPoliciesState.immediate.enabled || roomPoliciesState.cancel_window.enabled || roomPoliciesState.free_cancel.enabled;
     policyOptionsWarning.hidden = anyEnabled;
   }
+}
+
+function updateRoomStatusFields(statusValue) {
+  const status = (statusValue || '').toLowerCase();
+  const showMaintenance = status === 'manutencao';
+  const showDeactivated = status === 'desativada';
+  if (maintenanceStartGroup) maintenanceStartGroup.hidden = !showMaintenance;
+  if (maintenanceEndGroup) maintenanceEndGroup.hidden = !showMaintenance;
+  if (deactivatedFromGroup) deactivatedFromGroup.hidden = !showDeactivated;
+  if (!showMaintenance) {
+    if (maintenanceStart) maintenanceStart.value = '';
+    if (maintenanceEnd) maintenanceEnd.value = '';
+  }
+  if (!showDeactivated) {
+    if (deactivatedFrom) deactivatedFrom.value = '';
+  }
+}
+
+function hasFutureReservations(roomId, fromDate = null) {
+  if (!roomId) return false;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  let cutoff = today;
+  if (fromDate) {
+    const parsed = new Date(fromDate);
+    if (!Number.isNaN(parsed.getTime())) {
+      parsed.setHours(0, 0, 0, 0);
+      cutoff = parsed;
+    }
+  }
+  return (myReservations || []).some(r => {
+    if (String(r.room_id) !== String(roomId)) return false;
+    const status = String(r.status || '').toLowerCase();
+    if (['cancelada', 'negada', 'recusada'].includes(status)) return false;
+    if (!r.date) return false;
+    const resDate = new Date(r.date);
+    if (Number.isNaN(resDate.getTime())) return false;
+    resDate.setHours(0, 0, 0, 0);
+    return resDate >= cutoff;
+  });
 }
 
 async function loadRoomPolicies(roomId) {
@@ -1963,6 +2006,9 @@ policyFreeToggle?.addEventListener('change', () => {
 policyImmediateBasePrice?.addEventListener('input', updateDailyRateFromPolicies);
 policyCancelBasePrice?.addEventListener('input', updateDailyRateFromPolicies);
 policyFreeBasePrice?.addEventListener('input', updateDailyRateFromPolicies);
+roomStatus?.addEventListener('change', () => {
+  updateRoomStatusFields(roomStatus.value);
+});
 policyCancelDays?.addEventListener('input', () => {
   roomPoliciesState.cancel_window.cancel_days = policyCancelDays.value ? Number(policyCancelDays.value) : 0;
 });
@@ -2056,6 +2102,7 @@ async function openRoomModal(roomData){
 
   if (roomPhotosInput) roomPhotosInput.value = '';
   updateDailyRateFromPolicies();
+  updateRoomStatusFields(roomStatus?.value || '');
 
   roomModal.classList.add('show');
   roomModal.setAttribute('aria-hidden','false');
@@ -2099,6 +2146,32 @@ async function onRoomFormSubmit(e){
     roomMsg.textContent = `Informe o preço base para: ${missingPrices.join(', ')}.`;
     return;
   }
+  const statusValue = (roomStatus?.value || 'ativo').toLowerCase();
+  if (statusValue === 'desativada' && !deactivatedFrom?.value) {
+    roomMsg.textContent = 'Informe a data a partir da qual a sala será desativada.';
+    return;
+  }
+  const roomIdForCheck = roomIdHidden?.value || null;
+  if (statusValue === 'inativo' && hasFutureReservations(roomIdForCheck)) {
+    roomMsg.textContent = 'Há reservas futuras. Cancele os agendamentos antes de inativar a sala.';
+    return;
+  }
+  if (statusValue === 'desativada') {
+    const cutoff = deactivatedFrom?.value || null;
+    if (hasFutureReservations(roomIdForCheck, cutoff)) {
+      roomMsg.textContent = 'Há reservas futuras após a data de desativação. Cancele os agendamentos antes de desativar.';
+      return;
+    }
+  }
+
+  if (statusValue !== 'manutencao') {
+    if (maintenanceStart) maintenanceStart.value = '';
+    if (maintenanceEnd) maintenanceEnd.value = '';
+  }
+  if (statusValue !== 'desativada') {
+    if (deactivatedFrom) deactivatedFrom.value = '';
+  }
+
   const computedDailyRate = computeDailyRateFromPolicies();
   if (computedDailyRate != null && dailyRate) {
     dailyRate.value = String(computedDailyRate);
