@@ -344,6 +344,38 @@ const advStatusNoticeClose = document.getElementById('advStatusNoticeClose');
 const advStatusNoticeOk = document.getElementById('advStatusNoticeOk');
 const advStatusNoticeReservations = document.getElementById('advStatusNoticeReservations');
 
+const BANKS = [
+  { code: '001', name: 'Banco do Brasil' },
+  { code: '033', name: 'Santander' },
+  { code: '041', name: 'Banrisul' },
+  { code: '070', name: 'BRB' },
+  { code: '077', name: 'Banco Inter' },
+  { code: '085', name: 'Ailos' },
+  { code: '091', name: 'Unicred' },
+  { code: '104', name: 'Caixa Economica Federal' },
+  { code: '121', name: 'Agibank' },
+  { code: '208', name: 'BTG Pactual' },
+  { code: '212', name: 'Original' },
+  { code: '237', name: 'Bradesco' },
+  { code: '260', name: 'Nubank' },
+  { code: '290', name: 'PagBank (PagSeguro)' },
+  { code: '323', name: 'Mercado Pago' },
+  { code: '336', name: 'C6 Bank' },
+  { code: '341', name: 'Itau Unibanco' },
+  { code: '364', name: 'Gerencianet' },
+  { code: '399', name: 'HSBC' },
+  { code: '422', name: 'Safra' },
+  { code: '505', name: 'Credit Suisse' },
+  { code: '637', name: 'Sofisa Direto' },
+  { code: '655', name: 'Votorantim' },
+  { code: '746', name: 'Modal' },
+  { code: '748', name: 'Sicredi' },
+  { code: '756', name: 'Sicoob' }
+];
+const bankNameByCode = new Map(BANKS.map(({ code, name }) => [code, name]));
+const normalizeBankKey = (value) => (value || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+const bankCodeByName = new Map(BANKS.map(({ code, name }) => [normalizeBankKey(name), code]));
+
 let amenitiesCache = null;
 let amenitiesRequest = null;
 let currentRoomPhotoList = [];
@@ -362,6 +394,23 @@ const REQUIRED_ROOM_FIELDS = [
 function clearRoomFieldErrors() {
   REQUIRED_ROOM_FIELDS.forEach(({ el }) => {
     el?.classList.remove('field-error');
+  });
+}
+
+if (bankCodeInput && bankNameInput) {
+  bankCodeInput.addEventListener('input', () => {
+    const code = bankCodeInput.value.trim();
+    const name = bankNameByCode.get(code);
+    if (name) {
+      bankNameInput.value = name;
+    }
+  });
+  bankNameInput.addEventListener('input', () => {
+    const key = normalizeBankKey(bankNameInput.value);
+    const code = bankCodeByName.get(key);
+    if (code) {
+      bankCodeInput.value = code;
+    }
   });
 }
 

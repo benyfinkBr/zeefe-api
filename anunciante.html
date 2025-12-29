@@ -291,8 +291,64 @@
             <div class="form-grid-mini">
               <div>
                 <label for="bankCode">Banco</label>
-                <input type="text" id="bankCode" name="bank_code" placeholder="Cód." style="max-width:100px" />
-                <input type="text" id="bankName" name="bank_name" placeholder="Nome do banco" />
+                <input type="text" id="bankCode" name="bank_code" placeholder="Cód." list="bankCodeList" style="max-width:100px" />
+                <input type="text" id="bankName" name="bank_name" placeholder="Nome do banco" list="bankNameList" />
+                <datalist id="bankCodeList">
+                  <option value="001" label="Banco do Brasil"></option>
+                  <option value="033" label="Santander"></option>
+                  <option value="041" label="Banrisul"></option>
+                  <option value="070" label="BRB"></option>
+                  <option value="077" label="Banco Inter"></option>
+                  <option value="085" label="Ailos"></option>
+                  <option value="091" label="Unicred"></option>
+                  <option value="104" label="Caixa Economica Federal"></option>
+                  <option value="121" label="Agibank"></option>
+                  <option value="208" label="BTG Pactual"></option>
+                  <option value="212" label="Original"></option>
+                  <option value="237" label="Bradesco"></option>
+                  <option value="260" label="Nubank"></option>
+                  <option value="290" label="PagBank (PagSeguro)"></option>
+                  <option value="323" label="Mercado Pago"></option>
+                  <option value="336" label="C6 Bank"></option>
+                  <option value="341" label="Itau Unibanco"></option>
+                  <option value="364" label="Gerencianet"></option>
+                  <option value="399" label="HSBC"></option>
+                  <option value="422" label="Safra"></option>
+                  <option value="505" label="Credit Suisse"></option>
+                  <option value="637" label="Sofisa Direto"></option>
+                  <option value="655" label="Votorantim"></option>
+                  <option value="746" label="Modal"></option>
+                  <option value="748" label="Sicredi"></option>
+                  <option value="756" label="Sicoob"></option>
+                </datalist>
+                <datalist id="bankNameList">
+                  <option value="Banco do Brasil"></option>
+                  <option value="Santander"></option>
+                  <option value="Banrisul"></option>
+                  <option value="BRB"></option>
+                  <option value="Banco Inter"></option>
+                  <option value="Ailos"></option>
+                  <option value="Unicred"></option>
+                  <option value="Caixa Economica Federal"></option>
+                  <option value="Agibank"></option>
+                  <option value="BTG Pactual"></option>
+                  <option value="Original"></option>
+                  <option value="Bradesco"></option>
+                  <option value="Nubank"></option>
+                  <option value="PagBank (PagSeguro)"></option>
+                  <option value="Mercado Pago"></option>
+                  <option value="C6 Bank"></option>
+                  <option value="Itau Unibanco"></option>
+                  <option value="Gerencianet"></option>
+                  <option value="HSBC"></option>
+                  <option value="Safra"></option>
+                  <option value="Credit Suisse"></option>
+                  <option value="Sofisa Direto"></option>
+                  <option value="Votorantim"></option>
+                  <option value="Modal"></option>
+                  <option value="Sicredi"></option>
+                  <option value="Sicoob"></option>
+                </datalist>
               </div>
               <div>
                 <label for="accountType">Tipo de conta</label>
