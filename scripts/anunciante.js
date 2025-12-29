@@ -287,24 +287,21 @@ const roomAmenitiesGrid = document.getElementById('advAmenitiesGrid');
 const roomPhotosInput = document.getElementById('roomPhotos');
 const roomPhotosPreview = document.getElementById('roomPhotosPreview');
 const policyImmediateToggle = document.getElementById('policyImmediateToggle');
-const policyImmediateGrid = document.getElementById('policyImmediateGrid');
 const policyImmediateBasePrice = document.getElementById('policyImmediateBasePrice');
+const policyCancelToggle = document.getElementById('policyCancelToggle');
+const policyCancelDays = document.getElementById('policyCancelDays');
+const policyCancelFee = document.getElementById('policyCancelFee');
+const policyCancelBasePrice = document.getElementById('policyCancelBasePrice');
+const policyFreeToggle = document.getElementById('policyFreeToggle');
+const policyFreeBasePrice = document.getElementById('policyFreeBasePrice');
 const policyImmediateDate = document.getElementById('policyImmediateDate');
 const policyImmediatePrice = document.getElementById('policyImmediatePrice');
 const policyImmediateAdd = document.getElementById('policyImmediateAdd');
 const policyImmediateList = document.getElementById('policyImmediateList');
-const policyCancelToggle = document.getElementById('policyCancelToggle');
-const policyCancelGrid = document.getElementById('policyCancelGrid');
-const policyCancelDays = document.getElementById('policyCancelDays');
-const policyCancelFee = document.getElementById('policyCancelFee');
-const policyCancelBasePrice = document.getElementById('policyCancelBasePrice');
 const policyCancelDate = document.getElementById('policyCancelDate');
 const policyCancelPrice = document.getElementById('policyCancelPrice');
 const policyCancelAdd = document.getElementById('policyCancelAdd');
 const policyCancelList = document.getElementById('policyCancelList');
-const policyFreeToggle = document.getElementById('policyFreeToggle');
-const policyFreeGrid = document.getElementById('policyFreeGrid');
-const policyFreeBasePrice = document.getElementById('policyFreeBasePrice');
 const policyFreeDate = document.getElementById('policyFreeDate');
 const policyFreePrice = document.getElementById('policyFreePrice');
 const policyFreeAdd = document.getElementById('policyFreeAdd');
@@ -544,9 +541,7 @@ function resetRoomPoliciesState() {
   if (policyImmediateList) policyImmediateList.innerHTML = '';
   if (policyCancelList) policyCancelList.innerHTML = '';
   if (policyFreeList) policyFreeList.innerHTML = '';
-  if (policyImmediateGrid) policyImmediateGrid.hidden = true;
-  if (policyCancelGrid) policyCancelGrid.hidden = true;
-  if (policyFreeGrid) policyFreeGrid.hidden = true;
+  updateDailyRateFromPolicies();
 }
 
 function renderPolicyGrid(policyKey, listEl) {
@@ -603,12 +598,32 @@ function applyPoliciesToUi() {
   if (policyFreeBasePrice) policyFreeBasePrice.value = roomPoliciesState.free_cancel.base_price ?? '';
   if (policyCancelDays) policyCancelDays.value = roomPoliciesState.cancel_window.cancel_days ?? '';
   if (policyCancelFee) policyCancelFee.value = roomPoliciesState.cancel_window.cancel_fee_pct ?? '';
-  if (policyImmediateGrid) policyImmediateGrid.hidden = !roomPoliciesState.immediate.enabled;
-  if (policyCancelGrid) policyCancelGrid.hidden = !roomPoliciesState.cancel_window.enabled;
-  if (policyFreeGrid) policyFreeGrid.hidden = !roomPoliciesState.free_cancel.enabled;
   renderPolicyGrid('immediate', policyImmediateList);
   renderPolicyGrid('cancel_window', policyCancelList);
   renderPolicyGrid('free_cancel', policyFreeList);
+  updateDailyRateFromPolicies();
+}
+
+function computeDailyRateFromPolicies() {
+  const prices = [];
+  if (roomPoliciesState.immediate.enabled && roomPoliciesState.immediate.base_price) {
+    prices.push(Number(roomPoliciesState.immediate.base_price));
+  }
+  if (roomPoliciesState.cancel_window.enabled && roomPoliciesState.cancel_window.base_price) {
+    prices.push(Number(roomPoliciesState.cancel_window.base_price));
+  }
+  if (roomPoliciesState.free_cancel.enabled && roomPoliciesState.free_cancel.base_price) {
+    prices.push(Number(roomPoliciesState.free_cancel.base_price));
+  }
+  const valid = prices.filter(v => Number.isFinite(v) && v > 0);
+  if (!valid.length) return null;
+  return Math.min(...valid);
+}
+
+function updateDailyRateFromPolicies() {
+  if (!dailyRate) return;
+  const minValue = computeDailyRateFromPolicies();
+  dailyRate.value = minValue != null ? String(minValue) : '';
 }
 
 async function loadRoomPolicies(roomId) {
@@ -651,7 +666,7 @@ async function saveRoomPolicies(roomId) {
   if (roomPoliciesState.immediate.enabled) {
     policies.push({
       option_key: 'immediate',
-      label: 'Reservas com pagamento imediato',
+      label: 'Pagamento no momento da Reserva (Sem cancelamento)',
       charge_timing: 'confirm',
       base_price: policyImmediateBasePrice?.value ? Number(policyImmediateBasePrice.value) : null,
       prices: roomPoliciesState.immediate.prices || []
@@ -660,7 +675,7 @@ async function saveRoomPolicies(roomId) {
   if (roomPoliciesState.cancel_window.enabled) {
     policies.push({
       option_key: 'cancel_window',
-      label: `Cancelamento sem taxa em ${policyCancelDays?.value || 0} dias anteriores à reserva (Taxa de Cancelamento: ${policyCancelFee?.value || 0}%)`,
+      label: 'Cancelamento da Reserva',
       base_price: policyCancelBasePrice?.value ? Number(policyCancelBasePrice.value) : null,
       cancel_days: policyCancelDays?.value ? Number(policyCancelDays.value) : 0,
       cancel_fee_pct: policyCancelFee?.value ? Number(policyCancelFee.value) : 0,
@@ -1924,16 +1939,19 @@ roomForm?.addEventListener('submit', onRoomFormSubmit);
 cepInput?.addEventListener('input', handleCepInput);
 policyImmediateToggle?.addEventListener('change', () => {
   roomPoliciesState.immediate.enabled = !!policyImmediateToggle.checked;
-  if (policyImmediateGrid) policyImmediateGrid.hidden = !policyImmediateToggle.checked;
+  updateDailyRateFromPolicies();
 });
 policyCancelToggle?.addEventListener('change', () => {
   roomPoliciesState.cancel_window.enabled = !!policyCancelToggle.checked;
-  if (policyCancelGrid) policyCancelGrid.hidden = !policyCancelToggle.checked;
+  updateDailyRateFromPolicies();
 });
 policyFreeToggle?.addEventListener('change', () => {
   roomPoliciesState.free_cancel.enabled = !!policyFreeToggle.checked;
-  if (policyFreeGrid) policyFreeGrid.hidden = !policyFreeToggle.checked;
+  updateDailyRateFromPolicies();
 });
+policyImmediateBasePrice?.addEventListener('input', updateDailyRateFromPolicies);
+policyCancelBasePrice?.addEventListener('input', updateDailyRateFromPolicies);
+policyFreeBasePrice?.addEventListener('input', updateDailyRateFromPolicies);
 policyCancelDays?.addEventListener('input', () => {
   roomPoliciesState.cancel_window.cancel_days = policyCancelDays.value ? Number(policyCancelDays.value) : 0;
 });
@@ -2026,6 +2044,7 @@ async function openRoomModal(roomData){
   }
 
   if (roomPhotosInput) roomPhotosInput.value = '';
+  updateDailyRateFromPolicies();
 
   roomModal.classList.add('show');
   roomModal.setAttribute('aria-hidden','false');
@@ -2050,12 +2069,16 @@ async function onRoomFormSubmit(e){
   roomPoliciesState.free_cancel.base_price = policyFreeBasePrice?.value ? Number(policyFreeBasePrice.value) : null;
   roomPoliciesState.cancel_window.cancel_days = policyCancelDays?.value ? Number(policyCancelDays.value) : 0;
   roomPoliciesState.cancel_window.cancel_fee_pct = policyCancelFee?.value ? Number(policyCancelFee.value) : 0;
+  if (!roomPoliciesState.immediate.enabled && !roomPoliciesState.cancel_window.enabled && !roomPoliciesState.free_cancel.enabled) {
+    roomMsg.textContent = 'Selecione pelo menos uma opção de pagamento/cancelamento.';
+    return;
+  }
   const missingPrices = [];
   if (roomPoliciesState.immediate.enabled && (!roomPoliciesState.immediate.base_price || roomPoliciesState.immediate.base_price <= 0)) {
-    missingPrices.push('Pagamento imediato');
+    missingPrices.push('Pagamento no momento da Reserva');
   }
   if (roomPoliciesState.cancel_window.enabled && (!roomPoliciesState.cancel_window.base_price || roomPoliciesState.cancel_window.base_price <= 0)) {
-    missingPrices.push('Cancelamento com prazo');
+    missingPrices.push('Cancelamento da Reserva');
   }
   if (roomPoliciesState.free_cancel.enabled && (!roomPoliciesState.free_cancel.base_price || roomPoliciesState.free_cancel.base_price <= 0)) {
     missingPrices.push('Sem taxa de cancelamento');
@@ -2064,11 +2087,15 @@ async function onRoomFormSubmit(e){
     roomMsg.textContent = `Informe o preço base para: ${missingPrices.join(', ')}.`;
     return;
   }
+  const computedDailyRate = computeDailyRateFromPolicies();
+  if (computedDailyRate != null && dailyRate) {
+    dailyRate.value = String(computedDailyRate);
+  }
   const record = {
     name: (roomName?.value||'').trim(),
     description: descHtml,
     capacity: roomCap?.value ? parseInt(roomCap.value,10) : null,
-    daily_rate: dailyRate?.value ? Number(dailyRate.value) : null,
+    daily_rate: computedDailyRate != null ? Number(computedDailyRate) : null,
     facilitated_access: facilitatedAccess?.value || null,
     portaria_inteligente: portariaInteligente?.value || null,
     street: (streetInput?.value||'').trim(),

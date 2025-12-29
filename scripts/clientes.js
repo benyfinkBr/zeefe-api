@@ -199,11 +199,11 @@ async function requestProfileCardDeletion(card) {
 
 function buildPolicyLabel(policy) {
   if (policy.label) return policy.label;
-  if (policy.option_key === 'immediate') return 'Reservas com pagamento imediato';
+  if (policy.option_key === 'immediate') return 'Pagamento no momento da Reserva (Sem cancelamento)';
   if (policy.option_key === 'cancel_window') {
     const days = policy.cancel_days ?? 0;
     const fee = policy.cancel_fee_pct ?? 0;
-    return `Cancelamento sem taxa em ${days} dias anteriores à reserva (Taxa de Cancelamento: ${fee}%)`;
+    return `Cancelamento da Reserva (até ${days} dias · multa ${fee}%)`;
   }
   if (policy.option_key === 'free_cancel') return 'Sem taxa de cancelamento';
   return 'Opção de pagamento/cancelamento';
@@ -219,11 +219,11 @@ function getBookingPrimaryDate() {
 
 function getPolicyPriceForDate(policy, date) {
   if (!policy) return null;
+  if (typeof policy.base_price === 'number') return policy.base_price;
   if (date && Array.isArray(policy.prices)) {
     const match = policy.prices.find(item => item.date === date);
     if (match && typeof match.price === 'number') return match.price;
   }
-  if (typeof policy.base_price === 'number') return policy.base_price;
   return null;
 }
 
