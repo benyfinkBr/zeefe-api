@@ -327,6 +327,7 @@ const deactivatedFrom = document.getElementById('deactivatedFrom');
 const maintenanceStartGroup = document.getElementById('maintenanceStartGroup');
 const maintenanceEndGroup = document.getElementById('maintenanceEndGroup');
 const deactivatedFromGroup = document.getElementById('deactivatedFromGroup');
+const roomFutureReservationsWarning = document.getElementById('roomFutureReservationsWarning');
 // payout form
 const bankCodeInput = document.getElementById('bankCode');
 const bankNameInput = document.getElementById('bankName');
@@ -678,6 +679,11 @@ function hasFutureReservations(roomId, fromDate = null) {
     resDate.setHours(0, 0, 0, 0);
     return resDate >= cutoff;
   });
+}
+
+function updateFutureReservationsWarning(roomId, fromDate = null) {
+  if (!roomFutureReservationsWarning) return;
+  roomFutureReservationsWarning.hidden = !hasFutureReservations(roomId, fromDate);
 }
 
 async function loadRoomPolicies(roomId) {
@@ -2006,8 +2012,12 @@ policyFreeToggle?.addEventListener('change', () => {
 policyImmediateBasePrice?.addEventListener('input', updateDailyRateFromPolicies);
 policyCancelBasePrice?.addEventListener('input', updateDailyRateFromPolicies);
 policyFreeBasePrice?.addEventListener('input', updateDailyRateFromPolicies);
+deactivatedFrom?.addEventListener('change', () => {
+  updateFutureReservationsWarning(roomIdHidden?.value || null, deactivatedFrom.value || null);
+});
 roomStatus?.addEventListener('change', () => {
   updateRoomStatusFields(roomStatus.value);
+  updateFutureReservationsWarning(roomIdHidden?.value || null, deactivatedFrom?.value || null);
 });
 policyCancelDays?.addEventListener('input', () => {
   roomPoliciesState.cancel_window.cancel_days = policyCancelDays.value ? Number(policyCancelDays.value) : 0;
@@ -2103,6 +2113,7 @@ async function openRoomModal(roomData){
   if (roomPhotosInput) roomPhotosInput.value = '';
   updateDailyRateFromPolicies();
   updateRoomStatusFields(roomStatus?.value || '');
+  updateFutureReservationsWarning(currentId || roomIdHidden?.value || null, deactivatedFrom?.value || null);
 
   roomModal.classList.add('show');
   roomModal.setAttribute('aria-hidden','false');
