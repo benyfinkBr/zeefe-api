@@ -62,6 +62,12 @@ function updateCompanyAccessUi() {
   if (companyBookingRow) {
     companyBookingRow.hidden = !canUseCompany;
   }
+  if (clientCompanyEl) {
+    clientCompanyEl.hidden = !canUseCompany;
+  }
+  if (profileCompanyRow) {
+    profileCompanyRow.hidden = !canUseCompany;
+  }
   if (!canUseCompany && bookingCompanyToggle) {
     bookingCompanyToggle.checked = false;
   }
@@ -105,7 +111,9 @@ function formatCardLabel(card) {
   const last4 = card.last4 ? `•••• ${card.last4}` : 'Sem final';
   const expMonth = card.exp_month ? String(card.exp_month).padStart(2, '0') : '--';
   const expYear = card.exp_year ? String(card.exp_year) : '--';
-  return `${brand} ${last4} · ${expMonth}/${expYear}`;
+  const nickname = (card.nickname || card.card_nickname || '').trim();
+  const base = `${brand} ${last4} · ${expMonth}/${expYear}`;
+  return nickname ? `${nickname} · ${base}` : base;
 }
 
 function renderBookingCardOptions(preferredId = null) {
@@ -665,6 +673,7 @@ const profileForm = document.getElementById('profileForm');
 const profileMessageEl = document.getElementById('profileMessage');
 const profileCardsList = document.getElementById('profileCardsList');
 const profileCardsMessage = document.getElementById('profileCardsMessage');
+const profileCompanyRow = document.getElementById('profileCompanyRow');
 const editProfileBtn = document.getElementById('editProfileBtn');
 const saveProfileBtn = document.getElementById('saveProfileBtn');
 const cancelProfileEditBtn = document.getElementById('cancelProfileEditBtn');
@@ -3399,9 +3408,13 @@ function aplicarClienteAtivo(cliente) {
     clientNameEl.textContent = activeClient.name || activeClient.login || 'Cliente';
   }
   if (clientCompanyEl) {
-    clientCompanyEl.textContent = hasCompanyAccess()
-      ? (obterNomeEmpresa(activeClient.company_id) || 'Empresa')
-      : 'Cliente pessoa física';
+    if (hasCompanyAccess()) {
+      clientCompanyEl.textContent = obterNomeEmpresa(activeClient.company_id) || 'Empresa';
+      clientCompanyEl.hidden = false;
+    } else {
+      clientCompanyEl.textContent = '';
+      clientCompanyEl.hidden = true;
+    }
   }
   const paymentClientIdInput = document.getElementById('clientId');
   if (paymentClientIdInput) paymentClientIdInput.value = activeClient.id || '';
@@ -4952,6 +4965,7 @@ function renderProfile() {
       if (input) input.value = '';
     });
     if (profileMessageEl) profileMessageEl.textContent = '';
+    if (profileCompanyRow) profileCompanyRow.hidden = true;
     setProfileEditing(false);
     return;
   }
@@ -4961,9 +4975,11 @@ function renderProfile() {
   profileInputs.cpf.value = formatCPF(activeClient.cpf) || '';
   profileInputs.phone.value = formatPhone(activeClient.phone) || '';
   profileInputs.whatsapp.value = formatPhone(activeClient.whatsapp) || '';
-  profileInputs.company.value = hasCompanyAccess()
+  const hasCompany = hasCompanyAccess();
+  if (profileCompanyRow) profileCompanyRow.hidden = !hasCompany;
+  profileInputs.company.value = hasCompany
     ? (obterNomeEmpresa(activeClient.company_id) || 'Empresa')
-    : 'Cliente pessoa física';
+    : '';
   const addr = getActiveAddress();
   if (profileInputs.street) profileInputs.street.value = addr.street || '';
   if (profileInputs.number) profileInputs.number.value = addr.number || '';
@@ -5151,11 +5167,15 @@ async function onProfileSubmit(event) {
     if (!json.success) throw new Error(json.error || 'Erro ao atualizar cadastro.');
     activeClient = { ...activeClient, ...json.client, address: { ...(activeClient.address || {}), ...addr } };
     if (clientNameEl) clientNameEl.textContent = activeClient.name || activeClient.login || 'Cliente';
-    if (clientCompanyEl) {
-      clientCompanyEl.textContent = hasCompanyAccess()
-        ? (obterNomeEmpresa(activeClient.company_id) || 'Empresa')
-        : 'Cliente pessoa física';
+  if (clientCompanyEl) {
+    if (hasCompanyAccess()) {
+      clientCompanyEl.textContent = obterNomeEmpresa(activeClient.company_id) || 'Empresa';
+      clientCompanyEl.hidden = false;
+    } else {
+      clientCompanyEl.textContent = '';
+      clientCompanyEl.hidden = true;
     }
+  }
     renderProfile();
     if (profileMessageEl) profileMessageEl.textContent = json.message || 'Dados atualizados.';
   } catch (err) {
@@ -5566,6 +5586,7 @@ function initCardPaymentsFeature() {
   const cardModal = document.getElementById('cardModal');
   const cardForm = document.getElementById('cardSaveForm');
   const cardClientInput = document.getElementById('cardClientId');
+  const cardNicknameInput = document.getElementById('cardNickname');
   const holderInput = document.getElementById('cardHolderName');
   const billingEmailInput = document.getElementById('cardBillingEmail');
   const billingZipInput = document.getElementById('cardBillingZip');
@@ -5792,10 +5813,12 @@ function initCardPaymentsFeature() {
         const exp = expMonth && expYear ? `${expMonth}/${expYear}` : 'Sem validade';
         const providerLabel = card.provider === 'stripe' ? 'Stripe' : 'Legado';
         const statusLabel = card.status === 'inactive' ? ' (inativo)' : '';
+        const nickname = (card.nickname || card.card_nickname || '').trim();
         const info = document.createElement('div');
         info.className = 'card-info';
         info.innerHTML = `
           <span class="card-brand">${escapeHtml(brand + statusLabel)}</span>
+          ${nickname ? `<span class="card-nickname">${escapeHtml(nickname)}</span>` : ''}
           <span>${escapeHtml(lastDigits)}</span>
           <span>Expira em ${escapeHtml(exp)}</span>
           <span class="card-provider">${escapeHtml(providerLabel)}</span>
@@ -5939,6 +5962,7 @@ function initCardPaymentsFeature() {
     }
 
     const billingDetails = { name: cardholder };
+    const nickname = (cardNicknameInput?.value || '').trim();
     const email = (billingEmailInput?.value || '').trim();
     if (email) billingDetails.email = email;
     const address = {};
@@ -5983,6 +6007,7 @@ function initCardPaymentsFeature() {
         body: JSON.stringify({
           client_id: clientId,
           setup_intent_id: setupIntent?.id,
+          card_nickname: nickname,
           set_default: true
         })
       });
@@ -5992,6 +6017,7 @@ function initCardPaymentsFeature() {
       }
 
       cardElement.clear();
+      if (cardNicknameInput) cardNicknameInput.value = '';
       setSuccess('Cartão salvo com sucesso! Você já pode fechar este modal.', true);
       refreshCardList(clientId);
     } catch (err) {
@@ -6005,6 +6031,7 @@ function initCardPaymentsFeature() {
   function setClient(client) {
     currentClientId = client?.id || null;
     if (cardClientInput) cardClientInput.value = currentClientId || '';
+    if (cardNicknameInput) cardNicknameInput.value = '';
     if (client) {
       hydrateBillingFields(client, { force: true });
       refreshCardList(currentClientId);
@@ -6019,6 +6046,7 @@ function initCardPaymentsFeature() {
       }
       if (cardListError) cardListError.hidden = true;
       holderInput && (holderInput.value = '');
+      if (cardNicknameInput) cardNicknameInput.value = '';
       billingFieldInputs.forEach((input) => {
         if (!input) return;
         input.value = '';

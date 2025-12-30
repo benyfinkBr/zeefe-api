@@ -62,6 +62,11 @@ function zeefe_stripe_ensure_schema(PDO $pdo): void {
     error_log('[Stripe] Falha ao garantir coluna customer_cards.stripe_payment_method_id: ' . $e->getMessage());
   }
   try {
+    ensureColumn($pdo, 'customer_cards', 'card_nickname', 'VARCHAR(60) NULL', 'stripe_payment_method_id');
+  } catch (Throwable $e) {
+    error_log('[Stripe] Falha ao garantir coluna customer_cards.card_nickname: ' . $e->getMessage());
+  }
+  try {
     ensureColumn($pdo, 'customer_cards', 'pagarme_card_id', 'VARCHAR(80) NULL', 'stripe_payment_method_id');
   } catch (Throwable $e) {
     error_log('[Stripe] Falha ao garantir coluna customer_cards.pagarme_card_id: ' . $e->getMessage());
@@ -223,6 +228,7 @@ function zeefe_stripe_upsert_card(PDO $pdo, int $clientId, string $stripeCustome
     ':client_id' => $clientId,
     ':stripe_customer_id' => $stripeCustomerId,
     ':pm' => $cardData['payment_method_id'],
+    ':nickname' => $cardData['nickname'] ?? null,
     ':brand' => $cardData['brand'] ?? null,
     ':last4' => $cardData['last4'] ?? null,
     ':exp_month' => $cardData['exp_month'] ?? null,
@@ -232,11 +238,11 @@ function zeefe_stripe_upsert_card(PDO $pdo, int $clientId, string $stripeCustome
   ];
 
   if ($cardId) {
-    $sql = 'UPDATE customer_cards SET stripe_customer_id = :stripe_customer_id, brand = :brand, last4 = :last4, exp_month = :exp_month, exp_year = :exp_year, holder_name = :holder, fingerprint = :fingerprint, status = "active", updated_at = NOW() WHERE id = :id';
+    $sql = 'UPDATE customer_cards SET stripe_customer_id = :stripe_customer_id, card_nickname = :nickname, brand = :brand, last4 = :last4, exp_month = :exp_month, exp_year = :exp_year, holder_name = :holder, fingerprint = :fingerprint, status = "active", updated_at = NOW() WHERE id = :id';
     $stmt = $pdo->prepare($sql);
     $stmt->execute($payload + [':id' => $cardId]);
   } else {
-    $sql = 'INSERT INTO customer_cards (client_id, stripe_customer_id, stripe_payment_method_id, brand, last4, exp_month, exp_year, holder_name, fingerprint, status, created_at, updated_at) VALUES (:client_id, :stripe_customer_id, :pm, :brand, :last4, :exp_month, :exp_year, :holder, :fingerprint, "active", NOW(), NOW())';
+    $sql = 'INSERT INTO customer_cards (client_id, stripe_customer_id, stripe_payment_method_id, card_nickname, brand, last4, exp_month, exp_year, holder_name, fingerprint, status, created_at, updated_at) VALUES (:client_id, :stripe_customer_id, :pm, :nickname, :brand, :last4, :exp_month, :exp_year, :holder, :fingerprint, "active", NOW(), NOW())';
     $stmt = $pdo->prepare($sql);
     $stmt->execute($payload);
     $cardId = (int)$pdo->lastInsertId();
@@ -249,6 +255,7 @@ function zeefe_stripe_upsert_card(PDO $pdo, int $clientId, string $stripeCustome
     'exp_month' => (int)($cardData['exp_month'] ?? 0),
     'exp_year' => (int)($cardData['exp_year'] ?? 0),
     'holder_name' => $cardData['holder'] ?? null,
+    'nickname' => $cardData['nickname'] ?? null,
     'payment_method_id' => $cardData['payment_method_id']
   ];
 }

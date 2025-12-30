@@ -12,6 +12,7 @@ function ensureColumn(PDO $pdo, string $table, string $column, string $definitio
     'customer_cards' => [
       'stripe_customer_id',
       'stripe_payment_method_id',
+      'card_nickname',
       'billing_name',
       'billing_email',
       'billing_zip',

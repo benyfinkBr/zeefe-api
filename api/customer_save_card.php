@@ -35,6 +35,7 @@ try {
   $clientId = (int)($input['client_id'] ?? 0);
   $setupIntentId = trim((string)($input['setup_intent_id'] ?? ''));
   $paymentMethodId = trim((string)($input['payment_method_id'] ?? ''));
+  $cardNickname = trim((string)($input['card_nickname'] ?? ''));
   $setDefault = normalize_bool($input['set_default'] ?? null, true);
 
   if ($clientId <= 0) {
@@ -92,6 +93,7 @@ try {
 
   $cardRecord = zeefe_stripe_upsert_card($pdo, $clientId, $customerId, [
     'payment_method_id' => $paymentMethodId,
+    'nickname' => $cardNickname !== '' ? $cardNickname : null,
     'brand' => $card->brand ?? null,
     'last4' => $card->last4 ?? null,
     'exp_month' => $card->exp_month ?? null,
