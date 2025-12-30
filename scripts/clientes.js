@@ -38,35 +38,40 @@ function hasCompanyAccess() {
   return true;
 }
 
+function hasCompanyAssociation() {
+  return Boolean(activeClient?.company_id);
+}
+
 function updateCompanyAccessUi() {
+  const isAssociated = hasCompanyAssociation();
   const canUseCompany = hasCompanyAccess();
   if (authScopeCompanyBtn) {
-    authScopeCompanyBtn.hidden = !canUseCompany;
+    authScopeCompanyBtn.hidden = !isAssociated;
     authScopeCompanyBtn.disabled = !canUseCompany;
     authScopeCompanyBtn.classList.toggle('active', canUseCompany && desiredScope === 'company');
   }
   if (headerScopeCompanyBtn) {
-    headerScopeCompanyBtn.hidden = !canUseCompany;
+    headerScopeCompanyBtn.hidden = !isAssociated;
     headerScopeCompanyBtn.disabled = !canUseCompany;
     headerScopeCompanyBtn.classList.toggle('active', canUseCompany && currentScope === 'company');
   }
   if (scopeCompanyBtn) {
-    scopeCompanyBtn.hidden = !canUseCompany;
+    scopeCompanyBtn.hidden = !isAssociated;
     scopeCompanyBtn.disabled = !canUseCompany;
     scopeCompanyBtn.classList.toggle('active', canUseCompany && currentScope === 'company');
   }
   if (companyTabButton) {
-    companyTabButton.hidden = !canUseCompany;
+    companyTabButton.hidden = !isAssociated;
     if (!canUseCompany && portalSections.company) portalSections.company.hidden = true;
   }
   if (companyBookingRow) {
-    companyBookingRow.hidden = !canUseCompany;
+    companyBookingRow.hidden = !isAssociated;
   }
   if (clientCompanyEl) {
-    clientCompanyEl.hidden = !canUseCompany;
+    clientCompanyEl.hidden = !isAssociated;
   }
   if (profileCompanyRow) {
-    profileCompanyRow.hidden = !canUseCompany;
+    profileCompanyRow.hidden = !isAssociated;
   }
   if (!canUseCompany && bookingCompanyToggle) {
     bookingCompanyToggle.checked = false;
@@ -217,6 +222,36 @@ function buildPolicyLabel(policy) {
   return 'Opção de pagamento/cancelamento';
 }
 
+function formatPolicyChargeHint(policy, priceLabel) {
+  const timing = policy.charge_timing || '';
+  const cancelDays = policy.cancel_days ?? '';
+  const cancelFee = policy.cancel_fee_pct ?? '';
+  let chargeText = 'Cobrança conforme política';
+  if (timing === 'confirm') {
+    chargeText = 'Cobrança imediata (no momento da reserva)';
+  } else if (timing === 'cancel_window') {
+    const daysText = cancelDays !== '' ? `${cancelDays} dias antes` : 'o prazo limite';
+    chargeText = `Cobrança quando faltar ${daysText} para a reserva`;
+  } else if (timing === 'day_before') {
+    chargeText = 'Cobrança 24h antes do check-in';
+  }
+
+  let cancelText = '';
+  if (policy.option_key === 'immediate') {
+    cancelText = 'Sem cancelamento.';
+  } else if (policy.option_key === 'cancel_window') {
+    const daysText = cancelDays !== '' ? `${cancelDays} dias` : 'o prazo definido';
+    const feeText = cancelFee !== '' ? `${cancelFee}%` : 'a taxa definida';
+    cancelText = `Cancelamento gratuito até ${daysText} antes; após isso multa ${feeText}.`;
+  } else if (policy.option_key === 'free_cancel') {
+    cancelText = 'Cancelamento sem taxa.';
+  }
+
+  const parts = [`Preço: ${priceLabel}`, chargeText];
+  if (cancelText) parts.push(cancelText);
+  return parts.join(' · ');
+}
+
 function getBookingPrimaryDate() {
   if (bookingDateInput?.value) return bookingDateInput.value;
   if (Array.isArray(bookingSelectedDates) && bookingSelectedDates.length) {
@@ -283,7 +318,7 @@ function renderBookingPolicyOptions(preselectId = null) {
       <input type="radio" name="bookingPolicyChoice" value="${escapeHtml(id)}" />
       <div>
         <div style="font-weight:600">${escapeHtml(label)}</div>
-        <div class="input-hint">Preço: ${escapeHtml(priceLabel)} · Cobrança: ${escapeHtml(policy.charge_timing || 'confirm')}</div>
+        <div class="input-hint">${escapeHtml(formatPolicyChargeHint(policy, priceLabel))}</div>
       </div>
     `;
     bookingPolicyOptions.appendChild(item);
@@ -3408,7 +3443,7 @@ function aplicarClienteAtivo(cliente) {
     clientNameEl.textContent = activeClient.name || activeClient.login || 'Cliente';
   }
   if (clientCompanyEl) {
-    if (hasCompanyAccess()) {
+    if (hasCompanyAssociation()) {
       clientCompanyEl.textContent = obterNomeEmpresa(activeClient.company_id) || 'Empresa';
       clientCompanyEl.hidden = false;
     } else {
@@ -4975,7 +5010,7 @@ function renderProfile() {
   profileInputs.cpf.value = formatCPF(activeClient.cpf) || '';
   profileInputs.phone.value = formatPhone(activeClient.phone) || '';
   profileInputs.whatsapp.value = formatPhone(activeClient.whatsapp) || '';
-  const hasCompany = hasCompanyAccess();
+  const hasCompany = hasCompanyAssociation();
   if (profileCompanyRow) profileCompanyRow.hidden = !hasCompany;
   profileInputs.company.value = hasCompany
     ? (obterNomeEmpresa(activeClient.company_id) || 'Empresa')
@@ -5168,7 +5203,7 @@ async function onProfileSubmit(event) {
     activeClient = { ...activeClient, ...json.client, address: { ...(activeClient.address || {}), ...addr } };
     if (clientNameEl) clientNameEl.textContent = activeClient.name || activeClient.login || 'Cliente';
   if (clientCompanyEl) {
-    if (hasCompanyAccess()) {
+    if (hasCompanyAssociation()) {
       clientCompanyEl.textContent = obterNomeEmpresa(activeClient.company_id) || 'Empresa';
       clientCompanyEl.hidden = false;
     } else {
