@@ -821,6 +821,8 @@ input, select {
           { key: 'razao_social', label: 'Razão Social' },
           { key: 'nome_fantasia', label: 'Nome Fantasia' },
           { key: 'cnpj', label: 'CNPJ' },
+          { key: 'discount_pct', label: 'Desconto (%)' },
+          { key: 'account_manager_id', label: 'Gerente (ID)' },
           { key: 'status', label: 'Status', formatter: statusFormatter }
         ]
       },
@@ -1412,6 +1414,9 @@ input, select {
         { name: 'cnpj', label: 'CNPJ', span: 2 },
         { name: 'inscricao_estadual', label: 'Inscrição Estadual', span: 2 },
         { type: 'break' },
+        { name: 'discount_pct', label: '% de desconto', span: 1, type: 'number', cls: 'sm' },
+        { name: 'account_manager_id', label: 'Gerente de Conta', span: 3, type: 'select', source: 'admins' },
+        { type: 'break' },
         { name: 'street', label: 'Rua', span: 2 },
         { name: 'number', label: 'Número', span: 1, cls: 'sm' },
         { name: 'complement', label: 'Complemento', span: 1 },
@@ -1693,7 +1698,7 @@ input, select {
             (data.data || []).forEach(item => {
               const option = document.createElement('option');
               option.value = item.id;
-              option.textContent = item.nome_fantasia || item.razao_social || item.name || `#${item.id}`;
+              option.textContent = item.nome_fantasia || item.razao_social || item.name || item.username || item.email || `#${item.id}`;
               if (currentValue && String(currentValue) == String(item.id)) option.selected = true;
               sel.appendChild(option);
             });
