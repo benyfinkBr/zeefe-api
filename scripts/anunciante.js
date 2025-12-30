@@ -344,7 +344,8 @@ const advStatusNoticeClose = document.getElementById('advStatusNoticeClose');
 const advStatusNoticeOk = document.getElementById('advStatusNoticeOk');
 const advStatusNoticeReservations = document.getElementById('advStatusNoticeReservations');
 
-const BANKS = [
+const BANKS_JSON_URL = '/data/banks_bacen.json';
+const DEFAULT_BANKS = [
   { code: '001', name: 'Banco do Brasil' },
   { code: '033', name: 'Santander' },
   { code: '041', name: 'Banrisul' },
@@ -372,9 +373,51 @@ const BANKS = [
   { code: '748', name: 'Sicredi' },
   { code: '756', name: 'Sicoob' }
 ];
-const bankNameByCode = new Map(BANKS.map(({ code, name }) => [code, name]));
+let banksCache = [...DEFAULT_BANKS];
+const bankNameByCode = new Map();
 const normalizeBankKey = (value) => (value || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-const bankCodeByName = new Map(BANKS.map(({ code, name }) => [normalizeBankKey(name), code]));
+const bankCodeByName = new Map();
+
+function hydrateBankMaps(list) {
+  bankNameByCode.clear();
+  bankCodeByName.clear();
+  (list || []).forEach(({ code, name }) => {
+    if (!code || !name) return;
+    bankNameByCode.set(code, name);
+    bankCodeByName.set(normalizeBankKey(name), code);
+  });
+}
+
+function fillBankDatalists(list) {
+  const codeList = document.getElementById('bankCodeList');
+  const nameList = document.getElementById('bankNameList');
+  if (!codeList || !nameList) return;
+  codeList.innerHTML = '';
+  nameList.innerHTML = '';
+  (list || []).forEach(({ code, name }) => {
+    if (!code || !name) return;
+    const codeOpt = document.createElement('option');
+    codeOpt.value = code;
+    codeOpt.label = name;
+    codeList.appendChild(codeOpt);
+    const nameOpt = document.createElement('option');
+    nameOpt.value = name;
+    nameList.appendChild(nameOpt);
+  });
+}
+
+async function initBankAutocomplete() {
+  if (!bankCodeInput || !bankNameInput) return;
+  try {
+    const res = await fetch(BANKS_JSON_URL, { cache: 'no-store' });
+    const data = await res.json();
+    if (Array.isArray(data) && data.length) {
+      banksCache = data;
+    }
+  } catch (_) {}
+  hydrateBankMaps(banksCache);
+  fillBankDatalists(banksCache);
+}
 
 let amenitiesCache = null;
 let amenitiesRequest = null;
@@ -401,17 +444,14 @@ if (bankCodeInput && bankNameInput) {
   bankCodeInput.addEventListener('input', () => {
     const code = bankCodeInput.value.trim();
     const name = bankNameByCode.get(code);
-    if (name) {
-      bankNameInput.value = name;
-    }
+    if (name) bankNameInput.value = name;
   });
   bankNameInput.addEventListener('input', () => {
     const key = normalizeBankKey(bankNameInput.value);
     const code = bankCodeByName.get(key);
-    if (code) {
-      bankCodeInput.value = code;
-    }
+    if (code) bankCodeInput.value = code;
   });
+  initBankAutocomplete();
 }
 
 function validateRequiredRoomFields() {
