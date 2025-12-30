@@ -1,5 +1,6 @@
 <?php
 require 'apiconfig.php';
+require_once __DIR__ . '/lib/workshop_payments.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -67,6 +68,8 @@ try {
   $cpf   = trim($body['cpf']   ?? '');
   $phone = trim($body['phone'] ?? '');
   $voucherCode = strtoupper(trim($body['voucher_code'] ?? ''));
+  $clientId = isset($body['client_id']) ? (int) $body['client_id'] : 0;
+  $stripePaymentMethodId = trim((string)($body['stripe_payment_method_id'] ?? ''));
 
   if ($workshopId <= 0 || $name === '' || $email === '') {
     http_response_code(400);
@@ -83,9 +86,12 @@ try {
   // Carrega workshop com contagem de inscritos
   $stmtW = $pdo->prepare("
     SELECT w.*,
+           r.city AS room_city,
+           r.state AS room_state,
            (SELECT COUNT(*) FROM workshop_enrollments e WHERE e.workshop_id = w.id AND e.payment_status <> 'cancelado') AS active_seats,
            (SELECT COUNT(*) FROM workshop_enrollments e WHERE e.workshop_id = w.id AND e.payment_status = 'pago') AS paid_seats
     FROM workshops w
+    JOIN rooms r ON r.id = w.room_id
     WHERE w.id = ?
       AND w.status = 'publicado'
     LIMIT 1
@@ -174,15 +180,37 @@ try {
     }
   }
   $amountDue = max(0, $pricePerSeat - $discountAmount);
+  if ($amountDue > 0) {
+    if ($clientId <= 0) {
+      http_response_code(400);
+      echo json_encode(['success' => false, 'error' => 'Informe o cliente para selecionar um cartão.']);
+      exit;
+    }
+    if ($stripePaymentMethodId === '') {
+      http_response_code(400);
+      echo json_encode(['success' => false, 'error' => 'Selecione um cartão para continuar.']);
+      exit;
+    }
+  }
 
   // Para suportar o "break even", as inscrições começam como pendentes.
   $paymentStatus = 'pendente';
 
   $insE = $pdo->prepare('
-    INSERT INTO workshop_enrollments (workshop_id, participant_id, public_code, payment_status, voucher_code, discount_amount, checkin_status)
-    VALUES (?,?,?,?,?,?,\'nao_lido\')
+    INSERT INTO workshop_enrollments (workshop_id, participant_id, client_id, public_code, payment_status, voucher_code, discount_amount, amount_due, stripe_payment_method_id, checkin_status)
+    VALUES (?,?,?,?,?,?,?,?,?,\'nao_lido\')
   ');
-  $insE->execute([$workshopId, $participantId, $publicCode, $paymentStatus, $voucherCode ?: null, $discountAmount]);
+  $insE->execute([
+    $workshopId,
+    $participantId,
+    $clientId ?: null,
+    $publicCode,
+    $paymentStatus,
+    $voucherCode ?: null,
+    $discountAmount,
+    $amountDue,
+    $stripePaymentMethodId ?: null
+  ]);
   $enrollmentId = (int) $pdo->lastInsertId();
 
   // Lógica de break-even: a partir de min_seats, confirmamos todos os pendentes.
@@ -192,20 +220,33 @@ try {
 
   $pdo->commit();
 
-  $checkinUrl = sprintf(
-    '%s/api/workshop_checkin.php?code=%s',
-    rtrim((isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? ''), '/'),
-    urlencode($publicCode)
-  );
+  $checkinUrl = workshop_build_checkin_url($publicCode);
 
   $checkoutUrl = null;
   $checkoutWarning = null;
-  if ($paymentStatus !== 'pago' && $amountDue > 0) {
-    $checkoutWarning = 'Pagamentos online estão temporariamente indisponíveis. Entraremos em contato para combinar o pagamento.';
-  } elseif ($amountDue <= 0) {
+  if ($amountDue <= 0) {
     $paymentStatus = 'pago';
-    $stmtPaid = $pdo->prepare('UPDATE workshop_enrollments SET payment_status = \'pago\' WHERE id = ?');
+    $stmtPaid = $pdo->prepare('UPDATE workshop_enrollments SET payment_status = \'pago\', paid_at = NOW() WHERE id = ?');
     $stmtPaid->execute([$enrollmentId]);
+    workshop_send_ticket_email(
+      ['name' => $name, 'email' => $email],
+      $workshop,
+      ['public_code' => $publicCode]
+    );
+  }
+  $checkoutWarning = $minSeats > 0
+    ? 'O Workshop será pago quando atingir o mínimo de participantes definido pelo organizador.'
+    : 'O pagamento será processado após a confirmação da inscrição.';
+
+  workshop_send_enrollment_email(
+    ['name' => $name, 'email' => $email],
+    $workshop,
+    ['public_code' => $publicCode],
+    $checkoutWarning
+  );
+
+  if (($thresholdReached || $minSeats <= 0) && $amountDue > 0) {
+    workshop_charge_pending($pdo, $workshopId);
   }
 
   echo json_encode([

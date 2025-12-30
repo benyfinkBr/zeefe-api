@@ -1160,6 +1160,24 @@
     </div>
   </div>
 
+  <div class="modal-overlay" id="workshopCardModal" aria-hidden="true">
+    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="workshopCardTitle" style="width:640px; max-width:94vw;">
+      <button class="modal-close" type="button" id="workshopCardClose" aria-label="Fechar">&times;</button>
+      <div class="modal-body">
+        <div class="modal-info" style="width:100%;">
+          <h2 id="workshopCardTitle">Selecionar cartão</h2>
+          <p class="rooms-message" id="workshopCardNotice">O Workshop será pago quando atingir o mínimo de participantes definido pelo organizador.</p>
+          <div id="workshopCardList" class="card-list"></div>
+          <div class="form-row" style="display:flex; gap:10px; justify-content:flex-end; margin-top:16px;">
+            <button type="button" class="btn btn-secondary" data-open-card-modal>Gerenciar cartões</button>
+            <button type="button" class="btn btn-primary" id="workshopCardConfirm">Confirmar inscrição</button>
+          </div>
+          <div id="workshopCardError" class="rooms-message" hidden></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <footer class="site-footer">
     <div class="site-footer-inner">
       <div class="footer-column footer-map">

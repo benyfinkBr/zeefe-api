@@ -188,6 +188,67 @@ async function renderProfileCards() {
   });
 }
 
+function closeWorkshopCardModal() {
+  if (!workshopCardModal) return;
+  workshopCardModal.classList.remove('show');
+  workshopCardModal.setAttribute('aria-hidden', 'true');
+  if (workshopCardError) {
+    workshopCardError.hidden = true;
+    workshopCardError.textContent = '';
+  }
+}
+
+function renderWorkshopCardList(cards) {
+  if (!workshopCardList) return;
+  workshopCardList.innerHTML = '';
+  cards.forEach((card, idx) => {
+    const item = document.createElement('label');
+    item.className = 'card-item';
+    item.style.display = 'flex';
+    item.style.alignItems = 'center';
+    item.style.gap = '10px';
+    item.style.cursor = 'pointer';
+    item.innerHTML = `
+      <input type="radio" name="workshopCardChoice" value="${escapeHtml(card.stripe_payment_method_id || '')}" ${idx === 0 ? 'checked' : ''} />
+      <div class="card-info">
+        <span class="card-brand">${escapeHtml(formatCardLabel(card))}</span>
+        <span class="card-provider">${escapeHtml(card.provider === 'stripe' ? 'Stripe' : 'Legado')}</span>
+      </div>
+    `;
+    workshopCardList.appendChild(item);
+  });
+}
+
+async function openWorkshopCardModal(course) {
+  if (!workshopCardModal) return false;
+  if (!course) return false;
+  await loadClientCards(true);
+  const cards = getStripeCards();
+  if (!cards.length) {
+    if (workshopCardError) {
+      workshopCardError.hidden = false;
+      workshopCardError.textContent = 'Cadastre um cartão para confirmar a inscrição.';
+    }
+    cardPaymentsFeature?.openModal?.();
+    return false;
+  }
+  renderWorkshopCardList(cards);
+  const minSeats = Number(course.min_seats || 0);
+  if (workshopCardNotice) {
+    workshopCardNotice.textContent = minSeats > 0
+      ? `O Workshop será pago quando atingir o mínimo de ${minSeats} participante${minSeats > 1 ? 's' : ''} definido pelo organizador.`
+      : 'O pagamento será processado após a confirmação da inscrição.';
+  }
+  workshopCardModal.classList.add('show');
+  workshopCardModal.setAttribute('aria-hidden', 'false');
+  return true;
+}
+
+function getSelectedWorkshopCardId() {
+  const selected = workshopCardList?.querySelector('input[name="workshopCardChoice"]:checked');
+  return selected ? selected.value : '';
+}
+
 async function requestProfileCardDeletion(card) {
   if (!activeClient) return;
   const confirmMsg = `Remover o cartão ${card.brand || ''} ${card.last4 ? '•••• ' + card.last4 : ''}?`;
@@ -599,6 +660,7 @@ const workshopDetailsCache = new Map();
 let courseModalContext = { courseId: null, course: null, enrollment: null, voucher: null, voucherData: null, focusEnroll: false };
 let headerMenuOpen = false;
 let portalRefreshTimer = null;
+let pendingWorkshopEnrollment = null;
 
 const reservationsContainer = document.getElementById('reservationsContainer');
 const clientMessagesBadge = document.getElementById('clientMessagesBadge');
@@ -666,6 +728,12 @@ const reservationActionsButtons = document.getElementById('reservationActionsBut
 const cardModalCloseBtn = document.getElementById('cardModalClose');
 const cardModalCancelBtn = document.getElementById('cardModalCancel');
 const cardSaveForm = document.getElementById('cardSaveForm');
+const workshopCardModal = document.getElementById('workshopCardModal');
+const workshopCardClose = document.getElementById('workshopCardClose');
+const workshopCardConfirm = document.getElementById('workshopCardConfirm');
+const workshopCardList = document.getElementById('workshopCardList');
+const workshopCardNotice = document.getElementById('workshopCardNotice');
+const workshopCardError = document.getElementById('workshopCardError');
 
 const visitorForm = document.getElementById('visitorForm');
 const visitorFormTitle = document.getElementById('visitorFormTitle');
@@ -948,11 +1016,25 @@ async function initialize() {
   courseModalClose?.addEventListener('click', closeCourseModal);
   courseModal?.addEventListener('click', (event) => { if (event.target === courseModal) closeCourseModal(); });
   courseModalVoucherApply?.addEventListener('click', () => applyCourseVoucher());
-  courseModalConfirmBtn?.addEventListener('click', () => submitCourseEnrollment());
+  courseModalConfirmBtn?.addEventListener('click', () => startWorkshopEnrollment());
   courseCheckoutOpen?.addEventListener('click', () => {
     if (courseModalContext.checkoutUrl) {
       window.open(courseModalContext.checkoutUrl, '_blank', 'noopener');
     }
+  });
+  workshopCardClose?.addEventListener('click', closeWorkshopCardModal);
+  workshopCardModal?.addEventListener('click', (event) => { if (event.target === workshopCardModal) closeWorkshopCardModal(); });
+  workshopCardConfirm?.addEventListener('click', async () => {
+    const paymentMethodId = getSelectedWorkshopCardId();
+    if (!paymentMethodId) {
+      if (workshopCardError) {
+        workshopCardError.textContent = 'Selecione um cartão para continuar.';
+        workshopCardError.hidden = false;
+      }
+      return;
+    }
+    closeWorkshopCardModal();
+    await submitCourseEnrollment(paymentMethodId);
   });
   emailVerifyClose?.addEventListener('click', hideEmailVerifyModal);
   emailVerifyDismiss?.addEventListener('click', hideEmailVerifyModal);
@@ -1643,17 +1725,20 @@ async function applyCourseVoucher() {
   }
 }
 
-async function submitCourseEnrollment() {
+async function submitCourseEnrollment(paymentMethodId = '') {
   if (!activeClient || !courseModalContext.course) return;
   const course = courseModalContext.course;
   const voucherCode = courseModalContext.voucherData?.code || (courseModalVoucherInput?.value.trim() || '');
+  const price = Number(course.price_per_seat || 0);
   const payload = {
     workshop_id: course.id || courseModalContext.courseId,
     name: activeClient.name || activeClient.login || 'Cliente Ze.EFE',
     email: activeClient.email,
     cpf: activeClient.cpf || '',
     phone: activeClient.phone || activeClient.whatsapp || '',
-    voucher_code: voucherCode || undefined
+    voucher_code: voucherCode || undefined,
+    client_id: activeClient.id || undefined,
+    stripe_payment_method_id: price > 0 ? paymentMethodId : undefined
   };
   if (!payload.email) {
     courseModalStatus.textContent = 'Atualize seu e-mail no perfil antes de se inscrever.';
@@ -1674,7 +1759,7 @@ async function submitCourseEnrollment() {
     if (coursesFeedback) {
       coursesFeedback.textContent = json.payment_status === 'pago'
         ? 'Inscrição confirmada! Seu ingresso está disponível.'
-        : 'Inscrição registrada! Finalize o pagamento para garantir a vaga.';
+        : 'Inscrição registrada! Você será cobrado quando o workshop atingir o mínimo de participantes.';
     }
     if (json.warning) {
       courseModalStatus.textContent = json.warning;
@@ -1694,6 +1779,22 @@ async function submitCourseEnrollment() {
       courseModalConfirmBtn.disabled = false;
       courseModalConfirmBtn.textContent = 'Confirmar inscrição';
     }
+  }
+}
+
+async function startWorkshopEnrollment() {
+  if (!activeClient || !courseModalContext.course) return;
+  const course = courseModalContext.course;
+  const price = Number(course.price_per_seat || 0);
+  if (price <= 0) {
+    await submitCourseEnrollment('');
+    return;
+  }
+  pendingWorkshopEnrollment = { course };
+  const opened = await openWorkshopCardModal(course);
+  if (!opened && workshopCardError && workshopCardError.hidden) {
+    workshopCardError.textContent = 'Selecione um cartão para continuar.';
+    workshopCardError.hidden = false;
   }
 }
 

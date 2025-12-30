@@ -1466,7 +1466,8 @@ input, select {
         { name: 'display_name', label: 'Nome público (anúncio)', span: 2 },
         { name: 'status', label: 'Status', span: 1, type: 'select', options: [ {value:'ativo',label:'Ativo'}, {value:'inativo',label:'Inativo'}, {value:'suspenso',label:'Suspenso'} ], cls:'sm', includeEmpty:false },
         { type: 'break' },
-        { name: 'fee_pct', label: 'Fee (%)', span: 1, cls:'sm' },
+        { name: 'fee_pct_room', label: 'Fee Locação (%)', span: 1, cls:'sm' },
+        { name: 'fee_pct_workshop', label: 'Fee Workshop (%)', span: 1, cls:'sm' },
         { name: 'contact_phone', label: 'Telefone', span: 1, cls:'sm' },
         { type: 'break' },
         { name: 'owner_type', label: 'Tipo de dono', span: 1, type: 'select', options: [ {value:'client',label:'Cliente'}, {value:'company',label:'Empresa'} ], cls:'sm', includeEmpty:false },
@@ -1941,8 +1942,12 @@ input, select {
           codeInput.placeholder = 'Ex.: ZE-' + gerarCodigoVoucher().slice(0,6);
         }
       } else if (sec === 'advertisers') {
-        const feeInput = container.querySelector('input[name="fee_pct"]');
-        if (feeInput && (!feeInput.value || feeInput.value === '0')) feeInput.value = '15.00';
+        const feeRoomInput = container.querySelector('input[name="fee_pct_room"]');
+        const feeWorkshopInput = container.querySelector('input[name="fee_pct_workshop"]');
+        const legacyFeeInput = container.querySelector('input[name="fee_pct"]');
+        const defaultFee = legacyFeeInput?.value || '15.00';
+        if (feeRoomInput && (!feeRoomInput.value || feeRoomInput.value === '0')) feeRoomInput.value = defaultFee;
+        if (feeWorkshopInput && (!feeWorkshopInput.value || feeWorkshopInput.value === '0')) feeWorkshopInput.value = defaultFee;
 
         // Autocomplete de bancos (BACEN) nos campos bank_code/bank_name
         (async () => {

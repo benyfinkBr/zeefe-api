@@ -14,7 +14,8 @@ try {
   }
 
   $stmt = $pdo->prepare('
-    SELECT e.*, w.title, w.date, w.time_start, w.time_end, p.name AS participant_name
+    SELECT e.*, w.title, w.date, w.time_start, w.time_end,
+           p.name AS participant_name, p.cpf AS participant_cpf, p.email AS participant_email, p.phone AS participant_phone
     FROM workshop_enrollments e
     JOIN workshops w ON w.id = e.workshop_id
     JOIN workshop_participants p ON p.id = e.participant_id
@@ -42,6 +43,9 @@ try {
       'already_checked' => true,
       'checked_in_at' => $row['checked_in_at'],
       'participant_name' => $row['participant_name'],
+      'participant_cpf' => $row['participant_cpf'],
+      'participant_email' => $row['participant_email'],
+      'participant_phone' => $row['participant_phone'],
       'workshop_title' => $row['title'],
       'date' => $row['date'],
       'time_start' => $row['time_start'],
@@ -57,6 +61,9 @@ try {
     'success' => true,
     'already_checked' => false,
     'participant_name' => $row['participant_name'],
+    'participant_cpf' => $row['participant_cpf'],
+    'participant_email' => $row['participant_email'],
+    'participant_phone' => $row['participant_phone'],
     'workshop_title' => $row['title'],
     'date' => $row['date'],
     'time_start' => $row['time_start'],
@@ -66,4 +73,3 @@ try {
   http_response_code(500);
   echo json_encode(['success' => false, 'error' => $e->getMessage()]);
 }
-

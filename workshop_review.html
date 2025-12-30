@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Avalie seu workshop — Ze.EFE</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .review-shell{min-height:100vh;background:#F5F0E9;display:flex;align-items:center;justify-content:center;padding:24px}
+    .review-card{background:#fff;border-radius:18px;box-shadow:0 16px 40px rgba(29,65,58,.12);padding:28px 32px;max-width:640px;width:100%}
+    .review-card h1{margin:0 0 8px;color:#1D413A}
+    .review-card p{margin:0 0 16px;color:#8A7766}
+    .rating-row{display:flex;gap:10px;flex-wrap:wrap;margin:8px 0 16px}
+    .rating-pill{border:1px solid #C7D3CE;border-radius:10px;padding:8px 12px;cursor:pointer;display:flex;align-items:center;gap:6px}
+    .rating-pill input{margin:0}
+    .review-grid{display:grid;gap:12px}
+    .review-grid textarea{min-height:90px}
+    .review-actions{display:flex;justify-content:flex-end;margin-top:16px}
+  </style>
+</head>
+<body>
+  <div class="review-shell">
+    <div class="review-card">
+      <h1>Avalie seu workshop</h1>
+      <p>Conte como foi a experiência e nos ajude a melhorar.</p>
+      <form id="workshopReviewForm" class="review-grid">
+        <input type="hidden" id="reviewCode" name="public_code">
+        <div>
+          <strong>Evento</strong>
+          <div class="rating-row">
+            <label class="rating-pill"><input type="radio" name="rating_event" value="1">1</label>
+            <label class="rating-pill"><input type="radio" name="rating_event" value="2">2</label>
+            <label class="rating-pill"><input type="radio" name="rating_event" value="3">3</label>
+            <label class="rating-pill"><input type="radio" name="rating_event" value="4">4</label>
+            <label class="rating-pill"><input type="radio" name="rating_event" value="5">5</label>
+          </div>
+        </div>
+        <div>
+          <strong>Plataforma</strong>
+          <div class="rating-row">
+            <label class="rating-pill"><input type="radio" name="rating_platform" value="1">1</label>
+            <label class="rating-pill"><input type="radio" name="rating_platform" value="2">2</label>
+            <label class="rating-pill"><input type="radio" name="rating_platform" value="3">3</label>
+            <label class="rating-pill"><input type="radio" name="rating_platform" value="4">4</label>
+            <label class="rating-pill"><input type="radio" name="rating_platform" value="5">5</label>
+          </div>
+        </div>
+        <div>
+          <label for="commentsEvent"><strong>Comentário sobre o evento (opcional)</strong></label>
+          <textarea id="commentsEvent" name="comments_event" placeholder="O que mais gostou?"></textarea>
+        </div>
+        <div>
+          <label for="commentsPlatform"><strong>Comentário sobre a plataforma (opcional)</strong></label>
+          <textarea id="commentsPlatform" name="comments_platform" placeholder="O que podemos melhorar?"></textarea>
+        </div>
+        <label class="rating-pill" style="width:max-content;">
+          <input type="checkbox" id="reviewPublic" name="is_public">Permitir divulgar meu feedback
+        </label>
+        <div id="reviewMessage" class="rooms-message"></div>
+        <div class="review-actions">
+          <button type="submit" class="btn btn-primary">Enviar avaliação</button>
+        </div>
+      </form>
+    </div>
+  </div>
+  <script src="scripts/workshop_review.js"></script>
+</body>
+</html>

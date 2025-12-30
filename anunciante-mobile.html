@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="pt-br">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Portal do Anunciante - Mobile</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style-mobile.css">
+  </head>
+  <body class="mobile-portal">
+    <div class="mobile-shell">
+      <header class="mobile-header">
+        <h1>Portal do Anunciante</h1>
+        <button class="btn btn-outline btn-sm" id="mobileLogout" type="button" hidden>Sair</button>
+      </header>
+
+      <section class="mobile-card" id="mobileWelcome" hidden>
+        <p class="mobile-muted" id="mobileWelcomeText">Olá!</p>
+      </section>
+
+      <section class="mobile-actions" id="mobileActions" hidden>
+        <a class="mobile-action-btn" href="anunciante-convidados.html">Gestão de convidados</a>
+        <a class="mobile-action-btn secondary" href="anunciante-checkin.html">Realizar check-in</a>
+      </section>
+
+      <div class="modal-overlay show" id="mobileLoginOverlay" aria-hidden="false">
+        <div class="modal-dialog mobile-login-card" role="dialog" aria-modal="true" aria-labelledby="mobileLoginTitle" style="width:420px;max-width:92vw;">
+          <h2 id="mobileLoginTitle">Login do anunciante</h2>
+          <form id="mobileLoginForm">
+            <label for="mobileLoginId" class="mobile-muted">E-mail ou CPF</label>
+            <input id="mobileLoginId" name="login" type="text" autocomplete="username" required>
+            <label for="mobileLoginPw" class="mobile-muted">Senha</label>
+            <input id="mobileLoginPw" name="password" type="password" autocomplete="current-password" required>
+            <label class="mobile-muted" style="display:flex;gap:8px;align-items:center;margin:8px 0 16px;">
+              <input type="checkbox" id="mobileRemember"> Lembrar login
+            </label>
+            <button type="submit">Entrar</button>
+            <div class="rooms-message" id="mobileLoginError" style="margin-top:12px;"></div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <script src="scripts/anunciante-mobile.js" defer></script>
+  </body>
+</html>

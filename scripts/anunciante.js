@@ -969,7 +969,8 @@ function renderAdvProfileView() {
   if (advProfileEmailView) advProfileEmailView.value = myAdvertiser.email || myAdvertiser.login_email || '';
   if (advProfilePhoneView) advProfilePhoneView.value = myAdvertiser.contact_phone || '';
   if (advProfileFeeView) {
-    const fee = myAdvertiser.fee_pct != null ? Number(myAdvertiser.fee_pct) : 15;
+    const feeRaw = myAdvertiser.fee_pct_room ?? myAdvertiser.fee_pct;
+    const fee = feeRaw != null ? Number(feeRaw) : 15;
     advProfileFeeView.value = `${fee.toFixed(2).replace('.' , ',')} %`;
   }
   if (advProfileViewMsg) advProfileViewMsg.textContent = '';

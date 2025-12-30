@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="pt-br">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Check-in Workshop</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style-mobile.css">
+  </head>
+  <body class="mobile-portal">
+    <div class="mobile-shell">
+      <header class="mobile-header">
+        <button class="btn btn-outline btn-sm" type="button" id="checkinBack">Pagina inicial</button>
+        <h1 style="margin:0;">Check-in</h1>
+        <span></span>
+      </header>
+
+      <section class="mobile-card">
+        <p class="mobile-muted">Aponte a camera para o QR Code do ingresso.</p>
+        <div class="scanner-frame">
+          <video id="scannerVideo" playsinline></video>
+        </div>
+        <div class="mobile-filter" style="margin-top:12px;">
+          <label class="mobile-muted" for="manualCode">Ou digite o codigo</label>
+          <input id="manualCode" type="text" placeholder="Ex: AB12CD34">
+          <button class="btn btn-outline" type="button" id="manualCheckin">Validar codigo</button>
+        </div>
+      </section>
+
+      <section class="mobile-card" id="checkinDetails" hidden>
+        <h2 style="margin:0 0 10px;">Ingresso encontrado</h2>
+        <div class="checkin-card" id="checkinCard"></div>
+        <div class="mobile-inline-actions">
+          <button class="btn-deny" type="button" id="denyCheckin">Negar check-in</button>
+          <button class="btn-confirm" type="button" id="confirmCheckin">Confirmar check-in</button>
+        </div>
+      </section>
+    </div>
+
+    <div class="modal-overlay mobile-result-overlay" id="checkinResultModal" aria-hidden="true">
+      <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="checkinResultTitle" style="width:420px;max-width:92vw;">
+        <button class="modal-close" type="button" id="checkinResultClose" aria-label="Fechar">&times;</button>
+        <h2 id="checkinResultTitle">Resultado</h2>
+        <p id="checkinResultText" class="rooms-message"></p>
+        <button class="btn btn-primary" type="button" id="checkinResultHome">Pagina inicial</button>
+      </div>
+    </div>
+
+    <script src="scripts/anunciante-checkin.js" defer></script>
+  </body>
+</html>

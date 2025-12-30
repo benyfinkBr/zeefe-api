@@ -1,0 +1,200 @@
+/* Mobile-only advertiser workflow helpers */
+.mobile-portal {
+  background: linear-gradient(180deg, #fdfaf6 0%, #f4eee6 100%);
+  min-height: 100vh;
+}
+
+.mobile-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  padding: 16px 16px 32px;
+  gap: 20px;
+}
+
+.mobile-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.mobile-header h1 {
+  font-size: 1.3rem;
+  margin: 0;
+  font-weight: 700;
+}
+
+.mobile-card {
+  background: #fff;
+  border-radius: 18px;
+  padding: 20px;
+  box-shadow: var(--shadow-soft);
+}
+
+.mobile-actions {
+  display: grid;
+  gap: 16px;
+}
+
+.mobile-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px 20px;
+  border-radius: 16px;
+  font-weight: 600;
+  font-size: 1.05rem;
+  border: 2px solid var(--brand-green);
+  background: var(--brand-green);
+  color: #fff;
+  text-align: center;
+  min-height: 64px;
+}
+
+.mobile-action-btn.secondary {
+  background: #fff;
+  color: var(--brand-green);
+}
+
+.mobile-login-card input,
+.mobile-login-card button,
+.mobile-filter input,
+.mobile-filter select,
+.mobile-search input {
+  width: 100%;
+  border-radius: 12px;
+  border: 1px solid #d8d2c8;
+  padding: 12px 14px;
+  font-size: 0.95rem;
+  background: #fcfaf7;
+  color: var(--brand-green);
+}
+
+.mobile-login-card button {
+  background: var(--brand-green);
+  border: none;
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 14px;
+}
+
+.mobile-login-card button:hover {
+  background: var(--brand-dark);
+}
+
+.mobile-muted {
+  color: var(--brand-muted);
+  font-size: 0.92rem;
+}
+
+.guest-list {
+  display: grid;
+  gap: 12px;
+}
+
+.guest-card {
+  border: 1px solid #e5ded4;
+  border-radius: 16px;
+  padding: 14px;
+  background: #fff;
+}
+
+.guest-card h3 {
+  margin: 0 0 6px;
+  font-size: 1rem;
+}
+
+.guest-meta {
+  margin: 4px 0;
+  font-size: 0.9rem;
+  color: var(--brand-muted);
+}
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #f2ede6;
+  font-size: 0.78rem;
+  color: var(--brand-green);
+  font-weight: 600;
+}
+
+.status-pill.success {
+  background: #e5f4ec;
+  color: #19613d;
+}
+
+.status-pill.warn {
+  background: #fff3d9;
+  color: #7a4f00;
+}
+
+.status-pill.danger {
+  background: #fde9e6;
+  color: #9b2d20;
+}
+
+.mobile-filter {
+  display: grid;
+  gap: 10px;
+}
+
+.mobile-inline-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.mobile-inline-actions button {
+  flex: 1;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-confirm {
+  background: var(--brand-green);
+  color: #fff;
+}
+
+.btn-deny {
+  background: #d74f3d;
+  color: #fff;
+}
+
+.scanner-frame {
+  background: #000;
+  border-radius: 18px;
+  overflow: hidden;
+  min-height: 240px;
+}
+
+.scanner-frame video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.checkin-card {
+  border: 1px solid #e5ded4;
+  border-radius: 16px;
+  padding: 16px;
+  background: #fff;
+  display: grid;
+  gap: 6px;
+}
+
+.checkin-card strong {
+  font-size: 1.05rem;
+}
+
+.mobile-result-overlay .modal-dialog {
+  max-width: 92vw;
+}

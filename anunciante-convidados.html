@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="pt-br">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Gestão de Convidados</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style-mobile.css">
+  </head>
+  <body class="mobile-portal">
+    <div class="mobile-shell">
+      <header class="mobile-header">
+        <button class="btn btn-outline btn-sm" type="button" id="backToHome">Pagina inicial</button>
+        <h1 style="margin:0;">Convidados</h1>
+        <span></span>
+      </header>
+
+      <section class="mobile-card mobile-filter">
+        <label class="mobile-muted" for="workshopSelect">Workshop</label>
+        <select id="workshopSelect"></select>
+
+        <div class="mobile-search">
+          <label class="mobile-muted" for="guestSearch">Buscar por nome</label>
+          <input id="guestSearch" type="search" placeholder="Digite um nome">
+        </div>
+
+        <label class="mobile-muted" for="checkinFilter">Filtro de check-in</label>
+        <select id="checkinFilter">
+          <option value="all">Todos</option>
+          <option value="nao_lido">Nao realizado</option>
+          <option value="lido">Realizado</option>
+          <option value="cancelado">Negado</option>
+        </select>
+
+        <label class="mobile-muted" for="paymentFilter">Filtro de pagamento</label>
+        <select id="paymentFilter">
+          <option value="all">Todos</option>
+          <option value="pendente">Pagamento pendente</option>
+          <option value="pago">Pagamento realizado</option>
+          <option value="cancelado">Pagamento cancelado</option>
+        </select>
+      </section>
+
+      <section class="mobile-card">
+        <div class="mobile-inline-actions" style="margin:0 0 8px;">
+          <button class="btn btn-outline btn-sm" type="button" id="refreshGuests">Atualizar lista</button>
+          <button class="btn btn-outline btn-sm" type="button" id="cancelWorkshop">Cancelar workshop</button>
+        </div>
+        <div id="guestMessage" class="rooms-message">Carregando convidados...</div>
+        <div id="guestList" class="guest-list"></div>
+      </section>
+    </div>
+
+    <div class="modal-overlay" id="guestResultModal" aria-hidden="true">
+      <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="guestResultTitle" style="width:420px;max-width:92vw;">
+        <button class="modal-close" type="button" id="guestResultClose" aria-label="Fechar">&times;</button>
+        <h2 id="guestResultTitle">Atualizacao</h2>
+        <p id="guestResultText" class="rooms-message"></p>
+        <button class="btn btn-primary" type="button" id="guestResultOk">Ok</button>
+      </div>
+    </div>
+
+    <script src="scripts/anunciante-convidados.js" defer></script>
+  </body>
+</html>
