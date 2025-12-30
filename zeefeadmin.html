@@ -519,16 +519,22 @@ input, select {
     async function loadBanksCSV() {
       if (cachedBanks) return cachedBanks;
       try {
+        const res = await fetch('/data/banks_bacen.json', { cache: 'no-store' });
+        const data = await res.json();
+        if (Array.isArray(data) && data.length) {
+          cachedBanks = data;
+          return cachedBanks;
+        }
+      } catch (_) {}
+      try {
         const res = await fetch('img/Bancos.csv', { cache: 'no-store' });
         const text = await res.text();
         const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
         if (!lines.length) { cachedBanks = []; return cachedBanks; }
-        // Detect delimiter ; or ,
         const delim = (lines[0].includes(';') ? ';' : ',');
         const rows = lines.map(l => l.split(delim).map(s => s.trim()));
-        // Try to detect header
         let start = 0;
-        if (/cod|código|codigo|code/i.test(rows[0][0])) start = 1;
+        if (/cod|c(ó|o)digo|code/i.test(rows[0][0])) start = 1;
         cachedBanks = rows.slice(start).map(cols => ({ code: (cols[0]||'').replace(/\D/g,''), name: cols[1]||'' }))
           .filter(b => b.code && b.name);
       } catch (_) { cachedBanks = []; }
@@ -1938,7 +1944,7 @@ input, select {
         const feeInput = container.querySelector('input[name="fee_pct"]');
         if (feeInput && (!feeInput.value || feeInput.value === '0')) feeInput.value = '15.00';
 
-        // Conectar seleção de bancos (CSV) aos campos bank_code/bank_name
+        // Autocomplete de bancos (BACEN) nos campos bank_code/bank_name
         (async () => {
           const banks = await loadBanksCSV();
           const codeInput = container.querySelector('input[name="bank_code"]');
@@ -1949,33 +1955,43 @@ input, select {
           const label = wrap && wrap.querySelector('label');
           if (label) label.textContent = 'Banco';
 
-          const sel = document.createElement('select');
-          sel.className = 'form-select';
-          sel.style.marginTop = '4px';
-          const optEmpty = document.createElement('option');
-          optEmpty.value = '';
-          optEmpty.textContent = '-- Selecione --';
-          sel.appendChild(optEmpty);
+          const codeListId = 'adminBankCodeList';
+          const nameListId = 'adminBankNameList';
+          codeInput.setAttribute('list', codeListId);
+          nameInput.setAttribute('list', nameListId);
+
+          const codeList = document.createElement('datalist');
+          codeList.id = codeListId;
+          const nameList = document.createElement('datalist');
+          nameList.id = nameListId;
+
           banks.forEach(b => {
-            const o = document.createElement('option');
-            o.value = b.code;
-            o.textContent = `${b.code} - ${b.name}`;
-            sel.appendChild(o);
-          });
-          // Preselect
-          const currentCode = (codeInput.value || '').trim();
-          if (currentCode) sel.value = currentCode;
-          // Keep inputs as real fields to save; make them readonly to avoid conflito
-          codeInput.readOnly = true; nameInput.readOnly = true;
-
-          sel.addEventListener('change', () => {
-            const code = sel.value;
-            const found = banks.find(b => b.code === code);
-            codeInput.value = found ? found.code : '';
-            nameInput.value = found ? found.name : '';
+            if (!b.code || !b.name) return;
+            const codeOpt = document.createElement('option');
+            codeOpt.value = b.code;
+            codeOpt.label = b.name;
+            codeList.appendChild(codeOpt);
+            const nameOpt = document.createElement('option');
+            nameOpt.value = b.name;
+            nameList.appendChild(nameOpt);
           });
 
-          wrap.appendChild(sel);
+          wrap.appendChild(codeList);
+          wrap.appendChild(nameList);
+
+          const bankNameByCode = new Map(banks.map(b => [String(b.code), b.name]));
+          const normalizeKey = (value) => (value || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+          const bankCodeByName = new Map(banks.map(b => [normalizeKey(b.name), String(b.code)]));
+
+          codeInput.addEventListener('input', () => {
+            const code = codeInput.value.trim();
+            const name = bankNameByCode.get(code);
+            if (name) nameInput.value = name;
+          });
+          nameInput.addEventListener('input', () => {
+            const code = bankCodeByName.get(normalizeKey(nameInput.value));
+            if (code) codeInput.value = code;
+          });
         })();
       }
 
