@@ -2,6 +2,7 @@
 require_once __DIR__ . '/../apiconfig.php';
 require_once __DIR__ . '/../lib/stripe_helpers.php';
 require_once __DIR__ . '/../lib/reservations.php';
+require_once __DIR__ . '/../lib/ledger.php';
 
 // Captura pagamentos pendentes de reservas quando a data da política foi atingida.
 // Use via cron (ex: a cada hora).
@@ -90,6 +91,11 @@ try {
         ':paid_at' => $paidAt ?? date('Y-m-d H:i:s'),
         ':id' => $reservationId
       ]);
+      try {
+        ledger_insert_reservation_credit($pdo, $reservation, $paidAt ?? date('Y-m-d H:i:s'), $chargeId ?: $intentId);
+      } catch (Throwable $e) {
+        // Ignora falha no ledger para não interromper o fluxo de pagamento
+      }
 
       $pdo->commit();
       $captured++;

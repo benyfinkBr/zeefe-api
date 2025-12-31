@@ -4,6 +4,7 @@ require_once __DIR__ . '/lib/mailer.php';
 require_once __DIR__ . '/lib/reservations.php';
 require_once __DIR__ . '/lib/reservation_email_helpers.php';
 require_once __DIR__ . '/lib/stripe_helpers.php';
+require_once __DIR__ . '/lib/ledger.php';
 
 $data = getJsonInput();
 $reservationId = isset($data['id']) ? (int)$data['id'] : 0;
@@ -421,6 +422,11 @@ function persistStripePaymentAttempt(PDO $pdo, array $reservation, array $data, 
         ':paid_at' => $paidAt,
         ':id' => $reservation['id']
       ]);
+      try {
+        ledger_insert_reservation_credit($pdo, $reservation, $paidAt, $data['charge_id'] ?? ($data['payment_intent_id'] ?? null));
+      } catch (Throwable $e) {
+        // Ignora falha no ledger para não interromper o fluxo de pagamento
+      }
     } else {
       $stmt = $pdo->prepare('UPDATE reservations SET stripe_payment_intent_id = :pi, stripe_charge_id = :charge, payment_status = "pendente", updated_at = NOW() WHERE id = :id');
       $stmt->execute([
@@ -508,6 +514,11 @@ function persistStripeCaptureFee(PDO $pdo, array $reservation, array $data): voi
       ':paid_at' => $paidAt,
       ':id' => $reservation['id']
     ]);
+    try {
+      ledger_insert_reservation_credit($pdo, $reservation, $paidAt, $data['charge_id'] ?? ($data['payment_intent_id'] ?? null));
+    } catch (Throwable $e) {
+      // Ignora falha no ledger para não interromper o fluxo de pagamento
+    }
 
     $pdo->commit();
   } catch (Throwable $e) {

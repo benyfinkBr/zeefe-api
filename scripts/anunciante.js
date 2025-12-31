@@ -1248,6 +1248,20 @@ function renderAdvReservations() {
 // Finance helpers
 function parseDateOnly(s) { if (!s) return null; const d = new Date(s.replace(' ','T')); return isNaN(d) ? null : d; }
 function formatMoney(n){ return 'R$ ' + Number(n||0).toFixed(2); }
+function formatAvailableCell(entry) {
+  if (!entry) return '';
+  const dateValue = entry.available_at || '';
+  if (!dateValue) return '';
+  const base = parseDateOnly(dateValue);
+  if (!base) return dateValue;
+  const status = String(entry.status || '').toLowerCase();
+  if (status !== 'pendente') return dateValue;
+  const now = new Date();
+  const diffMs = base.getTime() - now.getTime();
+  if (diffMs <= 0) return dateValue;
+  const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+  return `${dateValue} (em ${diffDays}d)`;
+}
 function exportCSV(rows){
   const header = ['#','Tipo','Origem','Valor','Status','Disponível em','Criado em'];
   const data = rows.map(l => [
@@ -1319,13 +1333,22 @@ async function loadFinance() {
           if (workshopTotals.hasOwnProperty(st)) {
             workshopTotals[st] += Number(r.amount_due || 0);
           }
+          const paidAt = r.paid_at || '';
+          let availableAt = '';
+          const paidDate = parseDateOnly(paidAt);
+          if (paidDate) {
+            const next = new Date(paidDate.getTime());
+            next.setDate(next.getDate() + 30);
+            availableAt = next.toISOString().slice(0, 19).replace('T', ' ');
+          }
+          const payoutStatus = st === 'pago' ? 'pendente' : st;
           workshopEntries.push({
             id: `W-${r.id}`,
             type: 'evento',
             origin: `Workshop: ${r.workshop_title || 'Evento'}`,
             amount: Number(r.amount_due || 0),
-            status: r.payment_status || '',
-            available_at: r.paid_at || r.created_at || '',
+            status: payoutStatus || '',
+            available_at: availableAt || '',
             created_at: r.created_at || ''
           });
         });
@@ -1357,7 +1380,7 @@ async function loadFinance() {
         <td>${escapeHtml(l.origin || '')}</td>
         <td>${formatMoney(l.amount)}</td>
         <td>${escapeHtml(l.status)}</td>
-        <td>${escapeHtml(l.available_at || '')}</td>
+        <td>${escapeHtml(formatAvailableCell(l))}</td>
       </tr>
     `).join('');
 

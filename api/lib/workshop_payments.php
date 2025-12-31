@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/stripe_helpers.php';
 require_once __DIR__ . '/mailer.php';
+require_once __DIR__ . '/ledger.php';
 
 function workshop_build_checkin_url(string $publicCode): string {
   $host = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? '');
@@ -61,6 +62,18 @@ function workshop_charge_pending(PDO $pdo, int $workshopId): array {
   $stmtW->execute([$workshopId]);
   $workshop = $stmtW->fetch(PDO::FETCH_ASSOC) ?: null;
   if (!$workshop) return ['attempted' => 0, 'paid' => 0, 'failed' => 0];
+  $feePct = 0.0;
+  try {
+    $stmtFee = $pdo->prepare('SELECT fee_pct_workshop, fee_pct FROM advertisers WHERE id = ? LIMIT 1');
+    $stmtFee->execute([(int)$workshop['advertiser_id']]);
+    $feeRow = $stmtFee->fetch(PDO::FETCH_ASSOC) ?: [];
+    $feePct = (float)($feeRow['fee_pct_workshop'] ?? 0.0);
+    if ($feePct <= 0) {
+      $feePct = (float)($feeRow['fee_pct'] ?? 0.0);
+    }
+  } catch (Throwable $e) {
+    $feePct = 0.0;
+  }
 
   $stmt = $pdo->prepare('
     SELECT e.*, p.name AS participant_name, p.email AS participant_email, p.cpf AS participant_cpf, p.phone AS participant_phone
@@ -95,6 +108,11 @@ function workshop_charge_pending(PDO $pdo, int $workshopId): array {
         $upd = $pdo->prepare('UPDATE workshop_enrollments SET payment_status = "pago", paid_at = NOW(), stripe_customer_id = :cid WHERE id = :id');
         $upd->execute([':cid' => $customerId, ':id' => $row['id']]);
         $paid++;
+        try {
+          ledger_insert_workshop_credit($pdo, $workshop, $row, $feePct, date('Y-m-d H:i:s'));
+        } catch (Throwable $e) {
+          // Ignora falha no ledger
+        }
         workshop_send_ticket_email(
           ['name' => $row['participant_name'], 'email' => $row['participant_email']],
           $workshop,
@@ -135,6 +153,11 @@ function workshop_charge_pending(PDO $pdo, int $workshopId): array {
         ':id' => $row['id']
       ]);
       $paid++;
+      try {
+        ledger_insert_workshop_credit($pdo, $workshop, $row, $feePct, date('Y-m-d H:i:s'));
+      } catch (Throwable $e) {
+        // Ignora falha no ledger
+      }
       workshop_send_ticket_email(
         ['name' => $row['participant_name'], 'email' => $row['participant_email']],
         $workshop,
