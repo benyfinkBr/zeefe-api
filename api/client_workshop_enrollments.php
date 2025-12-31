@@ -40,16 +40,27 @@ try {
 
   $conditionsSql = implode(' OR ', array_map(fn($cond) => '(' . $cond . ')', $matchers));
 
-$hasEndDate = false;
-try {
-  $colStmt = $pdo->query("SHOW COLUMNS FROM workshops LIKE 'end_date'");
-  $hasEndDate = (bool) $colStmt->fetch();
-} catch (Throwable $e) {
-  $hasEndDate = false;
+$optionalCols = [
+  'end_date' => 'workshop_end_date',
+  'min_seats' => 'min_seats',
+  'max_seats' => 'max_seats',
+  'show_sold_bar' => 'show_sold_bar'
+];
+$colSelects = [];
+foreach ($optionalCols as $colName => $alias) {
+  $hasCol = false;
+  try {
+    $colStmt = $pdo->query("SHOW COLUMNS FROM workshops LIKE " . $pdo->quote($colName));
+    $hasCol = (bool) $colStmt->fetch();
+  } catch (Throwable $e) {
+    $hasCol = false;
+  }
+  if ($colName === 'end_date') {
+    $colSelects[$alias] = $hasCol ? "w.end_date     AS {$alias}," : "NULL           AS {$alias},";
+  } else {
+    $colSelects[$alias] = $hasCol ? "w.{$colName}   AS {$alias}," : "NULL           AS {$alias},";
+  }
 }
-$endDateSelect = $hasEndDate
-  ? 'w.end_date     AS workshop_end_date,'
-  : 'NULL           AS workshop_end_date,';
 
 $sql = "
     SELECT
@@ -57,14 +68,14 @@ $sql = "
       w.title        AS workshop_title,
       w.subtitle     AS workshop_subtitle,
       w.date         AS workshop_date,
-      {$endDateSelect}
+      {$colSelects['workshop_end_date']}
       w.time_start   AS workshop_time_start,
       w.time_end     AS workshop_time_end,
       w.price_per_seat,
-      w.min_seats,
-      w.max_seats,
+      {$colSelects['min_seats']}
+      {$colSelects['max_seats']}
       w.banner_path,
-      w.show_sold_bar,
+      {$colSelects['show_sold_bar']}
       r.name         AS room_name,
       r.city         AS room_city,
       r.state        AS room_state,
