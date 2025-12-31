@@ -8,6 +8,8 @@ const denyBtn = document.getElementById('denyCheckin');
 const manualCode = document.getElementById('manualCode');
 const manualBtn = document.getElementById('manualCheckin');
 const backBtn = document.getElementById('checkinBack');
+const startCameraBtn = document.getElementById('startCamera');
+const cameraStatus = document.getElementById('cameraStatus');
 
 const resultModal = document.getElementById('checkinResultModal');
 const resultText = document.getElementById('checkinResultText');
@@ -17,6 +19,7 @@ const resultHome = document.getElementById('checkinResultHome');
 let currentEnrollment = null;
 let scanTimer = null;
 let streamRef = null;
+let cameraStarted = false;
 
 function showResult(message) {
   if (resultText) resultText.textContent = message;
@@ -38,6 +41,7 @@ function stopScanner() {
     streamRef.getTracks().forEach(track => track.stop());
     streamRef = null;
   }
+  cameraStarted = false;
 }
 
 function parseCode(raw) {
@@ -107,29 +111,42 @@ async function startScanner() {
     showResult('Seu navegador nao suporta camera.');
     return;
   }
-  if (!('BarcodeDetector' in window)) {
-    showResult('Leitura de QR Code nao suportada. Digite o codigo manualmente.');
-    return;
-  }
   try {
+    if (cameraStatus) cameraStatus.textContent = 'Solicitando permissao da camera...';
     streamRef = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
     videoEl.srcObject = streamRef;
     await videoEl.play();
+    cameraStarted = true;
+    if (!('BarcodeDetector' in window)) {
+      if (cameraStatus) cameraStatus.textContent = 'Camera ativada. Leitura de QR Code nao suportada neste navegador.';
+      stopScanner();
+      return;
+    }
+    if (cameraStatus) cameraStatus.textContent = 'Camera ativada. Aguardando QR Code...';
     const detector = new BarcodeDetector({ formats: ['qr_code'] });
     scanTimer = setInterval(async () => {
       if (videoEl.readyState < 2) return;
       const codes = await detector.detect(videoEl);
       if (codes && codes.length) {
         stopScanner();
+        if (cameraStatus) cameraStatus.textContent = 'QR Code lido. Validando ingresso...';
         await lookupEnrollment(codes[0].rawValue);
       }
     }, 600);
   } catch (err) {
+    if (cameraStatus) cameraStatus.textContent = 'Permissao de camera negada ou indisponivel.';
     showResult('Nao foi possivel acessar a camera.');
   }
 }
 
 manualBtn?.addEventListener('click', () => lookupEnrollment(manualCode?.value || ''));
+startCameraBtn?.addEventListener('click', async () => {
+  if (cameraStarted) {
+    if (cameraStatus) cameraStatus.textContent = 'Camera ja ativada.';
+    return;
+  }
+  await startScanner();
+});
 confirmBtn?.addEventListener('click', () => updateCheckin('confirm'));
 denyBtn?.addEventListener('click', () => updateCheckin('deny'));
 resultClose?.addEventListener('click', closeResult);
@@ -142,7 +159,7 @@ async function loadSession() {
     const res = await fetch(`${API_BASE}/advertiser_session.php`, { credentials: 'include' });
     const json = await res.json();
     if (json.success && json.advertiser) {
-      await startScanner();
+      if (cameraStatus) cameraStatus.textContent = 'Toque em "Ativar camera" para iniciar.';
       return;
     }
   } catch (err) {
