@@ -1701,6 +1701,22 @@ async function loadWorkshops() {
         btn.addEventListener('click', () => sendWorkshopManageLink(id));
       }
     });
+    if (!workshopsContainer.dataset.bound) {
+      workshopsContainer.addEventListener('click', (event) => {
+        const btn = event.target.closest('button[data-ws][data-act]');
+        if (!btn) return;
+        const id = btn.getAttribute('data-ws');
+        const act = btn.getAttribute('data-act');
+        if (act === 'edit') {
+          openWorkshopModal(id);
+        } else if (act === 'enrollments') {
+          loadWorkshopEnrollments(id);
+        } else if (act === 'send-link') {
+          sendWorkshopManageLink(id);
+        }
+      });
+      workshopsContainer.dataset.bound = 'true';
+    }
   } catch (e) {
     workshopsContainer.innerHTML = '<div class="rooms-message">Falha ao carregar workshops.</div>';
   }

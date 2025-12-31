@@ -117,13 +117,13 @@ async function updateCheckin(action) {
 async function startScanner() {
   if (!videoEl) return;
   if (!supportsMediaDevices) {
-    if (cameraStatus) cameraStatus.textContent = 'Este navegador nao suporta camera.';
-    showResult('Seu navegador nao suporta camera.');
+    if (cameraStatus) cameraStatus.textContent = 'Erro: mediaDevices indisponivel.';
+    showResult('Erro: mediaDevices indisponivel. O navegador pode estar bloqueando camera.');
     return;
   }
   if (!window.isSecureContext) {
-    if (cameraStatus) cameraStatus.textContent = 'A camera precisa de HTTPS para funcionar.';
-    showResult('A camera precisa de HTTPS para funcionar.');
+    if (cameraStatus) cameraStatus.textContent = 'Erro: ambiente sem HTTPS.';
+    showResult('Erro: a camera exige HTTPS. Abra o link seguro.');
     return;
   }
   try {
@@ -141,7 +141,7 @@ async function startScanner() {
       if (isSafari) browserHint = 'Safari';
       if (isChrome) browserHint = 'Chrome';
       if (isEdge) browserHint = 'Edge';
-      if (cameraStatus) cameraStatus.textContent = `${browserHint} nao suporta leitura automatica. Use o codigo manual.`;
+      if (cameraStatus) cameraStatus.textContent = `${browserHint} sem BarcodeDetector. Use o codigo manual ou foto.`;
       return;
     }
     if (cameraStatus) cameraStatus.textContent = 'Camera ativada. Aguardando QR Code...';
@@ -156,15 +156,17 @@ async function startScanner() {
       }
     }, 600);
   } catch (err) {
-    if (cameraStatus) cameraStatus.textContent = 'Permissao de camera negada ou indisponivel.';
-    showResult('Nao foi possivel acessar a camera.');
+    const errName = err?.name || 'Erro';
+    const errMsg = err?.message || 'Falha ao abrir camera.';
+    if (cameraStatus) cameraStatus.textContent = `Erro: ${errName}`;
+    showResult(`Erro ao acessar camera: ${errName} - ${errMsg}`);
   }
 }
 
 async function decodeImageFile(file) {
   if (!file) return;
   if (!supportsBarcodeDetector) {
-    showResult('Leitura de QR Code nao suportada. Digite o codigo manualmente.');
+    showResult('Erro: BarcodeDetector indisponivel. Digite o codigo manualmente.');
     return;
   }
   try {
@@ -179,10 +181,12 @@ async function decodeImageFile(file) {
     if (codes && codes.length) {
       await lookupEnrollment(codes[0].rawValue);
     } else {
-      showResult('QR Code nao identificado. Tente novamente ou digite o codigo.');
+      showResult('Erro: QR Code nao identificado. Tente novamente ou digite o codigo.');
     }
   } catch (err) {
-    showResult('Nao foi possivel ler o QR Code da imagem.');
+    const errName = err?.name || 'Erro';
+    const errMsg = err?.message || 'Falha ao ler a imagem.';
+    showResult(`Erro ao ler imagem: ${errName} - ${errMsg}`);
   } finally {
     cameraFileInput.value = '';
   }
@@ -215,13 +219,13 @@ async function loadSession() {
       if (cameraStatus) {
         if (!supportsBarcodeDetector) {
           if (isSafari) {
-            cameraStatus.textContent = 'Safari: toque em "Permitir camera" e use o codigo manual.';
+            cameraStatus.textContent = 'Safari: toque em "Permitir camera". Se nao abrir, use codigo manual ou foto.';
           } else if (isChrome) {
-            cameraStatus.textContent = 'Chrome: toque em "Permitir camera" e use o codigo manual.';
+            cameraStatus.textContent = 'Chrome: toque em "Permitir camera". Se nao abrir, use codigo manual ou foto.';
           } else if (isEdge) {
-            cameraStatus.textContent = 'Edge: toque em "Permitir camera" e use o codigo manual.';
+            cameraStatus.textContent = 'Edge: toque em "Permitir camera". Se nao abrir, use codigo manual ou foto.';
           } else {
-            cameraStatus.textContent = 'Toque em "Permitir camera" e use o codigo manual.';
+            cameraStatus.textContent = 'Toque em "Permitir camera". Se nao abrir, use codigo manual ou foto.';
           }
         } else {
           cameraStatus.textContent = 'Toque em "Ativar camera" para iniciar.';
