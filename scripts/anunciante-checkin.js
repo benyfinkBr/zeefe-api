@@ -20,6 +20,13 @@ let currentEnrollment = null;
 let scanTimer = null;
 let streamRef = null;
 let cameraStarted = false;
+const ua = navigator.userAgent || '';
+const isIOS = /iPad|iPhone|iPod/i.test(ua);
+const isEdge = /Edg/i.test(ua);
+const isChrome = /Chrome|CriOS/i.test(ua) && !isEdge;
+const isSafari = /Safari/i.test(ua) && !/Chrome|CriOS|Edg/i.test(ua);
+const supportsBarcodeDetector = 'BarcodeDetector' in window;
+const supportsMediaDevices = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
 
 function showResult(message) {
   if (resultText) resultText.textContent = message;
@@ -107,19 +114,29 @@ async function updateCheckin(action) {
 
 async function startScanner() {
   if (!videoEl) return;
-  if (!('mediaDevices' in navigator)) {
+  if (!supportsMediaDevices) {
+    if (cameraStatus) cameraStatus.textContent = 'Este navegador nao suporta camera.';
     showResult('Seu navegador nao suporta camera.');
+    return;
+  }
+  if (!window.isSecureContext) {
+    if (cameraStatus) cameraStatus.textContent = 'A camera precisa de HTTPS para funcionar.';
+    showResult('A camera precisa de HTTPS para funcionar.');
     return;
   }
   try {
     if (cameraStatus) cameraStatus.textContent = 'Solicitando permissao da camera...';
     streamRef = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
     videoEl.srcObject = streamRef;
+    videoEl.muted = true;
     await videoEl.play();
     cameraStarted = true;
-    if (!('BarcodeDetector' in window)) {
-      if (cameraStatus) cameraStatus.textContent = 'Camera ativada. Leitura de QR Code nao suportada neste navegador.';
-      stopScanner();
+    if (!supportsBarcodeDetector) {
+      let browserHint = 'Este navegador';
+      if (isSafari) browserHint = 'Safari';
+      if (isChrome) browserHint = 'Chrome';
+      if (isEdge) browserHint = 'Edge';
+      if (cameraStatus) cameraStatus.textContent = `${browserHint} nao suporta leitura automatica. Use o codigo manual.`;
       return;
     }
     if (cameraStatus) cameraStatus.textContent = 'Camera ativada. Aguardando QR Code...';
@@ -159,7 +176,24 @@ async function loadSession() {
     const res = await fetch(`${API_BASE}/advertiser_session.php`, { credentials: 'include' });
     const json = await res.json();
     if (json.success && json.advertiser) {
-      if (cameraStatus) cameraStatus.textContent = 'Toque em "Ativar camera" para iniciar.';
+      if (cameraStatus) {
+        if (!supportsBarcodeDetector) {
+          if (isSafari) {
+            cameraStatus.textContent = 'Safari: toque em "Permitir camera" e use o codigo manual.';
+          } else if (isChrome) {
+            cameraStatus.textContent = 'Chrome: toque em "Permitir camera" e use o codigo manual.';
+          } else if (isEdge) {
+            cameraStatus.textContent = 'Edge: toque em "Permitir camera" e use o codigo manual.';
+          } else {
+            cameraStatus.textContent = 'Toque em "Permitir camera" e use o codigo manual.';
+          }
+        } else {
+          cameraStatus.textContent = 'Toque em "Ativar camera" para iniciar.';
+        }
+      }
+      if (startCameraBtn) {
+        startCameraBtn.textContent = supportsBarcodeDetector ? 'Ativar camera' : 'Permitir camera';
+      }
       return;
     }
   } catch (err) {

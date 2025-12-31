@@ -10,6 +10,17 @@ const actionsSection = document.getElementById('mobileActions');
 const welcomeCard = document.getElementById('mobileWelcome');
 const welcomeText = document.getElementById('mobileWelcomeText');
 const logoutBtn = document.getElementById('mobileLogout');
+const urlParams = new URLSearchParams(window.location.search);
+const redirectTarget = urlParams.get('redirect');
+const redirectWorkshopId = urlParams.get('workshop_id');
+
+function maybeRedirectAfterLogin() {
+  if (redirectTarget === 'convidados' && redirectWorkshopId) {
+    window.location.href = `anunciante-convidados.html?workshop_id=${encodeURIComponent(redirectWorkshopId)}`;
+    return true;
+  }
+  return false;
+}
 
 function showLogin() {
   loginOverlay?.classList.add('show');
@@ -20,6 +31,7 @@ function showLogin() {
 }
 
 function showLoggedIn(adv) {
+  if (maybeRedirectAfterLogin()) return;
   loginOverlay?.classList.remove('show');
   loginOverlay?.setAttribute('aria-hidden', 'true');
   actionsSection?.removeAttribute('hidden');

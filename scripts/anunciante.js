@@ -1609,6 +1609,7 @@ async function loadWorkshops() {
           <td>
             <button class="btn btn-secondary btn-sm" data-ws="${w.id}" data-act="edit">Editar</button>
             <button class="btn btn-secondary btn-sm" data-ws="${w.id}" data-act="enrollments">Ver inscritos</button>
+            <button class="btn btn-secondary btn-sm" data-ws="${w.id}" data-act="send-link">Enviar link</button>
           </td>
         </tr>
       `;
@@ -1636,10 +1637,28 @@ async function loadWorkshops() {
         btn.addEventListener('click', () => openWorkshopModal(id));
       } else if (act === 'enrollments') {
         btn.addEventListener('click', () => loadWorkshopEnrollments(id));
+      } else if (act === 'send-link') {
+        btn.addEventListener('click', () => sendWorkshopManageLink(id));
       }
     });
   } catch (e) {
     workshopsContainer.innerHTML = '<div class="rooms-message">Falha ao carregar workshops.</div>';
+  }
+}
+
+async function sendWorkshopManageLink(workshopId) {
+  try {
+    const res = await fetch(`${API_BASE}/workshop_send_manage_link.php`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ workshop_id: Number(workshopId) })
+    });
+    const json = await parseJsonSafe(res);
+    if (!json.success) throw new Error(json.error || 'Nao foi possivel enviar o link.');
+    alert(`Link enviado para ${json.email || 'o e-mail do anunciante'}.`);
+  } catch (err) {
+    alert(err.message || 'Erro ao enviar link.');
   }
 }
 
