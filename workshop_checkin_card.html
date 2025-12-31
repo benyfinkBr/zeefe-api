@@ -22,7 +22,10 @@
       <section class="mobile-card" id="cardDetails" hidden>
         <h2 style="margin:0 0 10px;">Carteirinha do participante</h2>
         <div class="checkin-card" id="cardInfo"></div>
-        <p class="mobile-muted" style="margin-top:12px;">Valide o documento com foto antes de confirmar.</p>
+        <div style="margin-top:12px;display:flex;align-items:center;gap:8px;">
+          <input type="checkbox" id="docVerified" />
+          <label for="docVerified" class="mobile-muted">Documento verificado ✅</label>
+        </div>
         <div class="mobile-inline-actions">
           <button class="btn-deny" type="button" id="cardDeny">Negar participacao</button>
           <button class="btn-confirm" type="button" id="cardConfirm">Confirmar participacao</button>
