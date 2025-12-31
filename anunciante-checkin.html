@@ -22,6 +22,10 @@
           <video id="scannerVideo" playsinline muted></video>
         </div>
         <button class="btn btn-primary" type="button" id="startCamera" style="margin-top:12px;">Ativar camera</button>
+        <label class="btn btn-outline" for="cameraFile" style="margin-top:8px;display:inline-flex;justify-content:center;align-items:center;">
+          Abrir camera (foto)
+        </label>
+        <input id="cameraFile" type="file" accept="image/*" capture="environment" style="display:none;">
         <div class="mobile-filter" style="margin-top:12px;">
           <label class="mobile-muted" for="manualCode">Ou digite o codigo</label>
           <input id="manualCode" type="text" placeholder="Ex: AB12CD34">

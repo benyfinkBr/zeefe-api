@@ -10,6 +10,7 @@ const manualBtn = document.getElementById('manualCheckin');
 const backBtn = document.getElementById('checkinBack');
 const startCameraBtn = document.getElementById('startCamera');
 const cameraStatus = document.getElementById('cameraStatus');
+const cameraFileInput = document.getElementById('cameraFile');
 
 const resultModal = document.getElementById('checkinResultModal');
 const resultText = document.getElementById('checkinResultText');
@@ -27,6 +28,7 @@ const isChrome = /Chrome|CriOS/i.test(ua) && !isEdge;
 const isSafari = /Safari/i.test(ua) && !/Chrome|CriOS|Edg/i.test(ua);
 const supportsBarcodeDetector = 'BarcodeDetector' in window;
 const supportsMediaDevices = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
+const isInApp = /FBAN|FBAV|Instagram|WhatsApp/i.test(ua);
 
 function showResult(message) {
   if (resultText) resultText.textContent = message;
@@ -126,7 +128,10 @@ async function startScanner() {
   }
   try {
     if (cameraStatus) cameraStatus.textContent = 'Solicitando permissao da camera...';
-    streamRef = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
+    streamRef = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: 'environment' } },
+      audio: false
+    });
     videoEl.srcObject = streamRef;
     videoEl.muted = true;
     await videoEl.play();
@@ -156,6 +161,33 @@ async function startScanner() {
   }
 }
 
+async function decodeImageFile(file) {
+  if (!file) return;
+  if (!supportsBarcodeDetector) {
+    showResult('Leitura de QR Code nao suportada. Digite o codigo manualmente.');
+    return;
+  }
+  try {
+    const img = new Image();
+    img.src = URL.createObjectURL(file);
+    await new Promise((resolve, reject) => {
+      img.onload = resolve;
+      img.onerror = reject;
+    });
+    const detector = new BarcodeDetector({ formats: ['qr_code'] });
+    const codes = await detector.detect(img);
+    if (codes && codes.length) {
+      await lookupEnrollment(codes[0].rawValue);
+    } else {
+      showResult('QR Code nao identificado. Tente novamente ou digite o codigo.');
+    }
+  } catch (err) {
+    showResult('Nao foi possivel ler o QR Code da imagem.');
+  } finally {
+    cameraFileInput.value = '';
+  }
+}
+
 manualBtn?.addEventListener('click', () => lookupEnrollment(manualCode?.value || ''));
 startCameraBtn?.addEventListener('click', async () => {
   if (cameraStarted) {
@@ -163,6 +195,10 @@ startCameraBtn?.addEventListener('click', async () => {
     return;
   }
   await startScanner();
+});
+cameraFileInput?.addEventListener('change', (event) => {
+  const file = event.target.files && event.target.files[0];
+  decodeImageFile(file);
 });
 confirmBtn?.addEventListener('click', () => updateCheckin('confirm'));
 denyBtn?.addEventListener('click', () => updateCheckin('deny'));
@@ -189,6 +225,12 @@ async function loadSession() {
           }
         } else {
           cameraStatus.textContent = 'Toque em "Ativar camera" para iniciar.';
+        }
+        if (isIOS && isInApp) {
+          cameraStatus.textContent = 'No iOS, abra este link no Safari para usar a camera.';
+        }
+        if (!window.isSecureContext) {
+          cameraStatus.textContent = 'A camera so funciona em HTTPS. Abra o link seguro.';
         }
       }
       if (startCameraBtn) {
