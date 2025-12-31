@@ -1291,6 +1291,7 @@ async function loadFinance() {
 
     // Totals for workshops (eventos)
     let workshopTotals = { pendente: 0, pago: 0, cancelado: 0 };
+    let workshopEntries = [];
     try {
       if (advId) {
         const wRes = await fetch(`${API_BASE}/workshop_enrollments_list.php?advertiser_id=${encodeURIComponent(advId)}`, { credentials:'include' });
@@ -1310,13 +1311,36 @@ async function loadFinance() {
           if (workshopTotals.hasOwnProperty(st)) {
             workshopTotals[st] += Number(r.amount_due || 0);
           }
+          workshopEntries.push({
+            id: `W-${r.id}`,
+            type: 'evento',
+            amount: Number(r.amount_due || 0),
+            status: r.payment_status || '',
+            available_at: r.paid_at || r.created_at || '',
+            created_at: r.created_at || ''
+          });
         });
       }
     } catch (err) {
       console.warn('[Financeiro] Falha ao carregar eventos', err);
     }
 
-    const body = filtered.map(l => `
+    const normalizedLedger = filtered.map(l => ({
+      id: l.id,
+      type: l.type || 'locacao',
+      amount: Number(l.amount || 0),
+      status: l.status || '',
+      available_at: l.available_at || '',
+      created_at: l.created_at || ''
+    }));
+
+    const combined = normalizedLedger.concat(workshopEntries).sort((a, b) => {
+      const da = parseDateOnly(a.created_at) || parseDateOnly(a.available_at) || new Date(0);
+      const db = parseDateOnly(b.created_at) || parseDateOnly(b.available_at) || new Date(0);
+      return db - da;
+    });
+
+    const body = combined.map(l => `
       <tr>
         <td>${escapeHtml(l.id)}</td>
         <td>${escapeHtml(l.type)}</td>
@@ -1345,7 +1369,7 @@ async function loadFinance() {
         <tbody>${body || '<tr><td colspan="5" style="text-align:center;padding:16px">Sem lançamentos.</td></tr>'}</tbody>
       </table>`;
 
-    document.getElementById('advFinExport')?.addEventListener('click', ()=> exportCSV(filtered));
+    document.getElementById('advFinExport')?.addEventListener('click', ()=> exportCSV(combined));
     document.getElementById('advFinTransfer')?.addEventListener('click', () => {
       finContainer.insertAdjacentHTML('afterbegin', '<div class="rooms-message" style="margin-bottom:8px;">Solicitações de transferência estarão disponíveis em breve.</div>');
     });
