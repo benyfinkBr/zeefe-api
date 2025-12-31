@@ -1658,7 +1658,7 @@ function renderCourseTicket(enrollment, course) {
   if (courseTicketQr) {
     const origin = (window.location && window.location.origin) || '';
     const base = origin ? origin.replace(/\/$/, '') : '';
-    const checkinUrl = `${base}/api/workshop_checkin.php?code=${encodeURIComponent(enrollment.public_code)}`;
+    const checkinUrl = `${base}/workshop_checkin_card.html?code=${encodeURIComponent(enrollment.public_code)}`;
     const safe = encodeURIComponent(checkinUrl);
     courseTicketQr.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${safe}" alt="QR Code do ingresso">`;
   }

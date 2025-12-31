@@ -13,10 +13,15 @@ const logoutBtn = document.getElementById('mobileLogout');
 const urlParams = new URLSearchParams(window.location.search);
 const redirectTarget = urlParams.get('redirect');
 const redirectWorkshopId = urlParams.get('workshop_id');
+const redirectCode = urlParams.get('code');
 
 function maybeRedirectAfterLogin() {
   if (redirectTarget === 'convidados' && redirectWorkshopId) {
     window.location.href = `anunciante-convidados.html?workshop_id=${encodeURIComponent(redirectWorkshopId)}`;
+    return true;
+  }
+  if (redirectTarget === 'card' && redirectCode) {
+    window.location.href = `workshop_checkin_card.html?code=${encodeURIComponent(redirectCode)}`;
     return true;
   }
   return false;

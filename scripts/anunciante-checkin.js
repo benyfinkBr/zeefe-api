@@ -86,15 +86,7 @@ async function lookupEnrollment(code) {
     showResult('Informe um codigo valido.');
     return;
   }
-  try {
-    const res = await fetch(`${API_BASE}/workshop_checkin_lookup.php?code=${encodeURIComponent(cleaned)}`, { credentials: 'include' });
-    const json = await res.json();
-    if (!json.success) throw new Error(json.error || 'Ingresso nao encontrado.');
-    currentEnrollment = json.data;
-    renderEnrollmentCard(json.data);
-  } catch (err) {
-    showResult(err.message || 'Erro ao validar ingresso.');
-  }
+  window.location.href = `workshop_checkin_card.html?code=${encodeURIComponent(cleaned)}`;
 }
 
 async function updateCheckin(action) {

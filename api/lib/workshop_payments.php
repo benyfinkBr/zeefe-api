@@ -5,7 +5,7 @@ require_once __DIR__ . '/ledger.php';
 
 function workshop_build_checkin_url(string $publicCode): string {
   $host = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? '');
-  return rtrim($host, '/') . '/api/workshop_checkin.php?code=' . urlencode($publicCode);
+  return rtrim($host, '/') . '/workshop_checkin_card.html?code=' . urlencode($publicCode);
 }
 
 function workshop_send_enrollment_email(array $participant, array $workshop, array $enrollment, string $warning): void {
