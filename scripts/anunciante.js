@@ -1249,8 +1249,16 @@ function renderAdvReservations() {
 function parseDateOnly(s) { if (!s) return null; const d = new Date(s.replace(' ','T')); return isNaN(d) ? null : d; }
 function formatMoney(n){ return 'R$ ' + Number(n||0).toFixed(2); }
 function exportCSV(rows){
-  const header = ['#','Tipo','Valor','Status','Disponível em','Criado em'];
-  const data = rows.map(l => [l.id, l.type, Number(l.amount||0).toFixed(2), l.status, (l.available_at||''), (l.created_at||'')]);
+  const header = ['#','Tipo','Origem','Valor','Status','Disponível em','Criado em'];
+  const data = rows.map(l => [
+    l.id,
+    l.type,
+    l.origin || '',
+    Number(l.amount||0).toFixed(2),
+    l.status,
+    (l.available_at||''),
+    (l.created_at||'')
+  ]);
   const csv = [header].concat(data).map(r => r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
   const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
   const url = URL.createObjectURL(blob);
@@ -1314,6 +1322,7 @@ async function loadFinance() {
           workshopEntries.push({
             id: `W-${r.id}`,
             type: 'evento',
+            origin: `Workshop: ${r.workshop_title || 'Evento'}`,
             amount: Number(r.amount_due || 0),
             status: r.payment_status || '',
             available_at: r.paid_at || r.created_at || '',
@@ -1328,6 +1337,7 @@ async function loadFinance() {
     const normalizedLedger = filtered.map(l => ({
       id: l.id,
       type: l.type || 'locacao',
+      origin: 'Sala',
       amount: Number(l.amount || 0),
       status: l.status || '',
       available_at: l.available_at || '',
@@ -1344,6 +1354,7 @@ async function loadFinance() {
       <tr>
         <td>${escapeHtml(l.id)}</td>
         <td>${escapeHtml(l.type)}</td>
+        <td>${escapeHtml(l.origin || '')}</td>
         <td>${formatMoney(l.amount)}</td>
         <td>${escapeHtml(l.status)}</td>
         <td>${escapeHtml(l.available_at || '')}</td>
@@ -1365,8 +1376,8 @@ async function loadFinance() {
 
     finContainer.innerHTML = summary + `
       <table>
-        <thead><tr><th>#</th><th>Tipo</th><th>Valor</th><th>Status</th><th>Disponível em</th></tr></thead>
-        <tbody>${body || '<tr><td colspan="5" style="text-align:center;padding:16px">Sem lançamentos.</td></tr>'}</tbody>
+        <thead><tr><th>#</th><th>Tipo</th><th>Origem</th><th>Valor</th><th>Status</th><th>Disponível em</th></tr></thead>
+        <tbody>${body || '<tr><td colspan="6" style="text-align:center;padding:16px">Sem lançamentos.</td></tr>'}</tbody>
       </table>`;
 
     document.getElementById('advFinExport')?.addEventListener('click', ()=> exportCSV(combined));
@@ -1631,9 +1642,11 @@ async function loadWorkshops() {
           <td>${escapeHtml(w.status || '')}</td>
           <td>${max ? `${sold}/${max} (${pct}%)` : '—'}</td>
           <td>
-            <button class="btn btn-secondary btn-sm" data-ws="${w.id}" data-act="edit">Editar</button>
-            <button class="btn btn-secondary btn-sm" data-ws="${w.id}" data-act="enrollments">Ver inscritos</button>
-            <button class="btn btn-secondary btn-sm" data-ws="${w.id}" data-act="send-link">Enviar link</button>
+            <div style="display:flex;flex-wrap:wrap;gap:6px;">
+              <button class="btn btn-secondary btn-sm" data-ws="${w.id}" data-act="edit">Editar</button>
+              <button class="btn btn-secondary btn-sm" data-ws="${w.id}" data-act="enrollments">Ver inscritos</button>
+              <button class="btn btn-secondary btn-sm" data-ws="${w.id}" data-act="send-link">Enviar link</button>
+            </div>
           </td>
         </tr>
       `;
