@@ -1667,8 +1667,8 @@ async function loadWorkshops() {
           <td>
             <div style="display:flex;flex-wrap:wrap;gap:6px;">
               <button class="btn btn-secondary btn-sm" data-ws="${w.id}" data-act="edit">Editar</button>
-              <button class="btn btn-secondary btn-sm" data-ws="${w.id}" data-act="enrollments">Ver inscritos</button>
-              <button class="btn btn-secondary btn-sm" data-ws="${w.id}" data-act="send-link">Enviar link</button>
+              <button class="btn btn-secondary btn-sm" data-ws="${w.id}" data-act="enrollments">Inscritos</button>
+              <button class="btn btn-secondary btn-sm" data-ws="${w.id}" data-act="send-link">Link</button>
             </div>
           </td>
         </tr>
