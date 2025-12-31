@@ -766,7 +766,6 @@ const courseModalVoucherInput = document.getElementById('courseDetailsVoucher');
 const courseModalVoucherApply = document.getElementById('courseDetailsVoucherApply');
 const courseModalVoucherResult = document.getElementById('courseDetailsVoucherResult');
 const courseModalConfirmBtn = document.getElementById('courseDetailsConfirm');
-const courseCheckoutOpen = document.getElementById('courseCheckoutOpen');
 const courseTicketSection = document.getElementById('courseTicketSection');
 const courseTicketCode = document.getElementById('courseTicketCode');
 const courseTicketQr = document.getElementById('courseTicketQr');
@@ -1017,11 +1016,6 @@ async function initialize() {
   courseModal?.addEventListener('click', (event) => { if (event.target === courseModal) closeCourseModal(); });
   courseModalVoucherApply?.addEventListener('click', () => applyCourseVoucher());
   courseModalConfirmBtn?.addEventListener('click', () => startWorkshopEnrollment());
-  courseCheckoutOpen?.addEventListener('click', () => {
-    if (courseModalContext.checkoutUrl) {
-      window.open(courseModalContext.checkoutUrl, '_blank', 'noopener');
-    }
-  });
   workshopCardClose?.addEventListener('click', closeWorkshopCardModal);
   workshopCardModal?.addEventListener('click', (event) => { if (event.target === workshopCardModal) closeWorkshopCardModal(); });
   workshopCardConfirm?.addEventListener('click', async () => {
@@ -1554,8 +1548,7 @@ async function openCourseModal(workshopId, options = {}) {
     enrollment,
     voucher: null,
     voucherData: null,
-    focusEnroll: Boolean(options.focusEnroll),
-    checkoutUrl: options.checkoutUrl || null
+    focusEnroll: Boolean(options.focusEnroll)
   };
   if (courseModalVoucherInput) courseModalVoucherInput.value = '';
   if (courseModalVoucherResult) courseModalVoucherResult.textContent = '';
@@ -1576,16 +1569,6 @@ function closeCourseModal() {
   courseModal.classList.remove('show');
   courseModal.setAttribute('aria-hidden', 'true');
   courseModalContext.focusEnroll = false;
-  const enrollmentStatus = String(enrollment?.payment_status || '').toLowerCase();
-  if (!courseModalContext.checkoutUrl && enrollment && enrollmentStatus !== 'pago') {
-    fetchCheckoutIntent('workshop', enrollment.id || enrollment.enrollment_id || enrollment.workshop_id)
-      .then((url) => {
-        if (url) {
-          courseModalContext.checkoutUrl = url;
-          updateCourseModalView();
-        }
-      });
-  }
 }
 
 function updateCourseModalView() {
@@ -1652,14 +1635,6 @@ function updateCourseModalView() {
 
   if (courseEnrollArea) {
     courseEnrollArea.style.display = alreadyEnrolled ? 'none' : 'block';
-  }
-  if (courseCheckoutOpen) {
-    const hasLink = Boolean(courseModalContext.checkoutUrl);
-    courseCheckoutOpen.hidden = !hasLink;
-    courseCheckoutOpen.disabled = !hasLink;
-    if (hasLink && courseModalStatus) {
-      courseModalStatus.textContent = 'Pagamento pendente. Clique em "Abrir checkout de pagamento" para finalizar.';
-    }
   }
 
   if (courseTicketSection) {
@@ -1763,11 +1738,6 @@ async function submitCourseEnrollment(paymentMethodId = '') {
     }
     if (json.warning) {
       courseModalStatus.textContent = json.warning;
-    }
-    if (json.checkout_url) {
-      courseModalContext.checkoutUrl = json.checkout_url;
-      const abrir = confirm('Geramos o checkout de pagamento. Deseja abrir em uma nova aba?');
-      if (abrir) window.open(json.checkout_url, '_blank', 'noopener');
     }
     await carregarCursosCliente();
     courseModalContext.enrollment = clientCoursesCache.find(item => Number(item.workshop_id) === Number(course.id));
