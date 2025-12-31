@@ -1285,9 +1285,36 @@ async function loadFinance() {
       });
     }
 
-    // Totals by status
+    // Totals by status (locacoes)
     const sum = { pendente:0, disponivel:0, pago:0, bloqueado:0 };
     filtered.forEach(l => { const st = String(l.status||'').toLowerCase(); if (sum.hasOwnProperty(st)) sum[st] += Number(l.amount||0); });
+
+    // Totals for workshops (eventos)
+    let workshopTotals = { pendente: 0, pago: 0, cancelado: 0 };
+    try {
+      if (advId) {
+        const wRes = await fetch(`${API_BASE}/workshop_enrollments_list.php?advertiser_id=${encodeURIComponent(advId)}`, { credentials:'include' });
+        const wJson = await parseJsonSafe(wRes);
+        const wRows = wJson.success ? (wJson.data || []) : [];
+        const wFiltered = (fromDate || toDate)
+          ? wRows.filter(r => {
+              const baseDate = parseDateOnly(r.paid_at) || parseDateOnly(r.created_at) || null;
+              if (!baseDate) return false;
+              if (fromDate && baseDate < fromDate) return false;
+              if (toDate && baseDate > toDate) return false;
+              return true;
+            })
+          : wRows;
+        wFiltered.forEach(r => {
+          const st = String(r.payment_status || '').toLowerCase();
+          if (workshopTotals.hasOwnProperty(st)) {
+            workshopTotals[st] += Number(r.amount_due || 0);
+          }
+        });
+      }
+    } catch (err) {
+      console.warn('[Financeiro] Falha ao carregar eventos', err);
+    }
 
     const body = filtered.map(l => `
       <tr>
@@ -1301,9 +1328,11 @@ async function loadFinance() {
 
     const summary = `
       <div class="finance-summary" style="display:flex;gap:12px;flex-wrap:wrap;margin:8px 0 12px">
-        <span class="chip">Pendente: ${formatMoney(sum.pendente)}</span>
-        <span class="chip">Disponível: ${formatMoney(sum.disponivel)}</span>
-        <span class="chip">Pago: ${formatMoney(sum.pago)}</span>
+        <span class="chip">Locações pendentes: ${formatMoney(sum.pendente)}</span>
+        <span class="chip">Locações disponíveis: ${formatMoney(sum.disponivel)}</span>
+        <span class="chip">Locações pagas: ${formatMoney(sum.pago)}</span>
+        <span class="chip">Eventos pendentes: ${formatMoney(workshopTotals.pendente)}</span>
+        <span class="chip">Eventos pagos: ${formatMoney(workshopTotals.pago)}</span>
       </div>
       <div style="display:flex; gap:10px; justify-content:flex-end; margin-bottom:6px">
         <button type="button" class="btn btn-secondary btn-sm" id="advFinTransfer">Transferir</button>
