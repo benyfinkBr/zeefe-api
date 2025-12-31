@@ -7,6 +7,7 @@ const cardInfo = document.getElementById('cardInfo');
 const cardConfirm = document.getElementById('cardConfirm');
 const cardDeny = document.getElementById('cardDeny');
 const cardBack = document.getElementById('cardBack');
+const docVerified = document.getElementById('docVerified');
 
 const resultModal = document.getElementById('cardResultModal');
 const resultText = document.getElementById('cardResultText');
@@ -41,6 +42,9 @@ function renderCard(data) {
     <div class="mobile-muted">Data: ${data.workshop_date || '--'} ${data.workshop_time || ''}</div>
   `;
   cardDetails.hidden = false;
+  if (cardConfirm) {
+    cardConfirm.disabled = true;
+  }
 }
 
 async function loadSessionAndCard(code) {
@@ -93,6 +97,11 @@ function getCodeFromUrl() {
 
 cardConfirm?.addEventListener('click', () => updateCheckin('confirm'));
 cardDeny?.addEventListener('click', () => updateCheckin('deny'));
+docVerified?.addEventListener('change', () => {
+  if (cardConfirm) {
+    cardConfirm.disabled = !docVerified.checked;
+  }
+});
 cardBack?.addEventListener('click', () => { window.location.href = 'anunciante-mobile.html'; });
 resultClose?.addEventListener('click', closeResult);
 resultHome?.addEventListener('click', () => { window.location.href = 'anunciante-mobile.html'; });
