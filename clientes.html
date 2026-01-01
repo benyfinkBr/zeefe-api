@@ -158,6 +158,7 @@
           <button type="button" data-panel="visitors">Visitantes</button>
           <button type="button" data-panel="company" id="companyTab" hidden>Empresa</button>
           <button type="button" data-panel="courses">Cursos</button>
+          <button type="button" data-panel="faq">FAQ</button>
           <button type="button" data-panel="profile">Meu Perfil</button>
         </nav>
         <button type="button" id="logoutBtn" class="nav-logout">Sair</button>
@@ -657,6 +658,14 @@
               <div id="coursesFeedback" class="rooms-message"></div>
               <div id="availableCoursesMessage" class="rooms-message"></div>
               <div id="availableCoursesGrid" class="workshops-grid courses-grid"></div>
+            </article>
+          </div>
+
+          <div id="panel-faq" class="portal-section" hidden>
+            <article class="form-card">
+              <h3>FAQ do Cliente</h3>
+              <p class="form-help">Tire suas dúvidas com um passo a passo simples.</p>
+              <iframe class="faq-embed" title="FAQ do Cliente" src="faq.html?perfil=cliente"></iframe>
             </article>
           </div>
         </div>

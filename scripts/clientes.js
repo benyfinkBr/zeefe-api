@@ -834,6 +834,7 @@ const portalSections = {
   reservations: document.getElementById('panel-reservations'),
   visitors: document.getElementById('panel-visitors'),
   courses: document.getElementById('panel-courses'),
+  faq: document.getElementById('panel-faq'),
   profile: document.getElementById('panel-profile'),
   company: document.getElementById('panel-company')
 };

@@ -955,7 +955,7 @@ async function parseJsonSafe(res) {
 }
 
 function setActivePanel(name) {
-  const panels = ['overview','rooms','workshops','reservations','finance','messages','reviews','profile'];
+  const panels = ['overview','rooms','workshops','reservations','finance','messages','reviews','faq','profile'];
   panels.forEach(p => {
     const el = document.getElementById('panel-' + p);
     if (el) el.hidden = (p !== name);
