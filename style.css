@@ -832,6 +832,15 @@ main {
   overflow: hidden;
   background: #f3f4f6;
 }
+.news-card-cover.is-missing {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #8a7766;
+  font-size: 0.85rem;
+  text-align: center;
+  padding: 12px;
+}
 .news-card-cover img {
   width: 100%;
   height: 100%;
@@ -888,6 +897,18 @@ main {
 }
 .post-cover {
   margin-bottom: 24px;
+}
+.post-cover.is-missing {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 220px;
+  border-radius: 18px;
+  background: #f3f4f6;
+  color: #8a7766;
+  font-size: 0.95rem;
+  text-align: center;
+  padding: 12px;
 }
 .post-cover img {
   width: 100%;

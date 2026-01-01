@@ -62,7 +62,7 @@
       </div>
       <div class="footer-column footer-contact">
         <h3>Contato</h3>
-        <p>contato@zeefe.com | (11) 9.2229-3332</p>
+        <p>contato@zeefe.com | <a href="https://wa.me/11922293332?text=Olá,%20gostaria%20de%20mais%20informações.">(11) 9.2229-3332</a></p>
         <p>Moema, São Paulo - SP</p>
         <p><a href="https://www.instagram.com/zeefe_brasil/">Instagram</a> | <a href="https://www.linkedin.com/company/zeefe/about/?viewAsMember=true">LinkedIn</a></p>
       </div>
@@ -92,6 +92,38 @@
           grid.innerHTML = '<p class="rooms-message">Não foi possível carregar os conteúdos.</p>';
           return;
         }
+        const normalizeCoverPath = (path) => {
+          const raw = String(path || '').trim();
+          if (!raw) return '';
+          if (raw.startsWith('data:')) return raw;
+          if (/^https?:\/\//i.test(raw)) return raw;
+          const idx = raw.indexOf('/img/posts/');
+          if (idx !== -1) return raw.slice(idx);
+          if (raw.startsWith('img/')) return raw;
+          if (raw.startsWith('/')) return raw;
+          return '/' + raw;
+        };
+        const attachCover = (img, rawPath, wrap, alt) => {
+          const primary = normalizeCoverPath(rawPath);
+          if (!primary) return false;
+          img.alt = alt;
+          img.src = primary;
+          let fallback = '';
+          if (!/^https?:\/\//i.test(primary) && !primary.startsWith('data:')) {
+            fallback = primary.startsWith('/') ? primary.slice(1) : '/' + primary;
+          }
+          img.addEventListener('error', () => {
+            if (fallback) {
+              img.src = fallback;
+              fallback = '';
+              return;
+            }
+            img.remove();
+            wrap.classList.add('is-missing');
+            wrap.textContent = 'Imagem indisponível';
+          });
+          return true;
+        };
         let posts = json.data || [];
         posts = posts.filter(p => (p.status || '').toLowerCase() === 'publicado');
         if (!posts.length) {
@@ -112,9 +144,9 @@
             const coverWrap = document.createElement('div');
             coverWrap.className = 'news-card-cover';
             const img = document.createElement('img');
-            img.src = p.cover_path;
-            img.alt = p.title || 'Imagem do conteúdo';
-            coverWrap.appendChild(img);
+            if (attachCover(img, p.cover_path, coverWrap, p.title || 'Imagem do conteúdo')) {
+              coverWrap.appendChild(img);
+            }
             card.appendChild(coverWrap);
           }
           const tag = document.createElement('span');

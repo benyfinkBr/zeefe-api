@@ -477,11 +477,43 @@ document.addEventListener('DOMContentLoaded', () => {
         const imgWrap = document.createElement('div');
         imgWrap.className = 'hero-news-image-wrap';
 
+        const normalizeCoverPath = (path) => {
+          const raw = String(path || '').trim();
+          if (!raw) return '';
+          if (raw.startsWith('data:')) return raw;
+          if (/^https?:\/\//i.test(raw)) return raw;
+          const idx = raw.indexOf('/img/posts/');
+          if (idx !== -1) return raw.slice(idx);
+          if (raw.startsWith('img/')) return raw;
+          if (raw.startsWith('/')) return raw;
+          return '/' + raw;
+        };
+        const attachCover = (img, rawPath, wrap, alt) => {
+          const primary = normalizeCoverPath(rawPath);
+          if (!primary) return false;
+          img.alt = alt;
+          img.src = primary;
+          let fallback = '';
+          if (!/^https?:\/\//i.test(primary) && !primary.startsWith('data:')) {
+            fallback = primary.startsWith('/') ? primary.slice(1) : '/' + primary;
+          }
+          img.addEventListener('error', () => {
+            if (fallback) {
+              img.src = fallback;
+              fallback = '';
+              return;
+            }
+            img.remove();
+            wrap.classList.add('is-missing');
+            wrap.textContent = 'Imagem indisponível';
+          });
+          return true;
+        };
         if (post.cover_path) {
           const img = document.createElement('img');
-          img.src = post.cover_path;
-          img.alt = post.title || 'Imagem do conteúdo';
-          imgWrap.appendChild(img);
+          if (attachCover(img, post.cover_path, imgWrap, post.title || 'Imagem do conteúdo')) {
+            imgWrap.appendChild(img);
+          }
         }
 
         const titleBar = document.createElement('div');
