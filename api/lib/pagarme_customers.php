@@ -6,12 +6,12 @@ function ensurePagarmeColumns(PDO $pdo): void {
   try {
     ensureColumn($pdo, 'clients', 'pagarme_customer_id', 'VARCHAR(80) NULL', 'company_role');
   } catch (Throwable $e) {
-    error_log('[Pagarme] Não foi possível garantir coluna clients.pagarme_customer_id: ' . $e->getMessage());
+    error_log('[Stripe] Não foi possível garantir coluna clients.pagarme_customer_id: ' . $e->getMessage());
   }
   try {
     ensureColumn($pdo, 'customer_cards', 'fingerprint', 'VARCHAR(128) NULL', 'pagarme_card_id');
   } catch (Throwable $e) {
-    error_log('[Pagarme] Não foi possível garantir coluna customer_cards.fingerprint: ' . $e->getMessage());
+    error_log('[Stripe] Não foi possível garantir coluna customer_cards.fingerprint: ' . $e->getMessage());
   }
 }
 
@@ -175,7 +175,7 @@ function syncPagarmeAddress(PDO $pdo, int $clientId, array $address): array {
         'type' => 'billing'
       ]);
     } catch (Throwable $e) {
-      error_log('[Pagarme] Falha ao registrar endereço na lista do customer: ' . $e->getMessage());
+      error_log('[Stripe] Falha ao registrar endereço na lista do customer: ' . $e->getMessage());
     }
   }
   return ['address' => $addressClean, 'customer_id' => $customerId, 'pagarme_response' => $resp];
@@ -242,7 +242,7 @@ function updatePagarmeCustomer(PDO $pdo, int $clientId, array $clientData, array
       ]);
     } catch (Throwable $e) {
       // não bloqueia fluxo
-      error_log('[Pagarme] Falha ao registrar endereço na lista do customer: ' . $e->getMessage());
+      error_log('[Stripe] Falha ao registrar endereço na lista do customer: ' . $e->getMessage());
     }
   }
 

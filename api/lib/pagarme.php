@@ -39,7 +39,7 @@ function pagarme_request(string $method, string $path, array $body = null) {
 
   $json = json_decode($response, true);
   if ($status >= 400) {
-    error_log('Pagarme error (' . $status . '): ' . $response);
+    error_log('Stripe error (' . $status . '): ' . $response);
     $extraParts = [];
     if (!empty($json['errors']) && is_array($json['errors'])) {
       $details = array_map(function ($e) {

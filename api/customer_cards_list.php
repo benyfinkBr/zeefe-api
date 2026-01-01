@@ -25,7 +25,7 @@ try {
   $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
   $cards = array_map(function (array $row) {
-    $provider = $row['stripe_payment_method_id'] ? 'stripe' : 'pagarme';
+    $provider = $row['stripe_payment_method_id'] ? 'stripe' : 'legacy';
     return [
       'id' => (int)$row['id'],
       'brand' => $row['brand'],

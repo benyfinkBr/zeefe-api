@@ -117,7 +117,7 @@ try {
 
   $checkoutUrl = pagarme_extract_checkout_url($order);
   if (!$checkoutUrl) {
-    throw new RuntimeException('Não foi possível gerar o checkout da Pagar.me.');
+    throw new RuntimeException('Não foi possível gerar o checkout da Stripe.');
   }
 
   $payment = $order['payments'][0] ?? [];
