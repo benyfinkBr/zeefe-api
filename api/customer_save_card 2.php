@@ -99,10 +99,10 @@ try {
   }
 
   $clientId = (int) ($input['client_id'] ?? 0);
-  $token = trim($input['pagarmetoken'] ?? '');
+  $token = trim($input['stripetoken'] ?? '');
 
   if ($clientId <= 0 || $token === '') {
-    throw new RuntimeException('Informe client_id e pagarmetoken.');
+    throw new RuntimeException('Informe client_id e stripetoken.');
   }
 
   // Valida cliente

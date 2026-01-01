@@ -167,7 +167,7 @@
         <h3>Contato</h3>
         <p>contato@zeefe.com.br | (11) 9.2229-3332</p>
         <p>Moema, São Paulo - SP</p>
-        <p><a href="#">Instagram</a> | <a href="#">LinkedIn</a></p>
+        <p><a href="https://www.instagram.com/zeefe_brasil/">Instagram</a> | <a href="https://www.linkedin.com/company/zeefe/about/?viewAsMember=true">LinkedIn</a></p>
       </div>
     </div>
     <div class="site-footer-bottom">
