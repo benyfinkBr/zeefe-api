@@ -20,6 +20,23 @@
     details.faq-item { border: 1px solid var(--brand-sand); border-radius: 12px; padding: 12px 14px; background: #fff; }
     details.faq-item + details.faq-item { margin-top: 10px; }
     summary { cursor: pointer; font-weight: 600; }
+    .faq-contact-cta { margin-top: 28px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .faq-contact-cta button { border: none; background: none; color: var(--brand-green); font-weight: 700; cursor: pointer; text-decoration: underline; padding: 0; }
+    .faq-contact-form { width: 100%; display: grid; gap: 12px; }
+    .faq-contact-form label { font-weight: 600; }
+    .faq-contact-form input,
+    .faq-contact-form select,
+    .faq-contact-form textarea {
+      width: 100%;
+      border: 1px solid var(--brand-sand);
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 0.95rem;
+      font-family: inherit;
+    }
+    .faq-contact-form textarea { min-height: 120px; resize: vertical; }
+    .faq-contact-actions { display: flex; gap: 10px; justify-content: flex-end; }
+    .faq-contact-status { color: var(--brand-green); font-weight: 600; }
   </style>
 </head>
 <body>
@@ -258,8 +275,56 @@
           </details>
         </div>
       </div>
+
+      <div class="faq-contact-cta">
+        <span>Não encontrou sua dúvida? Fale Conosco</span>
+        <button type="button" id="openFaqContact">(Clique Aqui)</button>
+      </div>
     </section>
   </main>
+
+  <div class="modal-overlay" id="faqContactModal" aria-hidden="true">
+    <div class="modal-dialog modal-small">
+      <button class="modal-close" type="button" id="closeFaqContact" aria-label="Fechar">&times;</button>
+      <div class="modal-body">
+        <div style="width:100%">
+          <h2 style="margin-top:0">Fale Conosco</h2>
+          <form id="faqContactForm" class="faq-contact-form">
+            <div>
+              <label for="faqContactName">Nome</label>
+              <input id="faqContactName" name="name" type="text" required />
+            </div>
+            <div>
+              <label for="faqContactEmail">E-mail</label>
+              <input id="faqContactEmail" name="email" type="email" required />
+            </div>
+            <div>
+              <label for="faqContactType">Tipo de Dúvida</label>
+              <select id="faqContactType" name="issue_type" required>
+                <option value="">Selecione</option>
+                <option value="reserva">Reserva</option>
+                <option value="pagamento">Pagamento</option>
+                <option value="workshop">Workshop</option>
+                <option value="conta">Conta/Perfil</option>
+                <option value="empresa">Empresa</option>
+                <option value="checkin">Check-in</option>
+                <option value="outro">Outro</option>
+              </select>
+            </div>
+            <div>
+              <label for="faqContactMessage">Dúvida</label>
+              <textarea id="faqContactMessage" name="message" required></textarea>
+            </div>
+            <div class="faq-contact-actions">
+              <button type="button" class="btn btn-secondary" id="cancelFaqContact">Cancelar</button>
+              <button type="submit" class="btn btn-primary" id="sendFaqContact">Enviar</button>
+            </div>
+            <div class="faq-contact-status" id="faqContactStatus" aria-live="polite"></div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <script>
     const tabs = document.querySelectorAll('.faq-tab');
@@ -309,6 +374,71 @@
     }
 
     searchInput?.addEventListener('input', (e) => filterFaq(e.target.value));
+
+    const contactModal = document.getElementById('faqContactModal');
+    const openFaqContact = document.getElementById('openFaqContact');
+    const closeFaqContact = document.getElementById('closeFaqContact');
+    const cancelFaqContact = document.getElementById('cancelFaqContact');
+    const faqContactForm = document.getElementById('faqContactForm');
+    const faqContactStatus = document.getElementById('faqContactStatus');
+    const sendFaqContact = document.getElementById('sendFaqContact');
+
+    function openContactModal() {
+      contactModal.classList.add('show');
+      contactModal.setAttribute('aria-hidden', 'false');
+      faqContactStatus.textContent = '';
+    }
+
+    function closeContactModal() {
+      contactModal.classList.remove('show');
+      contactModal.setAttribute('aria-hidden', 'true');
+    }
+
+    openFaqContact?.addEventListener('click', openContactModal);
+    closeFaqContact?.addEventListener('click', closeContactModal);
+    cancelFaqContact?.addEventListener('click', closeContactModal);
+    contactModal?.addEventListener('click', (e) => {
+      if (e.target === contactModal) closeContactModal();
+    });
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && contactModal?.classList.contains('show')) {
+        closeContactModal();
+      }
+    });
+
+    faqContactForm?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      faqContactStatus.textContent = '';
+      sendFaqContact.disabled = true;
+      try {
+        const formData = new FormData(faqContactForm);
+        const payload = {
+          name: String(formData.get('name') || '').trim(),
+          email: String(formData.get('email') || '').trim(),
+          issue_type: String(formData.get('issue_type') || '').trim(),
+          message: String(formData.get('message') || '').trim()
+        };
+        const response = await fetch('api/faq_contact.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok || !data.success) {
+          throw new Error(data.error || 'Nao foi possivel enviar sua mensagem.');
+        }
+        faqContactStatus.textContent = 'Mensagem enviada com sucesso.';
+        faqContactForm.reset();
+        setTimeout(() => {
+          closeContactModal();
+          faqContactStatus.textContent = '';
+        }, 1200);
+      } catch (err) {
+        faqContactStatus.textContent = err.message || 'Erro ao enviar sua mensagem.';
+      } finally {
+        sendFaqContact.disabled = false;
+      }
+    });
   </script>
 </body>
 </html>
