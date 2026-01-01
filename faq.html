@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>FAQ — Ze.EFE</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    .faq-hero { padding: 40px 0 10px; }
+    .faq-hero h1 { margin: 0 0 8px; }
+    .faq-tabs { display: flex; gap: 12px; margin: 16px 0 24px; flex-wrap: wrap; }
+    .faq-tab { border: 1px solid var(--brand-green); background: #fff; color: var(--brand-green); border-radius: 999px; padding: 8px 16px; font-weight: 600; cursor: pointer; }
+    .faq-tab.active { background: var(--brand-green); color: #fff; }
+    .faq-panel { display: none; }
+    .faq-panel.active { display: block; }
+    .faq-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+    .faq-card { background: #fff; border-radius: 16px; padding: 16px; box-shadow: var(--shadow-soft); }
+    .faq-card h4 { margin: 0 0 8px; }
+    .faq-card ol { margin: 8px 0 0 18px; }
+    .faq-section { margin: 18px 0 8px; }
+    details.faq-item { border: 1px solid var(--brand-sand); border-radius: 12px; padding: 12px 14px; background: #fff; }
+    details.faq-item + details.faq-item { margin-top: 10px; }
+    summary { cursor: pointer; font-weight: 600; }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="site-header-inner">
+      <div class="site-header-left">
+        <a href="index.html" class="site-logo">
+          <img src="img/logo.jpg" alt="Ze.EFE" />
+        </a>
+        <nav class="site-nav">
+          <a href="salas.html">Salas</a>
+          <a href="workshops.html">Cursos</a>
+          <a href="conteudos.html">Conteúdos</a>
+          <a href="quemsomos.html">Quem somos</a>
+        </nav>
+      </div>
+      <div class="site-header-actions">
+        <a href="clientes.html" class="site-link">Portal do Cliente</a>
+        <a href="anunciante.html" class="site-link">Portal do Anunciante</a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="landing-section faq-hero">
+      <div class="section-heading">
+        <h1>FAQ e passo-a-passo</h1>
+        <p>Respostas rápidas para dúvidas mais comuns e guias por perfil.</p>
+      </div>
+      <div class="faq-tabs" role="tablist">
+        <button class="faq-tab active" data-target="faq-cliente" type="button">Cliente</button>
+        <button class="faq-tab" data-target="faq-anunciante" type="button">Anunciante</button>
+      </div>
+
+      <div id="faq-cliente" class="faq-panel active" role="tabpanel">
+        <div class="faq-grid">
+          <div class="faq-card">
+            <h4>Como fazer uma reserva?</h4>
+            <ol>
+              <li>Acesse Salas e escolha a sala.</li>
+              <li>Selecione datas e confirme os detalhes.</li>
+              <li>Escolha a politica de pagamento/cancelamento.</li>
+              <li>Selecione um cartao e confirme.</li>
+            </ol>
+          </div>
+          <div class="faq-card">
+            <h4>Como cancelar uma reserva?</h4>
+            <ol>
+              <li>Abra Minhas Reservas.</li>
+              <li>Clique em Cancelar.</li>
+              <li>Confirme na segunda etapa.</li>
+            </ol>
+          </div>
+          <div class="faq-card">
+            <h4>Como me inscrever em um workshop?</h4>
+            <ol>
+              <li>Entre em Cursos.</li>
+              <li>Abra o workshop desejado.</li>
+              <li>Selecione um cartao.</li>
+              <li>Confirme a inscricao.</li>
+            </ol>
+          </div>
+          <div class="faq-card">
+            <h4>Onde vejo meu ingresso?</h4>
+            <ol>
+              <li>Acesse Meus cursos.</li>
+              <li>Abra o workshop inscrito.</li>
+              <li>Veja o QR Code.</li>
+            </ol>
+          </div>
+        </div>
+
+        <div class="faq-section">
+          <h3>Dúvidas frequentes</h3>
+          <details class="faq-item">
+            <summary>Pagamento pendente na reserva</summary>
+            <p>Verifique o cartao salvo em Meu Perfil. A reserva sera confirmada conforme a politica escolhida.</p>
+          </details>
+          <details class="faq-item">
+            <summary>Meu workshop ainda nao cobrou</summary>
+            <p>O pagamento so ocorre quando o minimo de participantes for atingido.</p>
+          </details>
+          <details class="faq-item">
+            <summary>Minha empresa nao aparece</summary>
+            <p>A aba Empresa so aparece quando seu usuario esta associado a uma empresa.</p>
+          </details>
+          <details class="faq-item">
+            <summary>QR Code nao abre</summary>
+            <p>Use o link do ingresso no email ou o QR Code em Meus cursos.</p>
+          </details>
+        </div>
+      </div>
+
+      <div id="faq-anunciante" class="faq-panel" role="tabpanel">
+        <div class="faq-grid">
+          <div class="faq-card">
+            <h4>Como cadastrar uma sala?</h4>
+            <ol>
+              <li>Acesse Minhas Salas.</li>
+              <li>Clique em Cadastrar sala.</li>
+              <li>Preencha dados e fotos.</li>
+              <li>Salve e a geocodificacao sera automatica.</li>
+            </ol>
+          </div>
+          <div class="faq-card">
+            <h4>Como configurar politicas?</h4>
+            <ol>
+              <li>No modal da sala, marque as opcoes.</li>
+              <li>Defina valor por opcao.</li>
+              <li>Salve e o menor valor vira o valor diario.</li>
+            </ol>
+          </div>
+          <div class="faq-card">
+            <h4>Como aprovar uma reserva?</h4>
+            <ol>
+              <li>Abra Reservas.</li>
+              <li>Abra a reserva pendente.</li>
+              <li>Confirme ou recuse.</li>
+            </ol>
+          </div>
+          <div class="faq-card">
+            <h4>Como gerir inscritos do workshop?</h4>
+            <ol>
+              <li>Vá em Workshops.</li>
+              <li>Clique em Inscritos.</li>
+              <li>Use filtros e confirme check-in.</li>
+            </ol>
+          </div>
+        </div>
+
+        <div class="faq-section">
+          <h3>Dúvidas frequentes</h3>
+          <details class="faq-item">
+            <summary>Quando recebo o repasse?</summary>
+            <p>O extrato mostra disponibilidade em D+30. Use o filtro do financeiro.</p>
+          </details>
+          <details class="faq-item">
+            <summary>Como enviar link de gestão do evento?</summary>
+            <p>Na lista de workshops, clique em Link para receber o acesso por email.</p>
+          </details>
+          <details class="faq-item">
+            <summary>Check-in pelo celular nao abre camera</summary>
+            <p>Use HTTPS e libere permissao. Em iOS dentro do WhatsApp, abra no Safari.</p>
+          </details>
+          <details class="faq-item">
+            <summary>Posso cancelar um workshop?</summary>
+            <p>Na gestao de convidados, use Cancelar workshop. Se ja houver pagamento, o estorno e automatico.</p>
+          </details>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const tabs = document.querySelectorAll('.faq-tab');
+    const panels = document.querySelectorAll('.faq-panel');
+    const params = new URLSearchParams(window.location.search);
+    const initial = params.get('perfil');
+    if (initial) {
+      tabs.forEach(tab => {
+        const isTarget = tab.dataset.target === `faq-${initial}`;
+        tab.classList.toggle('active', isTarget);
+      });
+      panels.forEach(panel => {
+        panel.classList.toggle('active', panel.id === `faq-${initial}`);
+      });
+    }
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        tabs.forEach(t => t.classList.remove('active'));
+        panels.forEach(p => p.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById(tab.dataset.target).classList.add('active');
+      });
+    });
+  </script>
+</body>
+</html>
