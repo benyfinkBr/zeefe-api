@@ -13,10 +13,9 @@
     .faq-tab.active { background: var(--brand-green); color: #fff; }
     .faq-panel { display: none; }
     .faq-panel.active { display: block; }
-    .faq-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
-    .faq-card { background: #fff; border-radius: 16px; padding: 16px; box-shadow: var(--shadow-soft); }
-    .faq-card h4 { margin: 0 0 8px; }
-    .faq-card ol { margin: 8px 0 0 18px; }
+    .faq-search { background: #fff; border-radius: 16px; padding: 16px; box-shadow: var(--shadow-soft); display: grid; gap: 8px; }
+    .faq-search input { width: 100%; border: 1px solid var(--brand-sand); border-radius: 10px; padding: 12px 14px; font-size: 1rem; }
+    .faq-search small { color: var(--brand-muted); }
     .faq-section { margin: 18px 0 8px; }
     details.faq-item { border: 1px solid var(--brand-sand); border-radius: 12px; padding: 12px 14px; background: #fff; }
     details.faq-item + details.faq-item { margin-top: 10px; }
@@ -55,188 +54,189 @@
         <button class="faq-tab" data-target="faq-anunciante" type="button">Anunciante</button>
       </div>
 
-      <div id="faq-cliente" class="faq-panel active" role="tabpanel">
-        <div class="faq-grid">
-          <div class="faq-card">
-            <h4>Como fazer uma reserva?</h4>
-            <ol>
-              <li>Entre em Salas e escolha a sala que atende seu objetivo.</li>
-              <li>Defina data, horario e quantidade de pessoas.</li>
-              <li>Leia a politica de pagamento/cancelamento da sala.</li>
-              <li>Escolha uma opcao de politica e confirme.</li>
-              <li>Selecione um cartao salvo ou cadastre um novo.</li>
-              <li>Finalize e aguarde a confirmacao da reserva.</li>
-            </ol>
-          </div>
-          <div class="faq-card">
-            <h4>Como cancelar uma reserva?</h4>
-            <ol>
-              <li>Vá em Minhas Reservas e localize a reserva.</li>
-              <li>Clique em Cancelar para abrir a primeira etapa.</li>
-              <li>Leia a mensagem de alerta sobre cancelamentos recorrentes.</li>
-              <li>Confirme na segunda etapa para concluir.</li>
-              <li>Pronto: o status será atualizado e o e-mail enviado.</li>
-            </ol>
-          </div>
-          <div class="faq-card">
-            <h4>Como me inscrever em um workshop?</h4>
-            <ol>
-              <li>Acesse Cursos e escolha o workshop.</li>
-              <li>Leia detalhes, data e regras.</li>
-              <li>Clique em Confirmar inscricao.</li>
-              <li>Selecione um cartao para o pagamento futuro.</li>
-              <li>Aguarde o minimo de participantes para a cobranca.</li>
-            </ol>
-          </div>
-          <div class="faq-card">
-            <h4>Onde vejo meu ingresso?</h4>
-            <ol>
-              <li>Abra Meus cursos no portal do cliente.</li>
-              <li>Clique no workshop inscrito.</li>
-              <li>O QR Code aparece quando o pagamento e confirmado.</li>
-              <li>Mostre o QR Code no dia do evento.</li>
-            </ol>
-          </div>
-          <div class="faq-card">
-            <h4>Como alterar o cartao de pagamento?</h4>
-            <ol>
-              <li>Abra Meu Perfil.</li>
-              <li>Vá em Cartoes salvos.</li>
-              <li>Adicione um novo cartao (com apelido).</li>
-              <li>Na reserva ou workshop, selecione o cartao desejado.</li>
-            </ol>
-          </div>
-          <div class="faq-card">
-            <h4>Como usar voucher?</h4>
-            <ol>
-              <li>Abra a reserva ou workshop.</li>
-              <li>Digite o codigo do voucher.</li>
-              <li>Confirme a aplicacao.</li>
-              <li>Veja o novo valor atualizado.</li>
-            </ol>
-          </div>
-        </div>
+      <div class="faq-search">
+        <label for="faqSearch"><strong>Digite sua dúvida</strong></label>
+        <input id="faqSearch" type="search" list="faqSuggestions" placeholder="Ex: Como cancelar uma reserva?" />
+        <datalist id="faqSuggestions"></datalist>
+        <small>Digite para filtrar. As respostas aparecem abaixo.</small>
+      </div>
 
+      <div id="faq-cliente" class="faq-panel active" role="tabpanel">
         <div class="faq-section">
-          <h3>Dúvidas frequentes</h3>
-          <details class="faq-item">
-            <summary>Pagamento pendente na reserva</summary>
-            <p>Se a politica for pagamento futuro, a cobranca acontece na data definida. Se for imediato, verifique se o cartao esta ativo em Meu Perfil.</p>
+          <h3>FAQ do Cliente — passo a passo</h3>
+          <details class="faq-item" data-question="Como fazer uma reserva">
+            <summary>Como fazer uma reserva?</summary>
+            <p>Entre em Salas, escolha a sala e leia a descricao completa para conferir o que esta incluso. Defina a data, horario e quantidade de pessoas. Depois, escolha a opcao de pagamento/cancelamento que melhor atende sua necessidade. Selecione um cartao salvo (ou cadastre um novo) e finalize. Voce recebe uma confirmacao na tela e por e-mail.</p>
           </details>
-          <details class="faq-item">
-            <summary>Meu workshop ainda nao cobrou</summary>
-            <p>O workshop so e cobrado quando o minimo de participantes for atingido. Voce recebera email quando o pagamento for confirmado.</p>
+          <details class="faq-item" data-question="Como cancelar uma reserva">
+            <summary>Como cancelar uma reserva?</summary>
+            <p>Vá em Minhas Reservas, abra a reserva desejada e clique em Cancelar. O sistema pede confirmacao em duas etapas e mostra um aviso sobre cancelamentos recorrentes. Confirme a segunda etapa para concluir. O status sera atualizado e voce recebe o e-mail de cancelamento. Se houver multa, o valor e exibido antes da confirmacao final.</p>
           </details>
-          <details class="faq-item">
-            <summary>Minha empresa nao aparece</summary>
-            <p>A aba Empresa aparece apenas se seu usuario estiver associado a uma empresa. Se nao aparece, solicite o convite do administrador da sua empresa.</p>
-          </details>
-          <details class="faq-item">
-            <summary>QR Code nao abre</summary>
-            <p>O QR Code aparece somente apos a confirmacao do pagamento. Se nao aparecer, verifique o status no workshop e aguarde o email de confirmacao.</p>
-          </details>
-          <details class="faq-item">
+          <details class="faq-item" data-question="Posso remarcar uma reserva">
             <summary>Posso remarcar uma reserva?</summary>
-            <p>Se a sala permitir edicao, use o botao Editar. Caso contrario, cancele e crie uma nova reserva.</p>
+            <p>Se a sala permitir edicao, use o botao Editar na reserva para ajustar data e horario. Caso o anunciante tenha bloqueado edicao, o caminho correto e cancelar e criar uma nova reserva com as datas desejadas.</p>
           </details>
-          <details class="faq-item">
+          <details class="faq-item" data-question="Como escolher a opcao de pagamento">
+            <summary>Como escolher a opcao de pagamento/cancelamento?</summary>
+            <p>Na etapa de confirmacao da reserva, voce vera as opcoes disponiveis para aquela sala. Leia a descricao de cada opcao: algumas cobram na hora, outras cobram mais perto da data. Escolha a opcao que faz mais sentido para seu planejamento e continue.</p>
+          </details>
+          <details class="faq-item" data-question="Como me inscrever em um workshop">
+            <summary>Como me inscrever em um workshop?</summary>
+            <p>Acesse Cursos, abra o workshop desejado e leia os detalhes (data, horario, local e vagas). Clique em Confirmar inscricao e selecione um cartao para o pagamento futuro. Sua inscricao fica registrada e o pagamento so sera confirmado quando o minimo de participantes for atingido.</p>
+          </details>
+          <details class="faq-item" data-question="Quando o workshop sera cobrado">
+            <summary>Quando o workshop sera cobrado?</summary>
+            <p>O pagamento do workshop acontece apenas quando o minimo de participantes definido pelo organizador for atingido. Voce recebe um e-mail quando a cobranca for confirmada e o ingresso for gerado.</p>
+          </details>
+          <details class="faq-item" data-question="Onde vejo meu ingresso">
+            <summary>Onde vejo meu ingresso?</summary>
+            <p>Abra Meus cursos, clique no workshop inscrito e visualize o QR Code. O ingresso so aparece quando o pagamento estiver confirmado. No dia do evento, apresente o QR Code no check-in.</p>
+          </details>
+          <details class="faq-item" data-question="Meu pagamento falhou ou foi recusado">
+            <summary>Meu pagamento falhou ou foi recusado. O que fazer?</summary>
+            <p>Abra Meu Perfil, verifique se o cartao esta ativo e atualizado. Se precisar, cadastre outro cartao com apelido. Depois, volte a sua reserva ou inscricao e selecione o cartao correto. Se o problema persistir, fale com o seu banco.</p>
+          </details>
+          <details class="faq-item" data-question="Como alterar o cartao de pagamento">
+            <summary>Como alterar o cartao de pagamento?</summary>
+            <p>Abra Meu Perfil, vá em Cartoes salvos e adicione um novo cartao com apelido. Depois, ao fazer uma reserva ou inscricao, selecione o cartao desejado antes de confirmar.</p>
+          </details>
+          <details class="faq-item" data-question="Como remover um cartao salvo">
+            <summary>Como remover um cartao salvo?</summary>
+            <p>Entre em Meu Perfil, localize o cartao salvo e clique em Remover. Se ele estiver vinculado a uma reserva futura, cadastre outro cartao primeiro para nao ficar sem um cartao valido.</p>
+          </details>
+          <details class="faq-item" data-question="Como usar voucher">
+            <summary>Como usar voucher?</summary>
+            <p>Durante a reserva ou inscricao, digite o codigo do voucher e confirme. O valor sera recalculado e exibido antes do pagamento. Se o voucher for invalido, a mensagem aparece na tela.</p>
+          </details>
+          <details class="faq-item" data-question="Pagamento pendente na reserva">
+            <summary>Pagamento pendente na reserva</summary>
+            <p>Se a politica escolhida for pagamento futuro, a cobranca ocorre na data definida pela regra. Se for pagamento imediato e ainda estiver pendente, verifique se o cartao esta ativo e atualizado no seu perfil. Voce sempre recebe notificacao quando a cobranca acontece.</p>
+          </details>
+          <details class="faq-item" data-question="Como usar reserva pela empresa">
+            <summary>Como usar reserva pela empresa?</summary>
+            <p>Se sua conta estiver associada a uma empresa, a opcao Empresa aparece no topo do portal. Selecione Empresa para fazer uma reserva corporativa. Se nao aparecer, solicite associacao ao administrador da empresa.</p>
+          </details>
+          <details class="faq-item" data-question="Minha empresa nao aparece">
+            <summary>Minha empresa nao aparece</summary>
+            <p>A aba Empresa so aparece se seu usuario estiver associado a uma empresa. Caso nao apareca, solicite o convite do administrador da empresa ou do suporte.</p>
+          </details>
+          <details class="faq-item" data-question="Como falar com o anunciante">
             <summary>Como falar com o anunciante?</summary>
-            <p>Abra a reserva e clique em Mensagens. O anunciante recebe notificacao no portal.</p>
+            <p>Abra a reserva e clique em Mensagens. Ali voce envia perguntas e combinacoes. O anunciante recebe notificacao no portal e pode responder pelo chat.</p>
           </details>
-          <details class="faq-item">
+          <details class="faq-item" data-question="Como solicitar nota fiscal">
+            <summary>Como solicitar nota fiscal?</summary>
+            <p>Abra a reserva e clique em Solicitar NF. Preencha os dados da empresa ou pessoa fisica. O anunciante recebe a solicitacao e retorna com a NF pelo canal combinado.</p>
+          </details>
+          <details class="faq-item" data-question="Como adicionar visitantes">
+            <summary>Como adicionar visitantes a uma reserva?</summary>
+            <p>Na reserva, clique em Visitantes. Informe nomes e dados basicos de cada visitante. Isso ajuda o controle de acesso do local no dia do evento.</p>
+          </details>
+          <details class="faq-item" data-question="O que acontece se eu cancelar em cima da hora">
             <summary>O que acontece se eu cancelar em cima da hora?</summary>
-            <p>Aplica-se a politica escolhida. Em alguns casos ha multa e o valor pode ser cobrado conforme a regra.</p>
+            <p>Aplica-se a politica escolhida na reserva. Dependendo da regra, pode haver multa e o valor pode ser cobrado integralmente ou parcialmente. O aviso aparece antes da confirmacao final do cancelamento.</p>
+          </details>
+          <details class="faq-item" data-question="Nao consigo fazer login">
+            <summary>Nao consigo fazer login</summary>
+            <p>Verifique se o e-mail foi confirmado. Caso nao tenha confirmado, solicite novo email de verificacao. Se o problema persistir, tente recuperar a senha e verifique se nao ha erros de digitacao.</p>
+          </details>
+          <details class="faq-item" data-question="Como avaliar a sala e a plataforma">
+            <summary>Como avaliar a sala e a plataforma?</summary>
+            <p>Apos a reserva, voce recebe um e-mail de avaliacao. Nele, avalie a sala e a plataforma separadamente, com nota e comentario. O feedback ajuda o anunciante e melhora a experiencia.</p>
+          </details>
+          <details class="faq-item" data-question="Meu QR Code nao aparece">
+            <summary>Meu QR Code nao aparece</summary>
+            <p>O QR Code aparece apenas apos a confirmacao do pagamento. Confirme se o workshop atingiu o minimo e se o pagamento foi realizado. Voce tambem recebe o QR por e-mail.</p>
           </details>
         </div>
       </div>
 
       <div id="faq-anunciante" class="faq-panel" role="tabpanel">
-        <div class="faq-grid">
-          <div class="faq-card">
-            <h4>Como cadastrar uma sala?</h4>
-            <ol>
-              <li>Entre em Minhas Salas e clique em Cadastrar sala.</li>
-              <li>Preencha dados da sala, capacidade e descricao.</li>
-              <li>Envie fotos (a primeira vira capa).</li>
-              <li>Complete endereco e salve.</li>
-              <li>A geocodificacao acontece automaticamente.</li>
-            </ol>
-          </div>
-          <div class="faq-card">
-            <h4>Como configurar politicas?</h4>
-            <ol>
-              <li>No modal da sala, role ate Opcoes de pagamento.</li>
-              <li>Marque as opcoes que deseja oferecer.</li>
-              <li>Defina o valor para cada opcao.</li>
-              <li>Salve: o menor valor vira o Valor Diario exibido.</li>
-            </ol>
-          </div>
-          <div class="faq-card">
-            <h4>Como aprovar uma reserva?</h4>
-            <ol>
-              <li>Abra Reservas no menu.</li>
-              <li>Clique na reserva pendente.</li>
-              <li>Escolha Confirmar ou Recusar.</li>
-              <li>Se confirmar, o pagamento segue a politica definida.</li>
-            </ol>
-          </div>
-          <div class="faq-card">
-            <h4>Como gerir inscritos do workshop?</h4>
-            <ol>
-              <li>Vá em Workshops e encontre o evento.</li>
-              <li>Clique em Inscritos.</li>
-              <li>Use busca, filtro de pagamento e check-in.</li>
-              <li>Confirme check-in manual quando necessario.</li>
-            </ol>
-          </div>
-          <div class="faq-card">
-            <h4>Como enviar o link de gestao?</h4>
-            <ol>
-              <li>Na lista de workshops, clique em Link.</li>
-              <li>O link chega no e-mail do anunciante.</li>
-              <li>Ao abrir, faz login e ja filtra o evento.</li>
-            </ol>
-          </div>
-          <div class="faq-card">
-            <h4>Como cancelar um workshop?</h4>
-            <ol>
-              <li>Abra Gestao de convidados (mobile).</li>
-              <li>Clique em Cancelar workshop.</li>
-              <li>Se houver pagamentos, o estorno e automatico.</li>
-              <li>Os inscritos recebem email de cancelamento.</li>
-            </ol>
-          </div>
-        </div>
-
         <div class="faq-section">
-          <h3>Dúvidas frequentes</h3>
-          <details class="faq-item">
+          <h3>FAQ do Anunciante — passo a passo</h3>
+          <details class="faq-item" data-question="Como cadastrar uma sala">
+            <summary>Como cadastrar uma sala?</summary>
+            <p>Abra Minhas Salas, clique em Cadastrar sala e preencha os dados principais. Adicione fotos (a primeira vira capa), informe o endereco completo e salve. A geocodificacao acontece automaticamente ao salvar.</p>
+          </details>
+          <details class="faq-item" data-question="Como editar uma sala">
+            <summary>Como editar uma sala?</summary>
+            <p>Em Minhas Salas, clique em Editar na sala desejada. Atualize o que for necessario (fotos, descricao, capacidade, politicas). Salve no final para aplicar as mudancas.</p>
+          </details>
+          <details class="faq-item" data-question="Como configurar politicas">
+            <summary>Como configurar politicas de pagamento/cancelamento?</summary>
+            <p>No modal da sala, role ate Opcoes de pagamento/cancelamento. Marque as opcoes disponiveis e defina o valor de cada uma. O sistema calcula o Valor Diario exibido com base no menor valor ativo. Essas opcoes aparecem para o cliente na hora da reserva.</p>
+          </details>
+          <details class="faq-item" data-question="Como definir o preco de cada opcao">
+            <summary>Como definir o preco de cada opcao?</summary>
+            <p>O ideal e pensar no risco de cancelamento: pagamento imediato costuma ter preco menor, cancelamento com multa tem preco intermediario e sem taxa de cancelamento pode ter preco maior. Preencha cada valor no bloco da opcao correspondente.</p>
+          </details>
+          <details class="faq-item" data-question="Como aprovar uma reserva">
+            <summary>Como aprovar ou recusar uma reserva?</summary>
+            <p>Vá em Reservas, abra a reserva pendente e escolha Confirmar ou Recusar. Ao confirmar, o pagamento segue a politica definida. Ao recusar, o cliente recebe a notificacao.</p>
+          </details>
+          <details class="faq-item" data-question="Como cancelar uma reserva">
+            <summary>Como cancelar uma reserva confirmada?</summary>
+            <p>Na reserva, clique em Cancelar. O sistema pede confirmacao em duas etapas e avisa sobre cancelamentos recorrentes. Apos confirmar, o cliente e o admin sao notificados. Se houver multa, o sistema aplica a regra automaticamente.</p>
+          </details>
+          <details class="faq-item" data-question="Como responder mensagens de clientes">
+            <summary>Como responder mensagens de clientes?</summary>
+            <p>Abra Mensagens no portal. Selecione a conversa da reserva e responda por la. O cliente recebe notificacao e pode continuar o contato pelo mesmo canal.</p>
+          </details>
+          <details class="faq-item" data-question="Como ver avaliacoes da sala">
+            <summary>Como ver avaliacoes da sala?</summary>
+            <p>Em Avaliacoes, voce encontra os feedbacks de salas e plataforma. Voce pode optar por divulgar o feedback publico, para que ele apareca na pagina da sala.</p>
+          </details>
+          <details class="faq-item" data-question="Como gerir inscritos do workshop">
+            <summary>Como gerir inscritos do workshop?</summary>
+            <p>Vá em Workshops, localize o evento e clique em Inscritos. Use busca por nome, filtros de pagamento e check-in. Tambem e possivel confirmar check-in manualmente.</p>
+          </details>
+          <details class="faq-item" data-question="Como enviar o link de gestao">
+            <summary>Como enviar o link de gestão do evento?</summary>
+            <p>Na lista de workshops, clique em Link. O link chega no e-mail do anunciante e, ao abrir, ja direciona para a gestao de convidados do evento.</p>
+          </details>
+          <details class="faq-item" data-question="Como fazer check-in no celular">
+            <summary>Como fazer check-in no celular?</summary>
+            <p>Abra o portal mobile e escolha Realizar check-in. Leia o QR Code ou digite o codigo. O sistema abre a carteirinha, e o atendente valida o documento com foto antes de confirmar.</p>
+          </details>
+          <details class="faq-item" data-question="Como criar um workshop">
+            <summary>Como criar um workshop?</summary>
+            <p>Em Workshops, clique em Criar workshop. Preencha titulo, sala, datas e valor. Defina o minimo de participantes e publique. A pagina do workshop fica disponivel para inscricoes.</p>
+          </details>
+          <details class="faq-item" data-question="Como editar um workshop">
+            <summary>Como editar um workshop?</summary>
+            <p>Na lista de workshops, clique em Editar. Ajuste datas, vagas, descricao ou valores e salve. Caso ja existam inscritos, evite mudar datas sem aviso.</p>
+          </details>
+          <details class="faq-item" data-question="Como cancelar um workshop">
+            <summary>Como cancelar um workshop?</summary>
+            <p>Na gestao de convidados (mobile), clique em Cancelar workshop. Se houver pagamentos, o estorno e automatico e os inscritos recebem e-mail. Se ainda nao atingiu o minimo, o cancelamento nao cobra ninguem.</p>
+          </details>
+          <details class="faq-item" data-question="Quando recebo o repasse">
             <summary>Quando recebo o repasse?</summary>
-            <p>O extrato mostra disponibilidade em D+30. Voce ve a data e a contagem regressiva no financeiro.</p>
+            <p>O financeiro mostra cada lancamento com disponibilidade em D+30. Voce pode acompanhar a contagem regressiva no extrato. Os lancamentos aparecem com Origem (Sala ou Workshop).</p>
           </details>
-          <details class="faq-item">
-            <summary>Como enviar link de gestão do evento?</summary>
-            <p>Na lista de workshops, clique em Link. O acesso chega por e-mail e abre direto no evento.</p>
+          <details class="faq-item" data-question="Como transferir meu saldo">
+            <summary>Como transferir meu saldo?</summary>
+            <p>Abra Financeiro e clique em Transferir. O sistema usa os dados de repasse cadastrados no Editar perfil. Caso precise atualizar, volte ao perfil antes de transferir.</p>
           </details>
-          <details class="faq-item">
-            <summary>Check-in pelo celular nao abre camera</summary>
-            <p>Use HTTPS e libere permissao. Em iOS dentro do WhatsApp, abra no Safari. Se preciso, use o codigo manual.</p>
-          </details>
-          <details class="faq-item">
-            <summary>Posso cancelar um workshop?</summary>
-            <p>Sim. Na gestao de convidados, use Cancelar workshop. Se ja houver pagamento, o estorno e automatico.</p>
-          </details>
-          <details class="faq-item">
+          <details class="faq-item" data-question="Como ajustar fotos da sala">
             <summary>Como ajustar fotos da sala?</summary>
-            <p>Em Minhas Salas, edite a sala e envie novas imagens. A primeira foto vira a capa.</p>
+            <p>Em Minhas Salas, edite a sala e envie novas fotos. A primeira imagem sempre vira a capa exibida ao cliente.</p>
           </details>
-          <details class="faq-item">
+          <details class="faq-item" data-question="Como editar dados bancarios">
             <summary>Como editar dados bancarios?</summary>
-            <p>Va em Editar perfil e atualize os dados de repasse. O financeiro usa esses dados.</p>
+            <p>Va em Editar perfil e atualize os dados de repasse. O financeiro usa esses dados para transferencias.</p>
           </details>
-          <details class="faq-item">
+          <details class="faq-item" data-question="Como funciona a taxa da plataforma">
+            <summary>Como funciona a taxa da plataforma?</summary>
+            <p>Ha taxas diferentes para locacao e para workshop. Elas sao configuradas no painel de administrador e aplicadas automaticamente nos lancamentos financeiros.</p>
+          </details>
+          <details class="faq-item" data-question="Por que a sala esta inativa">
             <summary>Por que a sala esta inativa?</summary>
-            <p>Se houver data de desativacao ou manutencao, a sala fica inativa ate a data definida.</p>
+            <p>Se houver data de manutencao ou desativacao, a sala fica inativa ate o periodo definido. Verifique a operacao da sala no modal. Se existirem reservas futuras, cancele-as antes de desativar.</p>
+          </details>
+          <details class="faq-item" data-question="Camera nao abre no check-in">
+            <summary>Camera nao abre no check-in</summary>
+            <p>Use HTTPS e libere permissao do navegador. Em iOS dentro do WhatsApp, abra o link no Safari. Se nao funcionar, use o codigo manual ou a foto do QR. Se aparecer erro, copie a mensagem e envie ao suporte.</p>
           </details>
         </div>
       </div>
@@ -248,23 +248,49 @@
     const panels = document.querySelectorAll('.faq-panel');
     const params = new URLSearchParams(window.location.search);
     const initial = params.get('perfil');
-    if (initial) {
-      tabs.forEach(tab => {
-        const isTarget = tab.dataset.target === `faq-${initial}`;
-        tab.classList.toggle('active', isTarget);
-      });
-      panels.forEach(panel => {
-        panel.classList.toggle('active', panel.id === `faq-${initial}`);
-      });
+    const searchInput = document.getElementById('faqSearch');
+    const suggestions = document.getElementById('faqSuggestions');
+
+    function setActivePanel(targetId) {
+      tabs.forEach(t => t.classList.toggle('active', t.dataset.target === targetId));
+      panels.forEach(p => p.classList.toggle('active', p.id === targetId));
     }
+
+    if (initial) {
+      setActivePanel(`faq-${initial}`);
+    }
+
     tabs.forEach(tab => {
       tab.addEventListener('click', () => {
-        tabs.forEach(t => t.classList.remove('active'));
-        panels.forEach(p => p.classList.remove('active'));
-        tab.classList.add('active');
-        document.getElementById(tab.dataset.target).classList.add('active');
+        setActivePanel(tab.dataset.target);
+        if (searchInput) searchInput.value = '';
+        filterFaq('');
       });
     });
+
+    const allItems = Array.from(document.querySelectorAll('details.faq-item'));
+    const allQuestions = allItems.map(item => item.getAttribute('data-question') || item.querySelector('summary')?.textContent || '').filter(Boolean);
+    if (suggestions) {
+      suggestions.innerHTML = allQuestions.map(q => `<option value="${q}"></option>`).join('');
+    }
+
+    function filterFaq(query) {
+      const activePanel = document.querySelector('.faq-panel.active');
+      if (!activePanel) return;
+      const items = Array.from(activePanel.querySelectorAll('details.faq-item'));
+      const term = (query || '').trim().toLowerCase();
+      items.forEach(item => {
+        const text = (item.textContent || '').toLowerCase();
+        item.style.display = term === '' || text.includes(term) ? 'block' : 'none';
+        if (term && text.includes(term)) {
+          item.open = true;
+        } else {
+          item.open = false;
+        }
+      });
+    }
+
+    searchInput?.addEventListener('input', (e) => filterFaq(e.target.value));
   </script>
 </body>
 </html>
