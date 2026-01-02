@@ -53,15 +53,66 @@ try {
     exit;
   }
 
+  $maxSize = 1200;
+  $resizeError = null;
+  if (function_exists('imagecreatetruecolor') && function_exists('getimagesize')) {
+    $info = @getimagesize($targetPath);
+    if ($info && !empty($info[0]) && !empty($info[1])) {
+      $width = (int)$info[0];
+      $height = (int)$info[1];
+      $largest = max($width, $height);
+      if ($largest > $maxSize) {
+        $scale = $maxSize / $largest;
+        $newWidth = (int)round($width * $scale);
+        $newHeight = (int)round($height * $scale);
+        $src = null;
+        if ($ext === 'jpg') {
+          $src = @imagecreatefromjpeg($targetPath);
+        } elseif ($ext === 'png') {
+          $src = @imagecreatefrompng($targetPath);
+        } elseif ($ext === 'webp') {
+          $src = @imagecreatefromwebp($targetPath);
+        }
+        if ($src) {
+          $dst = imagecreatetruecolor($newWidth, $newHeight);
+          if ($ext === 'png') {
+            imagealphablending($dst, false);
+            imagesavealpha($dst, true);
+          }
+          if (imagecopyresampled($dst, $src, 0, 0, 0, 0, $newWidth, $newHeight, $width, $height)) {
+            if ($ext === 'jpg') {
+              imagejpeg($dst, $targetPath, 82);
+            } elseif ($ext === 'png') {
+              imagepng($dst, $targetPath, 6);
+            } elseif ($ext === 'webp') {
+              imagewebp($dst, $targetPath, 82);
+            }
+          } else {
+            $resizeError = 'Falha ao redimensionar.';
+          }
+          imagedestroy($dst);
+          imagedestroy($src);
+        } else {
+          $resizeError = 'Falha ao abrir a imagem.';
+        }
+      }
+    }
+  } else {
+    $resizeError = 'Biblioteca de imagem indisponível.';
+  }
+
   // Caminho relativo para uso no front
   $relativePath = 'img/posts/' . $id . '/' . $filename;
 
   $stmt = $pdo->prepare('UPDATE posts SET cover_path = :cover WHERE id = :id');
   $stmt->execute([':cover' => $relativePath, ':id' => $id]);
 
-  echo json_encode(['success' => true, 'cover_path' => $relativePath]);
+  echo json_encode([
+    'success' => true,
+    'cover_path' => $relativePath,
+    'resize_warning' => $resizeError
+  ]);
 } catch (Exception $e) {
   http_response_code(500);
   echo json_encode(['success' => false, 'error' => $e->getMessage()]);
 }
-
