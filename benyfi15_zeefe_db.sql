@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Tempo de geração: 29/12/2025 às 21:20
+-- Tempo de geração: 04/01/2026 às 12:52
 -- Versão do servidor: 5.7.23-23
 -- Versão do PHP: 8.1.34
 
@@ -43,16 +43,52 @@ CREATE TABLE `admins` (
   `id` int(11) NOT NULL,
   `username` varchar(100) COLLATE utf8_unicode_ci DEFAULT NULL,
   `email` varchar(150) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `name` varchar(120) COLLATE utf8_unicode_ci DEFAULT NULL,
   `password` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
-  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
+  `password_hash` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `status` varchar(20) COLLATE utf8_unicode_ci NOT NULL DEFAULT 'ativo',
+  `profile_id` int(11) DEFAULT NULL,
+  `is_master` tinyint(1) NOT NULL DEFAULT '0',
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 --
 -- Despejando dados para a tabela `admins`
 --
 
-INSERT INTO `admins` (`id`, `username`, `email`, `password`, `created_at`) VALUES
-(1, '123', 'admin@zeefe.com.br', '123', '2025-10-30 22:36:01');
+INSERT INTO `admins` (`id`, `username`, `email`, `name`, `password`, `password_hash`, `status`, `profile_id`, `is_master`, `created_at`, `updated_at`) VALUES
+(1, '123', 'admin@zeefe.com.br', NULL, '123', NULL, 'ativo', NULL, 1, '2025-10-30 22:36:01', NULL);
+
+-- --------------------------------------------------------
+
+--
+-- Estrutura para tabela `admin_profiles`
+--
+
+CREATE TABLE `admin_profiles` (
+  `id` int(11) NOT NULL,
+  `name` varchar(120) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `permissions_json` text COLLATE utf8mb4_unicode_ci,
+  `status` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'ativo',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Estrutura para tabela `admin_remember_tokens`
+--
+
+CREATE TABLE `admin_remember_tokens` (
+  `id` bigint(20) UNSIGNED NOT NULL,
+  `admin_id` int(11) NOT NULL,
+  `token_hash` char(64) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `user_agent` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `expires_at` datetime NOT NULL,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -91,7 +127,7 @@ CREATE TABLE `advertisers` (
 --
 
 INSERT INTO `advertisers` (`id`, `owner_type`, `owner_id`, `bank_code`, `display_name`, `full_name`, `login_email`, `login_cpf`, `contact_phone`, `password_hash`, `email_verified_at`, `verification_token`, `verification_token_expires`, `last_login`, `status`, `fee_pct`, `bank_name`, `account_type`, `agency_number`, `account_number`, `pix_key`, `created_at`, `updated_at`) VALUES
-(1, 'client', 0, '0001', 'MZF', 'Mira Zlotnik', 'benyfinkelstein@gmail.com', '41836484836', NULL, '$2y$10$coY86ax3NyQXEr1DAE4Q4uX6JMCV6LAI.gAHpLTdZ2Q7MdCTO.nW6', '2025-11-16 22:46:54', NULL, NULL, '2025-12-29 14:11:06', 'ativo', NULL, '', 'corrente', '0001', '6506487-7', '37333590895', '2025-11-16 22:46:39', '2025-12-29 15:07:44');
+(1, 'client', 0, '0001', 'MZF', 'Mira Zlotnik', 'benyfinkelstein@gmail.com', '41836484836', NULL, '$2y$10$coY86ax3NyQXEr1DAE4Q4uX6JMCV6LAI.gAHpLTdZ2Q7MdCTO.nW6', '2025-11-16 22:46:54', NULL, NULL, '2026-01-01 12:21:59', 'ativo', NULL, '', 'corrente', '0001', '6506487-7', '37333590895', '2025-11-16 22:46:39', '2025-12-29 15:07:44');
 
 -- --------------------------------------------------------
 
@@ -134,7 +170,12 @@ INSERT INTO `advertiser_remember_tokens` (`id`, `advertiser_id`, `token_hash`, `
 (30, 1, '22006e3e0e4ac5a80ee6a3be56e1447492f159becc301ad057d8dc5096dea987', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', '2025-12-28 09:55:37', '2025-12-29 09:55:37'),
 (31, 1, '03e7b21ba936ba018b40c4dddf518634fd5bcba443d019d64df635c7311a3221', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', '2025-12-28 21:15:18', '2025-12-29 21:15:18'),
 (32, 1, '0c2520d4c89671bc45b441a58de55a6087fd2c273392ac185725f8491eeddd49', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', '2025-12-29 12:21:50', '2025-12-30 12:21:50'),
-(33, 1, '004ee7feedc204021c305941059baf56b93f2a471dd5bfe989446b162d90fa4c', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', '2025-12-29 12:54:16', '2025-12-30 12:54:16');
+(33, 1, '004ee7feedc204021c305941059baf56b93f2a471dd5bfe989446b162d90fa4c', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', '2025-12-29 12:54:16', '2025-12-30 12:54:16'),
+(34, 1, '21b711a0be6d8c480af4141dc6e6feeb46b083494026d9c6383752efacaf7bc6', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', '2025-12-30 12:03:53', '2025-12-31 12:03:53'),
+(35, 1, 'd9409fbb0e7182b97c90892fdeeca9077c1172946b44e131d80a20d0a352351e', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', '2025-12-30 21:07:42', '2025-12-31 21:07:42'),
+(36, 1, 'dedde8813d21a3ad1fccf64d3ac9becfedb672309be726e47fdd2031a1ab4a32', 'Mozilla/5.0 (iPhone; CPU iPhone OS 26_1_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) EdgiOS/143.0.3650.112 Version/26.0 Mobile/15E148 Safari/604.1', '2025-12-30 21:33:28', '2025-12-31 21:33:28'),
+(37, 1, '65d3bb509c74ae6efaf1a48a13924a890709382246237f71b82f680fcae5ef21', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.6 Safari/605.1.15', '2025-12-30 21:36:39', '2025-12-31 21:36:39'),
+(38, 1, 'd44d5f13fa92d44444df68fb12e199b6176b15771f0d00329d1bcd569448ef4b', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', '2026-01-01 12:21:59', '2026-01-02 12:21:59');
 
 -- --------------------------------------------------------
 
@@ -274,7 +315,8 @@ INSERT INTO `client_remember_tokens` (`id`, `client_id`, `token_hash`, `user_age
 (34, 26, '72739d925677a58d437b19c6e5b99c7bec04ad1d9402b875a3ae461ead4e82ba', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', '2025-12-27 17:09:59', '2025-12-28 17:09:59'),
 (35, 27, '4cfe66af4b2fd41cf80ebf4a6c9f2aa49826f4ccb8cb13345eda79ab09cf5889', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', '2025-12-27 21:47:01', '2025-12-28 21:47:01'),
 (36, 26, '932b1c729cba59340344349b0abcdec53af6f2ebf40271c4ea221bb8ce5085ae', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.6 Safari/605.1.15', '2025-12-27 21:48:43', '2025-12-28 21:48:43'),
-(37, 27, '331ca6852c8f18a126be36a30f401212e3eef424112b54704af59ea9fc512b83', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', '2025-12-28 18:22:42', '2025-12-29 18:22:42');
+(37, 27, '331ca6852c8f18a126be36a30f401212e3eef424112b54704af59ea9fc512b83', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', '2025-12-28 18:22:42', '2025-12-29 18:22:42'),
+(38, 26, '5705d707e72a76b8a4323fb1860b57afc907363a249316c7ddcff7dbec0f2e42', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', '2025-12-30 06:47:34', '2025-12-31 06:47:34');
 
 -- --------------------------------------------------------
 
@@ -371,6 +413,7 @@ CREATE TABLE `customer_cards` (
   `client_id` bigint(20) NOT NULL,
   `stripe_customer_id` varchar(80) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `stripe_payment_method_id` varchar(80) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `card_nickname` varchar(60) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `pagarme_card_id` varchar(80) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `fingerprint` varchar(128) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `billing_name` varchar(150) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
@@ -390,8 +433,10 @@ CREATE TABLE `customer_cards` (
 -- Despejando dados para a tabela `customer_cards`
 --
 
-INSERT INTO `customer_cards` (`id`, `client_id`, `stripe_customer_id`, `stripe_payment_method_id`, `pagarme_card_id`, `fingerprint`, `billing_name`, `billing_email`, `billing_zip`, `brand`, `last4`, `exp_month`, `exp_year`, `holder_name`, `status`, `created_at`, `updated_at`) VALUES
-(11, 27, 'cus_TgQBcUNKCm1KcV', 'pm_1SjKDSRGALXK8tGEOh0QmBPs', NULL, 'Bqvvh7Ouk3nQbeB2', NULL, NULL, NULL, 'mastercard', '5454', 5, 2041, 'Mira', 'active', '2025-12-28 10:41:03', '2025-12-28 10:41:03');
+INSERT INTO `customer_cards` (`id`, `client_id`, `stripe_customer_id`, `stripe_payment_method_id`, `card_nickname`, `pagarme_card_id`, `fingerprint`, `billing_name`, `billing_email`, `billing_zip`, `brand`, `last4`, `exp_month`, `exp_year`, `holder_name`, `status`, `created_at`, `updated_at`) VALUES
+(11, 27, 'cus_TgQBcUNKCm1KcV', 'pm_1SjKDSRGALXK8tGEOh0QmBPs', NULL, NULL, 'Bqvvh7Ouk3nQbeB2', NULL, NULL, NULL, 'mastercard', '5454', 5, 2041, 'Mira', 'active', '2025-12-28 10:41:03', '2025-12-28 10:41:03'),
+(12, 26, 'cus_TfzrwBc3nbZUrt', 'pm_1SjzcqRGALXK8tGELGfbr1rz', NULL, NULL, 'kSlmrCoDGD10mLLy', NULL, NULL, NULL, 'visa', '4242', 12, 2033, 'Beny Finkelstein', 'active', '2025-12-30 06:54:02', '2025-12-30 06:54:02'),
+(15, 27, 'cus_TgQBcUNKCm1KcV', 'pm_1Sk2SjRGALXK8tGEIsrafR74', 'Amex', NULL, '2tO4KRutbospcrcr', NULL, NULL, NULL, 'mastercard', '3222', 12, 2033, 'Mira', 'active', '2025-12-30 09:55:46', '2025-12-30 09:55:46');
 
 -- --------------------------------------------------------
 
@@ -472,6 +517,13 @@ CREATE TABLE `ledger_entries` (
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+--
+-- Despejando dados para a tabela `ledger_entries`
+--
+
+INSERT INTO `ledger_entries` (`id`, `advertiser_id`, `reservation_id`, `type`, `description`, `amount`, `status`, `available_at`, `paid_at`, `txid`, `created_at`) VALUES
+(33, 1, NULL, 'credito', 'Crédito workshop: Workshop Teste 2', 150.00, 'pendente', '2026-01-30 19:21:38', '2025-12-31 19:21:38', 'workshop_enrollment_27', '2025-12-31 19:21:38');
+
 -- --------------------------------------------------------
 
 --
@@ -488,6 +540,15 @@ CREATE TABLE `messages` (
   `read_by_client_at` datetime DEFAULT NULL,
   `read_by_advertiser_at` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Despejando dados para a tabela `messages`
+--
+
+INSERT INTO `messages` (`id`, `thread_id`, `sender_type`, `body`, `attachment_url`, `created_at`, `read_by_client_at`, `read_by_advertiser_at`) VALUES
+(10, 7, 'client', 'teste', NULL, '2026-01-04 11:06:46', '2026-01-04 11:06:47', NULL),
+(11, 7, '', 'teste', NULL, '2026-01-04 11:07:11', '2026-01-04 11:07:13', NULL),
+(12, 7, '', 'teste2', NULL, '2026-01-04 11:07:19', '2026-01-04 11:07:28', NULL);
 
 -- --------------------------------------------------------
 
@@ -510,7 +571,7 @@ CREATE TABLE `message_threads` (
 --
 
 INSERT INTO `message_threads` (`id`, `room_id`, `reservation_id`, `client_id`, `advertiser_id`, `created_at`, `last_message_at`) VALUES
-(7, NULL, NULL, 26, NULL, '2025-12-26 13:30:11', NULL),
+(7, NULL, NULL, 26, NULL, '2025-12-26 13:30:11', '2026-01-04 11:07:19'),
 (8, NULL, NULL, 27, NULL, '2025-12-27 22:38:13', NULL);
 
 -- --------------------------------------------------------
@@ -614,7 +675,10 @@ CREATE TABLE `payments` (
 
 INSERT INTO `payments` (`id`, `reservation_id`, `method`, `amount`, `status`, `transaction_code`, `paid_at`, `created_at`, `updated_at`, `provider`, `currency`, `amount_cents`, `stripe_payment_intent_id`, `stripe_charge_id`, `stripe_customer_id`, `stripe_payment_method_id`, `failure_code`, `failure_message`) VALUES
 (6, 72, 'cartao', 1100.00, 'pago', 'pi_3SjKEtRGALXK8tGE1rHL86s1', '2025-12-28 10:42:31', '2025-12-28 10:42:31', '2025-12-28 10:42:31', 'stripe', 'BRL', 110000, 'pi_3SjKEtRGALXK8tGE1rHL86s1', NULL, 'cus_TgQBcUNKCm1KcV', 'pm_1SjKDSRGALXK8tGEOh0QmBPs', NULL, NULL),
-(7, 73, 'cartao', 1100.00, 'pago', 'pi_3SjVLDRGALXK8tGE1KWTsipc', '2025-12-28 22:33:48', '2025-12-28 22:33:48', '2025-12-28 22:33:48', 'stripe', 'BRL', 110000, 'pi_3SjVLDRGALXK8tGE1KWTsipc', NULL, 'cus_TgQBcUNKCm1KcV', 'pm_1SjKDSRGALXK8tGEOh0QmBPs', NULL, NULL);
+(7, 73, 'cartao', 1100.00, 'pago', 'pi_3SjVLDRGALXK8tGE1KWTsipc', '2025-12-28 22:33:48', '2025-12-28 22:33:48', '2025-12-28 22:33:48', 'stripe', 'BRL', 110000, 'pi_3SjVLDRGALXK8tGE1KWTsipc', NULL, 'cus_TgQBcUNKCm1KcV', 'pm_1SjKDSRGALXK8tGEOh0QmBPs', NULL, NULL),
+(8, 74, 'cartao', 1.00, 'pago', 'pi_3SjziuRGALXK8tGE15HJzFhg', '2025-12-30 07:00:16', '2025-12-30 07:00:16', '2025-12-30 07:00:16', 'stripe', 'BRL', 100, 'pi_3SjziuRGALXK8tGE15HJzFhg', NULL, 'cus_TfzrwBc3nbZUrt', 'pm_1SjzcqRGALXK8tGELGfbr1rz', NULL, NULL),
+(9, 75, 'cartao', 150.00, 'pendente', 'pi_3SjzlcRGALXK8tGE097azVfj', NULL, '2025-12-30 07:03:05', '2025-12-30 07:03:05', 'stripe', 'BRL', 15000, 'pi_3SjzlcRGALXK8tGE097azVfj', 'ch_3SjzlcRGALXK8tGE0HWrW43B', 'cus_TgQBcUNKCm1KcV', 'pm_1SjKDSRGALXK8tGEOh0QmBPs', NULL, NULL),
+(10, 74, 'cartao', 1.00, 'estornado', 're_3SjziuRGALXK8tGE1cE3MeWU', '2025-12-30 07:05:57', '2025-12-30 07:05:58', '2025-12-30 07:05:58', 'stripe', 'BRL', 100, 'pi_3SjziuRGALXK8tGE15HJzFhg', NULL, NULL, 'pm_1SjzcqRGALXK8tGELGfbr1rz', NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -689,6 +753,7 @@ CREATE TABLE `posts` (
   `summary` varchar(300) DEFAULT NULL,
   `content` mediumtext,
   `category` varchar(80) DEFAULT NULL,
+  `category_id` int(11) DEFAULT NULL,
   `status` enum('rascunho','publicado','arquivado') NOT NULL DEFAULT 'rascunho',
   `cover_path` varchar(255) DEFAULT NULL,
   `author_name` varchar(120) DEFAULT NULL,
@@ -701,13 +766,41 @@ CREATE TABLE `posts` (
 -- Despejando dados para a tabela `posts`
 --
 
-INSERT INTO `posts` (`id`, `slug`, `title`, `summary`, `content`, `category`, `status`, `cover_path`, `author_name`, `published_at`, `created_at`, `updated_at`) VALUES
-(16, '', 'A diminuição dos espaços de trabalho e a necessidade de reuniões presenciais', 'Com escritórios cada vez menores, cresce a necessidade de encontros presenciais em ambientes profissionais, equipados e prontos para decisões rápidas.', '<p data-start=\"140\" data-end=\"445\">A redução das áreas físicas nas empresas tornou-se uma tendência irreversível. Modelos híbridos, escritórios menores e equipes distribuídas levaram muitas organizações a repensar o papel do espaço corporativo. Mas, ao mesmo tempo em que as mesas diminuíram, a necessidade de encontros presenciais cresceu.</p>\n<p data-start=\"447\" data-end=\"779\">Reuniões presenciais seguem essenciais para decisões complexas, alinhamentos estratégicos, construção de confiança e resolução de conflitos. Elas aceleram ciclos de negociação e reduzem ruídos que, no digital, se acumulam. Com menos salas internas, porém, muitos times ficam sem infraestrutura adequada para esses momentos críticos.</p>\n<p data-start=\"781\" data-end=\"1101\">Esse cenário abre espaço para ambientes profissionais compartilhados, bem localizados e já preparados para receber equipes com tecnologia, conforto e privacidade. O escritório deixou de ser um local fixo: virou um recurso a ser acionado conforme a necessidade — especialmente quando o encontro cara a cara faz diferença.</p>', 'Espaços', 'publicado', 'img/posts/16/cover.webp', 'Beny Finkelstein', '2025-11-27 19:13:00', '2025-11-27 19:15:02', '2025-11-27 19:15:02'),
-(21, '123', 'Workshops e Produtividade', 'Workshops presenciais impulsionam colaboração, alinhamento e aprendizado, aumentando produtividade e fortalecendo a retenção de talentos.', '<p data-start=\"1189\" data-end=\"1505\">Workshops presenciais se tornaram ferramentas de alto impacto para empresas que buscam produtividade e retenção de talentos. Diferentemente de treinamentos tradicionais, o formato de workshop combina conteúdo prático, troca entre equipes e resolução de problemas reais — tudo em um ambiente que estimula colaboração.</p>\n<p data-start=\"1507\" data-end=\"1853\">Ao trabalhar em grupo, os profissionais ganham clareza sobre processos, entendem expectativas, fortalecem relações e desenvolvem senso de pertencimento. Isso reduz retrabalho, melhora a comunicação interna e acelera entregas. Além disso, a experiência presencial cria memórias positivas, reforça cultura e dá visibilidade ao propósito da empresa.</p>\n<p data-start=\"1855\" data-end=\"2223\">Do ponto de vista de retenção, workshops funcionam como investimento direto no desenvolvimento do colaborador. Pessoas que sentem evolução, aprendizado contínuo e conexão humana tendem a permanecer mais tempo e produzir mais. Para organizações que já operam com times híbridos ou remotos, encontros estruturados tornam-se fundamentais para manter coesão e engajamento.</p>', 'Workshop', 'publicado', 'img/posts/21/cover.webp', 'Beny Finkelstein', '2025-11-28 01:19:00', '2025-11-27 19:19:17', '2025-12-19 15:53:55'),
-(22, 'locais', 'Locais privativos para reuniões', 'Reuniões de negócios exigem foco e confidencialidade. Espaços privativos garantem profissionalismo, segurança e eficiência nas decisões.', '<p data-start=\"2307\" data-end=\"2594\">Reuniões de negócios exigem confidencialidade, foco e ambiente adequado. Mesmo com o avanço do trabalho remoto, muitos profissionais perceberam que cafés, escritórios improvisados ou salas compartilhadas não garantem a privacidade e a concentração necessárias para negociações sensíveis.</p>\n<p data-start=\"2596\" data-end=\"2871\">Ambientes privativos oferecem segurança para tratar temas estratégicos, números financeiros, contratos e decisões que não podem vazar. Além disso, geram percepção de profissionalismo — algo que impacta diretamente a credibilidade diante de clientes, parceiros e investidores.</p>\n<p data-start=\"2873\" data-end=\"3219\">Outro ponto crítico é a eficiência. Em salas planejadas para reuniões, a tecnologia funciona, a acústica ajuda, e o espaço convida à objetividade. Isso reduz atrasos, interrupções e improvisos. Ter um local reservado, confortável e bem equipado deixou de ser luxo: tornou-se elemento básico para quem conduz negócios de forma séria e competitiva.</p>', 'Locais', 'publicado', 'img/posts/22/cover.jpg', 'Beny Finkelstein', '2025-11-27 19:19:00', '2025-11-27 19:20:48', '2025-11-27 19:20:48'),
-(24, 'o-dilema-da-gest-o-moderna-home-office-x-presencial-2', 'Dilema: Homeoffice ou Presencial?', 'Flexibilidade ou conexão real? A gestão moderna busca equilíbrio entre trabalho remoto e encontros presenciais estratégicos para decisões que realmente importam.', '<p data-start=\"194\" data-end=\"469\">A gestão moderna vive um paradoxo. De um lado, o home office trouxe flexibilidade, redução de custos e maior autonomia para profissionais. De outro, a ausência de encontros presenciais tem impactado colaboração, alinhamento estratégico e construção de cultura organizacional.</p>\n<p data-start=\"471\" data-end=\"805\">Reuniões virtuais funcionam bem para decisões operacionais e acompanhamentos rápidos. Porém, quando o objetivo é criar, negociar, alinhar expectativas ou tomar decisões críticas, o presencial ainda exerce um papel insubstituível. Linguagem corporal, foco compartilhado e troca espontânea são elementos difíceis de replicar no digital.</p>\n<p data-start=\"807\" data-end=\"1076\">O desafio atual não é escolher entre remoto ou presencial, mas <strong data-start=\"870\" data-end=\"916\">saber quando cada formato faz mais sentido</strong>. Empresas mais eficientes têm adotado modelos híbridos inteligentes, utilizando encontros presenciais pontuais e bem planejados para momentos de maior impacto.</p>\n<p data-start=\"1078\" data-end=\"1253\">Nesse contexto, espaços flexíveis e prontos para uso tornam-se aliados da gestão: permitem reunir pessoas quando realmente importa, sem a rigidez de manter um escritório fixo.</p>', 'espaços', 'publicado', 'img/posts/24/cover.png', 'Beny Finkelstein', '2025-12-19 14:19:00', '2025-12-19 08:20:12', '2025-12-22 12:39:47'),
-(25, 'impressionar-um-cliente-come-a-pelo-local-da-reuni-o', 'Impressionar um cliente começa pelo local da reunião', 'O local da reunião comunica antes das palavras. Ambientes certos geram confiança, foco e impacto nas negociações com clientes.', '<p data-start=\"1320\" data-end=\"1519\">Antes mesmo da primeira palavra, o ambiente já comunica. O local escolhido para uma reunião influencia diretamente a percepção de profissionalismo, organização e cuidado com a experiência do cliente.</p>\n<p data-start=\"1521\" data-end=\"1798\">Salas improvisadas, ruído excessivo, falta de privacidade ou infraestrutura limitada podem comprometer negociações importantes — independentemente da qualidade da proposta apresentada. Por outro lado, um espaço bem projetado transmite confiança, preparo e atenção aos detalhes.</p>\n<p data-start=\"1800\" data-end=\"2019\">Iluminação adequada, conforto, tecnologia funcional e hospitalidade criam um cenário favorável para conversas estratégicas. O cliente se sente valorizado, o diálogo flui melhor e as decisões tendem a ser mais objetivas.</p>\n<p data-start=\"2021\" data-end=\"2219\">Impressionar não é exagerar. É oferecer o ambiente certo para que a reunião aconteça com foco, privacidade e fluidez. Escolher bem onde receber um cliente é parte essencial da estratégia de negócio.</p>', 'clientes', 'publicado', 'img/posts/25/cover.png', 'Beny Finkelstein', '2025-12-19 14:20:00', '2025-12-19 08:22:24', '2025-12-22 12:39:23'),
-(26, 'alugar-sob-demanda-ou-possuir-um-espa-o-pr-s-e-contras', 'Alugar sob demanda ou possuir um espaço? Prós e contras', 'Espaço próprio ou sob demanda? Entenda os prós e contras de cada modelo e como escolher a opção mais eficiente para o seu negócio.', '<p data-start=\"2289\" data-end=\"2465\">A decisão entre possuir um espaço próprio ou alugar sob demanda envolve muito mais do que custo mensal. Trata-se de flexibilidade, eficiência e adequação ao momento da empresa.</p>\n<p data-start=\"2467\" data-end=\"2737\"><strong data-start=\"2467\" data-end=\"2496\">Possuir um espaço próprio</strong> oferece controle total, identidade fixa e disponibilidade constante. Em contrapartida, exige investimento inicial elevado, custos fixos recorrentes, manutenção, ociosidade em períodos de menor uso e menor capacidade de adaptação a mudanças.</p>\n<p data-start=\"2739\" data-end=\"3041\">Já <strong data-start=\"2742\" data-end=\"2772\">alugar espaços sob demanda</strong> reduz compromissos financeiros, elimina custos ocultos e permite escolher o local ideal para cada necessidade: reuniões, workshops, apresentações ou encontros estratégicos. A principal limitação está na dependência de disponibilidade e na ausência de um endereço fixo.</p>\n<p data-start=\"3043\" data-end=\"3299\">Para empresas enxutas, times híbridos ou profissionais que se reúnem presencialmente apenas em momentos-chave, o modelo sob demanda tende a ser mais racional. Ele converte estrutura fixa em variável e libera energia para o que realmente importa: o negócio.</p>\n<p data-start=\"3301\" data-end=\"3442\">Cada modelo tem seu papel. A escolha certa depende do estágio da empresa, da frequência de uso e da importância estratégica do espaço físico.</p>', 'Locais', 'publicado', 'img/posts/26/cover.png', 'Beny Finkelstein', '0000-00-00 00:00:00', '2025-12-19 08:25:31', '2025-12-19 08:27:49');
+INSERT INTO `posts` (`id`, `slug`, `title`, `summary`, `content`, `category`, `category_id`, `status`, `cover_path`, `author_name`, `published_at`, `created_at`, `updated_at`) VALUES
+(16, '', 'A diminuição dos espaços de trabalho e a necessidade de reuniões presenciais', 'Com escritórios cada vez menores, cresce a necessidade de encontros presenciais em ambientes profissionais, equipados e prontos para decisões rápidas.', '<p data-start=\"140\" data-end=\"445\">A redução das áreas físicas nas empresas tornou-se uma tendência irreversível. Modelos híbridos, escritórios menores e equipes distribuídas levaram muitas organizações a repensar o papel do espaço corporativo. Mas, ao mesmo tempo em que as mesas diminuíram, a necessidade de encontros presenciais cresceu.</p>\n<p data-start=\"447\" data-end=\"779\">Reuniões presenciais seguem essenciais para decisões complexas, alinhamentos estratégicos, construção de confiança e resolução de conflitos. Elas aceleram ciclos de negociação e reduzem ruídos que, no digital, se acumulam. Com menos salas internas, porém, muitos times ficam sem infraestrutura adequada para esses momentos críticos.</p>\n<p data-start=\"781\" data-end=\"1101\">Esse cenário abre espaço para ambientes profissionais compartilhados, bem localizados e já preparados para receber equipes com tecnologia, conforto e privacidade. O escritório deixou de ser um local fixo: virou um recurso a ser acionado conforme a necessidade — especialmente quando o encontro cara a cara faz diferença.</p>', 'Espaços', NULL, 'publicado', 'img/posts/16/cover.webp', 'Beny Finkelstein', '2025-11-27 19:13:00', '2025-11-27 19:15:02', '2025-11-27 19:15:02'),
+(21, '123', 'Workshops e Produtividade', 'Workshops presenciais impulsionam colaboração, alinhamento e aprendizado, aumentando produtividade e fortalecendo a retenção de talentos.', '<p data-start=\"1189\" data-end=\"1505\">Workshops presenciais se tornaram ferramentas de alto impacto para empresas que buscam produtividade e retenção de talentos. Diferentemente de treinamentos tradicionais, o formato de workshop combina conteúdo prático, troca entre equipes e resolução de problemas reais — tudo em um ambiente que estimula colaboração.</p>\n<p data-start=\"1507\" data-end=\"1853\">Ao trabalhar em grupo, os profissionais ganham clareza sobre processos, entendem expectativas, fortalecem relações e desenvolvem senso de pertencimento. Isso reduz retrabalho, melhora a comunicação interna e acelera entregas. Além disso, a experiência presencial cria memórias positivas, reforça cultura e dá visibilidade ao propósito da empresa.</p>\n<p data-start=\"1855\" data-end=\"2223\">Do ponto de vista de retenção, workshops funcionam como investimento direto no desenvolvimento do colaborador. Pessoas que sentem evolução, aprendizado contínuo e conexão humana tendem a permanecer mais tempo e produzir mais. Para organizações que já operam com times híbridos ou remotos, encontros estruturados tornam-se fundamentais para manter coesão e engajamento.</p>', 'Workshop', NULL, 'publicado', 'img/posts/21/cover.webp', 'Beny Finkelstein', '2025-11-28 01:19:00', '2025-11-27 19:19:17', '2025-12-19 15:53:55'),
+(22, 'locais', 'Locais privativos para reuniões', 'Reuniões de negócios exigem foco e confidencialidade. Espaços privativos garantem profissionalismo, segurança e eficiência nas decisões.', '<p data-start=\"2307\" data-end=\"2594\">Reuniões de negócios exigem confidencialidade, foco e ambiente adequado. Mesmo com o avanço do trabalho remoto, muitos profissionais perceberam que cafés, escritórios improvisados ou salas compartilhadas não garantem a privacidade e a concentração necessárias para negociações sensíveis.</p>\n<p data-start=\"2596\" data-end=\"2871\">Ambientes privativos oferecem segurança para tratar temas estratégicos, números financeiros, contratos e decisões que não podem vazar. Além disso, geram percepção de profissionalismo — algo que impacta diretamente a credibilidade diante de clientes, parceiros e investidores.</p>\n<p data-start=\"2873\" data-end=\"3219\">Outro ponto crítico é a eficiência. Em salas planejadas para reuniões, a tecnologia funciona, a acústica ajuda, e o espaço convida à objetividade. Isso reduz atrasos, interrupções e improvisos. Ter um local reservado, confortável e bem equipado deixou de ser luxo: tornou-se elemento básico para quem conduz negócios de forma séria e competitiva.</p>', 'Locais', NULL, 'publicado', 'img/posts/22/cover.jpg', 'Beny Finkelstein', '2025-11-27 19:19:00', '2025-11-27 19:20:48', '2025-11-27 19:20:48'),
+(24, 'o-dilema-da-gest-o-moderna-home-office-x-presencial-2', 'Dilema: Homeoffice ou Presencial?', 'Flexibilidade ou conexão real? A gestão moderna busca equilíbrio entre trabalho remoto e encontros presenciais estratégicos para decisões que realmente importam.', '<p data-start=\"194\" data-end=\"469\">A gestão moderna vive um paradoxo. De um lado, o home office trouxe flexibilidade, redução de custos e maior autonomia para profissionais. De outro, a ausência de encontros presenciais tem impactado colaboração, alinhamento estratégico e construção de cultura organizacional.</p>\n<p data-start=\"471\" data-end=\"805\">Reuniões virtuais funcionam bem para decisões operacionais e acompanhamentos rápidos. Porém, quando o objetivo é criar, negociar, alinhar expectativas ou tomar decisões críticas, o presencial ainda exerce um papel insubstituível. Linguagem corporal, foco compartilhado e troca espontânea são elementos difíceis de replicar no digital.</p>\n<p data-start=\"807\" data-end=\"1076\">O desafio atual não é escolher entre remoto ou presencial, mas <strong data-start=\"870\" data-end=\"916\">saber quando cada formato faz mais sentido</strong>. Empresas mais eficientes têm adotado modelos híbridos inteligentes, utilizando encontros presenciais pontuais e bem planejados para momentos de maior impacto.</p>\n<p data-start=\"1078\" data-end=\"1253\">Nesse contexto, espaços flexíveis e prontos para uso tornam-se aliados da gestão: permitem reunir pessoas quando realmente importa, sem a rigidez de manter um escritório fixo.</p>', 'espaços', NULL, 'publicado', 'img/posts/24/cover.png', 'Beny Finkelstein', '2025-12-19 20:19:00', '2025-12-19 08:20:12', '2026-01-01 21:12:07'),
+(25, 'impressionar-um-cliente-come-a-pelo-local-da-reuni-o', 'Impressionar um cliente começa pelo local da reunião', 'O local da reunião comunica antes das palavras. Ambientes certos geram confiança, foco e impacto nas negociações com clientes.', '<p data-start=\"1320\" data-end=\"1519\">Antes mesmo da primeira palavra, o ambiente já comunica. O local escolhido para uma reunião influencia diretamente a percepção de profissionalismo, organização e cuidado com a experiência do cliente.</p>\n<p data-start=\"1521\" data-end=\"1798\">Salas improvisadas, ruído excessivo, falta de privacidade ou infraestrutura limitada podem comprometer negociações importantes — independentemente da qualidade da proposta apresentada. Por outro lado, um espaço bem projetado transmite confiança, preparo e atenção aos detalhes.</p>\n<p data-start=\"1800\" data-end=\"2019\">Iluminação adequada, conforto, tecnologia funcional e hospitalidade criam um cenário favorável para conversas estratégicas. O cliente se sente valorizado, o diálogo flui melhor e as decisões tendem a ser mais objetivas.</p>\n<p data-start=\"2021\" data-end=\"2219\">Impressionar não é exagerar. É oferecer o ambiente certo para que a reunião aconteça com foco, privacidade e fluidez. Escolher bem onde receber um cliente é parte essencial da estratégia de negócio.</p>', 'clientes', NULL, 'publicado', 'img/posts/25/cover.png', 'Beny Finkelstein', '2025-12-19 23:20:00', '2025-12-19 08:22:24', '2026-01-01 21:12:46'),
+(26, 'alugar-sob-demanda-ou-possuir-um-espa-o-pr-s-e-contras', 'Alugar sob demanda ou possuir um espaço? Prós e contras', 'Espaço próprio ou sob demanda? Entenda os prós e contras de cada modelo e como escolher a opção mais eficiente para o seu negócio.', '<p data-start=\"2289\" data-end=\"2465\">A decisão entre possuir um espaço próprio ou alugar sob demanda envolve muito mais do que custo mensal. Trata-se de flexibilidade, eficiência e adequação ao momento da empresa.</p>\n<p data-start=\"2467\" data-end=\"2737\"><strong data-start=\"2467\" data-end=\"2496\">Possuir um espaço próprio</strong> oferece controle total, identidade fixa e disponibilidade constante. Em contrapartida, exige investimento inicial elevado, custos fixos recorrentes, manutenção, ociosidade em períodos de menor uso e menor capacidade de adaptação a mudanças.</p>\n<p data-start=\"2739\" data-end=\"3041\">Já <strong data-start=\"2742\" data-end=\"2772\">alugar espaços sob demanda</strong> reduz compromissos financeiros, elimina custos ocultos e permite escolher o local ideal para cada necessidade: reuniões, workshops, apresentações ou encontros estratégicos. A principal limitação está na dependência de disponibilidade e na ausência de um endereço fixo.</p>\n<p data-start=\"3043\" data-end=\"3299\">Para empresas enxutas, times híbridos ou profissionais que se reúnem presencialmente apenas em momentos-chave, o modelo sob demanda tende a ser mais racional. Ele converte estrutura fixa em variável e libera energia para o que realmente importa: o negócio.</p>\n<p data-start=\"3301\" data-end=\"3442\">Cada modelo tem seu papel. A escolha certa depende do estágio da empresa, da frequência de uso e da importância estratégica do espaço físico.</p>', 'Locais', 9, 'publicado', 'img/posts/26/cover.png', 'Beny Finkelstein', '2026-01-03 14:56:00', '2025-12-19 08:25:31', '2026-01-04 08:57:59');
+
+-- --------------------------------------------------------
+
+--
+-- Estrutura para tabela `post_categories`
+--
+
+CREATE TABLE `post_categories` (
+  `id` int(11) NOT NULL,
+  `name` varchar(120) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `status` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'ativo',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Despejando dados para a tabela `post_categories`
+--
+
+INSERT INTO `post_categories` (`id`, `name`, `status`, `created_at`) VALUES
+(1, 'Locais', 'ativo', '2026-01-04 08:54:24'),
+(2, 'Clientes', 'ativo', '2026-01-04 08:54:24'),
+(3, 'Espaços', 'ativo', '2026-01-04 08:54:24'),
+(4, 'Workshops', 'ativo', '2026-01-04 08:54:24'),
+(5, 'Produtividade', 'ativo', '2026-01-04 08:54:24'),
+(6, 'Gestão', 'ativo', '2026-01-04 08:54:24'),
+(7, 'Novidades', 'ativo', '2026-01-04 08:54:24'),
+(8, 'Tendências', 'ativo', '2026-01-04 08:54:24'),
+(9, 'Dicas', 'ativo', '2026-01-04 08:54:24');
 
 -- --------------------------------------------------------
 
@@ -792,7 +885,9 @@ CREATE TABLE `reservations` (
 
 INSERT INTO `reservations` (`id`, `room_id`, `client_id`, `participants`, `price`, `company_id`, `title`, `description`, `date`, `time_start`, `time_end`, `total_price`, `amount_gross`, `voucher_code`, `voucher_amount`, `fee_pct_at_time`, `fee_amount`, `amount_net`, `attendees_count`, `requirements`, `observations`, `status`, `payment_status`, `hold_expires_at`, `notes`, `created_at`, `updated_at`, `public_code`, `stripe_payment_intent_id`, `stripe_charge_id`, `payment_confirmed_at`, `policy_id`, `policy_key`, `policy_label`, `policy_cancel_days`, `policy_cancel_fee_pct`, `policy_charge_timing`, `policy_charge_at`, `stripe_payment_method_id`) VALUES
 (72, 6, 27, 1, 1100.00, NULL, '123', '', '2025-12-29', '08:00:00', '20:00:00', 1100.00, 1100.00, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, 'cancelada', 'confirmado', NULL, NULL, NULL, '2025-12-28 21:27:11', 'ZF-28UH-M599NN', 'pi_3SjKEtRGALXK8tGE1rHL86s1', NULL, '2025-12-28 10:42:31', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-(73, 6, 27, 1, 1100.00, NULL, 'teste123', '', '2025-12-28', '08:00:00', '20:00:00', 1100.00, 1100.00, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, 'cancelada', 'confirmado', NULL, NULL, NULL, '2025-12-28 22:34:47', 'ZF-J4CN-ZEZN2H', 'pi_3SjVLDRGALXK8tGE1KWTsipc', NULL, '2025-12-28 22:33:48', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+(73, 6, 27, 1, 1100.00, NULL, 'teste123', '', '2025-12-28', '08:00:00', '20:00:00', 1100.00, 1100.00, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, 'cancelada', 'confirmado', NULL, NULL, NULL, '2025-12-28 22:34:47', 'ZF-J4CN-ZEZN2H', 'pi_3SjVLDRGALXK8tGE1KWTsipc', NULL, '2025-12-28 22:33:48', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
+(74, 45, 26, 1, 1.00, NULL, '123', '', '2025-12-31', '08:00:00', '20:00:00', 1.00, 1.00, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, 'cancelada', 'confirmado', NULL, NULL, NULL, '2025-12-30 07:05:58', 'ZF-YSZZ-P9YLV7', 'pi_3SjziuRGALXK8tGE15HJzFhg', NULL, '2025-12-30 07:00:16', 7, 'immediate', 'Pagamento no momento da Reserva (Sem cancelamento)', 0, 0.00, 'confirm', '2025-12-30 06:57:58', 'pm_1SjzcqRGALXK8tGELGfbr1rz'),
+(75, 50, 27, 1, 100.00, NULL, 'Reserva', '', '2025-12-31', '08:00:00', '20:00:00', 100.00, 100.00, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, 'confirmada', 'pendente', '2025-12-30 08:00:00', NULL, NULL, '2025-12-30 07:03:05', NULL, 'pi_3SjzlcRGALXK8tGE097azVfj', 'ch_3SjzlcRGALXK8tGE0HWrW43B', NULL, 8, 'immediate', 'Pagamento no momento da Reserva (Sem cancelamento)', 0, 0.00, 'confirm', '2025-12-30 12:28:12', 'pm_1SjKDSRGALXK8tGEOh0QmBPs');
 
 -- --------------------------------------------------------
 
@@ -804,6 +899,13 @@ CREATE TABLE `reservation_visitors` (
   `reservation_id` bigint(20) NOT NULL,
   `visitor_id` bigint(20) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+--
+-- Despejando dados para a tabela `reservation_visitors`
+--
+
+INSERT INTO `reservation_visitors` (`reservation_id`, `visitor_id`) VALUES
+(75, 5);
 
 -- --------------------------------------------------------
 
@@ -901,10 +1003,10 @@ INSERT INTO `rooms` (`id`, `name`, `capacity`, `description`, `street`, `complem
 (44, 'Estanplaza Berrini', 14, 'Tipo: Hotel (salas até 20p) | Rating: 4.4 | Fonte: Estanplaza Hotéis + Website | Website: estanplaza.com.br', 'Av. Eng. Luís Carlos Berrini, 853', 'Brooklin Novo', NULL, 'São Paulo', 'SP', 'Estanplaza Berrini', '+55 11 5509-8900', 'berrini@estanplaza.com.br', '+55 11 5509-8900', 'berrini@estanplaza.com.br', 'Não', NULL, 550.00, 'Brooklin Novo', -23.6117153, -46.6953355, 'ativo', NULL, NULL, NULL, NULL, 0, '2025-12-29 15:20:12', '2025-12-29 15:37:00', 1),
 (45, 'Bristol The Time Hotel', 16, 'Tipo: Hotel (salas até 20p) | Rating: 4.6 | Fonte: Bristol Hotels + Website + Google Maps | Website: www.bristolhoteis.com.br', 'R. Hans Oersted', '115', '', 'São Paulo', 'SP', 'Bristol The Time Hotel', '551155041600', 'saopaulo@bristolhoteis.com.br', '551155041600', 'saopaulo@bristolhoteis.com.br', 'Não', NULL, 1.00, 'Cidade Monções', -23.6088798, -46.6949347, 'ativo', NULL, NULL, NULL, NULL, 0, '2025-12-29 15:20:12', '2025-12-29 15:35:37', 1),
 (46, 'Golden Tower Express Berrini', 12, 'Tipo: Hotel (salas até 20p) | Rating: 4.3 | Fonte: Fênix Hotéis + Google Maps | Website: www.fenixhoteis.com.br', 'R. Miguel Sutil, 577', 'Vila Cordeiro', '', 'São Paulo', 'SP', 'Golden Tower Express Berrini', '551130146277', 'berrini@fenixhoteis.com.br', '551130146277', 'berrini@fenixhoteis.com.br', 'Não', NULL, 1.00, 'Vila Cordeiro', NULL, NULL, 'ativo', NULL, NULL, NULL, NULL, 0, '2025-12-29 15:20:12', '2025-12-29 15:20:12', 1),
-(47, 'INNSiDE by Meliá Itaim', 16, 'Tipo: Hotel (salas até 20p) | Rating: 4.6 | Fonte: Meliá Hotels + Website (Centro de Conferências) | Website: www.melia.com/pt/hoteis/brasil/sao-paulo', 'R. Jesuíno Arruda, 806', 'Itaim Bibi', '', 'São Paulo', 'SP', 'INNSiDE by Meliá Itaim', '551137044400', 'innside.itaim@melia.com', '551137044400', 'innside.itaim@melia.com', 'Não', NULL, 1.00, 'Itaim Bibi', -23.5832044, -46.6788041, 'ativo', NULL, NULL, NULL, NULL, 0, '2025-12-29 15:20:12', '2025-12-29 15:33:39', 1),
-(48, 'INNSiDE by Meliá Iguatemi', 16, 'Tipo: Hotel (salas até 20p) | Rating: 4.4 | Fonte: Meliá Hotels + Website (Centro de Conferências) | Website: www.melia.com/pt/hoteis/brasil/sao-paulo', 'R. Iguatemi, 150', 'Itaim Bibi', '', 'São Paulo', 'SP', 'INNSiDE by Meliá Iguatemi', '551137045100', 'innside.iguatemi@melia.com', '551137045100', 'innside.iguatemi@melia.com', 'Não', NULL, 1.00, 'Itaim Bibi', -23.5850117, -46.6816399, 'ativo', NULL, NULL, NULL, NULL, 0, '2025-12-29 15:20:12', '2025-12-29 15:33:29', 1),
-(49, 'DoubleTree by Hilton Itaim', 14, 'Tipo: Hotel (salas até 20p) | Rating: 4.3 | Fonte: Hilton Hotels + Website (Convention Center) | Website: www.hilton.com', 'R. Manuel Guedes, 320', 'Itaim Bibi', '', 'São Paulo', 'SP', 'DoubleTree by Hilton Itaim', '551130662699', 'saopaulo.itaim@hilton.com', '551130662699', 'saopaulo.itaim@hilton.com', 'Não', NULL, 1.00, 'Itaim Bibi', -23.5833267, -46.6793872, 'ativo', NULL, NULL, NULL, NULL, 0, '2025-12-29 15:20:12', '2025-12-29 15:33:14', 1),
-(50, 'Radisson Vila Olimpia', 18, 'Tipo: Hotel (salas até 20p) | Rating: 4.5 | Fonte: Radisson Hotels + Website | Website: www.radisson.com/pt-br', 'R. Fidêncio Ramos, 420', 'Vila Olímpia', '', 'São Paulo', 'SP', 'Radisson Vila Olimpia', '551143953279', 'saopaulo.vilaolimpia@radisson.com', '551143953279', 'saopaulo.vilaolimpia@radisson.com', 'Não', NULL, 1.00, 'Vila Olímpia', -23.5950688, -46.6877514, 'ativo', NULL, NULL, NULL, NULL, 0, '2025-12-29 15:20:12', '2025-12-29 15:32:53', 1);
+(47, 'INNSiDE by Meliá Itaim', 16, 'Tipo: Hotel (salas até 20p) | Rating: 4.6 | Fonte: Meliá Hotels + Website (Centro de Conferências) | Website: www.melia.com/pt/hoteis/brasil/sao-paulo', 'R. Jesuíno Arruda, 806', 'Itaim Bibi', '', 'São Paulo', 'SP', 'INNSiDE by Meliá Itaim', '551137044400', 'innside.itaim@melia.com', '551137044400', 'innside.itaim@melia.com', 'Não', NULL, 1.00, 'Itaim Bibi', -23.5832044, -46.6788041, 'ativo', NULL, NULL, NULL, 'img/rooms/47/room_47_695a61b0012d21.86611459.jpeg', 0, '2025-12-29 15:20:12', '2025-12-29 15:33:39', 1),
+(48, 'INNSiDE by Meliá Iguatemi', 16, 'Tipo: Hotel (salas até 20p) | Rating: 4.4 | Fonte: Meliá Hotels + Website (Centro de Conferências) | Website: www.melia.com/pt/hoteis/brasil/sao-paulo', 'R. Iguatemi, 150', 'Itaim Bibi', '', 'São Paulo', 'SP', 'INNSiDE by Meliá Iguatemi', '551137045100', 'innside.iguatemi@melia.com', '551137045100', 'innside.iguatemi@melia.com', 'Não', NULL, 1.00, 'Itaim Bibi', -23.5850117, -46.6816399, 'ativo', NULL, NULL, NULL, 'img/rooms/48/room_48_695a61aa0a0aa2.81375484.jpeg', 0, '2025-12-29 15:20:12', '2025-12-29 15:33:29', 1),
+(49, 'DoubleTree by Hilton Itaim', 14, 'Tipo: Hotel (salas até 20p) | Rating: 4.3 | Fonte: Hilton Hotels + Website (Convention Center) | Website: www.hilton.com', 'R. Manuel Guedes, 320', 'Itaim Bibi', '', 'São Paulo', 'SP', 'DoubleTree by Hilton Itaim', '551130662699', 'saopaulo.itaim@hilton.com', '551130662699', 'saopaulo.itaim@hilton.com', 'Não', NULL, 1.00, 'Itaim Bibi', -23.5833267, -46.6793872, 'ativo', NULL, NULL, NULL, 'img/rooms/49/room_49_695a61a2c3aa93.06805101.jpeg', 0, '2025-12-29 15:20:12', '2025-12-29 15:33:14', 1),
+(50, 'Radisson Vila Olimpia', 18, 'Tipo: Hotel (salas até 20p) | Rating: 4.5 | Fonte: Radisson Hotels + Website | Website: www.radisson.com/pt-br', 'R. Fidêncio Ramos, 420', 'Vila Olímpia', '', 'São Paulo', 'SP', 'Radisson Vila Olimpia', '551143953279', 'saopaulo.vilaolimpia@radisson.com', '551143953279', 'saopaulo.vilaolimpia@radisson.com', 'Não', NULL, 100.00, 'Vila Olímpia', -23.5950688, -46.6877514, 'ativo', NULL, NULL, NULL, 'img/rooms/50/room_50_695a619ac4b3a6.26078386.jpg', 0, '2025-12-29 15:20:12', '2025-12-29 15:32:53', 1);
 
 -- --------------------------------------------------------
 
@@ -964,12 +1066,14 @@ CREATE TABLE `room_policies` (
 
 INSERT INTO `room_policies` (`id`, `room_id`, `option_key`, `label`, `cancel_days`, `cancel_fee_pct`, `charge_timing`, `active`, `created_at`, `updated_at`, `base_price`) VALUES
 (1, 6, 'immediate', 'Pagamento no momento da Reserva (Sem cancelamento)', NULL, NULL, 'confirm', 1, '2025-12-29 14:56:42', '2025-12-29 14:56:42', 1200.00),
-(2, 50, 'immediate', 'Pagamento no momento da Reserva (Sem cancelamento)', NULL, NULL, 'confirm', 1, '2025-12-29 15:32:53', '2025-12-29 15:32:53', 1.00),
-(3, 49, 'immediate', 'Pagamento no momento da Reserva (Sem cancelamento)', NULL, NULL, 'confirm', 1, '2025-12-29 15:33:14', '2025-12-29 15:33:14', 1.00),
-(4, 48, 'immediate', 'Pagamento no momento da Reserva (Sem cancelamento)', NULL, NULL, 'confirm', 1, '2025-12-29 15:33:29', '2025-12-29 15:33:29', 1.00),
-(5, 47, 'immediate', 'Pagamento no momento da Reserva (Sem cancelamento)', NULL, NULL, 'confirm', 1, '2025-12-29 15:33:39', '2025-12-29 15:33:39', 1.00),
 (6, 46, 'immediate', 'Pagamento no momento da Reserva (Sem cancelamento)', NULL, NULL, 'confirm', 1, '2025-12-29 15:33:51', '2025-12-29 15:33:51', 1.00),
-(7, 45, 'immediate', 'Pagamento no momento da Reserva (Sem cancelamento)', NULL, NULL, 'confirm', 1, '2025-12-29 15:35:38', '2025-12-29 15:35:38', 1.00);
+(7, 45, 'immediate', 'Pagamento no momento da Reserva (Sem cancelamento)', NULL, NULL, 'confirm', 1, '2025-12-29 15:35:38', '2025-12-29 15:35:38', 1.00),
+(11, 50, 'immediate', 'Pagamento no momento da Reserva (Sem cancelamento)', NULL, NULL, 'confirm', 1, '2026-01-04 09:48:26', '2026-01-04 09:48:26', 100.00),
+(12, 50, 'cancel_window', 'Cancelamento da Reserva', 2, 10.00, 'cancel_window', 1, '2026-01-04 09:48:26', '2026-01-04 09:48:26', 120.00),
+(13, 50, 'free_cancel', 'Sem taxa de cancelamento', NULL, NULL, 'day_before', 1, '2026-01-04 09:48:26', '2026-01-04 09:48:26', 150.00),
+(14, 49, 'immediate', 'Pagamento no momento da Reserva (Sem cancelamento)', NULL, NULL, 'confirm', 1, '2026-01-04 09:48:34', '2026-01-04 09:48:34', 1.00),
+(15, 48, 'immediate', 'Pagamento no momento da Reserva (Sem cancelamento)', NULL, NULL, 'confirm', 1, '2026-01-04 09:48:42', '2026-01-04 09:48:42', 1.00),
+(16, 47, 'immediate', 'Pagamento no momento da Reserva (Sem cancelamento)', NULL, NULL, 'confirm', 1, '2026-01-04 09:48:48', '2026-01-04 09:48:48', 1.00);
 
 -- --------------------------------------------------------
 
@@ -1023,7 +1127,9 @@ CREATE TABLE `room_views` (
 
 INSERT INTO `room_views` (`id`, `room_id`, `session_id`, `user_agent`, `ip`, `viewed_at`) VALUES
 (1, 6, 'rv_j0asokoqoa9_mjrbcrlz', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', '186.249.142.155', '2025-12-29 12:28:52'),
-(2, 44, 'rv_ftf9abj6hm_mjri64fn', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', '186.249.142.155', '2025-12-29 15:39:40');
+(2, 44, 'rv_ftf9abj6hm_mjri64fn', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', '186.249.142.155', '2025-12-29 15:39:40'),
+(3, 50, 'rv_ftf9abj6hm_mjri64fn', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', '201.95.205.173', '2026-01-04 09:18:39'),
+(4, 49, 'rv_ftf9abj6hm_mjri64fn', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', '201.95.205.173', '2026-01-04 09:51:32');
 
 -- --------------------------------------------------------
 
@@ -1088,6 +1194,13 @@ CREATE TABLE `visitors` (
   `created_at` datetime DEFAULT NULL,
   `updated_at` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Despejando dados para a tabela `visitors`
+--
+
+INSERT INTO `visitors` (`id`, `client_id`, `company_id`, `name`, `rg`, `cpf`, `email`, `invite_token`, `invite_status`, `phone`, `whatsapp`, `status`, `observations`, `created_at`, `updated_at`) VALUES
+(5, 27, NULL, 'Rafael Elkabetz', '', '37333590895', '', NULL, 'pendente', '', '', 'ativo', NULL, NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -1170,7 +1283,9 @@ CREATE TABLE `workshops` (
 INSERT INTO `workshops` (`id`, `public_code`, `advertiser_id`, `room_id`, `title`, `subtitle`, `description`, `category`, `date`, `time_start`, `time_end`, `price_per_seat`, `max_seats`, `show_sold_bar`, `status`, `banner_path`, `created_at`, `updated_at`) VALUES
 (1, NULL, 1, 1, 'Teste', NULL, '<b>MEIA ENTRADA ESTUDANTES </b><div><br></div><div>\n\nEstudantes do território nacional de instituições públicas ou particulares do ensino infantil, fundamental, <b>médio, superior,</b> especialização, pós-graduação, mestrado, doutorado, supletivo e técnico profissionalizante, seja ensino presencial ou à distância, possuem o benefício da meia-entrada.  Fonte: Lei 12.933, Lei Federal 12.852, de 26 de dezembro de 2013 e Decreto Federal 8.537, de 05 de outubro de 2015.\n\nCaso não apresente na portaria o documento que comprove o beneficio, será cobrado o complemento de meia para igualar a categoria do ingresso de interia.\n\nJOVENS DE 15 A 29 ANOS PERTENCENTES A FAMÍLIAS DE BAIXA RENDA \n\nJovens 15 a 29 anos pertencentes a famílias de baixa renda possuem o benefício de meia-entrada, desde que estejam inscritos, obrigatoriamente, no Cadastro Único para Programas Sociais do Governo Federal (CADÚNICO), e cuja renda mensal seja de até 02 (dois) salários mínimos.  Como comprovar: apresentação obrigatória da Carteirinha de Identidade Jovem, emitida pela Secretaria Nacional de Juventude, e o Documento de Identidade oficial com foto, expedido por órgão público e válido em todo território nacional, original ou cópia autenticada. Fonte: Lei Federal 12. 933, de 26 de dezembro de 2013 e Decreto 8.537, de 5 de outubro de 2015\n\nPcD – PESSOA COM DEFICIÊNCIA  \n\nPessoas com deficiência (PcD) possuem o benefício da meia-entrada. Se o PcD necessita de auxílio para locomoção, a meia-entrada também se estende ao seu acompanhante, sendo permitido apenas um acompanhante pagando meia-entrada para cada PcD.  Como comprovar: apresentação obrigatória do cartão de Benefício de Prestação Continuada da Assistência Social da pessoa com deficiência ou de documento emitido pelo Instituto Nacional do Seguro Social - INSS que ateste a aposentadoria de acordo com os critérios estabelecidos na Lei Complementar nº 142, de 8 de maio de 2013; em ambos os casos estes documentos devem ser acompanhados de um Documento de Identidade oficial com foto, expedido por órgão público e válido em todo território nacional, original ou cópia autenticada. Fonte: Lei Federal 12.933, de 26 de dezembro de 2013 e Decreto 8.537, de 5 de outubro de 2015\n\nIDOSOS (ADULTOS COM IDADE IGUAL OU SUPERIOR A 60 ANOS) \n\nAdultos com idade igual ou superior a 60 anos possuem o benefício da meia-entrada.  Como comprovar:  apresentação obrigatória do Documento de Identidade original (RG) ou cópia autenticada. Fonte: Lei Federal 10.741 de 01 de outubro de 2003\n\nMENORES DE 21 ANOS DO MUNICÍPIO DE BELO HORIZONTE \n\nMenores de 21 anos do Município de Belo Horizonte possuem o benefício da meia-entrada.  Como comprovar: apresentação obrigatória do Documento de Identidade oficial com foto, expedido por órgão público e válido em todo território nacional, original ou cópia autenticada. Fonte: Lei Municipal 9.070, de 17 janeiro de 2005\n\nOUTRAS INFORMAÇÕES IMPORTANTES \n\nO benefício da meia-entrada não é cumulativa com outros descontos A carteira estudantil provisória / voucher emitido pelos sites UNE, Ubes e Anpg são aceitos para compra de meia-entrada, desde que apresentados impressos Crianças de até 12 meses não pagam ingresso e devem permanecer no colo. \n\nO ingresso é válido somente para data, horário local e assento para o qual foi emitido.\n\nÓrgãos Responsáveis Pela Fiscalização\n\nProcon Estadual Telefone: (31) 3250-5033 Site: www.mp.mg.gov.br/procon E-mail:  proconcr@mp.mg.gov.br \n\nProcon Municipal Telefone: (31) 156 Site: www.pbh.gov.br/procon E-mail:  procon@pbh.gov.br \n\nProcon Assembleia Telefone: (31) 2108-5500 Site: www.almg.gov.br/procon E-mail:  procon@almg.gov.br \n\nProcon Assembleia – Posto Psiu Telefone: (31) 3272-0108 Site: www.almg.gov.br/procon E-mail:  procon@almg.gov.br \n\nProcon Câmara Municipal Telefone: (31) 3555-1268 E-mail:  procon@cmbh.mg.gov.br</div>', 'Psicologia / Terapia', '2025-12-30', '07:00:00', '10:15:00', 100.00, 15, 0, 'publicado', 'img/workshops/1/ws_1_69245462a548b8.17740968.jpg', '2025-11-22 22:44:30', '2025-12-01 08:01:59'),
 (2, NULL, 1, 1, 'Evento teste', 'descobrindo o nada', 'teste', 'Arte e criatividade', '2025-12-30', '08:00:00', '17:00:00', 100.00, 10, 1, 'publicado', 'img/workshops/2/ws_2_692b4445781d59.46608580.jpg', '2025-11-29 16:03:38', '2025-12-01 08:01:48'),
-(3, NULL, 1, 1, 'Evento teste 2', NULL, 'teste', 'Saúde e bem-estar', '2025-12-31', '06:00:00', '08:00:00', 1.00, 5, 1, 'publicado', 'img/workshops/3/ws_3_692b44a506d0c9.81676450.webp', '2025-11-29 16:07:34', '2025-12-01 08:01:39');
+(3, NULL, 1, 1, 'Evento teste 2', NULL, 'teste', 'Saúde e bem-estar', '2025-12-31', '06:00:00', '08:00:00', 1.00, 5, 1, 'publicado', 'img/workshops/3/ws_3_692b44a506d0c9.81676450.webp', '2025-11-29 16:07:34', '2025-12-01 08:01:39'),
+(4, NULL, 1, 6, 'Workshop Teste', 'Teste subtitulo', NULL, 'Desenvolvimento pessoal', '2025-12-31', '08:00:00', '19:00:00', 100.00, 10, 1, 'publicado', 'img/workshops/4/ws_4_6953cc380a38c1.80963826.jpeg', '2025-12-30 09:51:35', '2025-12-30 09:57:28'),
+(5, NULL, 1, 6, 'Workshop Teste 2', NULL, 'Teste Workshop', 'Desenvolvimento pessoal', '2026-01-01', '07:00:00', '19:00:00', 150.00, 2, 0, 'cancelado', 'img/workshops/5/ws_5_6953ea133b87d1.23708964.jpeg', '2025-12-30 12:04:51', '2025-12-31 19:22:26');
 
 -- --------------------------------------------------------
 
@@ -1182,15 +1297,51 @@ CREATE TABLE `workshop_enrollments` (
   `id` int(11) NOT NULL,
   `workshop_id` int(11) NOT NULL,
   `participant_id` int(11) NOT NULL,
+  `client_id` bigint(20) DEFAULT NULL,
   `public_code` varchar(64) NOT NULL,
   `payment_status` enum('pendente','pago','cancelado') NOT NULL DEFAULT 'pendente',
   `voucher_code` varchar(64) DEFAULT NULL,
   `discount_amount` decimal(10,2) NOT NULL DEFAULT '0.00',
+  `amount_due` decimal(10,2) NOT NULL DEFAULT '0.00',
+  `stripe_customer_id` varchar(80) DEFAULT NULL,
+  `stripe_payment_method_id` varchar(80) DEFAULT NULL,
+  `stripe_payment_intent_id` varchar(80) DEFAULT NULL,
+  `stripe_charge_id` varchar(80) DEFAULT NULL,
+  `paid_at` datetime DEFAULT NULL,
+  `payment_failure_message` varchar(255) DEFAULT NULL,
   `checkin_status` enum('nao_lido','lido','cancelado') NOT NULL DEFAULT 'nao_lido',
   `checked_in_at` datetime DEFAULT NULL,
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Despejando dados para a tabela `workshop_enrollments`
+--
+
+INSERT INTO `workshop_enrollments` (`id`, `workshop_id`, `participant_id`, `client_id`, `public_code`, `payment_status`, `voucher_code`, `discount_amount`, `amount_due`, `stripe_customer_id`, `stripe_payment_method_id`, `stripe_payment_intent_id`, `stripe_charge_id`, `paid_at`, `payment_failure_message`, `checkin_status`, `checked_in_at`, `created_at`, `updated_at`) VALUES
+(25, 4, 1, NULL, 'W212586b3d0', 'pendente', NULL, 0.00, 0.00, NULL, NULL, NULL, NULL, NULL, NULL, 'nao_lido', NULL, '2025-12-30 09:56:25', NULL),
+(26, 5, 1, 27, 'W064255eaa3', 'cancelado', NULL, 0.00, 150.00, 'cus_TgQBcUNKCm1KcV', 'pm_1Sk2SjRGALXK8tGEIsrafR74', 'pi_3Sk5NVRGALXK8tGE1mgs9cdL', NULL, '2025-12-30 13:02:34', NULL, 'cancelado', '2025-12-30 21:08:34', '2025-12-30 13:02:33', '2025-12-31 19:22:26'),
+(27, 5, 2, 26, 'W7f62210537', 'cancelado', NULL, 0.00, 150.00, 'cus_TfzrwBc3nbZUrt', 'pm_1SjzcqRGALXK8tGELGfbr1rz', 'pi_3SkXltRGALXK8tGE1RvaCIkC', NULL, '2025-12-31 19:21:38', NULL, 'cancelado', '2025-12-31 19:22:05', '2025-12-31 19:21:36', '2025-12-31 19:22:26');
+
+-- --------------------------------------------------------
+
+--
+-- Estrutura para tabela `workshop_feedback`
+--
+
+CREATE TABLE `workshop_feedback` (
+  `id` bigint(20) UNSIGNED NOT NULL,
+  `workshop_id` int(11) NOT NULL,
+  `participant_id` int(11) NOT NULL,
+  `participant_name` varchar(160) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `rating_event` tinyint(4) NOT NULL,
+  `rating_platform` tinyint(4) NOT NULL,
+  `comments_event` text COLLATE utf8mb4_unicode_ci,
+  `comments_platform` text COLLATE utf8mb4_unicode_ci,
+  `is_public` tinyint(1) NOT NULL DEFAULT '0',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -1229,7 +1380,8 @@ CREATE TABLE `workshop_participants` (
 --
 
 INSERT INTO `workshop_participants` (`id`, `name`, `email`, `cpf`, `phone`, `password_hash`, `status`, `created_at`, `updated_at`) VALUES
-(1, 'Beny', 'benyfink@gmail.com', '37333590895', NULL, NULL, 'ativo', '2025-11-22 22:45:15', '2025-11-29 22:40:03');
+(1, 'Mira', 'benyfink@gmail.com', '41836484836', NULL, NULL, 'ativo', '2025-11-22 22:45:15', '2025-12-30 09:56:25'),
+(2, 'Beny Finkelstein', 'benyfink@zeefe.com.br', '37333590895', NULL, NULL, 'ativo', '2025-12-31 19:21:36', NULL);
 
 --
 -- Índices para tabelas despejadas
@@ -1241,7 +1393,23 @@ INSERT INTO `workshop_participants` (`id`, `name`, `email`, `cpf`, `phone`, `pas
 ALTER TABLE `admins`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `username` (`username`),
-  ADD UNIQUE KEY `email` (`email`);
+  ADD UNIQUE KEY `email` (`email`),
+  ADD KEY `idx_admins_profile_id` (`profile_id`);
+
+--
+-- Índices de tabela `admin_profiles`
+--
+ALTER TABLE `admin_profiles`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `uniq_admin_profiles_name` (`name`);
+
+--
+-- Índices de tabela `admin_remember_tokens`
+--
+ALTER TABLE `admin_remember_tokens`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_admin_remember_token` (`token_hash`),
+  ADD KEY `idx_admin_remember_admin` (`admin_id`);
 
 --
 -- Índices de tabela `advertisers`
@@ -1322,7 +1490,6 @@ ALTER TABLE `company_invitations`
 --
 ALTER TABLE `customer_cards`
   ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `uk_customer_card` (`client_id`),
   ADD UNIQUE KEY `uniq_stripe_payment_method` (`stripe_payment_method_id`),
   ADD KEY `idx_customer_cards_client` (`client_id`);
 
@@ -1430,6 +1597,13 @@ ALTER TABLE `posts`
   ADD KEY `idx_posts_status` (`status`),
   ADD KEY `idx_posts_category` (`category`),
   ADD KEY `idx_posts_published` (`published_at`);
+
+--
+-- Índices de tabela `post_categories`
+--
+ALTER TABLE `post_categories`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `uniq_post_categories_name` (`name`);
 
 --
 -- Índices de tabela `pre_reservations`
@@ -1578,7 +1752,16 @@ ALTER TABLE `workshop_enrollments`
   ADD UNIQUE KEY `uk_workshop_enrollment_code` (`public_code`),
   ADD KEY `idx_workshop_enrollment_workshop` (`workshop_id`),
   ADD KEY `idx_workshop_enrollment_participant` (`participant_id`),
-  ADD KEY `idx_workshop_enrollment_payment` (`payment_status`);
+  ADD KEY `idx_workshop_enrollment_payment` (`payment_status`),
+  ADD KEY `idx_workshop_enrollment_client` (`client_id`);
+
+--
+-- Índices de tabela `workshop_feedback`
+--
+ALTER TABLE `workshop_feedback`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_feedback_workshop` (`workshop_id`),
+  ADD KEY `idx_feedback_participant` (`participant_id`);
 
 --
 -- Índices de tabela `workshop_media`
@@ -1606,6 +1789,18 @@ ALTER TABLE `admins`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
+-- AUTO_INCREMENT de tabela `admin_profiles`
+--
+ALTER TABLE `admin_profiles`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT de tabela `admin_remember_tokens`
+--
+ALTER TABLE `admin_remember_tokens`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT de tabela `advertisers`
 --
 ALTER TABLE `advertisers`
@@ -1615,7 +1810,7 @@ ALTER TABLE `advertisers`
 -- AUTO_INCREMENT de tabela `advertiser_remember_tokens`
 --
 ALTER TABLE `advertiser_remember_tokens`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=34;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=39;
 
 --
 -- AUTO_INCREMENT de tabela `amenities`
@@ -1633,7 +1828,7 @@ ALTER TABLE `clients`
 -- AUTO_INCREMENT de tabela `client_remember_tokens`
 --
 ALTER TABLE `client_remember_tokens`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=38;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=39;
 
 --
 -- AUTO_INCREMENT de tabela `companies`
@@ -1657,7 +1852,7 @@ ALTER TABLE `company_invitations`
 -- AUTO_INCREMENT de tabela `customer_cards`
 --
 ALTER TABLE `customer_cards`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
 
 --
 -- AUTO_INCREMENT de tabela `events`
@@ -1675,13 +1870,13 @@ ALTER TABLE `import_batches`
 -- AUTO_INCREMENT de tabela `ledger_entries`
 --
 ALTER TABLE `ledger_entries`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=33;
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=34;
 
 --
 -- AUTO_INCREMENT de tabela `messages`
 --
 ALTER TABLE `messages`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
 
 --
 -- AUTO_INCREMENT de tabela `message_threads`
@@ -1711,7 +1906,7 @@ ALTER TABLE `panel_users`
 -- AUTO_INCREMENT de tabela `payments`
 --
 ALTER TABLE `payments`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
 
 --
 -- AUTO_INCREMENT de tabela `payment_intents`
@@ -1732,6 +1927,12 @@ ALTER TABLE `posts`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=27;
 
 --
+-- AUTO_INCREMENT de tabela `post_categories`
+--
+ALTER TABLE `post_categories`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
+
+--
 -- AUTO_INCREMENT de tabela `pre_reservations`
 --
 ALTER TABLE `pre_reservations`
@@ -1741,7 +1942,7 @@ ALTER TABLE `pre_reservations`
 -- AUTO_INCREMENT de tabela `reservations`
 --
 ALTER TABLE `reservations`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=74;
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=76;
 
 --
 -- AUTO_INCREMENT de tabela `reviews`
@@ -1765,7 +1966,7 @@ ALTER TABLE `room_photos`
 -- AUTO_INCREMENT de tabela `room_policies`
 --
 ALTER TABLE `room_policies`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17;
 
 --
 -- AUTO_INCREMENT de tabela `room_policy_prices`
@@ -1777,7 +1978,7 @@ ALTER TABLE `room_policy_prices`
 -- AUTO_INCREMENT de tabela `room_views`
 --
 ALTER TABLE `room_views`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT de tabela `stripe_events`
@@ -1789,7 +1990,7 @@ ALTER TABLE `stripe_events`
 -- AUTO_INCREMENT de tabela `visitors`
 --
 ALTER TABLE `visitors`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
 -- AUTO_INCREMENT de tabela `vouchers`
@@ -1807,13 +2008,19 @@ ALTER TABLE `voucher_redemptions`
 -- AUTO_INCREMENT de tabela `workshops`
 --
 ALTER TABLE `workshops`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
 -- AUTO_INCREMENT de tabela `workshop_enrollments`
 --
 ALTER TABLE `workshop_enrollments`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=25;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=28;
+
+--
+-- AUTO_INCREMENT de tabela `workshop_feedback`
+--
+ALTER TABLE `workshop_feedback`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT de tabela `workshop_media`
@@ -1825,7 +2032,7 @@ ALTER TABLE `workshop_media`
 -- AUTO_INCREMENT de tabela `workshop_participants`
 --
 ALTER TABLE `workshop_participants`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- Restrições para tabelas despejadas

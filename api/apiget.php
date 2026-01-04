@@ -212,6 +212,18 @@ try {
       $rows = $stmt->fetchAll();
       echo json_encode(['success' => true, 'data' => $rows]);
       break;
+    case 'admins':
+      $sql = "
+        SELECT a.*,
+               p.name AS profile_name
+        FROM admins a
+        LEFT JOIN admin_profiles p ON p.id = a.profile_id
+        ORDER BY a.id DESC
+      ";
+      $stmt = $pdo->query($sql);
+      $rows = $stmt->fetchAll();
+      echo json_encode(['success' => true, 'data' => $rows]);
+      break;
 
     default:
       $stmt = $pdo->query("SELECT * FROM `$table` ORDER BY id DESC");

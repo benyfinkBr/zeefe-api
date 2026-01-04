@@ -54,9 +54,10 @@
     }
     .cockpit-columns{
       display:grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap:16px;
-      padding:16px 20px 20px;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap:20px;
+      padding:20px 24px 28px;
+      width:100%;
     }
     .cockpit-group{
       background:#FFF;
@@ -102,8 +103,14 @@
       font-size:12px;
       min-width: 64px;
     }
-    @media (max-width: 980px){
-      .cockpit-columns{ grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+    @media (min-width: 1200px){
+      .cockpit-columns{ grid-template-columns: repeat(4, minmax(220px, 1fr)); }
+    }
+    @media (min-width: 900px) and (max-width: 1199px){
+      .cockpit-columns{ grid-template-columns: repeat(3, minmax(220px, 1fr)); }
+    }
+    @media (max-width: 899px){
+      .cockpit-columns{ grid-template-columns: repeat(2, minmax(200px, 1fr)); }
     }
     @media (max-width: 640px){
       .cockpit-columns{ grid-template-columns: 1fr; }
@@ -306,6 +313,13 @@ input, select {
 .amenities-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:8px; margin-top:4px; }
 .checkbox-item { display:flex; align-items:center; font-size:13px; color:#1D413A; }
 .checkbox-item input { margin-right:6px; }
+.permissions-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:12px; margin-top:8px; }
+.permissions-card { border:1px solid #E0D7CC; border-radius:12px; padding:12px; background:#FAF7F2; }
+.permissions-card h5 { margin:0 0 8px 0; color:#1D413A; font-size:14px; }
+.permissions-row { display:flex; gap:10px; flex-wrap:wrap; }
+.permissions-row label { display:flex; align-items:center; gap:6px; font-size:12px; color:#344B45; }
+.permissions-row input { margin:0; }
+.field-note { font-size:12px; color:#7A6C5D; margin-top:6px; }
 
   
   </style>
@@ -358,6 +372,9 @@ input, select {
           <li data-section="campaigns">Campanhas</li>
           <li data-section="vouchers">Vouchers</li>
           <li data-section="messages">Mensagens</li>
+          <li class="menu-group">Administração</li>
+          <li data-section="admin_profiles">Perfis</li>
+          <li data-section="admins">Usuários Admin</li>
         </ul>
         <div class="logout-link" id="logoutBtn">Sair</div>
       </nav>
@@ -543,8 +560,74 @@ input, select {
       campaigns: 'Campanha',
       workshops: 'Workshop',
       workshop_participants: 'Participante de Workshop',
-      workshop_enrollments: 'Inscrição de Workshop'
+      workshop_enrollments: 'Inscrição de Workshop',
+      admin_profiles: 'Perfil',
+      admins: 'Usuário Admin'
     };
+
+    const permissionCatalog = [
+      { key: 'companies', label: 'Empresas' },
+      { key: 'clients', label: 'Clientes' },
+      { key: 'reservations', label: 'Reservas' },
+      { key: 'visitors', label: 'Visitantes' },
+      { key: 'rooms', label: 'Salas' },
+      { key: 'advertisers', label: 'Anunciantes' },
+      { key: 'workshops', label: 'Workshops' },
+      { key: 'workshop_participants', label: 'Participantes' },
+      { key: 'workshop_enrollments', label: 'Inscrições' },
+      { key: 'posts', label: 'Matérias' },
+      { key: 'amenities', label: 'Comodidades' },
+      { key: 'campaigns', label: 'Campanhas' },
+      { key: 'vouchers', label: 'Vouchers' },
+      { key: 'messages', label: 'Mensagens' },
+      { key: 'admin_profiles', label: 'Perfis Admin' },
+      { key: 'admins', label: 'Usuários Admin' }
+    ];
+
+    const ADMIN_REMEMBER_STORAGE = 'zeefeAdminRememberToken';
+
+    function normalizePermissions(raw) {
+      if (!raw || typeof raw !== 'object') return {};
+      const normalized = {};
+      Object.keys(raw).forEach(section => {
+        const perm = raw[section] || {};
+        normalized[section] = {
+          read: !!perm.read,
+          create: !!perm.create,
+          update: !!perm.update,
+          delete: !!perm.delete
+        };
+      });
+      return normalized;
+    }
+
+    function can(section, action) {
+      if (currentAdminIsMaster) return true;
+      const perms = currentAdminPermissions[section];
+      if (!perms) return false;
+      if (!action) return !!perms.read;
+      return !!perms[action];
+    }
+
+    function setAdminContext(admin) {
+      currentAdmin = admin || null;
+      currentAdminIsMaster = !!(admin && admin.is_master);
+      let raw = admin?.permissions_json;
+      if (typeof raw === 'string') {
+        try { raw = JSON.parse(raw); } catch (e) { raw = null; }
+      }
+      currentAdminPermissions = normalizePermissions(raw);
+      applyMenuPermissions();
+    }
+
+    function applyMenuPermissions() {
+      const menuItems = Array.from(document.querySelectorAll('#menu li[data-section]'));
+      menuItems.forEach(li => {
+        const section = li.dataset.section;
+        if (!section) return;
+        li.style.display = can(section, 'read') ? '' : 'none';
+      });
+    }
 
     const reservationFilters = {
       room_id: '',
@@ -561,6 +644,9 @@ input, select {
     let cachedRooms = null;
     let cachedClients = null;
     let cachedBanks = null;
+    let currentAdmin = null;
+    let currentAdminPermissions = {};
+    let currentAdminIsMaster = false;
     let adminThreadsCache = [];
     let adminActiveThreadId = null;
     const adminMessagesModal = document.getElementById('adminMessagesModal');
@@ -1023,6 +1109,24 @@ input, select {
           { key: 'status', label: 'Status', formatter: statusFormatter },
           { key: 'published_at', label: 'Publicado em', formatter: dateTimeFormatter }
         ]
+      },
+      admin_profiles: {
+        columns: [
+          { key: 'id', label: 'ID' },
+          { key: 'name', label: 'Perfil' },
+          { key: 'status', label: 'Status', formatter: statusFormatter }
+        ]
+      },
+      admins: {
+        columns: [
+          { key: 'id', label: 'ID' },
+          { key: 'name', label: 'Nome' },
+          { key: 'username', label: 'Usuário' },
+          { key: 'email', label: 'E-mail' },
+          { key: 'profile_name', label: 'Perfil' },
+          { key: 'status', label: 'Status', formatter: statusFormatter },
+          { key: 'is_master', label: 'Master', formatter: value => Number(value) ? 'Sim' : 'Não' }
+        ]
       }
     };
 
@@ -1031,12 +1135,61 @@ input, select {
       const loginDiv = document.getElementById('login');
       const appDiv = document.getElementById('app');
       const errorDiv = document.getElementById('loginError');
+      const getRememberToken = () => {
+        try {
+          const raw = localStorage.getItem(ADMIN_REMEMBER_STORAGE);
+          if (!raw) return null;
+          const parsed = JSON.parse(raw);
+          if (parsed && parsed.token) return parsed;
+        } catch (e) {
+          localStorage.removeItem(ADMIN_REMEMBER_STORAGE);
+        }
+        return null;
+      };
+
+      const saveRememberToken = (token, username) => {
+        if (!token) return;
+        localStorage.setItem(ADMIN_REMEMBER_STORAGE, JSON.stringify({
+          token,
+          username: username || '',
+          saved_at: new Date().toISOString()
+        }));
+      };
+
+      const clearRememberToken = () => localStorage.removeItem(ADMIN_REMEMBER_STORAGE);
 
       const savedUser = localStorage.getItem('zeefeRememberUser');
       if (savedUser) {
         form.username.value = savedUser;
         form.remember.checked = true;
       }
+
+      const tryAutoLogin = async () => {
+        const remembered = getRememberToken();
+        if (!remembered || !remembered.token) return false;
+        try {
+          const res = await fetch(`${API_BASE}/admin_auto_login.php`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ token: remembered.token })
+          });
+          const data = await res.json();
+          if (data.success && data.admin) {
+            setAdminContext(data.admin);
+            loginDiv.style.display = 'none';
+            appDiv.style.display = 'flex';
+            loadSection('cockpit');
+            return true;
+          }
+        } catch (err) {
+          console.error(err);
+        }
+        clearRememberToken();
+        return false;
+      };
+
+      tryAutoLogin();
 
       form.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -1055,10 +1208,16 @@ input, select {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
-            body: JSON.stringify({ username, password })
+            body: JSON.stringify({ username, password, remember: !!form.remember.checked })
           });
           const data = await res.json();
           if (data.success) {
+            if (form.remember.checked && data.remember && data.remember.token) {
+              saveRememberToken(data.remember.token, username);
+            } else {
+              clearRememberToken();
+            }
+            setAdminContext(data.admin || null);
             loginDiv.style.display = 'none';
             appDiv.style.display = 'flex';
             loadSection('cockpit');
@@ -1090,7 +1249,15 @@ input, select {
       });
     });
 
-    document.getElementById('logoutBtn').onclick = () => location.reload();
+    document.getElementById('logoutBtn').onclick = async () => {
+      try {
+        localStorage.removeItem(ADMIN_REMEMBER_STORAGE);
+        await fetch(`${API_BASE}/apilogout.php`, { credentials: 'include' });
+      } catch (e) {
+        // ignora falhas de logout remoto
+      }
+      location.reload();
+    };
 
     if (adminMessagesForm) {
       adminMessagesForm.addEventListener('submit', enviarMensagemAdmin);
@@ -1101,6 +1268,13 @@ input, select {
       const filters = document.getElementById('search-filters');
       if (filters) {
         filters.style.display = section === 'cockpit' ? 'none' : 'flex';
+      }
+      if (section !== 'cockpit' && !can(section, 'read')) {
+        const body = document.getElementById('content-body');
+        if (body) {
+          body.innerHTML = '<div class="box-message">Você não tem permissão para acessar esta seção.</div>';
+        }
+        return;
       }
       if (section === 'cockpit') {
         renderCockpit();
@@ -1190,11 +1364,23 @@ input, select {
             { id: 'vouchers', title: 'Vouchers', desc: 'Cupons e descontos.' },
             { id: 'messages', title: 'Mensagens', desc: 'Central de mensagens e suporte.' }
           ]
+        },
+        {
+          label: 'Administração',
+          items: [
+            { id: 'admin_profiles', title: 'Perfis', desc: 'Permissões e acessos por perfil.' },
+            { id: 'admins', title: 'Usuários Admin', desc: 'Gestão de usuários administrativos.' }
+          ]
         }
       ];
+      const visibleGroups = groups.map(group => {
+        const items = group.items.filter(item => can(item.id, 'read'));
+        return { ...group, items };
+      }).filter(group => group.items.length);
+
       body.innerHTML = `
         <div class="cockpit-columns">
-          ${groups.map(group => `
+          ${visibleGroups.map(group => `
             <div class="cockpit-group">
               <div class="cockpit-group-title">${escapeHtml(group.label)}</div>
               <div class="cockpit-links">
@@ -1281,25 +1467,34 @@ input, select {
         });
 
         const actionButtons = [];
-        if (sec === 'rooms') {
+        const canUpdate = can(sec, 'update');
+        const canDelete = can(sec, 'delete');
+        if (sec === 'rooms' && canUpdate) {
           actionButtons.push(`<button class="btn-ghost" onclick="abrirChamadaReservas(${rowId})">Reservas</button>`);
           actionButtons.push(`<button class="btn-ghost" onclick="abrirAnuncianteSala(${rowId})">Anunciante</button>`);
         }
-        if (sec === 'companies') {
+        if (sec === 'companies' && canUpdate) {
           const nomeEmpresa = escapeHtml(row.nome_fantasia || row.razao_social || `Empresa #${rowId}`).replace(/'/g, "\\'");
           actionButtons.push(`<button class="btn-ghost" onclick="listarClientesEmpresa(${rowId}, '${nomeEmpresa}')">Clientes</button>`);
         }
-        if (sec === 'reservations') {
+        if (sec === 'reservations' && canUpdate) {
           actionButtons.push(`<button class="btn-ghost" onclick="abrirEmailsModal(${rowId})">E-mails</button>`);
         }
-        actionButtons.push(`<button class="btn" onclick="abrirModalEdit(${rowId})">Editar</button>`);
-        actionButtons.push(`<button class="btn" onclick="abrirModalExcluir(${rowId})">Excluir</button>`);
-        if (sec === 'clients') {
+        if (canUpdate) {
+          actionButtons.push(`<button class="btn" onclick="abrirModalEdit(${rowId})">Editar</button>`);
+        }
+        if (canDelete) {
+          const isMasterRow = sec === 'admins' && Number(row.is_master) === 1;
+          if (!isMasterRow) {
+            actionButtons.push(`<button class="btn" onclick="abrirModalExcluir(${rowId})">Excluir</button>`);
+          }
+        }
+        if (sec === 'clients' && canDelete) {
           actionButtons.push(`<button class="btn danger" onclick="excluirTotalCliente(${rowId})">ETR</button>`);
         }
 
         let extraControls = '';
-        if (sec === 'reservations') {
+        if (sec === 'reservations' && canUpdate) {
           const inline = [];
           const rowRoomId = row.room_id || row.roomId || row.room || null;
           const roomArg = rowRoomId ? rowRoomId : 'null';
@@ -1396,6 +1591,7 @@ input, select {
 
     async function renderFilters(section) {
       const container = document.getElementById('search-filters');
+      const canCreate = can(section, 'create');
       if (section === 'reservations') {
         await renderReservationFilters(container);
         return;
@@ -1409,12 +1605,12 @@ input, select {
             <option value="inativo">Inativo</option>
             <option value="expirado">Expirado</option>
           </select>
-          <button class="btn" onclick="abrirModalNovo()">+ Novo</button>
+          ${canCreate ? `<button class="btn" onclick="abrirModalNovo()">+ Novo</button>` : ''}
           <button class="btn-secondary" onclick="exportarCSV()">Exportar CSV</button>`;
       } else {
         container.innerHTML =
           `<input type="text" id="inputBusca" placeholder="Buscar..." value="${escapeHtml(filtro)}" oninput="buscar(this.value)">
-           <button class="btn" onclick="abrirModalNovo()">+ Novo</button>`;
+           ${canCreate ? `<button class="btn" onclick="abrirModalNovo()">+ Novo</button>` : ''}`;
       }
     }
 
@@ -1459,7 +1655,7 @@ input, select {
           <input type="date" value="${reservationFilters.date_to || ''}" onchange="atualizarFiltroReservaData('date_to', this.value)">
           <button class="btn" type="button" onclick="aplicarFiltroPersonalizado()">Aplicar</button>
         </span>
-        <button class="btn" onclick="abrirModalNovo()">+ Nova</button>
+        ${can('reservations', 'create') ? `<button class="btn" onclick="abrirModalNovo()">+ Nova</button>` : ''}
       `;
     }
 
@@ -1510,6 +1706,10 @@ input, select {
     }
 
     function abrirModalNovo() {
+      if (!can(sec, 'create')) {
+        alert('Você não tem permissão para criar registros nesta seção.');
+        return;
+      }
       itemEdit = null;
       gerarCampos({});
       document.getElementById('modalTitle').textContent = `Nova ${modalEntities[sec] || 'Entrada'}`;
@@ -1521,6 +1721,10 @@ input, select {
     }
 
     function abrirModalEdit(id) {
+      if (!can(sec, 'update')) {
+        alert('Você não tem permissão para editar registros nesta seção.');
+        return;
+      }
       itemEdit = dadosJSON.find(r => r.id == id);
       if (!itemEdit) return;
       gerarCampos(itemEdit);
@@ -1551,6 +1755,10 @@ input, select {
     }
 
     function abrirModalExcluir(id) {
+      if (!can(sec, 'delete')) {
+        alert('Você não tem permissão para excluir registros nesta seção.');
+        return;
+      }
       if (!confirm('Deseja realmente excluir este registro?')) return;
       excluirItem(id);
     }
@@ -1788,6 +1996,33 @@ input, select {
         { name: 'cover_file', label: 'Upload de capa (JPG/PNG/WEBP)', span: 2, type: 'file' },
         { name: 'cover_path', label: 'Caminho da capa (preenchido automaticamente)', span: 2, readonly: true },
         { name: 'views_count', label: 'Visualizações', span: 1, cls:'sm', readonly: true }
+      ],
+      admin_profiles: [
+        { name: 'name', label: 'Nome do perfil', span: 3, required: true },
+        { name: 'status', label: 'Status', span: 1, type: 'select', options: [
+          { value: 'ativo', label: 'Ativo' },
+          { value: 'inativo', label: 'Inativo' }
+        ], cls: 'sm', includeEmpty: false },
+        { type: 'break', label: 'Permissões por funcionalidade' },
+        { name: 'permissions_json', label: 'Permissões', span: 4, type: 'permissions' }
+      ],
+      admins: [
+        { name: 'name', label: 'Nome', span: 2 },
+        { name: 'username', label: 'Usuário', span: 1, cls: 'sm', required: true },
+        { name: 'email', label: 'E-mail', span: 2 },
+        { type: 'break' },
+        { name: 'profile_id', label: 'Perfil', span: 2, type: 'select', source: 'admin_profiles', includeEmpty: true },
+        { name: 'status', label: 'Status', span: 1, type: 'select', options: [
+          { value: 'ativo', label: 'Ativo' },
+          { value: 'inativo', label: 'Inativo' }
+        ], cls: 'sm', includeEmpty: false },
+        { name: 'is_master', label: 'Admin master', span: 1, type: 'select', options: [
+          { value: 1, label: 'Sim' },
+          { value: 0, label: 'Não' }
+        ], cls: 'sm', includeEmpty: false },
+        { type: 'break' },
+        { name: 'password', label: 'Senha (definir/alterar)', span: 2, type: 'password' },
+        { name: 'password_hash', label: 'Senha (hash)', span: 2, readonly: true }
       ]
     };
 
@@ -2059,6 +2294,50 @@ input, select {
           wrap.appendChild(toolbar);
           wrap.appendChild(editor);
           wrap.appendChild(hidden);
+        } else if (field.type === 'permissions') {
+          const hidden = document.createElement('input');
+          hidden.type = 'hidden';
+          hidden.name = field.name;
+          const current = currentValue ? (typeof currentValue === 'string' ? (() => {
+            try { return JSON.parse(currentValue); } catch { return {}; }
+          })() : currentValue) : {};
+          const normalized = normalizePermissions(current);
+          hidden.value = JSON.stringify(normalized || {});
+          wrap.appendChild(hidden);
+
+          const grid = document.createElement('div');
+          grid.className = 'permissions-grid';
+          permissionCatalog.forEach(item => {
+            const card = document.createElement('div');
+            card.className = 'permissions-card';
+            card.innerHTML = `
+              <h5>${escapeHtml(item.label)}</h5>
+              <div class="permissions-row">
+                <label><input type="checkbox" data-perm="read">Leitura</label>
+                <label><input type="checkbox" data-perm="create">Criação</label>
+                <label><input type="checkbox" data-perm="update">Edição</label>
+                <label><input type="checkbox" data-perm="delete">Exclusão</label>
+              </div>
+            `;
+            const rowPerms = normalized[item.key] || {};
+            card.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+              const permKey = cb.dataset.perm;
+              cb.checked = !!rowPerms[permKey];
+              cb.addEventListener('change', () => {
+                const updated = JSON.parse(hidden.value || '{}');
+                if (!updated[item.key]) updated[item.key] = {};
+                updated[item.key][permKey] = cb.checked;
+                hidden.value = JSON.stringify(updated);
+              });
+            });
+            grid.appendChild(card);
+          });
+          wrap.appendChild(grid);
+
+          const note = document.createElement('div');
+          note.className = 'field-note';
+          note.textContent = 'Dica: se marcar apenas leitura, o usuário verá a seção sem criar/editar/excluir.';
+          wrap.appendChild(note);
         } else {
           const input = document.createElement('input');
           input.type = field.type || 'text';
@@ -2220,6 +2499,11 @@ input, select {
       }
       if (sec === 'rooms' && record.facilitated_access !== undefined) {
         record.facilitated_access = parseInt(record.facilitated_access, 10) || 0;
+      }
+      if (sec === 'admins') {
+        if (!record.password) delete record.password;
+        if (record.is_master !== undefined) record.is_master = Number(record.is_master) ? 1 : 0;
+        if (record.profile_id === '') record.profile_id = null;
       }
 
       Object.keys(record).forEach(chave => {

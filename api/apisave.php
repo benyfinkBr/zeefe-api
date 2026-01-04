@@ -26,7 +26,7 @@ if (!$payload || !isset($payload['table']) || !isset($payload['record'])) {
   echo json_encode(['error'=>'Formato inválido']); exit;
 }
 
-$allowed = ['companies','clients','rooms','reservations','visitors','amenities','campaigns','vouchers','workshops','posts'];
+$allowed = ['companies','clients','rooms','reservations','visitors','amenities','campaigns','vouchers','workshops','posts','admin_profiles','admins'];
 $table   = $payload['table'];
 $rawRecord = $payload['record'];
 $record = $rawRecord;
@@ -118,6 +118,31 @@ try {
     }
     if (isset($record['password']) && $record['password'] === '' && empty($rawRecord['password'])) {
       unset($record['password']);
+    }
+  }
+
+  if ($table === 'admins') {
+    if (!empty($rawRecord['password'])) {
+      $passwordPlain = $rawRecord['password'];
+      $passwordHash = password_hash($passwordPlain, PASSWORD_DEFAULT);
+      $record['password_hash'] = $passwordHash;
+      $record['password'] = $passwordHash;
+    }
+    if (isset($record['password']) && $record['password'] === '' && empty($rawRecord['password'])) {
+      unset($record['password']);
+    }
+    if (isset($record['password_hash']) && $record['password_hash'] === '' && empty($rawRecord['password'])) {
+      unset($record['password_hash']);
+    }
+    if (array_key_exists('profile_id', $record) && $record['profile_id'] === '') {
+      $record['profile_id'] = null;
+    }
+  }
+
+  if ($table === 'admin_profiles' && isset($record['permissions_json'])) {
+    $decoded = json_decode((string)$record['permissions_json'], true);
+    if (!is_array($decoded)) {
+      $record['permissions_json'] = json_encode(new stdClass());
     }
   }
 
