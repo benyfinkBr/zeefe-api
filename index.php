@@ -65,8 +65,7 @@
 
     <section class="home-results">
       <div class="section-heading">
-        <h3>Salas encontradas</h3>
-        <p>Confira as salas disponíveis para sua próxima reunião.</p>
+        <h3>Salas em Destaque</h3>
       </div>
       <div id="rooms-message" class="rooms-message"></div>
       <div id="rooms-strip" class="rooms-strip home-rooms-grid" aria-live="polite"></div>
@@ -74,11 +73,18 @@
 
     <section class="home-results">
       <div class="section-heading">
-        <h3>Cursos e workshops</h3>
-        <p>Alguns dos próximos encontros presenciais na agenda Ze.EFE.</p>
+        <h3>Cursos & Workshops</h3>
       </div>
       <div id="workshops-message" class="rooms-message"></div>
       <div id="featured-workshops" class="rooms-strip home-workshops-grid"></div>
+    </section>
+
+    <section class="home-results">
+      <div class="section-heading">
+        <h3>Conteúdo</h3>
+      </div>
+      <div id="content-message" class="rooms-message"></div>
+      <div id="home-content-cards" class="home-content-grid"></div>
     </section>
   </main>
 

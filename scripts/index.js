@@ -15,6 +15,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const clearFiltersBtn = document.getElementById('clearFilters');
   const workshopsStrip = document.getElementById('featured-workshops');
   const workshopsMessage = document.getElementById('workshops-message');
+  const homeContentStrip = document.getElementById('home-content-cards');
+  const contentMessage = document.getElementById('content-message');
   const heroTabs = document.querySelectorAll('.hero-tab');
   const heroForm = document.getElementById('heroSearchForm');
   const heroLocation = document.getElementById('heroLocation');
@@ -38,6 +40,30 @@ document.addEventListener('DOMContentLoaded', () => {
   const heroNeighborhoodSelect = document.getElementById('heroNeighborhoodSelect');
   const sharePanels = new Set();
   let locationIndex = new Map();
+
+  const normalizeCoverPath = (path) => {
+    const raw = String(path || '').trim();
+    if (!raw) return '';
+    if (raw.startsWith('data:')) return raw;
+    if (/^https?:\/\//i.test(raw)) return raw;
+    const idx = raw.indexOf('/img/posts/');
+    if (idx !== -1) return raw.slice(idx);
+    if (raw.startsWith('img/')) return raw;
+    if (raw.startsWith('/')) return raw;
+    return '/' + raw;
+  };
+
+  const getPublishedPosts = (posts) => {
+    const now = new Date();
+    return (posts || []).filter(post => {
+      const status = (post.status || '').toLowerCase();
+      if (status !== 'publicado') return false;
+      if (!post.published_at) return true;
+      const scheduled = new Date(post.published_at);
+      if (Number.isNaN(scheduled.getTime())) return true;
+      return scheduled <= now;
+    });
+  };
 
   const closeSharePanels = (event) => {
     if (event && event.target.closest('.share-menu')) return;
@@ -242,7 +268,8 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
     roomsMessage.textContent = '';
-    filtered.slice(0, 4).forEach(room => {
+    const roomItems = filtered.slice(0, 4);
+    roomItems.forEach(room => {
       const available = isRoomAvailable(room, today);
         const photos = getRoomPhotos(room.photo_path);
         const statusMeta = getStatusMeta(room, available);
@@ -348,9 +375,25 @@ document.addEventListener('DOMContentLoaded', () => {
         card.appendChild(info);
         roomsStrip.appendChild(card);
     });
+    roomsStrip.appendChild(createRoomPromoCard());
     // Atualiza marcadores do mapa conforme filtros aplicados
     renderMapMarkers(filtered);
     requestAnimationFrame(() => updateCarouselNavState());
+  }
+
+  function createRoomPromoCard() {
+    const card = document.createElement('article');
+    card.className = 'promo-card';
+    card.innerHTML = `
+      <h4>Seja Anunciante Ze.EFE</h4>
+      <p>Anuncie sua sala, receba reservas rápidas e aumente sua ocupação com clientes qualificados.</p>
+      <button class="btn btn-secondary" type="button" data-destino="/anunciante.html">Quero anunciar</button>
+    `;
+    card.querySelector('[data-destino]')?.addEventListener('click', (event) => {
+      event.preventDefault();
+      window.location.href = '/anunciante.html';
+    });
+    return card;
   }
 
   function buildLocationIndex(rooms) {
@@ -622,23 +665,14 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   async function carregarPostsHero() {
-    if (!heroNewsMain) return;
-    heroNewsMain.innerHTML = '';
+    if (!heroNewsMain && !homeContentStrip) return;
+    if (heroNewsMain) heroNewsMain.innerHTML = '';
     try {
       const res = await fetch('api/apiget.php?table=posts', { credentials: 'include' });
       const json = await res.json();
       if (!json.success) return;
       let posts = json.data || [];
-      const now = new Date();
-      const isPublished = (post) => {
-        const status = (post.status || '').toLowerCase();
-        if (status !== 'publicado') return false;
-        if (!post.published_at) return true;
-        const scheduled = new Date(post.published_at);
-        if (Number.isNaN(scheduled.getTime())) return true;
-        return scheduled <= now;
-      };
-      posts = posts.filter(isPublished);
+      posts = getPublishedPosts(posts);
       if (!posts.length) {
         if (heroNewsMain) {
           const p = document.createElement('p');
@@ -646,6 +680,7 @@ document.addEventListener('DOMContentLoaded', () => {
           p.textContent = 'Nenhum conteúdo publicado ainda.';
           heroNewsMain.appendChild(p);
         }
+        renderHomeContentCards([]);
         return;
       }
       posts.sort((a, b) => {
@@ -654,6 +689,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (db !== da) return db - da;
         return (b.id || 0) - (a.id || 0);
       });
+      renderHomeContentCards(posts);
       // Mantém apenas os 3 mais recentes para o carrossel
       const items = posts.slice(0, 3);
       let currentIndex = 0;
@@ -668,17 +704,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const imgWrap = document.createElement('div');
         imgWrap.className = 'hero-news-image-wrap';
 
-        const normalizeCoverPath = (path) => {
-          const raw = String(path || '').trim();
-          if (!raw) return '';
-          if (raw.startsWith('data:')) return raw;
-          if (/^https?:\/\//i.test(raw)) return raw;
-          const idx = raw.indexOf('/img/posts/');
-          if (idx !== -1) return raw.slice(idx);
-          if (raw.startsWith('img/')) return raw;
-          if (raw.startsWith('/')) return raw;
-          return '/' + raw;
-        };
         const attachCover = (img, rawPath, wrap, alt) => {
           const primary = normalizeCoverPath(rawPath);
           if (!primary) return false;
@@ -769,6 +794,54 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (e) {
       console.error('Erro ao carregar conteúdos para o hero', e);
     }
+  }
+
+  function renderHomeContentCards(posts) {
+    if (!homeContentStrip || !contentMessage) return;
+    homeContentStrip.innerHTML = '';
+    const items = (posts || []).slice(0, 5);
+    if (!items.length) {
+      contentMessage.textContent = 'Nenhum conteúdo publicado ainda.';
+      return;
+    }
+    contentMessage.textContent = '';
+    items.forEach(post => {
+      const card = document.createElement('article');
+      card.className = 'content-card';
+      const media = document.createElement('div');
+      media.className = 'content-media';
+      const cover = normalizeCoverPath(post.cover_path);
+      if (cover) {
+        const img = document.createElement('img');
+        img.alt = post.title || 'Conteúdo Ze.EFE';
+        img.src = cover;
+        img.addEventListener('error', () => {
+          img.remove();
+          media.classList.add('is-missing');
+        }, { once: true });
+        media.appendChild(img);
+      }
+      card.appendChild(media);
+
+      const body = document.createElement('div');
+      body.className = 'content-body';
+      const tag = document.createElement('div');
+      tag.className = 'content-tag';
+      tag.textContent = post.category_name || post.category || 'Conteúdo';
+      body.appendChild(tag);
+      const title = document.createElement('h4');
+      title.textContent = post.title || 'Conteúdo Ze.EFE';
+      body.appendChild(title);
+      const summary = document.createElement('p');
+      summary.textContent = post.summary || 'Leia mais sobre este conteúdo na Ze.EFE.';
+      body.appendChild(summary);
+      const actions = document.createElement('div');
+      actions.className = 'content-actions';
+      actions.innerHTML = `<a class="btn btn-secondary btn-sm" href="conteudo-detalhe.html?id=${post.id}">Ler conteúdo</a>`;
+      body.appendChild(actions);
+      card.appendChild(body);
+      homeContentStrip.appendChild(card);
+    });
   }
 
   heroTabs.forEach(tab => {
@@ -885,12 +958,14 @@ document.addEventListener('DOMContentLoaded', () => {
   function renderFeaturedWorkshops() {
     if (!workshopsStrip || !workshopsMessage) return;
     workshopsStrip.innerHTML = '';
+    const promo = createWorkshopPromoCard();
+    workshopsStrip.appendChild(promo);
     if (!allWorkshops.length) {
       workshopsMessage.textContent = 'Nenhum curso disponível no momento.';
       return;
     }
     workshopsMessage.textContent = '';
-    const items = allWorkshops.slice(0, 2);
+    const items = allWorkshops.slice(0, 4);
     items.forEach(w => {
       const card = document.createElement('article');
       card.className = 'card workshop-card';
@@ -941,6 +1016,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
       workshopsStrip.appendChild(card);
     });
+  }
+
+  function createWorkshopPromoCard() {
+    const card = document.createElement('article');
+    card.className = 'promo-card';
+    card.innerHTML = `
+      <h4>Você também pode oferecer cursos</h4>
+      <p>Transforme sua sala em palco para workshops e monetize sua expertise com a Ze.EFE.</p>
+      <button class="btn btn-secondary" type="button" data-destino="/anunciante.html">Quero oferecer cursos</button>
+    `;
+    card.querySelector('[data-destino]')?.addEventListener('click', (event) => {
+      event.preventDefault();
+      window.location.href = '/anunciante.html';
+    });
+    return card;
   }
 
 });

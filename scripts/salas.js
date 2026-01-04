@@ -252,9 +252,8 @@ async function init() {
     renderAmenityFilters();
     hydrateUfAndCities();
     applyFiltersFromUrl();
-    renderRooms('all');
     initMapIfNeeded();
-    renderMapMarkersSalas(roomsData);
+    renderRooms('all');
     handleHashRoomOpen();
   } catch (err) {
     console.error(err);
