@@ -242,7 +242,7 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
     roomsMessage.textContent = '';
-    filtered.slice(0, 2).forEach(room => {
+    filtered.slice(0, 4).forEach(room => {
       const available = isRoomAvailable(room, today);
         const photos = getRoomPhotos(room.photo_path);
         const statusMeta = getStatusMeta(room, available);

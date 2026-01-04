@@ -580,6 +580,25 @@ main {
   gap: 18px;
   overflow: visible;
 }
+.home-rooms-grid .room-card,
+.home-workshops-grid .card {
+  height: 100%;
+}
+.home-rooms-grid .room-card {
+  display: flex;
+  flex-direction: column;
+}
+.home-rooms-grid .room-info {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+.home-rooms-grid .room-actions {
+  margin-top: auto;
+}
+.home-rooms-grid .card-share {
+  margin-top: 12px;
+}
 .hero-location-dialog.modal-small {
   max-width: 520px;
 }
