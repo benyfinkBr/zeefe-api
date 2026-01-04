@@ -800,6 +800,7 @@ main {
   display: none;
 }
 .hidden { display: none !important; }
+[hidden] { display: none !important; }
 
 @media (max-width: 900px) {
   .hero-split { grid-template-columns: 1fr; }
