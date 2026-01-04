@@ -47,9 +47,9 @@
           <p>Sem complicação, sem custos ocultos</p>
         </div>
         <form class="hero-search-bar" id="heroSearchForm">
-          <div class="hero-search-field">
+          <div class="hero-search-field hero-location-field">
             <label for="heroLocation">Local</label>
-            <input id="heroLocation" type="text" placeholder="Selecione um local..." readonly />
+            <input id="heroLocation" type="text" placeholder="Selecione um local..." readonly aria-haspopup="dialog" aria-controls="heroLocationModal" />
           </div>
           <div class="hero-search-field hero-search-date">
             <label for="heroDate">Data</label>

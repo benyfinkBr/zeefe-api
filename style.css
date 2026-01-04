@@ -510,9 +510,9 @@ main {
 
 /* Home v2 */
 .home-v2 main {
-  max-width: 1400px;
+  max-width: 1600px;
   margin: 0 auto;
-  padding: 0 16px 32px;
+  padding: 0 10px 32px;
 }
 .hero-spotlight {
   margin: 20px 0 28px;
@@ -564,6 +564,9 @@ main {
   padding: 10px 14px;
   font-size: 0.95rem;
 }
+.hero-search-field input[readonly] {
+  cursor: pointer;
+}
 .hero-search-bar .hero-submit {
   margin: 0;
   padding: 12px 22px;
@@ -574,7 +577,7 @@ main {
   margin: 24px 0 36px;
 }
 .home-results .section-heading {
-  margin-bottom: 14px;
+  margin-bottom: 8px;
 }
 .home-rooms-grid,
 .home-workshops-grid {

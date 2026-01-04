@@ -20,6 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const heroTabs = document.querySelectorAll('.hero-tab');
   const heroForm = document.getElementById('heroSearchForm');
   const heroLocation = document.getElementById('heroLocation');
+  const heroLocationField = document.querySelector('.hero-location-field');
   const heroDate = document.getElementById('heroDate');
   const heroCapacity = document.getElementById('heroCapacity');
   const heroCourseTopic = document.getElementById('heroCourseTopic');
@@ -444,6 +445,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function openLocationModal() {
     if (!heroLocationModal) return;
+    populateStateOptions();
     if (heroStateSelect) heroStateSelect.value = heroLocation?.dataset.uf || '';
     populateCityOptions(heroStateSelect?.value || '');
     if (heroCitySelect) heroCitySelect.value = heroLocation?.dataset.city || '';
@@ -861,6 +863,10 @@ document.addEventListener('DOMContentLoaded', () => {
     openLocationModal();
   });
   heroLocation?.addEventListener('pointerdown', () => {
+    openLocationModal();
+  });
+  heroLocationField?.addEventListener('click', (event) => {
+    if (event.target === heroDate) return;
     openLocationModal();
   });
   heroLocation?.addEventListener('keydown', (event) => {
