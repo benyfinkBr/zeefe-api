@@ -83,7 +83,7 @@
         <div class="footer-powered-logos">
           <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='110' height='30'><text x='5' y='20' font-family='Arial' font-size='16' fill='%23005CAB'>HostGator</text></svg>" alt="HostGator" loading="lazy">
           <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='130' height='30'><text x='5' y='20' font-family='Arial' font-size='16' fill='%2300317A'>Contabilizei</text></svg>" alt="Contabilizei" loading="lazy">
-          <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='110' height='30'><text x='5' y='20' font-family='Arial' font-size='16' fill='%2300B376'>pagar.me</text></svg>" alt="Pagar.me" loading="lazy">
+          <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='110' height='30'><text x='5' y='20' font-family='Arial' font-size='16' fill='%2300B376'>Stripe</text></svg>" alt="Stripe" loading="lazy">
           <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='80' height='30'><text x='5' y='20' font-family='Arial' font-size='16' fill='%23E10D5C'>cora</text></svg>" alt="Cora" loading="lazy">
         </div>
       </div>
@@ -134,8 +134,108 @@
           });
           return true;
         };
+        const sharePanels = new Set();
+        const closeSharePanels = (event) => {
+          if (event && event.target.closest('.share-menu')) return;
+          sharePanels.forEach(panel => {
+            panel.hidden = true;
+          });
+        };
+        document.addEventListener('click', closeSharePanels);
+        const openShareWindow = (url) => window.open(url, '_blank', 'noopener');
+        const createShareActions = (titleText, url) => {
+          const wrap = document.createElement('div');
+          wrap.className = 'news-card-share';
+
+          const whatsappBtn = document.createElement('button');
+          whatsappBtn.type = 'button';
+          whatsappBtn.className = 'btn btn-secondary btn-sm';
+          whatsappBtn.textContent = 'WhatsApp';
+          whatsappBtn.addEventListener('click', (event) => {
+            event.stopPropagation();
+            const text = encodeURIComponent(`${titleText} ${url}`);
+            openShareWindow(`https://web.whatsapp.com/send?text=${text}`);
+          });
+          wrap.appendChild(whatsappBtn);
+
+          const shareMenu = document.createElement('div');
+          shareMenu.className = 'share-menu';
+          const menuToggle = document.createElement('button');
+          menuToggle.type = 'button';
+          menuToggle.className = 'btn btn-secondary btn-sm';
+          menuToggle.textContent = 'Compartilhar';
+
+          const menuPanel = document.createElement('div');
+          menuPanel.className = 'share-menu-panel';
+          menuPanel.hidden = true;
+          sharePanels.add(menuPanel);
+
+          const menuItems = [
+            { key: 'x', label: 'X' },
+            { key: 'facebook', label: 'Facebook' },
+            { key: 'linkedin', label: 'LinkedIn' },
+            { key: 'email', label: 'E-mail' },
+            { key: 'copy', label: 'Copiar link' }
+          ];
+          menuItems.forEach(item => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.dataset.share = item.key;
+            btn.textContent = item.label;
+            menuPanel.appendChild(btn);
+          });
+
+          menuToggle.addEventListener('click', (event) => {
+            event.stopPropagation();
+            const willOpen = menuPanel.hidden;
+            closeSharePanels();
+            menuPanel.hidden = !willOpen;
+          });
+
+          menuPanel.addEventListener('click', (event) => {
+            const btn = event.target.closest('button[data-share]');
+            if (!btn) return;
+            const type = btn.dataset.share;
+            const title = encodeURIComponent(titleText);
+            const shareUrl = encodeURIComponent(url);
+            if (type === 'x') {
+              openShareWindow(`https://twitter.com/intent/tweet?text=${title}&url=${shareUrl}`);
+            } else if (type === 'facebook') {
+              openShareWindow(`https://www.facebook.com/sharer/sharer.php?u=${shareUrl}`);
+            } else if (type === 'linkedin') {
+              openShareWindow(`https://www.linkedin.com/sharing/share-offsite/?url=${shareUrl}`);
+            } else if (type === 'email') {
+              window.location.href = `mailto:?subject=${title}&body=${shareUrl}`;
+            } else if (type === 'copy') {
+              if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(url).then(() => {
+                  const original = menuToggle.textContent;
+                  menuToggle.textContent = 'Copiado!';
+                  setTimeout(() => { menuToggle.textContent = original; }, 1400);
+                });
+              } else {
+                window.prompt('Copie o link:', url);
+              }
+            }
+            menuPanel.hidden = true;
+          });
+
+          shareMenu.appendChild(menuToggle);
+          shareMenu.appendChild(menuPanel);
+          wrap.appendChild(shareMenu);
+          return wrap;
+        };
         let posts = json.data || [];
-        posts = posts.filter(p => (p.status || '').toLowerCase() === 'publicado');
+        const now = new Date();
+        const isPublished = (post) => {
+          const status = (post.status || '').toLowerCase();
+          if (status !== 'publicado') return false;
+          if (!post.published_at) return true;
+          const scheduled = new Date(post.published_at);
+          if (Number.isNaN(scheduled.getTime())) return true;
+          return scheduled <= now;
+        };
+        posts = posts.filter(isPublished);
         if (!posts.length) {
           grid.innerHTML = '<p class="rooms-message">Nenhum conteúdo publicado no momento.</p>';
           return;
@@ -150,6 +250,7 @@
         posts.forEach(p => {
           const card = document.createElement('article');
           card.className = 'news-card';
+          const detailUrl = new URL(`conteudo-detalhe.html?id=${p.id}`, window.location.href).toString();
           if (p.cover_path) {
             const coverWrap = document.createElement('div');
             coverWrap.className = 'news-card-cover';
@@ -161,17 +262,18 @@
           }
           const tag = document.createElement('span');
           tag.className = 'news-tag';
-          tag.textContent = p.category || 'Conteúdo';
+          tag.textContent = p.category_name || p.category || 'Conteúdo';
           card.appendChild(tag);
           const title = document.createElement('h4');
           const link = document.createElement('a');
-          link.href = `conteudo-detalhe.html?id=${p.id}`;
+          link.href = detailUrl;
           link.textContent = p.title || 'Conteúdo';
           title.appendChild(link);
           card.appendChild(title);
           const summary = document.createElement('p');
           summary.textContent = p.summary || '';
           card.appendChild(summary);
+          card.appendChild(createShareActions(p.title || 'Conteúdo Ze.EFE', detailUrl));
           grid.appendChild(card);
         });
       } catch (e) {

@@ -200,6 +200,19 @@ try {
       echo json_encode(['success' => true, 'data' => $rows]);
       break;
 
+    case 'posts':
+      $sql = "
+        SELECT p.*,
+               pc.name AS category_name
+        FROM posts p
+        LEFT JOIN post_categories pc ON pc.id = p.category_id
+        ORDER BY p.id DESC
+      ";
+      $stmt = $pdo->query($sql);
+      $rows = $stmt->fetchAll();
+      echo json_encode(['success' => true, 'data' => $rows]);
+      break;
+
     default:
       $stmt = $pdo->query("SELECT * FROM `$table` ORDER BY id DESC");
       $rows = $stmt->fetchAll();

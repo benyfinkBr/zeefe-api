@@ -447,7 +447,16 @@ document.addEventListener('DOMContentLoaded', () => {
       const json = await res.json();
       if (!json.success) return;
       let posts = json.data || [];
-      posts = posts.filter(p => (p.status || '').toLowerCase() === 'publicado');
+      const now = new Date();
+      const isPublished = (post) => {
+        const status = (post.status || '').toLowerCase();
+        if (status !== 'publicado') return false;
+        if (!post.published_at) return true;
+        const scheduled = new Date(post.published_at);
+        if (Number.isNaN(scheduled.getTime())) return true;
+        return scheduled <= now;
+      };
+      posts = posts.filter(isPublished);
       if (!posts.length) {
         if (heroNewsMain) {
           const p = document.createElement('p');
@@ -535,7 +544,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const meta = document.createElement('p');
         meta.className = 'hero-news-meta';
         const parts = [];
-        if (post.category) parts.push(post.category);
+        if (post.category_name || post.category) parts.push(post.category_name || post.category);
         if (post.published_at) {
           const d = new Date(post.published_at);
           if (!Number.isNaN(d.getTime())) {

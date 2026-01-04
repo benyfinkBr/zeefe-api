@@ -960,7 +960,7 @@ input, select {
           { key: 'id', label: 'ID' },
           { key: 'title', label: 'Título' },
           { key: 'summary', label: 'Resumo' },
-          { key: 'category', label: 'Categoria' },
+          { key: 'category_name', label: 'Categoria' },
           { key: 'views_count', label: 'Visualizações' },
           { key: 'status', label: 'Status', formatter: statusFormatter },
           { key: 'published_at', label: 'Publicado em', formatter: dateTimeFormatter }
@@ -1625,7 +1625,7 @@ input, select {
         { name: 'title', label: 'Título da matéria', span: 4, required: true },
         { type: 'break' },
         { name: 'slug', label: 'Slug (URL amigável)', span: 2, cls:'sm' },
-        { name: 'category', label: 'Categoria', span: 1, cls:'sm' },
+        { name: 'category_id', label: 'Categoria', span: 1, cls:'sm', type: 'select', source: 'post_categories', includeEmpty: false, required: true },
         { name: 'author_name', label: 'Autor (opcional)', span: 1, cls:'sm' },
         { type: 'break' },
         { name: 'status', label: 'Status', span: 2, type: 'select', cls:'sm', includeEmpty:false, options: [
@@ -1633,7 +1633,7 @@ input, select {
           { value: 'publicado', label: 'Publicado' },
           { value: 'arquivado', label: 'Arquivado' }
         ]},
-        { name: 'published_at', label: 'Publicado em', span: 2, cls:'sm', type: 'datetime-local' },
+        { name: 'published_at', label: 'Publicado em (agendamento)', span: 2, cls:'sm', type: 'datetime-local' },
         { type: 'break', label: 'Resumo' },
         { name: 'summary', label: 'Resumo curto (aparece nos cards)', span: 4, type: 'textarea' },
         { type: 'break', label: 'Conteúdo' },

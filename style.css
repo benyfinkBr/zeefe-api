@@ -880,6 +880,53 @@ main {
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+.news-card-share {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+.news-card-share .btn {
+  white-space: nowrap;
+}
+.post-share {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.share-menu {
+  position: relative;
+}
+.share-menu-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 6px;
+  min-width: 170px;
+  box-shadow: 0 14px 28px rgba(15, 23, 42, 0.12);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  z-index: 20;
+}
+.share-menu-panel button {
+  border: 0;
+  background: transparent;
+  padding: 8px 10px;
+  text-align: left;
+  border-radius: 8px;
+  color: #0f172a;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+.share-menu-panel button:hover {
+  background: #f3f4f6;
+}
 .btn.btn-link {
   color: var(--brand-green);
   font-weight: 700;

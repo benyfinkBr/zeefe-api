@@ -54,6 +54,19 @@
       <header class="section-heading">
         <h3 id="postTitle">Conteúdo</h3>
         <p id="postMeta"></p>
+        <div class="post-share" id="postShare" hidden>
+          <button type="button" class="btn btn-secondary btn-sm" id="shareWhatsappBtn">WhatsApp</button>
+          <div class="share-menu">
+            <button type="button" class="btn btn-secondary btn-sm" id="shareMenuToggle">Compartilhar</button>
+            <div class="share-menu-panel" id="shareMenuPanel" hidden>
+              <button type="button" data-share="x">X</button>
+              <button type="button" data-share="facebook">Facebook</button>
+              <button type="button" data-share="linkedin">LinkedIn</button>
+              <button type="button" data-share="email">E-mail</button>
+              <button type="button" data-share="copy">Copiar link</button>
+            </div>
+          </div>
+        </div>
       </header>
       <div id="postBody" class="post-body">
         <p>Carregando conteúdo...</p>
@@ -97,7 +110,7 @@
         <div class="footer-powered-logos">
           <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='110' height='30'><text x='5' y='20' font-family='Arial' font-size='16' fill='%23005CAB'>HostGator</text></svg>" alt="HostGator" loading="lazy">
           <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='130' height='30'><text x='5' y='20' font-family='Arial' font-size='16' fill='%2300317A'>Contabilizei</text></svg>" alt="Contabilizei" loading="lazy">
-          <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='110' height='30'><text x='5' y='20' font-family='Arial' font-size='16' fill='%2300B376'>pagar.me</text></svg>" alt="Pagar.me" loading="lazy">
+          <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='110' height='30'><text x='5' y='20' font-family='Arial' font-size='16' fill='%2300B376'>Stripe</text></svg>" alt="Stripe" loading="lazy">
           <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='80' height='30'><text x='5' y='20' font-family='Arial' font-size='16' fill='%23E10D5C'>cora</text></svg>" alt="Cora" loading="lazy">
         </div>
       </div>
@@ -140,9 +153,21 @@
         const metaEl = document.getElementById('postMeta');
         const bodyEl = document.getElementById('postBody');
         if (titleEl) titleEl.textContent = post.title || 'Conteúdo';
+        const now = new Date();
+        const status = (post.status || '').toLowerCase();
+        const publishedAt = post.published_at ? new Date(post.published_at) : null;
+        const isPublished = status === 'publicado' && (!publishedAt || !Number.isNaN(publishedAt.getTime()) && publishedAt <= now);
+
+        if (!isPublished) {
+          if (bodyEl) {
+            bodyEl.innerHTML = '<p class="rooms-message">Este conteúdo está programado e ficará disponível na data de publicação.</p>';
+          }
+          return;
+        }
+
         if (metaEl) {
           const parts = [];
-          if (post.category) parts.push(post.category);
+          if (post.category_name || post.category) parts.push(post.category_name || post.category);
           if (post.published_at) parts.push(new Date(post.published_at).toLocaleString('pt-BR'));
           metaEl.textContent = parts.join(' • ');
         }
@@ -198,6 +223,54 @@
           contentWrap.innerHTML = post.content || '';
           bodyEl.appendChild(contentWrap);
         }
+
+        const postShare = document.getElementById('postShare');
+        const shareWhatsappBtn = document.getElementById('shareWhatsappBtn');
+        const shareMenuToggle = document.getElementById('shareMenuToggle');
+        const shareMenuPanel = document.getElementById('shareMenuPanel');
+        const shareTitle = post.title || 'Conteúdo Ze.EFE';
+        const shareUrl = window.location.href;
+        if (postShare) postShare.hidden = false;
+
+        const openShareWindow = (url) => window.open(url, '_blank', 'noopener');
+
+        shareWhatsappBtn?.addEventListener('click', () => {
+          const text = encodeURIComponent(`${shareTitle} ${shareUrl}`);
+          openShareWindow(`https://web.whatsapp.com/send?text=${text}`);
+        });
+
+        shareMenuToggle?.addEventListener('click', () => {
+          shareMenuPanel.hidden = !shareMenuPanel.hidden;
+        });
+
+        shareMenuPanel?.addEventListener('click', (event) => {
+          const btn = event.target.closest('button[data-share]');
+          if (!btn) return;
+          const type = btn.dataset.share;
+          const title = encodeURIComponent(shareTitle);
+          const url = encodeURIComponent(shareUrl);
+          if (type === 'x') {
+            openShareWindow(`https://twitter.com/intent/tweet?text=${title}&url=${url}`);
+          } else if (type === 'facebook') {
+            openShareWindow(`https://www.facebook.com/sharer/sharer.php?u=${url}`);
+          } else if (type === 'linkedin') {
+            openShareWindow(`https://www.linkedin.com/sharing/share-offsite/?url=${url}`);
+          } else if (type === 'email') {
+            window.location.href = `mailto:?subject=${title}&body=${url}`;
+          } else if (type === 'copy') {
+            navigator.clipboard?.writeText(shareUrl).then(() => {
+              btn.textContent = 'Link copiado!';
+              setTimeout(() => { btn.textContent = 'Copiar link'; }, 1200);
+            });
+          }
+          shareMenuPanel.hidden = true;
+        });
+
+        document.addEventListener('click', (event) => {
+          if (!shareMenuPanel || shareMenuPanel.hidden) return;
+          if (shareMenuPanel.contains(event.target) || shareMenuToggle?.contains(event.target)) return;
+          shareMenuPanel.hidden = true;
+        });
 
         // Incrementa contador de visualizações (somente se encontrar o post)
         try {
