@@ -1,5 +1,0 @@
----
-deployment:
-  tasks:
-    - /bin/echo "Deploying Ze.EFE..."
-

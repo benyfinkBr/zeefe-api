@@ -18,7 +18,7 @@
   <!-- Leaflet (mapa) -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
 </head>
-<body>
+<body class="home-v2">
   <header class="site-header">
     <div class="site-header-inner">
       <div class="site-header-left">
@@ -40,114 +40,46 @@
   </header>
   
   <main>
-    <!-- Hero com card de busca -->
-    <section class="hero-split">
-      <div class="hero-card">
-        <div class="hero-tabs" role="tablist">
-          <button class="hero-tab active" data-target="salas" type="button">Salas</button>
-          <button class="hero-tab" data-target="cursos" type="button">Cursos</button>
+    <section class="hero-spotlight">
+      <div class="hero-spotlight-inner">
+        <div class="hero-spotlight-content">
+          <h1>Encontre sua sala em 30 segundos</h1>
+          <p>Sem complicação, sem custos ocultos</p>
         </div>
-        <div class="hero-copy">
-          <h1>Encontre salas e cursos presenciais para você ou sua empresa.</h1>
-          <p>Espaços prontos para reuniões, treinamentos e workshops, com gestão de reservas em um só lugar.</p>
-        </div>
-        <form class="hero-form" id="heroSearchForm">
-          <div class="form-row tab-salas">
-            <label for="heroLocation">Onde você precisa?</label>
-            <input id="heroLocation" type="text" placeholder="Cidade, bairro ou região" />
+        <form class="hero-search-bar" id="heroSearchForm">
+          <div class="hero-search-field">
+            <label for="heroLocation">Local</label>
+            <input id="heroLocation" type="text" placeholder="Selecione um local..." />
           </div>
-          <div class="form-row form-row-inline tab-salas">
-            <div class="field">
-              <label for="heroDate">Data da reserva</label>
-              <input id="heroDate" type="date" />
-            </div>
-            <div class="field">
-              <label for="heroCapacity">Quantidade de pessoas (opcional)</label>
-              <input id="heroCapacity" type="number" min="1" placeholder="Ex: 12" />
-            </div>
+          <div class="hero-search-field hero-search-date">
+            <label for="heroDate">Data</label>
+            <input id="heroDate" type="date" />
           </div>
-          <div class="form-row tab-cursos hidden">
-            <label for="heroCourseCity">Cidade do curso</label>
-            <input id="heroCourseCity" type="text" placeholder="Ex: São Paulo" />
-          </div>
-          <div class="form-row tab-cursos hidden">
-            <label for="heroCourseTopic">Tema ou área</label>
-            <select id="heroCourseTopic">
-              <option value="">Todos os temas</option>
-              <option value="Desenvolvimento pessoal">Desenvolvimento pessoal</option>
-              <option value="Saúde e bem-estar">Saúde e bem-estar</option>
-              <option value="Psicologia / Terapia">Psicologia / Terapia</option>
-              <option value="Negócios e carreira">Negócios e carreira</option>
-              <option value="Tecnologia e inovação">Tecnologia e inovação</option>
-              <option value="Finanças e investimentos">Finanças e investimentos</option>
-              <option value="Arte e criatividade">Arte e criatividade</option>
-              <option value="Outros">Outros</option>
-            </select>
-          </div>
-          <button class="btn btn-primary hero-submit" type="submit">Buscar salas</button>
-          <p class="hero-hint">Sem cadastro inicial. Você só cria conta ao avançar com uma reserva ou inscrição.</p>
+          <input id="heroCapacity" type="number" min="1" class="hidden" />
+          <input id="filterQuery" type="hidden" />
+          <input id="filterType" type="hidden" value="rooms" />
+          <button class="btn btn-primary hero-submit" type="submit">Marcar agora</button>
         </form>
       </div>
-      <div class="hero-visual">
-        <div class="hero-visual-block">
-          <h3 class="hero-news-title">Últimos conteúdos</h3>
-          <p class="hero-news-subtitle">Atualizações rápidas sobre salas, cursos e encontros presenciais.</p>
-          <div id="heroNewsMain" class="hero-news-main" aria-label="Conteúdo em destaque" aria-live="polite"></div>
-        </div>
-        <div class="hero-visual-block hero-visual-block-secondary">
-          <div id="heroNewsSecondary" class="hero-news-secondary" aria-label="Segundo conteúdo em destaque"></div>
-        </div>
-      </div>
     </section>
 
-    <!-- Filtros rápidos -->
-    <section class="rooms-filters" aria-label="Filtros de salas e cursos">
-      <div class="filters-wrap">
-        <input id="filterQuery" type="text" placeholder="Buscar por nome ou local" aria-label="Buscar por nome ou local" />
-        <select id="filterType" aria-label="Tipo de resultado">
-          <option value="all">Salas e cursos</option>
-          <option value="rooms">Somente salas</option>
-          <option value="workshops">Somente cursos</option>
-        </select>
-        <button id="clearFilters" class="btn btn-secondary btn-sm" type="button">Limpar filtros</button>
-      </div>
-    </section>
-
-    <!-- Mapa de salas -->
-    <section class="landing-section">
+    <section class="home-results">
       <div class="section-heading">
-        <h3>Encontre no mapa</h3>
-        <p>Visualize onde estão as salas e veja em quais delas também acontecem cursos presenciais.</p>
+        <h3>Salas encontradas</h3>
+        <p>Confira as salas disponíveis para sua próxima reunião.</p>
       </div>
-      <div id="rooms-map" class="rooms-map" role="region" aria-label="Mapa de salas"></div>
+      <div id="rooms-message" class="rooms-message"></div>
+      <div id="rooms-strip" class="rooms-strip home-rooms-grid" aria-live="polite"></div>
     </section>
 
-    <!-- Destaques: Salas e Cursos em duas colunas -->
-    <section class="landing-section">
+    <section class="home-results">
       <div class="section-heading">
-        <h3>Em destaque</h3>
-        <p>Salas prontas para uso e cursos presenciais pensados para empresas e profissionais.</p>
+        <h3>Cursos e workshops</h3>
+        <p>Alguns dos próximos encontros presenciais na agenda Ze.EFE.</p>
       </div>
-      <div class="featured-grid">
-        <div class="featured-column">
-          <h4>Salas em destaque</h4>
-          <p class="featured-subtitle">Ambientes mais usados para reuniões, atendimentos e treinamentos.</p>
-          <div id="rooms-message" class="rooms-message"></div>
-          <div class="rooms-carousel">
-            <button class="rooms-nav rooms-nav-prev" type="button" aria-label="Ver salas anteriores"><span aria-hidden="true">&lsaquo;</span></button>
-            <div id="rooms-strip" class="rooms-strip" aria-live="polite"></div>
-            <button class="rooms-nav rooms-nav-next" type="button" aria-label="Ver mais salas"><span aria-hidden="true">&rsaquo;</span></button>
-          </div>
-        </div>
-        <div class="featured-column">
-          <h4>Cursos e workshops</h4>
-          <p class="featured-subtitle">Alguns dos próximos encontros presenciais na agenda Ze.EFE.</p>
-          <div id="workshops-message" class="rooms-message"></div>
-          <div id="featured-workshops" class="rooms-strip"></div>
-        </div>
-      </div>
+      <div id="workshops-message" class="rooms-message"></div>
+      <div id="featured-workshops" class="rooms-strip home-workshops-grid"></div>
     </section>
-    
   </main>
 
   <footer class="site-footer">

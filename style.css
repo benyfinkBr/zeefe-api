@@ -508,6 +508,88 @@ main {
   margin-bottom: 40px;
 }
 
+/* Home v2 */
+.home-v2 main {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px 32px;
+}
+.hero-spotlight {
+  margin: 24px 0 32px;
+}
+.hero-spotlight-inner {
+  background: linear-gradient(135deg, rgba(29, 65, 58, 0.82), rgba(22, 51, 46, 0.72)),
+    url('img/cover.jpg') center/cover no-repeat;
+  border-radius: 24px;
+  padding: 64px 32px 72px;
+  text-align: center;
+  color: #fff;
+  box-shadow: 0 24px 48px rgba(17, 24, 39, 0.18);
+}
+.hero-spotlight-content h1 {
+  margin: 0 0 10px;
+  font-size: clamp(1.8rem, 3.6vw, 2.6rem);
+  font-weight: 700;
+}
+.hero-spotlight-content p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 1rem;
+}
+.hero-search-bar {
+  margin: 28px auto 0;
+  background: #fff;
+  border-radius: 18px;
+  padding: 18px 20px;
+  display: grid;
+  grid-template-columns: minmax(180px, 2fr) minmax(140px, 1fr) auto;
+  gap: 16px;
+  align-items: end;
+  max-width: 860px;
+  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.18);
+}
+.hero-search-field {
+  display: grid;
+  gap: 6px;
+  text-align: left;
+}
+.hero-search-field label {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+.hero-search-field input {
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-size: 0.95rem;
+}
+.hero-search-bar .hero-submit {
+  margin: 0;
+  padding: 12px 22px;
+  border-radius: 999px;
+  font-size: 0.95rem;
+}
+.home-results {
+  margin: 24px 0 36px;
+}
+.home-rooms-grid,
+.home-workshops-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 18px;
+  overflow: visible;
+}
+
+@media (max-width: 900px) {
+  .hero-search-bar {
+    grid-template-columns: 1fr;
+  }
+  .hero-search-bar .hero-submit {
+    width: 100%;
+  }
+}
+
 /* Chips de destaque no estilo "pills" */
 .cards-grid.pills .card {
   background: var(--brand-sand);
