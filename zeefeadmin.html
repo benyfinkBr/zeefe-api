@@ -52,6 +52,32 @@
       border-top:none;
       padding-top:4px;
     }
+    .cockpit-grid{
+      display:grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap:16px;
+      padding:24px;
+    }
+    .cockpit-card{
+      background:#FFF;
+      border:1px solid #E0DAD1;
+      border-radius:14px;
+      padding:18px;
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+      box-shadow:0 10px 22px rgba(0,0,0,.06);
+    }
+    .cockpit-card h4{
+      margin:0;
+      font-size:16px;
+      color:#1D413A;
+    }
+    .cockpit-card p{
+      margin:0;
+      color:#6B5D50;
+      font-size:13px;
+    }
     .logout-link{padding:12px 28px;border-top:1px solid rgba(255,255,255,.1);cursor:pointer}
 
     main.content{flex:1;display:flex;flex-direction:column;background:#F5F0E9;overflow-y:auto}
@@ -281,8 +307,10 @@ input, select {
       <nav class="sidebar">
         <img src="img/logo.jpg" alt="Ze.EFE">
         <ul id="menu">
+          <li class="menu-group">Início</li>
+          <li data-section="cockpit" class="active">Cockpit</li>
           <li class="menu-group">Portal de Salas</li>
-          <li data-section="companies" class="active">Empresas</li>
+          <li data-section="companies">Empresas</li>
           <li data-section="clients">Clientes</li>
           <li data-section="reservations">Reservas</li>
           <li data-section="visitors">Visitantes</li>
@@ -305,7 +333,7 @@ input, select {
       </nav>
 
       <main class="content">
-        <div class="section-header"><h2 id="content-title">Empresas</h2></div>
+        <div class="section-header"><h2 id="content-title">Cockpit</h2></div>
         <div class="search-filters" id="search-filters"></div>
         <section id="content-body"></section>
       </main>
@@ -1003,7 +1031,7 @@ input, select {
           if (data.success) {
             loginDiv.style.display = 'none';
             appDiv.style.display = 'flex';
-            loadSection('companies');
+            loadSection('cockpit');
           } else {
             errorDiv.textContent = data.error || 'Usuário ou senha inválidos.';
             errorDiv.style.display = 'block';
@@ -1040,6 +1068,14 @@ input, select {
 
     async function loadSection(section) {
       sec = section;
+      const filters = document.getElementById('search-filters');
+      if (filters) {
+        filters.style.display = section === 'cockpit' ? 'none' : 'flex';
+      }
+      if (section === 'cockpit') {
+        renderCockpit();
+        return;
+      }
       if (section === 'rooms') cachedRooms = null;
       if (section === 'clients') {
         cachedClients = null;
@@ -1080,6 +1116,55 @@ input, select {
       }
 
       await renderFilters(section);
+    }
+
+    function renderCockpit() {
+      const body = document.getElementById('content-body');
+      if (!body) return;
+      const entries = [
+        { id: 'companies', title: 'Empresas', desc: 'Cadastro e gestão de empresas clientes.' },
+        { id: 'clients', title: 'Clientes', desc: 'Usuários finais e dados de contato.' },
+        { id: 'reservations', title: 'Reservas', desc: 'Todas as reservas ativas e históricas.' },
+        { id: 'visitors', title: 'Visitantes', desc: 'Lista de visitantes associados.' },
+        { id: 'rooms', title: 'Salas', desc: 'Inventário e disponibilidade de salas.' },
+        { id: 'advertisers', title: 'Anunciantes', desc: 'Gestão de anunciantes e taxas.' },
+        { id: 'workshops', title: 'Workshops', desc: 'Eventos e cursos publicados.' },
+        { id: 'workshop_participants', title: 'Participantes', desc: 'Participantes cadastrados no evento.' },
+        { id: 'workshop_enrollments', title: 'Inscrições', desc: 'Inscrições e pagamentos de workshops.' },
+        { id: 'posts', title: 'Matérias', desc: 'Conteúdos do blog e notícias.' },
+        { id: 'amenities', title: 'Comodidades', desc: 'Itens de comodidade disponíveis.' },
+        { id: 'campaigns', title: 'Campanhas', desc: 'Campanhas e promoções.' },
+        { id: 'vouchers', title: 'Vouchers', desc: 'Cupons e descontos.' },
+        { id: 'messages', title: 'Mensagens', desc: 'Central de mensagens e suporte.' }
+      ];
+      body.innerHTML = `
+        <div class="cockpit-grid">
+          ${entries.map(item => `
+            <div class="cockpit-card">
+              <h4>${escapeHtml(item.title)}</h4>
+              <p>${escapeHtml(item.desc)}</p>
+              <button class="btn btn-secondary" type="button" data-cockpit="${item.id}">Abrir</button>
+            </div>
+          `).join('')}
+        </div>
+      `;
+      body.querySelectorAll('[data-cockpit]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const target = btn.getAttribute('data-cockpit');
+          if (!target) return;
+          const li = document.querySelector(`#menu li[data-section="${target}"]`);
+          if (li) {
+            document.querySelectorAll('#menu li').forEach(x => x.classList.remove('active'));
+            li.classList.add('active');
+            document.getElementById('content-title').textContent = li.textContent;
+          }
+          if (target === 'messages') {
+            abrirAdminMessages();
+          } else {
+            loadSection(target);
+          }
+        });
+      });
     }
 
     function buscar(valor) {
