@@ -52,60 +52,61 @@
       border-top:none;
       padding-top:4px;
     }
-    .cockpit-grid{
+    .cockpit-columns{
       display:grid;
-      grid-template-columns: repeat(4, minmax(160px, 1fr));
-      gap:10px;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap:16px;
       padding:16px 20px 20px;
     }
-    @media (max-width: 1200px){
-      .cockpit-grid{ grid-template-columns: repeat(3, minmax(160px, 1fr)); }
-    }
-    @media (max-width: 980px){
-      .cockpit-grid{ grid-template-columns: repeat(2, minmax(160px, 1fr)); }
-    }
-    @media (max-width: 640px){
-      .cockpit-grid{ grid-template-columns: 1fr; }
-    }
-    .cockpit-card{
+    .cockpit-group{
       background:#FFF;
       border:1px solid #E0DAD1;
       border-radius:12px;
-      padding:10px 12px;
+      padding:12px 12px 10px;
+      box-shadow:0 8px 18px rgba(0,0,0,.05);
       display:flex;
       flex-direction:column;
       gap:8px;
-      box-shadow:0 8px 18px rgba(0,0,0,.05);
-    }
-    .cockpit-card h4{
-      margin:0;
-      font-size:14px;
-      color:#1D413A;
-    }
-    .cockpit-card p{
-      margin:0;
-      color:#6B5D50;
-      font-size:11.5px;
-      line-height:1.35;
-      display:-webkit-box;
-      -webkit-line-clamp:2;
-      -webkit-box-orient:vertical;
-      overflow:hidden;
-    }
-    .cockpit-card .btn{
-      padding:6px 10px;
-      font-size:12.5px;
-    }
-    .cockpit-group{
-      margin-bottom:18px;
+      min-height: 100%;
     }
     .cockpit-group-title{
       font-size:12px;
       text-transform:uppercase;
       letter-spacing:.08em;
       color:#6B5D50;
-      margin:0 20px 8px;
+      margin:0 0 4px;
       font-weight:700;
+    }
+    .cockpit-links{
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+    }
+    .cockpit-link{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:8px;
+      border:1px solid #E0DAD1;
+      border-radius:10px;
+      padding:8px 10px;
+      background:#FDFCF9;
+    }
+    .cockpit-link h4{
+      margin:0;
+      font-size:13px;
+      color:#1D413A;
+    }
+    .cockpit-link .btn{
+      padding:4px 8px;
+      font-size:12px;
+      min-width: 64px;
+    }
+    @media (max-width: 980px){
+      .cockpit-columns{ grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+    }
+    @media (max-width: 640px){
+      .cockpit-columns{ grid-template-columns: 1fr; }
     }
     .logout-link{padding:12px 28px;border-top:1px solid rgba(255,255,255,.1);cursor:pointer}
 
@@ -1192,20 +1193,21 @@ input, select {
         }
       ];
       body.innerHTML = `
-        ${groups.map(group => `
-          <div class="cockpit-group">
-            <div class="cockpit-group-title">${escapeHtml(group.label)}</div>
-            <div class="cockpit-grid">
-              ${group.items.map(item => `
-                <div class="cockpit-card">
-                  <h4>${escapeHtml(item.title)}</h4>
-                  <p>${escapeHtml(item.desc)}</p>
-                  <button class="btn btn-secondary" type="button" data-cockpit="${item.id}">Abrir</button>
-                </div>
-              `).join('')}
+        <div class="cockpit-columns">
+          ${groups.map(group => `
+            <div class="cockpit-group">
+              <div class="cockpit-group-title">${escapeHtml(group.label)}</div>
+              <div class="cockpit-links">
+                ${group.items.map(item => `
+                  <div class="cockpit-link">
+                    <h4>${escapeHtml(item.title)}</h4>
+                    <button class="btn btn-secondary" type="button" data-cockpit="${item.id}">Abrir</button>
+                  </div>
+                `).join('')}
+              </div>
             </div>
-          </div>
-        `).join('')}
+          `).join('')}
+        </div>
       `;
       body.querySelectorAll('[data-cockpit]').forEach(btn => {
         btn.addEventListener('click', () => {
