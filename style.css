@@ -599,6 +599,19 @@ main {
 .home-rooms-grid .card-share {
   margin-top: 12px;
 }
+.home-rooms-grid .room-card-media {
+  margin: 16px 16px 0;
+}
+.home-rooms-grid .room-photo {
+  height: 200px;
+}
+.home-rooms-grid .room-description {
+  min-height: 3.6em;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
 .hero-location-dialog.modal-small {
   max-width: 520px;
 }
