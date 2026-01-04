@@ -1378,6 +1378,15 @@ button:disabled {
   padding: 8px 14px;
   font-size: 0.85rem;
 }
+.btn-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.btn-icon svg {
+  width: 18px;
+  height: 18px;
+}
 
 .btn-with-badge {
   display: inline-flex;
