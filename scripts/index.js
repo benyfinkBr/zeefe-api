@@ -29,7 +29,15 @@ document.addEventListener('DOMContentLoaded', () => {
   const openLoginChoiceBtn = document.getElementById('openLoginChoice');
   const entryChoiceModal = document.getElementById('entryChoiceModal');
   const entryChoiceClose = document.getElementById('entryChoiceClose');
+  const heroLocationModal = document.getElementById('heroLocationModal');
+  const heroLocationClose = document.getElementById('heroLocationClose');
+  const heroLocationCancel = document.getElementById('heroLocationCancel');
+  const heroLocationConfirm = document.getElementById('heroLocationConfirm');
+  const heroStateSelect = document.getElementById('heroStateSelect');
+  const heroCitySelect = document.getElementById('heroCitySelect');
+  const heroNeighborhoodSelect = document.getElementById('heroNeighborhoodSelect');
   const sharePanels = new Set();
+  let locationIndex = new Map();
 
   const closeSharePanels = (event) => {
     if (event && event.target.closest('.share-menu')) return;
@@ -199,6 +207,7 @@ document.addEventListener('DOMContentLoaded', () => {
         roomsMessage.textContent = 'Nenhuma sala cadastrada no momento.';
         return;
       }
+      buildLocationIndex(allRooms);
       roomsMessage.textContent = '';
       renderRooms();
       initMapIfNeeded();
@@ -342,6 +351,78 @@ document.addEventListener('DOMContentLoaded', () => {
     // Atualiza marcadores do mapa conforme filtros aplicados
     renderMapMarkers(filtered);
     requestAnimationFrame(() => updateCarouselNavState());
+  }
+
+  function buildLocationIndex(rooms) {
+    locationIndex = new Map();
+    (rooms || []).forEach(room => {
+      const uf = String(room.state || room.uf || '').trim().toUpperCase();
+      const city = String(room.city || '').trim();
+      const neighborhood = String(room.location || '').trim();
+      if (!uf || !city) return;
+      if (!locationIndex.has(uf)) locationIndex.set(uf, new Map());
+      const cityMap = locationIndex.get(uf);
+      if (!cityMap.has(city)) cityMap.set(city, new Set());
+      if (neighborhood) cityMap.get(city).add(neighborhood);
+    });
+    populateStateOptions();
+  }
+
+  function populateStateOptions() {
+    if (!heroStateSelect) return;
+    const states = Array.from(locationIndex.keys()).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+    heroStateSelect.innerHTML = '<option value="">Selecione um estado...</option>' +
+      states.map(uf => `<option value="${uf}">${uf}</option>`).join('');
+  }
+
+  function populateCityOptions(uf) {
+    if (!heroCitySelect) return;
+    const cityMap = locationIndex.get(uf) || new Map();
+    const cities = Array.from(cityMap.keys()).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+    heroCitySelect.innerHTML = '<option value="">Selecione uma cidade...</option>' +
+      cities.map(city => `<option value="${city}">${city}</option>`).join('');
+    heroCitySelect.disabled = !cities.length;
+  }
+
+  function populateNeighborhoodOptions(uf, city) {
+    if (!heroNeighborhoodSelect) return;
+    const cityMap = locationIndex.get(uf) || new Map();
+    const neighborhoods = Array.from((cityMap.get(city) || new Set()).values())
+      .sort((a, b) => a.localeCompare(b, 'pt-BR'));
+    if (!neighborhoods.length) {
+      heroNeighborhoodSelect.innerHTML = '<option value="">Sem bairro disponível</option>';
+      heroNeighborhoodSelect.disabled = true;
+      return;
+    }
+    heroNeighborhoodSelect.innerHTML = '<option value="">Selecione um bairro...</option>' +
+      neighborhoods.map(n => `<option value="${n}">${n}</option>`).join('');
+    heroNeighborhoodSelect.disabled = false;
+  }
+
+  function openLocationModal() {
+    if (!heroLocationModal) return;
+    if (heroStateSelect) heroStateSelect.value = heroLocation?.dataset.uf || '';
+    populateCityOptions(heroStateSelect?.value || '');
+    if (heroCitySelect) heroCitySelect.value = heroLocation?.dataset.city || '';
+    populateNeighborhoodOptions(heroStateSelect?.value || '', heroCitySelect?.value || '');
+    if (heroNeighborhoodSelect) heroNeighborhoodSelect.value = heroLocation?.dataset.neighborhood || '';
+    updateLocationConfirmState();
+    heroLocationModal.classList.add('show');
+    heroLocationModal.setAttribute('aria-hidden', 'false');
+  }
+
+  function closeLocationModal() {
+    if (!heroLocationModal) return;
+    heroLocationModal.classList.remove('show');
+    heroLocationModal.setAttribute('aria-hidden', 'true');
+  }
+
+  function updateLocationConfirmState() {
+    if (!heroLocationConfirm) return;
+    const hasUf = heroStateSelect && heroStateSelect.value;
+    const hasCity = heroCitySelect && heroCitySelect.value;
+    const hasNeighborhood = heroNeighborhoodSelect && heroNeighborhoodSelect.value;
+    heroLocationConfirm.disabled = !(hasUf && hasCity && hasNeighborhood);
   }
 
   function initMapIfNeeded() {
@@ -700,22 +781,64 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
+  heroLocation?.addEventListener('click', () => {
+    if (!locationIndex || !locationIndex.size) return;
+    openLocationModal();
+  });
+  heroLocation?.addEventListener('focus', () => {
+    if (!locationIndex || !locationIndex.size) return;
+    openLocationModal();
+  });
+
+  heroLocationClose?.addEventListener('click', closeLocationModal);
+  heroLocationCancel?.addEventListener('click', closeLocationModal);
+  heroLocationModal?.addEventListener('click', (event) => {
+    if (event.target === heroLocationModal) closeLocationModal();
+  });
+
+  heroStateSelect?.addEventListener('change', () => {
+    const uf = heroStateSelect.value;
+    if (heroCitySelect) heroCitySelect.value = '';
+    if (heroNeighborhoodSelect) heroNeighborhoodSelect.value = '';
+    populateCityOptions(uf);
+    populateNeighborhoodOptions(uf, '');
+    updateLocationConfirmState();
+  });
+
+  heroCitySelect?.addEventListener('change', () => {
+    const uf = heroStateSelect?.value || '';
+    const city = heroCitySelect.value;
+    if (heroNeighborhoodSelect) heroNeighborhoodSelect.value = '';
+    populateNeighborhoodOptions(uf, city);
+    updateLocationConfirmState();
+  });
+
+  heroNeighborhoodSelect?.addEventListener('change', updateLocationConfirmState);
+
+  heroLocationConfirm?.addEventListener('click', () => {
+    if (!heroLocation) return;
+    const uf = heroStateSelect?.value || '';
+    const city = heroCitySelect?.value || '';
+    const neighborhood = heroNeighborhoodSelect?.value || '';
+    if (!uf || !city || !neighborhood) return;
+    heroLocation.value = `${neighborhood}, ${city}, ${uf}`;
+    heroLocation.dataset.uf = uf;
+    heroLocation.dataset.city = city;
+    heroLocation.dataset.neighborhood = neighborhood;
+    closeLocationModal();
+  });
+
   heroForm?.addEventListener('submit', (e) => {
     e.preventDefault();
-    if (heroMode === 'salas') {
-      if (filterType) filterType.value = 'rooms';
-      if (filterQuery && heroLocation) filterQuery.value = heroLocation.value || '';
-      renderRooms();
-      document.getElementById('rooms-map')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    } else {
-      const params = new URLSearchParams();
-      const topic = (heroCourseTopic?.value || '').trim();
-      const city = (heroCourseCity?.value || heroLocation?.value || '').trim();
-      if (topic) params.set('q', topic);
-      if (city) params.set('city', city);
-      const url = params.toString() ? `/workshops.html?${params.toString()}` : '/workshops.html';
-      window.location.href = url;
-    }
+    const params = new URLSearchParams();
+    const uf = heroLocation?.dataset.uf || '';
+    const city = heroLocation?.dataset.city || '';
+    const neighborhood = heroLocation?.dataset.neighborhood || '';
+    if (uf) params.set('uf', uf);
+    if (city) params.set('city', city);
+    if (neighborhood) params.set('bairro', neighborhood);
+    const url = params.toString() ? `/salas.html?${params.toString()}` : '/salas.html';
+    window.location.href = url;
   });
 
   // Modal de escolha de entrada (cliente ou anunciante)

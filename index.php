@@ -49,7 +49,7 @@
         <form class="hero-search-bar" id="heroSearchForm">
           <div class="hero-search-field">
             <label for="heroLocation">Local</label>
-            <input id="heroLocation" type="text" placeholder="Selecione um local..." />
+            <input id="heroLocation" type="text" placeholder="Selecione um local..." readonly />
           </div>
           <div class="hero-search-field hero-search-date">
             <label for="heroDate">Data</label>
@@ -140,6 +140,36 @@
             <button type="button" class="btn btn-secondary entry-choice-btn" data-destino="anunciante.html">
               Sou anunciante
             </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: seleção de local -->
+  <div class="modal-overlay" id="heroLocationModal" aria-hidden="true">
+    <div class="modal-dialog modal-small hero-location-dialog" role="dialog" aria-modal="true" aria-labelledby="heroLocationTitle">
+      <button class="modal-close" type="button" id="heroLocationClose" aria-label="Fechar">&times;</button>
+      <div class="modal-body">
+        <div class="modal-info hero-location-modal">
+          <h2 id="heroLocationTitle">Selecione seu local</h2>
+          <div class="hero-location-fields">
+            <label for="heroStateSelect">Estado (UF)</label>
+            <select id="heroStateSelect">
+              <option value="">Selecione um estado...</option>
+            </select>
+            <label for="heroCitySelect">Cidade</label>
+            <select id="heroCitySelect" disabled>
+              <option value="">Selecione uma cidade...</option>
+            </select>
+            <label for="heroNeighborhoodSelect">Bairro</label>
+            <select id="heroNeighborhoodSelect" disabled>
+              <option value="">Selecione um bairro...</option>
+            </select>
+          </div>
+          <div class="hero-location-actions">
+            <button type="button" class="btn btn-secondary" id="heroLocationCancel">Cancelar</button>
+            <button type="button" class="btn btn-primary" id="heroLocationConfirm" disabled>Confirmar</button>
           </div>
         </div>
       </div>

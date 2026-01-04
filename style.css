@@ -580,6 +580,45 @@ main {
   gap: 18px;
   overflow: visible;
 }
+.hero-location-dialog.modal-small {
+  max-width: 520px;
+}
+.hero-location-modal {
+  width: 100%;
+}
+.hero-location-modal h2 {
+  margin: 0 0 18px;
+  font-size: 1.4rem;
+  text-align: center;
+}
+.hero-location-fields {
+  display: grid;
+  gap: 12px;
+}
+.hero-location-fields label {
+  font-weight: 700;
+  color: #0f172a;
+  text-align: center;
+  margin-top: 2px;
+}
+.hero-location-fields select {
+  width: 100%;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 12px 14px;
+  font-size: 1rem;
+  background: #fff;
+}
+.hero-location-fields select:disabled {
+  background: #f8fafc;
+  color: #9ca3af;
+}
+.hero-location-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 16px;
+}
 
 @media (max-width: 900px) {
   .hero-search-bar {

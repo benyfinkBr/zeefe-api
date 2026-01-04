@@ -251,6 +251,7 @@ async function init() {
     amenitiesMap = amenities;
     renderAmenityFilters();
     hydrateUfAndCities();
+    applyFiltersFromUrl();
     renderRooms('all');
     initMapIfNeeded();
     renderMapMarkersSalas(roomsData);
@@ -298,6 +299,24 @@ async function init() {
   });
 
   window.addEventListener('hashchange', handleHashRoomOpen);
+}
+
+function applyFiltersFromUrl() {
+  const params = new URLSearchParams(window.location.search || '');
+  const uf = (params.get('uf') || '').toLowerCase().trim();
+  const city = (params.get('city') || '').toLowerCase().trim();
+  const bairro = (params.get('bairro') || params.get('neighborhood') || '').toLowerCase().trim();
+  const q = (params.get('q') || '').toLowerCase().trim();
+  if (filterStateSalas && uf) {
+    filterStateSalas.value = uf;
+  }
+  hydrateCitiesForUf(filterStateSalas?.value || '');
+  if (filterCitySalas && city) {
+    filterCitySalas.value = city;
+  }
+  if (filterQuerySalas) {
+    filterQuerySalas.value = bairro || q || '';
+  }
 }
 
 async function fetchRooms() {
