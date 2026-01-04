@@ -17,6 +17,105 @@ const roomsMapEl = document.getElementById('rooms-map-salas');
 let salasMap = null;
 let salasMarkersLayer = null;
 let selectedAmenities = new Set();
+const sharePanels = new Set();
+
+const closeSharePanels = (event) => {
+  if (event && event.target.closest('.share-menu')) return;
+  sharePanels.forEach(panel => {
+    panel.hidden = true;
+  });
+};
+document.addEventListener('click', closeSharePanels);
+
+const openShareWindow = (url) => window.open(url, '_blank', 'noopener');
+const createShareActions = (titleText, url) => {
+  const wrap = document.createElement('div');
+  wrap.className = 'card-share';
+
+  const whatsappBtn = document.createElement('button');
+  whatsappBtn.type = 'button';
+  whatsappBtn.className = 'btn btn-secondary btn-sm btn-icon';
+  whatsappBtn.setAttribute('aria-label', 'Compartilhar no WhatsApp');
+  whatsappBtn.innerHTML = `
+    <svg viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+      <path fill="currentColor" d="M16 3C9.4 3 4 8.2 4 14.7c0 2.3.7 4.4 1.9 6.2L4 29l8.4-1.9c1.7.9 3.7 1.4 5.6 1.4 6.6 0 12-5.2 12-11.7C30 8.2 22.6 3 16 3zm0 21.3c-1.6 0-3.2-.4-4.6-1.2l-.7-.4-5 .9 1-4.7-.5-.8c-1-1.5-1.5-3.2-1.5-5 0-5 4.1-9 9.3-9 5.1 0 9.3 4 9.3 8.9s-4.1 9.3-9.3 9.3zm5.4-6.6c-.3-.1-1.7-.8-1.9-.9-.3-.1-.5-.1-.7.1-.2.3-.8.9-1 .9-.2.1-.4.1-.7 0-.3-.1-1.2-.4-2.2-1.3-.8-.7-1.3-1.6-1.5-1.9-.1-.3 0-.5.1-.6.1-.1.3-.3.4-.5.1-.2.1-.3.2-.5.1-.2 0-.4 0-.5 0-.1-.7-1.6-.9-2.2-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.7.3-.2.2-1 .9-1 2.3 0 1.3 1 2.6 1.1 2.8.1.2 2 3 4.8 4.2.7.3 1.2.5 1.6.6.7.2 1.3.2 1.7.1.5-.1 1.7-.7 1.9-1.4.2-.7.2-1.2.1-1.3-.1-.1-.3-.2-.6-.3z"/>
+    </svg>
+  `;
+  whatsappBtn.addEventListener('click', (event) => {
+    event.stopPropagation();
+    const text = encodeURIComponent(`${titleText} ${url}`);
+    openShareWindow(`https://web.whatsapp.com/send?text=${text}`);
+  });
+  wrap.appendChild(whatsappBtn);
+
+  const shareMenu = document.createElement('div');
+  shareMenu.className = 'share-menu';
+  const menuToggle = document.createElement('button');
+  menuToggle.type = 'button';
+  menuToggle.className = 'btn btn-secondary btn-sm btn-icon';
+  menuToggle.setAttribute('aria-label', 'Compartilhar');
+  menuToggle.innerHTML = `
+    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path fill="currentColor" d="M18 16a2.9 2.9 0 0 0-1.8.7l-6.2-3.2a3 3 0 0 0 0-1l6.2-3.2A3 3 0 1 0 15 7a3 3 0 0 0 .1.7L9 10.9A3 3 0 1 0 9 14l6.1 3.2A3 3 0 1 0 18 16z"/>
+    </svg>
+  `;
+
+  const menuPanel = document.createElement('div');
+  menuPanel.className = 'share-menu-panel';
+  menuPanel.hidden = true;
+  sharePanels.add(menuPanel);
+
+  const menuItems = [
+    { key: 'x', label: 'X' },
+    { key: 'facebook', label: 'Facebook' },
+    { key: 'linkedin', label: 'LinkedIn' },
+    { key: 'email', label: 'E-mail' },
+    { key: 'copy', label: 'Copiar link' }
+  ];
+  menuItems.forEach(item => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.dataset.share = item.key;
+    btn.textContent = item.label;
+    menuPanel.appendChild(btn);
+  });
+
+  menuToggle.addEventListener('click', (event) => {
+    event.stopPropagation();
+    const willOpen = menuPanel.hidden;
+    closeSharePanels();
+    menuPanel.hidden = !willOpen;
+  });
+
+  menuPanel.addEventListener('click', (event) => {
+    const btn = event.target.closest('button[data-share]');
+    if (!btn) return;
+    const type = btn.dataset.share;
+    const title = encodeURIComponent(titleText);
+    const shareUrl = encodeURIComponent(url);
+    if (type === 'x') {
+      openShareWindow(`https://twitter.com/intent/tweet?text=${title}&url=${shareUrl}`);
+    } else if (type === 'facebook') {
+      openShareWindow(`https://www.facebook.com/sharer/sharer.php?u=${shareUrl}`);
+    } else if (type === 'linkedin') {
+      openShareWindow(`https://www.linkedin.com/sharing/share-offsite/?url=${shareUrl}`);
+    } else if (type === 'email') {
+      window.location.href = `mailto:?subject=${title}&body=${shareUrl}`;
+    } else if (type === 'copy') {
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(url);
+      } else {
+        window.prompt('Copie o link:', url);
+      }
+    }
+    menuPanel.hidden = true;
+  });
+
+  shareMenu.appendChild(menuToggle);
+  shareMenu.appendChild(menuPanel);
+  wrap.appendChild(shareMenu);
+  return wrap;
+};
 
 function getRoomViewSessionId() {
   const key = 'zeefeRoomViewSession';
@@ -287,6 +386,7 @@ function hydrateCitiesForUf(ufValue) {
 function createRoomCard(room) {
   const card = document.createElement('article');
   card.className = 'room-card carousel-room-card';
+  card.id = `sala-${room.id}`;
   const photos = getPhotos(room.photo_path);
   const status = (room.status || '').toLowerCase();
   const statusLabel = status === 'manutencao'
@@ -366,6 +466,8 @@ function createRoomCard(room) {
     <button class="btn btn-secondary" type="button" data-room="${room.id}">Ver detalhes</button>
     <a class="btn btn-primary${disabledCta ? ' disabled' : ''}" ${disabledCta ? 'aria-disabled=\"true\" tabindex=\"-1\"' : ''} href="${disabledCta ? '#' : `/clientes.html`}">${disabledCta ? 'Indisponível' : 'Reservar diária'}</a>`;
   info.appendChild(actions);
+  const detailUrl = new URL(`/salas.html#sala-${room.id}`, window.location.href).toString();
+  info.appendChild(createShareActions(room.name || 'Sala Ze.EFE', detailUrl));
 
   card.appendChild(info);
 

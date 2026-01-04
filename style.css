@@ -891,6 +891,14 @@ main {
 .news-card-share .btn {
   white-space: nowrap;
 }
+.card-share {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+  justify-content: flex-end;
+}
 .post-share {
   display: flex;
   align-items: center;
