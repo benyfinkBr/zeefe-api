@@ -782,12 +782,19 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   heroLocation?.addEventListener('click', () => {
-    if (!locationIndex || !locationIndex.size) return;
     openLocationModal();
   });
   heroLocation?.addEventListener('focus', () => {
-    if (!locationIndex || !locationIndex.size) return;
     openLocationModal();
+  });
+  heroLocation?.addEventListener('pointerdown', () => {
+    openLocationModal();
+  });
+  heroLocation?.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      openLocationModal();
+    }
   });
 
   heroLocationClose?.addEventListener('click', closeLocationModal);
