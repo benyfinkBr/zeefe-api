@@ -47,6 +47,16 @@ const closeSharePanels = (event) => {
 };
 document.addEventListener('click', closeSharePanels);
 
+document.addEventListener('click', (event) => {
+  const link = event.target.closest('a[href*="clientes.html?room_id="]');
+  if (!link) return;
+  const href = link.getAttribute('href') || '';
+  const match = href.match(/room_id=([^&]+)/);
+  if (!match) return;
+  const roomId = decodeURIComponent(match[1]);
+  persistRoomSelection(roomId);
+});
+
 const openShareWindow = (url) => window.open(url, '_blank', 'noopener');
 const createShareActions = (titleText, url) => {
   const wrap = document.createElement('div');

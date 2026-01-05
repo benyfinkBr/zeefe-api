@@ -43,7 +43,7 @@
     <section class="hero-spotlight">
       <div class="hero-spotlight-inner">
         <div class="hero-spotlight-content">
-          <h1>Encontre uma sala para fazer sua reunião</h1>
+          <h1>Encontre uma sala para fazer sua reunião!</h1>
           <p>Sem complicação, sem custos ocultos</p>
         </div>
         <form class="hero-search-bar" id="heroSearchForm">

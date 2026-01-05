@@ -41,6 +41,14 @@ document.addEventListener('DOMContentLoaded', () => {
   const heroNeighborhoodSelect = document.getElementById('heroNeighborhoodSelect');
   const sharePanels = new Set();
   let locationIndex = new Map();
+  const PENDING_ROOM_KEY = 'zeefePendingRoomSelection';
+
+  const persistRoomSelection = (roomId) => {
+    if (!roomId) return;
+    try {
+      localStorage.setItem(PENDING_ROOM_KEY, JSON.stringify({ roomId: String(roomId) }));
+    } catch (_) {}
+  };
 
   const normalizeCoverPath = (path) => {
     const raw = String(path || '').trim();
@@ -73,6 +81,15 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   };
   document.addEventListener('click', closeSharePanels);
+  document.addEventListener('click', (event) => {
+    const link = event.target.closest('a[href*="clientes.html?room_id="]');
+    if (!link) return;
+    const href = link.getAttribute('href') || '';
+    const match = href.match(/room_id=([^&]+)/);
+    if (!match) return;
+    const roomId = decodeURIComponent(match[1]);
+    persistRoomSelection(roomId);
+  });
 
   const openShareWindow = (url) => window.open(url, '_blank', 'noopener');
   const createShareActions = (titleText, url, className = 'card-share') => {
@@ -378,6 +395,12 @@ document.addEventListener('DOMContentLoaded', () => {
           <a class="btn btn-primary${available ? '' : ' disabled'}" ${available ? '' : 'aria-disabled="true" tabindex="-1"'} href="${available ? `/clientes.html?room_id=${encodeURIComponent(room.id)}` : '#'}">${available ? 'Solicitar reserva' : 'Indisponível'}</a>
           <a class="btn btn-secondary" href="/salas.html#sala-${room.id}">Ver detalhes</a>
         `;
+        const reserveLink = actions.querySelector('a.btn.btn-primary');
+        if (reserveLink && available) {
+          reserveLink.addEventListener('click', () => {
+            persistRoomSelection(room.id);
+          });
+        }
         info.appendChild(actions);
         const detailUrl = new URL(`/salas.html#sala-${room.id}`, window.location.href).toString();
         info.appendChild(createShareActions(room.name || 'Sala Ze.EFE', detailUrl));
