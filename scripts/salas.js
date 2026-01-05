@@ -633,7 +633,7 @@ function openModal(room) {
   modalStatus.textContent = statusLabel(room.status);
   modalLocation.textContent = room.location || 'Não informado';
   modalRate.textContent = formatCurrency(room.daily_rate) || '--';
-  modalReserve.href = `/clientes.html`;
+  modalReserve.href = `/clientes.html?room_id=${encodeURIComponent(room.id)}`;
   modalReserve.classList.toggle('disabled', ['manutencao', 'desativada', 'inativo'].includes((room.status || '').toLowerCase()));
   if (modalReserve.classList.contains('disabled')) {
     modalReserve.setAttribute('aria-disabled', 'true');
