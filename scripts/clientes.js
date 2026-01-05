@@ -957,7 +957,15 @@ async function handleEmailVerifyResend() {
 }
 
 function applyRoomSelectionFromQuery() {
-  if (!preselectRoomId || !bookingRoomHiddenInput) return;
+  if (!preselectRoomId || !bookingRoomHiddenInput || !activeClient) return;
+  if (bookingSearchMode !== 'room') {
+    bookingSearchMode = 'room';
+    bookingModeRoomBtn?.classList.add('active');
+    bookingModeDateBtn?.classList.remove('active');
+    if (bookingModeHint) bookingModeHint.textContent = 'Buscar por Local: escolha a sala primeiro, depois veja as datas disponíveis no calendário.';
+    if (stepLabelData) stepLabelData.textContent = 'SALAS';
+    if (stepLabelRooms) stepLabelRooms.textContent = 'DATA';
+  }
   bookingRoomHiddenInput.value = preselectRoomId;
   renderRoomOptions(bookingDateInput?.value || '');
   selectRoomOption(preselectRoomId);
@@ -967,6 +975,10 @@ function applyRoomSelectionFromQuery() {
     });
   }
   setActivePanel('book');
+  if (bookingSearchMode === 'room') {
+    bookingStepIndex = 1;
+    setBookingStep(bookingStepIndex);
+  }
 }
 
 if (document.readyState === 'loading') {
@@ -3540,6 +3552,7 @@ function aplicarClienteAtivo(cliente) {
   checkPendingCompanyInvites();
   startPortalAutoRefresh();
   // Permanece no portal após login
+  applyRoomSelectionFromQuery();
 }
 
 function fazerLogout() {

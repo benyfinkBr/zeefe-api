@@ -569,7 +569,7 @@ function createRoomCard(room) {
   const disabledCta = !availableToday;
   actions.innerHTML = `
     <button class="btn btn-secondary" type="button" data-room="${room.id}">Ver detalhes</button>
-    <a class="btn btn-primary${disabledCta ? ' disabled' : ''}" ${disabledCta ? 'aria-disabled=\"true\" tabindex=\"-1\"' : ''} href="${disabledCta ? '#' : `/clientes.html`}">${disabledCta ? 'Indisponível' : 'Reservar diária'}</a>`;
+    <a class="btn btn-primary${disabledCta ? ' disabled' : ''}" ${disabledCta ? 'aria-disabled=\"true\" tabindex=\"-1\"' : ''} href="${disabledCta ? '#' : `/clientes.html?room_id=${encodeURIComponent(room.id)}`}">${disabledCta ? 'Indisponível' : 'Reservar diária'}</a>`;
   info.appendChild(actions);
   const detailUrl = new URL(`/salas.html#sala-${room.id}`, window.location.href).toString();
   info.appendChild(createShareActions(room.name || 'Sala Ze.EFE', detailUrl));
@@ -607,7 +607,7 @@ function renderMapMarkersSalas(rooms) {
       `<strong>${name}</strong><br>${city}${uf ? ' - ' + uf : ''}<br>` +
       `<div style="margin-top:6px;display:flex;gap:8px;flex-wrap:wrap">` +
       `<button type="button" class="btn btn-secondary btn-sm" data-room-popup="${room.id}">Ver detalhes</button>` +
-      `<a class="btn btn-primary btn-sm" href="/clientes.html">Solicitar reserva</a>` +
+      `<a class="btn btn-primary btn-sm" href="/clientes.html?room_id=${encodeURIComponent(room.id)}">Solicitar reserva</a>` +
       `</div>`;
     marker.bindPopup(popupHtml);
     marker.addTo(salasMarkersLayer);
