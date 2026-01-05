@@ -585,11 +585,15 @@ main {
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 18px;
   overflow: visible;
+  align-items: stretch;
+  grid-auto-rows: 1fr;
 }
 .home-content-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 18px;
+  align-items: stretch;
+  grid-auto-rows: 1fr;
 }
 .content-card {
   background: #fff;
@@ -653,6 +657,28 @@ main {
   flex-direction: column;
   gap: 12px;
   text-align: left;
+}
+.home-rooms-grid > * {
+  height: 100%;
+}
+.home-workshops-grid > *,
+.home-content-grid > * {
+  height: 100%;
+}
+.promo-room-card {
+  border: 1px dashed rgba(29,65,58,0.35);
+  background: linear-gradient(135deg, #fdfbf7, #f6efe6);
+  padding: 0;
+  gap: 0;
+}
+.promo-room-card .room-card-media {
+  margin: 16px 16px 0;
+}
+.promo-room-card .room-photo {
+  background: linear-gradient(135deg, rgba(29,65,58,0.7), rgba(138,119,102,0.7));
+}
+.promo-room-card .room-info {
+  padding: 20px 22px 26px;
 }
 .promo-card h4 {
   margin: 0;

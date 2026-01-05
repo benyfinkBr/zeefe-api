@@ -384,16 +384,72 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function createRoomPromoCard() {
     const card = document.createElement('article');
-    card.className = 'promo-card';
-    card.innerHTML = `
+    card.className = 'room-card carousel-room-card promo-card promo-room-card';
+
+    const media = document.createElement('div');
+    media.className = 'room-card-media';
+
+    const photo = document.createElement('div');
+    photo.className = 'room-photo room-photo-empty promo-room-photo';
+    photo.innerHTML = '<span class="room-photo-placeholder">Sua sala em destaque aqui</span>';
+
+    const statusPill = document.createElement('span');
+    statusPill.className = 'room-status-pill';
+    statusPill.textContent = 'Convite';
+
+    const availabilityNote = document.createElement('span');
+    availabilityNote.className = 'room-availability-note available';
+    availabilityNote.textContent = 'Mais reservas para o seu espaço.';
+
+    media.appendChild(photo);
+    media.appendChild(statusPill);
+    media.appendChild(availabilityNote);
+    card.appendChild(media);
+
+    const info = document.createElement('div');
+    info.className = 'room-info';
+
+    const header = document.createElement('div');
+    header.className = 'room-header';
+    header.innerHTML = `
       <h4>Seja Anunciante Ze.EFE</h4>
-      <p>Anuncie sua sala, receba reservas rápidas e aumente sua ocupação com clientes qualificados.</p>
-      <button class="btn btn-secondary" type="button" data-destino="/anunciante.html">Quero anunciar</button>
+      <span class="status-badge status-ativo">Anuncie aqui</span>
     `;
-    card.querySelector('[data-destino]')?.addEventListener('click', (event) => {
-      event.preventDefault();
-      window.location.href = '/anunciante.html';
-    });
+    info.appendChild(header);
+
+    const description = document.createElement('p');
+    description.className = 'room-description';
+    description.textContent = 'Anuncie sua sala, receba reservas rápidas e aumente sua ocupação com clientes qualificados.';
+    info.appendChild(description);
+
+    const meta = document.createElement('div');
+    meta.className = 'room-meta';
+    meta.innerHTML = `
+      <span class="room-location">Sua sala, novos clientes</span>
+      <span class="room-capacity">Mais visibilidade</span>
+    `;
+    info.appendChild(meta);
+
+    const price = document.createElement('div');
+    price.className = 'room-price';
+    price.innerHTML = `
+      <strong>Cadastro gratuito</strong>
+      <span>na plataforma</span>
+    `;
+    info.appendChild(price);
+
+    const actions = document.createElement('div');
+    actions.className = 'room-actions';
+    actions.innerHTML = `
+      <a class="btn btn-primary" href="/anunciante.html">Quero anunciar</a>
+      <a class="btn btn-secondary" href="/anunciante.html">Saiba mais</a>
+    `;
+    info.appendChild(actions);
+
+    const detailUrl = new URL('/anunciante.html', window.location.href).toString();
+    info.appendChild(createShareActions('Seja anunciante Ze.EFE', detailUrl));
+
+    card.appendChild(info);
     return card;
   }
 
