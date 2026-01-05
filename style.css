@@ -582,7 +582,7 @@ main {
 .home-rooms-grid,
 .home-workshops-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 18px;
   overflow: visible;
   align-items: stretch;
@@ -590,7 +590,7 @@ main {
 }
 .home-content-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 18px;
   align-items: stretch;
   grid-auto-rows: 1fr;
