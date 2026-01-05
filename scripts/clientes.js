@@ -998,8 +998,10 @@ async function initialize() {
   authViewButtons.forEach(btn => btn.addEventListener('click', () => setAuthView(btn.dataset.view)));
   setAuthView('login');
 
-  aplicarLoginMemorizado();
-  hydrateSessionFromServer();
+  await hydrateSessionFromServer();
+  if (!activeClient) {
+    aplicarLoginMemorizado();
+  }
   if (hasPaymentToken) {
     console.log('[Portal] Retorno de pagamento: mantendo portal e aplicando auto-login memorizado.');
   }
@@ -1077,8 +1079,6 @@ async function initialize() {
   refreshBtn?.addEventListener('click', () => {
     if (activeClient) atualizarPainel();
   });
-
-  applyRoomSelectionFromQuery();
 
   if (bookingForm) {
     bookingForm.addEventListener('submit', onBookingSubmit);
@@ -1341,6 +1341,7 @@ async function initialize() {
     showAuthOverlay();
   }
   setActivePanel('book');
+  applyRoomSelectionFromQuery();
 }
 
 function isReducedMotionPreferred() {
