@@ -1,10 +1,11 @@
 <?php
-require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/apiconfig.php';
 require_once __DIR__ . '/lib/policies.php';
 
-header('Content-Type: application/json; charset=utf-8');
-
 try {
+  if (!$pdo) {
+    throw new RuntimeException($ZEEFE_DB_ERROR ?? $ZEEFE_CONFIG_ERROR ?? 'Conexão indisponível.');
+  }
   zeefe_policies_ensure_schema($pdo);
   $stmt = $pdo->query('SELECT room_id, option_key FROM room_policies WHERE active = 1');
   $rows = $stmt ? $stmt->fetchAll(PDO::FETCH_ASSOC) : [];
