@@ -20,11 +20,33 @@ const hasPaymentToken = currentUrl.searchParams.has('stripetoken') || currentUrl
 const isPaymentReturn = hasPaymentToken;
 const preselectRoomId = currentUrl.searchParams.get('room_id');
 const preselectPolicyId = currentUrl.searchParams.get('policy_id');
+const PENDING_ROOM_KEY = 'zeefePendingRoomSelection';
 const autoLoginIdentifier = currentUrl.searchParams.get('identifier') || '';
 const autoLoginPassword = currentUrl.searchParams.get('password') || '';
 const shouldAutoLoginFromParams = Boolean(autoLoginIdentifier && autoLoginPassword);
 let autoLoginAlreadyTriggered = false;
 let cardPaymentsFeature = null;
+
+function peekPendingRoomSelection() {
+  try {
+    const raw = localStorage.getItem(PENDING_ROOM_KEY);
+    if (!raw) return null;
+    const data = JSON.parse(raw);
+    if (!data || !data.roomId) return null;
+    return {
+      roomId: String(data.roomId),
+      policyId: data.policyId ? String(data.policyId) : null
+    };
+  } catch (_) {
+    return null;
+  }
+}
+
+function consumePendingRoomSelection() {
+  const data = peekPendingRoomSelection();
+  try { localStorage.removeItem(PENDING_ROOM_KEY); } catch (_) {}
+  return data;
+}
 
 function hasCompanyAccess() {
   if (!activeClient?.company_id) return false;
@@ -957,7 +979,19 @@ async function handleEmailVerifyResend() {
 }
 
 function applyRoomSelectionFromQuery() {
-  if (!preselectRoomId || !bookingRoomHiddenInput || !activeClient) return;
+  if (!bookingRoomHiddenInput || !activeClient) return;
+  let roomId = preselectRoomId;
+  let policyId = preselectPolicyId;
+  let usedPending = false;
+  if (!roomId) {
+    const pending = peekPendingRoomSelection();
+    if (pending?.roomId) {
+      roomId = pending.roomId;
+      if (!policyId && pending.policyId) policyId = pending.policyId;
+      usedPending = true;
+    }
+  }
+  if (!roomId) return;
   if (bookingSearchMode !== 'room') {
     bookingSearchMode = 'room';
     bookingModeRoomBtn?.classList.add('active');
@@ -966,12 +1000,12 @@ function applyRoomSelectionFromQuery() {
     if (stepLabelData) stepLabelData.textContent = 'SALAS';
     if (stepLabelRooms) stepLabelRooms.textContent = 'DATA';
   }
-  bookingRoomHiddenInput.value = preselectRoomId;
+  bookingRoomHiddenInput.value = roomId;
   renderRoomOptions(bookingDateInput?.value || '');
-  selectRoomOption(preselectRoomId);
-  if (preselectPolicyId) {
-    loadRoomPolicies(preselectRoomId).then(() => {
-      renderBookingPolicyOptions(preselectPolicyId);
+  selectRoomOption(roomId);
+  if (policyId) {
+    loadRoomPolicies(roomId).then(() => {
+      renderBookingPolicyOptions(policyId);
     });
   }
   setActivePanel('book');
@@ -979,6 +1013,7 @@ function applyRoomSelectionFromQuery() {
     bookingStepIndex = 1;
     setBookingStep(bookingStepIndex);
   }
+  if (usedPending) consumePendingRoomSelection();
 }
 
 if (document.readyState === 'loading') {

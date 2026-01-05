@@ -28,6 +28,16 @@ let selectedPaymentOptions = new Set();
 let selectedFormats = new Set();
 let roomPoliciesByRoom = new Map();
 const sharePanels = new Set();
+const PENDING_ROOM_KEY = 'zeefePendingRoomSelection';
+
+function persistRoomSelection(roomId, policyId = null) {
+  if (!roomId) return;
+  try {
+    const payload = { roomId: String(roomId) };
+    if (policyId) payload.policyId = String(policyId);
+    localStorage.setItem(PENDING_ROOM_KEY, JSON.stringify(payload));
+  } catch (_) {}
+}
 
 const closeSharePanels = (event) => {
   if (event && event.target.closest('.share-menu')) return;
@@ -180,6 +190,7 @@ async function renderModalPolicies(roomId, reserveDisabled = false) {
       modalReserve.classList.add('disabled');
       modalReserve.setAttribute('aria-disabled', 'true');
       modalReserve.href = '/clientes.html';
+      modalReserve.dataset.policyId = '';
       return;
     }
     modalPolicies.innerHTML = '<strong>Opções de pagamento/cancelamento</strong>';
@@ -195,10 +206,12 @@ async function renderModalPolicies(roomId, reserveDisabled = false) {
       `;
       item.querySelector('input')?.addEventListener('change', () => {
         modalReserve.href = `/clientes.html?room_id=${encodeURIComponent(roomId)}&policy_id=${encodeURIComponent(policy.id)}`;
+        modalReserve.dataset.policyId = String(policy.id);
       });
       modalPolicies.appendChild(item);
     });
     modalReserve.href = `/clientes.html?room_id=${encodeURIComponent(roomId)}&policy_id=${encodeURIComponent(policies[0].id)}`;
+    modalReserve.dataset.policyId = String(policies[0].id);
   } catch (_) {
     modalPolicies.innerHTML = '<div class="rooms-message">Não foi possível carregar opções de pagamento.</div>';
   }
@@ -570,6 +583,12 @@ function createRoomCard(room) {
   actions.innerHTML = `
     <button class="btn btn-secondary" type="button" data-room="${room.id}">Ver detalhes</button>
     <a class="btn btn-primary${disabledCta ? ' disabled' : ''}" ${disabledCta ? 'aria-disabled=\"true\" tabindex=\"-1\"' : ''} href="${disabledCta ? '#' : `/clientes.html?room_id=${encodeURIComponent(room.id)}`}">${disabledCta ? 'Indisponível' : 'Reservar diária'}</a>`;
+  const reserveLink = actions.querySelector('a.btn.btn-primary');
+  if (reserveLink && !disabledCta) {
+    reserveLink.addEventListener('click', () => {
+      persistRoomSelection(room.id);
+    });
+  }
   info.appendChild(actions);
   const detailUrl = new URL(`/salas.html#sala-${room.id}`, window.location.href).toString();
   info.appendChild(createShareActions(room.name || 'Sala Ze.EFE', detailUrl));
@@ -618,6 +637,12 @@ function renderMapMarkersSalas(rooms) {
       if (btn) {
         btn.addEventListener('click', () => openModal(room), { once: true });
       }
+      const reserveBtn = popupEl.querySelector('a.btn.btn-primary');
+      if (reserveBtn) {
+        reserveBtn.addEventListener('click', () => {
+          persistRoomSelection(room.id);
+        }, { once: true });
+      }
     });
     bounds.push([lat, lon]);
   });
@@ -634,6 +659,8 @@ function openModal(room) {
   modalLocation.textContent = room.location || 'Não informado';
   modalRate.textContent = formatCurrency(room.daily_rate) || '--';
   modalReserve.href = `/clientes.html?room_id=${encodeURIComponent(room.id)}`;
+  modalReserve.dataset.roomId = String(room.id);
+  modalReserve.dataset.policyId = '';
   modalReserve.classList.toggle('disabled', ['manutencao', 'desativada', 'inativo'].includes((room.status || '').toLowerCase()));
   if (modalReserve.classList.contains('disabled')) {
     modalReserve.setAttribute('aria-disabled', 'true');
@@ -649,6 +676,12 @@ function openModal(room) {
   modalOverlay.classList.add('show');
   modalOverlay.setAttribute('aria-hidden', 'false');
 }
+
+modalReserve?.addEventListener('click', () => {
+  const roomId = modalReserve.dataset.roomId;
+  const policyId = modalReserve.dataset.policyId || null;
+  if (roomId) persistRoomSelection(roomId, policyId);
+});
 
 function handleHashRoomOpen() {
   if (!roomsData || !roomsData.length) return;
