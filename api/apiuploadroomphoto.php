@@ -66,7 +66,7 @@ if (!is_dir($roomDir) && !mkdir($roomDir, 0755, true)) {
 }
 
 $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
-$allowedMimes = ['image/jpeg','image/png','image/gif','image/webp'];
+$allowedMimes = ['image/jpeg','image/png','image/x-png','image/gif','image/webp'];
 $maxFileSize = 8 * 1024 * 1024; // 8 MB
 $uploaded = [];
 

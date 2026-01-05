@@ -359,16 +359,18 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         info.appendChild(price);
 
+        const amenityWrapper = document.createElement('div');
+        amenityWrapper.className = 'room-amenities';
         if (amenities.length) {
-          const amenityWrapper = document.createElement('div');
-          amenityWrapper.className = 'room-amenities';
           amenities.forEach(name => {
             const chip = document.createElement('span');
             chip.textContent = name;
             amenityWrapper.appendChild(chip);
           });
-          info.appendChild(amenityWrapper);
+        } else {
+          amenityWrapper.classList.add('is-empty');
         }
+        info.appendChild(amenityWrapper);
 
         const actions = document.createElement('div');
         actions.className = 'room-actions';
@@ -443,6 +445,10 @@ document.addEventListener('DOMContentLoaded', () => {
       <span>na plataforma</span>
     `;
     info.appendChild(price);
+
+    const promoAmenities = document.createElement('div');
+    promoAmenities.className = 'room-amenities is-empty';
+    info.appendChild(promoAmenities);
 
     const actions = document.createElement('div');
     actions.className = 'room-actions';

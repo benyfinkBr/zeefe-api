@@ -52,7 +52,7 @@ if (!is_dir($wsDir) && !mkdir($wsDir, 0755, true)) {
 }
 
 $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
-$allowedMimes = ['image/jpeg','image/png','image/gif','image/webp'];
+$allowedMimes = ['image/jpeg','image/png','image/x-png','image/gif','image/webp'];
 $maxFileSize = 5 * 1024 * 1024; // 5 MB
 
 $file = $_FILES['file'];
@@ -111,4 +111,3 @@ echo json_encode([
   'success' => true,
   'banner_path' => $relativePath
 ]);
-

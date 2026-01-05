@@ -30,7 +30,7 @@ try {
     exit;
   }
 
-  $allowed = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp'];
+  $allowed = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/x-png' => 'png', 'image/webp' => 'webp'];
   $type = mime_content_type($file['tmp_name']);
   if (!isset($allowed[$type])) {
     http_response_code(400);
