@@ -327,12 +327,15 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
         info.appendChild(header);
 
+        const description = document.createElement('p');
+        description.className = 'room-description';
         if (room.description) {
-          const description = document.createElement('p');
-          description.className = 'room-description';
           description.textContent = truncateText(room.description, 180);
-          info.appendChild(description);
+        } else {
+          description.textContent = ' ';
+          description.classList.add('is-empty');
         }
+        info.appendChild(description);
 
         const meta = document.createElement('div');
         meta.className = 'room-meta';
@@ -343,15 +346,18 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
         info.appendChild(meta);
 
+        const price = document.createElement('div');
+        price.className = 'room-price';
         if (room.daily_rate) {
-          const price = document.createElement('div');
-          price.className = 'room-price';
           price.innerHTML = `
             <strong>${formatCurrency(room.daily_rate)}</strong>
             <span>/ diária</span>
           `;
-          info.appendChild(price);
+        } else {
+          price.innerHTML = `<strong>—</strong><span>/ diária</span>`;
+          price.classList.add('is-empty');
         }
+        info.appendChild(price);
 
         if (amenities.length) {
           const amenityWrapper = document.createElement('div');

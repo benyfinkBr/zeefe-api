@@ -705,12 +705,20 @@ main {
   display: flex;
   flex-direction: column;
   flex: 1;
+  min-height: 0;
 }
 .home-rooms-grid .room-actions {
   margin-top: auto;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
 }
 .home-rooms-grid .card-share {
   margin-top: 12px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  min-height: 40px;
 }
 .home-rooms-grid .room-card-media {
   margin: 16px 16px 0;
@@ -719,11 +727,34 @@ main {
   height: 200px;
 }
 .home-rooms-grid .room-description {
-  min-height: 3.6em;
+  min-height: 4.2em;
   display: -webkit-box;
-  -webkit-line-clamp: 3;
+  -webkit-line-clamp: 4;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+.home-rooms-grid .room-header h4 {
+  min-height: 2.6em;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.home-rooms-grid .room-meta {
+  min-height: 1.4em;
+}
+.home-rooms-grid .room-price {
+  min-height: 1.6em;
+}
+.home-rooms-grid .room-actions .btn {
+  width: 100%;
+  justify-content: center;
+}
+.home-rooms-grid .card-share .btn {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  justify-content: center;
 }
 .hero-location-dialog.modal-small {
   max-width: 520px;
@@ -1962,6 +1993,9 @@ section h3 {
   font-size: 0.9rem;
   line-height: 1.45;
 }
+.room-description.is-empty {
+  visibility: hidden;
+}
 
 .room-meta {
   display: flex;
@@ -1983,6 +2017,9 @@ section h3 {
   gap: 6px;
   color: var(--brand-green);
   font-size: 0.95rem;
+}
+.room-price.is-empty {
+  visibility: hidden;
 }
 
 .room-price strong {
