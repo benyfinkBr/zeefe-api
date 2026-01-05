@@ -13,10 +13,20 @@ const filterCitySalas = document.getElementById('filterCitySalas');
 const filterStateSalas = document.getElementById('filterStateSalas');
 const clearFiltersSalas = document.getElementById('clearFiltersSalas');
 const amenityFilters = document.getElementById('amenityFilters');
+const openAdvancedFilters = document.getElementById('openAdvancedFilters');
+const advancedFiltersModal = document.getElementById('advancedFiltersModal');
+const advancedFiltersClose = document.getElementById('advancedFiltersClose');
+const advancedFiltersApply = document.getElementById('advancedFiltersApply');
+const advancedFiltersClear = document.getElementById('advancedFiltersClear');
+const paymentFilters = document.getElementById('paymentFilters');
+const formatFilters = document.getElementById('formatFilters');
 const roomsMapEl = document.getElementById('rooms-map-salas');
 let salasMap = null;
 let salasMarkersLayer = null;
 let selectedAmenities = new Set();
+let selectedPaymentOptions = new Set();
+let selectedFormats = new Set();
+let roomPoliciesByRoom = new Map();
 const sharePanels = new Set();
 
 const closeSharePanels = (event) => {
@@ -246,9 +256,10 @@ init();
 
 async function init() {
   try {
-    const [rooms, amenities] = await Promise.all([fetchRooms(), fetchAmenities()]);
+    const [rooms, amenities, policies] = await Promise.all([fetchRooms(), fetchAmenities(), fetchRoomPolicies()]);
     roomsData = rooms;
     amenitiesMap = amenities;
+    roomPoliciesByRoom = policies;
     renderAmenityFilters();
     hydrateUfAndCities();
     applyFiltersFromUrl();
@@ -276,6 +287,10 @@ async function init() {
     if (event.key === 'Escape' && modalOverlay.classList.contains('show')) {
       closeModal();
     }
+    if (event.key === 'Escape' && advancedFiltersModal?.classList.contains('show')) {
+      advancedFiltersModal.classList.remove('show');
+      advancedFiltersModal.setAttribute('aria-hidden', 'true');
+    }
   });
 
   // Filtros extras
@@ -294,7 +309,45 @@ async function init() {
     if (filterCitySalas) filterCitySalas.value = '';
     selectedAmenities.clear();
     amenityFilters?.querySelectorAll('input[type="checkbox"]').forEach(i => (i.checked = false));
+    selectedPaymentOptions.clear();
+    selectedFormats.clear();
+    paymentFilters?.querySelectorAll('input[type="checkbox"]').forEach(i => (i.checked = false));
+    formatFilters?.querySelectorAll('input[type="checkbox"]').forEach(i => (i.checked = false));
     renderRooms(getActiveFilter());
+  });
+
+  openAdvancedFilters?.addEventListener('click', () => {
+    if (!advancedFiltersModal) return;
+    advancedFiltersModal.classList.add('show');
+    advancedFiltersModal.setAttribute('aria-hidden', 'false');
+  });
+  [advancedFiltersClose].forEach(btn => {
+    btn?.addEventListener('click', () => {
+      advancedFiltersModal?.classList.remove('show');
+      advancedFiltersModal?.setAttribute('aria-hidden', 'true');
+    });
+  });
+  advancedFiltersModal?.addEventListener('click', event => {
+    if (event.target === advancedFiltersModal) {
+      advancedFiltersModal.classList.remove('show');
+      advancedFiltersModal.setAttribute('aria-hidden', 'true');
+    }
+  });
+  advancedFiltersApply?.addEventListener('click', () => {
+    selectedAmenities = new Set(Array.from(amenityFilters?.querySelectorAll('input[type="checkbox"]:checked') || []).map(i => i.value));
+    selectedPaymentOptions = new Set(Array.from(paymentFilters?.querySelectorAll('input[type="checkbox"]:checked') || []).map(i => i.value));
+    selectedFormats = new Set(Array.from(formatFilters?.querySelectorAll('input[type="checkbox"]:checked') || []).map(i => i.value));
+    renderRooms(getActiveFilter());
+    advancedFiltersModal?.classList.remove('show');
+    advancedFiltersModal?.setAttribute('aria-hidden', 'true');
+  });
+  advancedFiltersClear?.addEventListener('click', () => {
+    selectedAmenities.clear();
+    selectedPaymentOptions.clear();
+    selectedFormats.clear();
+    amenityFilters?.querySelectorAll('input[type="checkbox"]').forEach(i => (i.checked = false));
+    paymentFilters?.querySelectorAll('input[type="checkbox"]').forEach(i => (i.checked = false));
+    formatFilters?.querySelectorAll('input[type="checkbox"]').forEach(i => (i.checked = false));
   });
 
   window.addEventListener('hashchange', handleHashRoomOpen);
@@ -336,6 +389,24 @@ async function fetchAmenities() {
   return map;
 }
 
+async function fetchRoomPolicies() {
+  try {
+    const res = await fetch(`${API_BASE}/room_policies_all.php`, { credentials: 'include' });
+    const json = await res.json();
+    if (!json.success) return new Map();
+    const map = new Map();
+    (json.data || []).forEach(policy => {
+      if (!policy?.room_id || !policy?.option_key) return;
+      const key = String(policy.room_id);
+      if (!map.has(key)) map.set(key, new Set());
+      map.get(key).add(String(policy.option_key));
+    });
+    return map;
+  } catch (_) {
+    return new Map();
+  }
+}
+
 function renderRooms(filter) {
   if (!roomsStrip) return;
   roomsStrip.innerHTML = '';
@@ -357,6 +428,8 @@ function renderRooms(filter) {
   const city = (filterCitySalas?.value || '').toLowerCase().trim();
   const uf = (filterStateSalas?.value || '').toLowerCase().trim();
   const amenityIds = Array.from(selectedAmenities);
+  const paymentOptions = Array.from(selectedPaymentOptions);
+  const formats = Array.from(selectedFormats);
 
   filtered = filtered.filter(room => {
     const name = (room.name || '').toLowerCase();
@@ -368,11 +441,25 @@ function renderRooms(filter) {
     const okCity = !city || cityRoom.includes(city);
     const okState = !uf || (stateRoom === uf);
     const okAmenities = !amenityIds.length || amenityIds.every(id => (room.amenities || []).includes(Number(id)) || (room.amenities || []).includes(String(id)));
-    return okQuery && okCap && okCity && okState && okAmenities;
+    let okPayments = true;
+    if (paymentOptions.length) {
+      const policies = roomPoliciesByRoom.get(String(room.id));
+      okPayments = !!policies && paymentOptions.some(option => policies.has(option));
+    }
+    let okFormats = true;
+    if (formats.length) {
+      const roomFormats = String(room.room_formats || '')
+        .split(',')
+        .map(val => val.trim().toLowerCase())
+        .filter(Boolean);
+      okFormats = roomFormats.length && formats.some(val => roomFormats.includes(val));
+    }
+    return okQuery && okCap && okCity && okState && okAmenities && okPayments && okFormats;
   });
 
   if (!filtered.length) {
     if (roomsMessage) roomsMessage.textContent = 'Nenhuma sala encontrada com os filtros atuais.';
+    renderMapMarkersSalas([]);
     return;
   }
   if (roomsMessage) roomsMessage.textContent = '';
@@ -594,7 +681,9 @@ function renderAmenityFilters() {
   title.style.fontWeight = '600';
   fragment.appendChild(title);
 
-  Object.entries(amenitiesMap).forEach(([id, name]) => {
+  Object.entries(amenitiesMap)
+    .sort(([, aName], [, bName]) => String(aName).localeCompare(String(bName), 'pt-BR'))
+    .forEach(([id, name]) => {
     const label = document.createElement('label');
     label.style.display = 'inline-flex';
     label.style.alignItems = 'center';
@@ -603,11 +692,6 @@ function renderAmenityFilters() {
     const input = document.createElement('input');
     input.type = 'checkbox';
     input.value = String(id);
-    input.addEventListener('change', () => {
-      if (input.checked) selectedAmenities.add(input.value);
-      else selectedAmenities.delete(input.value);
-      renderRooms(getActiveFilter());
-    });
     label.appendChild(input);
     const span = document.createElement('span');
     span.textContent = name;

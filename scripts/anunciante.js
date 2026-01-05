@@ -284,6 +284,7 @@ const roomDesc = document.getElementById('roomDescription');
 const roomDescEditor = document.getElementById('advRoomDescriptionEditor');
 const roomDescToolbar = document.getElementById('advRoomDescToolbar');
 const roomAmenitiesGrid = document.getElementById('advAmenitiesGrid');
+const roomFormats = document.getElementById('roomFormats');
 const roomPhotosInput = document.getElementById('roomPhotos');
 const roomPhotosPreview = document.getElementById('roomPhotosPreview');
 const policyImmediateToggle = document.getElementById('policyImmediateToggle');
@@ -563,6 +564,21 @@ function collectSelectedAmenities() {
   return Array.from(roomAmenitiesGrid.querySelectorAll('input[type="checkbox"]:checked'))
     .map(input => Number(input.value))
     .filter(id => Number.isFinite(id) && id > 0);
+}
+
+function setRoomFormats(values = []) {
+  if (!roomFormats) return;
+  const selected = new Set((values || []).map(v => String(v).toLowerCase()));
+  roomFormats.querySelectorAll('input[type="checkbox"]').forEach(input => {
+    input.checked = selected.has(String(input.value).toLowerCase());
+  });
+}
+
+function collectRoomFormats() {
+  if (!roomFormats) return [];
+  return Array.from(roomFormats.querySelectorAll('input[type="checkbox"]:checked'))
+    .map(input => String(input.value).toLowerCase())
+    .filter(Boolean);
 }
 
 function parseRoomPhotoPaths(photoPathValue) {
@@ -2313,6 +2329,7 @@ async function openRoomModal(roomData){
     if (maintenanceStart) maintenanceStart.value = roomData.maintenance_start || '';
     if (maintenanceEnd) maintenanceEnd.value = roomData.maintenance_end || '';
     if (deactivatedFrom) deactivatedFrom.value = roomData.deactivated_from || '';
+    setRoomFormats((roomData.room_formats || '').split(',').map(v => v.trim()).filter(Boolean));
   } else {
     if (roomIdHidden) roomIdHidden.value = '';
     if (roomName) roomName.value = '';
@@ -2337,6 +2354,7 @@ async function openRoomModal(roomData){
     if (maintenanceStart) maintenanceStart.value = '';
     if (maintenanceEnd) maintenanceEnd.value = '';
     if (deactivatedFrom) deactivatedFrom.value = '';
+    setRoomFormats([]);
   }
 
   if (roomPhotosInput) roomPhotosInput.value = '';
@@ -2416,6 +2434,7 @@ async function onRoomFormSubmit(e){
   if (computedDailyRate != null && dailyRate) {
     dailyRate.value = String(computedDailyRate);
   }
+  const roomFormatsValue = collectRoomFormats();
   const record = {
     name: (roomName?.value||'').trim(),
     description: descHtml,
@@ -2439,7 +2458,8 @@ async function onRoomFormSubmit(e){
     maintenance_end: (maintenanceEnd?.value||'') || null,
     deactivated_from: (deactivatedFrom?.value||'') || null,
     advertiser_id: myAdvertiser.id,
-    amenities: collectSelectedAmenities()
+    amenities: collectSelectedAmenities(),
+    room_formats: roomFormatsValue.length ? roomFormatsValue.join(',') : null
   };
   clearRoomFieldErrors();
   const requiredMissing = validateRequiredRoomFields();

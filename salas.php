@@ -89,9 +89,9 @@
         <option value="50">Até 50</option>
         <option value="51">Mais de 50</option>
       </select>
+      <button id="openAdvancedFilters" class="btn btn-secondary btn-sm" type="button">Filtros avançados</button>
       <button id="clearFiltersSalas" class="btn btn-secondary btn-sm" type="button">Limpar filtros</button>
     </div>
-    <div class="filters-wrap" id="amenityFilters" aria-label="Comodidades"></div>
   </section>
 
   <!-- Mapa de salas (mesma experiência do index) -->
@@ -115,6 +115,39 @@
       <button class="rooms-nav rooms-nav-next" type="button" aria-label="Ver mais salas"><span aria-hidden="true">&rsaquo;</span></button>
     </div>
   </section>
+  <div class="modal-overlay" id="advancedFiltersModal" aria-hidden="true">
+    <div class="modal-dialog modal-small advanced-filters-dialog" role="dialog" aria-modal="true" aria-labelledby="advancedFiltersTitle">
+      <button class="modal-close" type="button" aria-label="Fechar" id="advancedFiltersClose">&times;</button>
+      <div class="modal-body">
+        <div class="modal-info advanced-filters-modal">
+          <h2 id="advancedFiltersTitle">Filtros avançados</h2>
+          <div class="advanced-filters-section">
+            <h4>Modalidade de pagamento</h4>
+            <div id="paymentFilters" class="checkbox-grid">
+              <label><input type="checkbox" value="immediate" /> Pagamento no momento da Reserva</label>
+              <label><input type="checkbox" value="cancel_window" /> Cancelamento da Reserva</label>
+              <label><input type="checkbox" value="free_cancel" /> Sem taxa de cancelamento</label>
+            </div>
+          </div>
+          <div class="advanced-filters-section">
+            <h4>Comodidades</h4>
+            <div id="amenityFilters" class="checkbox-grid" aria-label="Comodidades"></div>
+          </div>
+          <div class="advanced-filters-section">
+            <h4>Formato da sala</h4>
+            <div id="formatFilters" class="checkbox-grid">
+              <label><input type="checkbox" value="reuniao" /> Reunião</label>
+              <label><input type="checkbox" value="workshop" /> Workshop</label>
+            </div>
+          </div>
+          <div class="advanced-filters-actions">
+            <button id="advancedFiltersClear" class="btn btn-secondary" type="button">Limpar</button>
+            <button id="advancedFiltersApply" class="btn btn-primary" type="button">Aplicar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
   <div class="modal-overlay" id="roomModal" aria-hidden="true">
   <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="roomModalTitle">
     <button class="modal-close" type="button" aria-label="Fechar" id="roomModalClose">&times;</button>

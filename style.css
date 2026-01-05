@@ -1503,6 +1503,32 @@ main {
 .rooms-filters select {
   flex: 1 1 220px;
 }
+.advanced-filters-dialog.modal-small {
+  max-width: 560px;
+}
+.advanced-filters-modal h2 {
+  margin: 0 0 14px;
+  text-align: center;
+}
+.advanced-filters-section {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.advanced-filters-section h4 {
+  margin: 0;
+  font-size: 0.95rem;
+  color: var(--brand-dark);
+}
+.advanced-filters-section .checkbox-grid {
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+}
+.advanced-filters-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 6px;
+}
 
 .landing-portal {
   display: grid;

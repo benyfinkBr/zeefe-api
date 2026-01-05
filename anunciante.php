@@ -662,6 +662,13 @@
             <label for="portariaInteligente">Portaria inteligente</label>
             <input type="text" id="portariaInteligente" />
           </div>
+          <div class="form-field form-field-full">
+            <label>Formato da sala</label>
+            <div id="roomFormats" class="modal-amenities">
+              <label><input type="checkbox" name="roomFormat" value="reuniao" /> Reunião</label>
+              <label><input type="checkbox" name="roomFormat" value="workshop" /> Workshop</label>
+            </div>
+          </div>
           <div class="form-field">
             <label for="street">Rua</label>
             <input type="text" id="street" />
