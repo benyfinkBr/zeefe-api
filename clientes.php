@@ -136,7 +136,9 @@
           </button>
         </div>
         <button type="button" class="referral-slot referral-slot-side" id="referralSlotSide" hidden>
-          <span>Quando você indica uma empresa para a Ze.EFE, vocês dois ganham.</span>
+          <span class="referral-kicker">Indique e Ganhe</span>
+          <span class="referral-text">Quando você indica uma empresa para a Ze.EFE, vocês dois ganham.</span>
+          <span class="referral-pill">Indicar agora</span>
         </button>
         <button class="nav-logout" id="logoutBtn" type="button">Sair</button>
       </aside>
