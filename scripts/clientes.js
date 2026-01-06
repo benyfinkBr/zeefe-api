@@ -1367,6 +1367,7 @@ async function initialize() {
   setBookingStep(0);
   renderRoomOptions(bookingDateInput?.value || '');
   updateBookingNavigation();
+  bodyEl?.classList.remove('auth-loading');
   setBodyAuthState(Boolean(activeClient));
   if (activeClient) {
     hideAuthOverlay();
