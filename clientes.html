@@ -172,6 +172,9 @@
           <button type="button" data-panel="faq">FAQ</button>
           <button type="button" data-panel="profile">Meu Perfil</button>
         </nav>
+        <button type="button" class="referral-slot referral-slot-side" id="referralSlotSide" hidden>
+          <span>Quando você indica uma empresa para a Ze.EFE, vocês dois ganham.</span>
+        </button>
         <button type="button" id="logoutBtn" class="nav-logout">Sair</button>
       </aside>
 
@@ -188,6 +191,7 @@
             </div>
           </div>
           <div class="portal-actions">
+            <button class="referral-slot referral-slot-top" type="button" id="referralSlotTop" hidden>Indique e Ganhe</button>
             <button class="btn btn-secondary btn-with-badge" type="button" id="openSupportChatBtn">
               <span>Mensagens</span>
               <span id="clientMessagesBadge" class="badge-dot" hidden></span>
@@ -751,6 +755,45 @@
             </form>
           </section>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="referralModal" aria-hidden="true">
+    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="referralTitle">
+      <button class="modal-close" type="button" id="referralClose" aria-label="Fechar">&times;</button>
+      <div class="modal-body">
+        <div class="modal-info">
+          <h2 id="referralTitle">Indique e Ganhe</h2>
+          <p class="rooms-message">Preencha os dados abaixo para indicar uma empresa.</p>
+        </div>
+        <form id="referralForm" class="referral-form">
+          <div class="form-field">
+            <label for="referralCompany">Qual empresa? *</label>
+            <input type="text" id="referralCompany" name="company" required />
+          </div>
+          <div class="form-field">
+            <label for="referralContactName">Nome de pessoa responsável *</label>
+            <input type="text" id="referralContactName" name="contact_name" required />
+          </div>
+          <div class="form-field">
+            <label for="referralContactPhone">Telefone da pessoa responsável *</label>
+            <input type="text" id="referralContactPhone" name="contact_phone" required />
+          </div>
+          <div class="form-field">
+            <label for="referralContactEmail">E-mail da pessoa responsável *</label>
+            <input type="email" id="referralContactEmail" name="contact_email" required />
+          </div>
+          <div class="form-field">
+            <label for="referralReason">Porque você acha que a empresa usaria a plataforma da Ze.EFE? *</label>
+            <textarea id="referralReason" name="reason" rows="4" required></textarea>
+          </div>
+          <div class="form-actions">
+            <button type="button" class="btn btn-outline" id="referralCancel">Cancelar</button>
+            <button type="submit" class="btn btn-primary">Indicar</button>
+          </div>
+          <div id="referralMessage" class="rooms-message referral-message" hidden></div>
+        </form>
       </div>
     </div>
   </div>

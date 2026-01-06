@@ -99,6 +99,90 @@ function updateCompanyAccessUi() {
   if (!canUseCompany && bookingCompanyToggle) {
     bookingCompanyToggle.checked = false;
   }
+  updateReferralSlots();
+}
+
+function updateReferralSlots() {
+  const show = Boolean(activeClient) && !hasCompanyAssociation();
+  if (referralSlotTop) referralSlotTop.hidden = !show;
+  if (referralSlotSide) referralSlotSide.hidden = !show;
+}
+
+function openReferralModal() {
+  if (!referralModal) return;
+  referralModal.classList.add('show');
+  referralModal.setAttribute('aria-hidden', 'false');
+  if (referralMessage) {
+    referralMessage.hidden = true;
+    referralMessage.textContent = '';
+  }
+}
+
+function closeReferralModal() {
+  if (!referralModal) return;
+  referralModal.classList.remove('show');
+  referralModal.setAttribute('aria-hidden', 'true');
+  referralForm?.reset();
+  if (referralMessage) {
+    referralMessage.hidden = true;
+    referralMessage.textContent = '';
+  }
+}
+
+async function submitReferralForm(event) {
+  event.preventDefault();
+  if (!referralForm) return;
+  const company = referralCompanyInput?.value.trim() || '';
+  const contactName = referralContactNameInput?.value.trim() || '';
+  const contactPhone = referralContactPhoneInput?.value.trim() || '';
+  const contactEmail = referralContactEmailInput?.value.trim() || '';
+  const reason = referralReasonInput?.value.trim() || '';
+  if (!company || !contactName || !contactPhone || !contactEmail || !reason) {
+    if (referralMessage) {
+      referralMessage.textContent = 'Preencha todos os campos obrigatórios.';
+      referralMessage.hidden = false;
+    }
+    return;
+  }
+  try {
+    if (referralMessage) {
+      referralMessage.textContent = 'Enviando indicação...';
+      referralMessage.hidden = false;
+    }
+    const payload = {
+      company,
+      contact_name: contactName,
+      contact_phone: contactPhone,
+      contact_email: contactEmail,
+      reason,
+      referrer: {
+        id: activeClient?.id || null,
+        name: activeClient?.name || '',
+        email: activeClient?.email || '',
+        phone: activeClient?.phone || activeClient?.whatsapp || '',
+        login: activeClient?.login || ''
+      }
+    };
+    const res = await fetch(`${API_BASE}/company_referral.php`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(payload)
+    });
+    const json = await parseJsonSafe(res);
+    if (!json.success) throw new Error(json.error || 'Não foi possível enviar sua indicação.');
+    if (referralMessage) {
+      referralMessage.textContent = 'Indicação enviada! Obrigado por indicar.';
+      referralMessage.hidden = false;
+    }
+    referralForm.reset();
+    setTimeout(closeReferralModal, 1200);
+  } catch (err) {
+    if (referralMessage) {
+      referralMessage.textContent = err.message || 'Erro ao enviar indicação.';
+      referralMessage.hidden = false;
+    }
+  }
 }
 
 async function loadClientCards(force = false) {
@@ -596,6 +680,18 @@ const headerReservationsBtn = document.getElementById('clientHeaderReservations'
 const headerProfileBtn = document.getElementById('clientHeaderProfile');
 const headerMessagesBtn = document.getElementById('clientHeaderMessages');
 const headerLogoutBtn = document.getElementById('clientHeaderLogout');
+const referralSlotTop = document.getElementById('referralSlotTop');
+const referralSlotSide = document.getElementById('referralSlotSide');
+const referralModal = document.getElementById('referralModal');
+const referralForm = document.getElementById('referralForm');
+const referralClose = document.getElementById('referralClose');
+const referralCancel = document.getElementById('referralCancel');
+const referralMessage = document.getElementById('referralMessage');
+const referralCompanyInput = document.getElementById('referralCompany');
+const referralContactNameInput = document.getElementById('referralContactName');
+const referralContactPhoneInput = document.getElementById('referralContactPhone');
+const referralContactEmailInput = document.getElementById('referralContactEmail');
+const referralReasonInput = document.getElementById('referralReason');
 
 function prefillPortalRegisterForm() {
   if (!REGISTER_PREFILL_ENABLED || !portalRegisterForm) return;
@@ -1076,6 +1172,15 @@ async function initialize() {
     const digits = somenteDigitos(registerPhoneInput.value).slice(0, 11);
     registerPhoneInput.value = formatPhone(digits);
   });
+
+  referralSlotTop?.addEventListener('click', openReferralModal);
+  referralSlotSide?.addEventListener('click', openReferralModal);
+  referralClose?.addEventListener('click', closeReferralModal);
+  referralCancel?.addEventListener('click', closeReferralModal);
+  referralModal?.addEventListener('click', (event) => {
+    if (event.target === referralModal) closeReferralModal();
+  });
+  referralForm?.addEventListener('submit', submitReferralForm);
 
   // Auth scope buttons
   authScopePFBtn?.addEventListener('click', () => setAuthScope('pf'));
