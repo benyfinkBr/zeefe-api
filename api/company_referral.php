@@ -63,11 +63,19 @@ try {
     $body[] = '<p><strong>ID do cliente:</strong> ' . htmlspecialchars((string)$referrerId, ENT_QUOTES, 'UTF-8') . '</p>';
   }
 
-  $sent = mailer_send('Indica@zeefe.com.br', $subject, implode('', $body));
+  $htmlBody = implode('', $body);
+  $sent = mailer_send('indique@zeefe.com.br', $subject, $htmlBody);
   if (!$sent) {
-    http_response_code(500);
-    echo json_encode(['success' => false, 'error' => 'Falha ao enviar o e-mail.']);
-    exit;
+    $headers = [];
+    $headers[] = 'MIME-Version: 1.0';
+    $headers[] = 'Content-Type: text/html; charset=UTF-8';
+    $headers[] = 'From: ' . MAIL_FROM_NAME . ' <' . MAIL_FROM_ADDRESS . '>';
+    $fallbackSent = @mail('indique@zeefe.com.br', $subject, $htmlBody, implode("\r\n", $headers));
+    if (!$fallbackSent) {
+      http_response_code(500);
+      echo json_encode(['success' => false, 'error' => 'Falha ao enviar o e-mail.']);
+      exit;
+    }
   }
 
   echo json_encode(['success' => true]);

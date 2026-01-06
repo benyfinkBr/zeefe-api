@@ -108,6 +108,25 @@ function updateReferralSlots() {
   if (referralSlotSide) referralSlotSide.hidden = !show;
 }
 
+function formatReferralPhone(digits) {
+  const raw = String(digits || '').replace(/\D/g, '').slice(0, 11);
+  if (raw.length <= 2) return raw ? `(${raw}` : '';
+  const ddd = raw.slice(0, 2);
+  const rest = raw.slice(2);
+  if (rest.length <= 4) {
+    return `(${ddd}) ${rest}`;
+  }
+  if (rest.length <= 8) {
+    const part1 = rest.slice(0, 1);
+    const part2 = rest.slice(1);
+    return `(${ddd}) ${part1}.${part2}`;
+  }
+  const part1 = rest.slice(0, 1);
+  const part2 = rest.slice(1, 5);
+  const part3 = rest.slice(5, 9);
+  return `(${ddd}) ${part1}.${part2}-${part3}`;
+}
+
 function openReferralModal() {
   if (!referralModal) return;
   referralModal.classList.add('show');
@@ -1171,6 +1190,10 @@ async function initialize() {
   registerPhoneInput?.addEventListener('input', () => {
     const digits = somenteDigitos(registerPhoneInput.value).slice(0, 11);
     registerPhoneInput.value = formatPhone(digits);
+  });
+  referralContactPhoneInput?.addEventListener('input', () => {
+    const digits = somenteDigitos(referralContactPhoneInput.value).slice(0, 11);
+    referralContactPhoneInput.value = formatReferralPhone(digits);
   });
 
   referralSlotTop?.addEventListener('click', openReferralModal);
