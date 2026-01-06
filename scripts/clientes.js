@@ -1195,6 +1195,10 @@ async function initialize() {
     const digits = somenteDigitos(referralContactPhoneInput.value).slice(0, 11);
     referralContactPhoneInput.value = formatReferralPhone(digits);
   });
+  if (referralContactPhoneInput?.value) {
+    const digits = somenteDigitos(referralContactPhoneInput.value).slice(0, 11);
+    referralContactPhoneInput.value = formatReferralPhone(digits);
+  }
 
   referralSlotTop?.addEventListener('click', openReferralModal);
   referralSlotSide?.addEventListener('click', openReferralModal);
