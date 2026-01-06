@@ -2,6 +2,23 @@ const API_BASE = '/api';
 const ADV_REMEMBER_KEY = 'advRememberToken';
 const HEADER_COOKIE_NAME = 'ZEEFE_HEADER_SESSION';
 const HEADER_COOKIE_MAX_AGE = 60 * 60 * 24 * 30;
+const advUrl = new URL(window.location.href);
+let pendingAdvPanel = advUrl.searchParams.get('panel');
+
+function applyAdvPanelFromQuery() {
+  if (!pendingAdvPanel) return;
+  const panel = pendingAdvPanel;
+  pendingAdvPanel = null;
+  if (panel === 'messages') {
+    setActivePanel('messages');
+    openAdvChatDrawer();
+    return;
+  }
+  const allowed = new Set(['overview', 'rooms', 'workshops', 'reservations', 'finance', 'reviews', 'faq', 'profile']);
+  if (allowed.has(panel)) {
+    setActivePanel(panel);
+  }
+}
 
 function isHttps() {
   try {
@@ -1084,6 +1101,7 @@ async function afterLogin() {
 
   await refreshPortalData();
   setActivePanel('overview');
+  applyAdvPanelFromQuery();
   startAdvAutoRefresh();
 
   if (!advEventsBound) {

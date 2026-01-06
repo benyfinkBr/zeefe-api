@@ -107,7 +107,13 @@
     if (accountSection) {
       const clientItems = accountSection.querySelectorAll('[data-zeefe-header-client]');
       clientItems.forEach(item => {
-        item.hidden = !(isLogged && currentSession?.type === 'client');
+        item.hidden = !isLogged;
+      });
+    }
+    if (accountSection) {
+      const advItems = accountSection.querySelectorAll('[data-zeefe-header-adv]');
+      advItems.forEach(item => {
+        item.hidden = !(isLogged && currentSession?.type === 'advertiser');
       });
     }
 
@@ -229,6 +235,15 @@
       const destino = panel ? `/clientes.html?panel=${encodeURIComponent(panel)}` : '/clientes.html';
       window.location.href = destino;
     });
+
+    accountSection?.addEventListener('click', (event) => {
+      const target = event.target?.closest('[data-zeefe-header-adv]');
+      if (!target) return;
+      event.preventDefault();
+      const panel = target.getAttribute('data-zeefe-header-adv');
+      const destino = panel ? `/anunciante.html?panel=${encodeURIComponent(panel)}` : '/anunciante.html';
+      window.location.href = destino;
+    });
   }
 
   function ensureClientMenuItems() {
@@ -247,6 +262,31 @@
       btn.className = 'user-menu-item';
       btn.textContent = item.label;
       btn.setAttribute('data-zeefe-header-client', item.key);
+      btn.hidden = true;
+      if (portalBtn) {
+        menu.insertBefore(btn, portalBtn);
+      } else {
+        menu.appendChild(btn);
+      }
+    });
+  }
+
+  function ensureAdvertiserMenuItems() {
+    if (!domRefs?.accountSection) return;
+    const menu = domRefs.accountSection.querySelector('.user-menu-dropdown');
+    if (!menu || menu.querySelector('[data-zeefe-header-adv]')) return;
+    const portalBtn = menu.querySelector('[data-zeefe-header-btn="portal"]');
+    const items = [
+      { key: 'reservations', label: 'Minhas Reservas' },
+      { key: 'profile', label: 'Meu Perfil' },
+      { key: 'messages', label: 'Mensagens' }
+    ];
+    items.forEach(item => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'user-menu-item';
+      btn.textContent = item.label;
+      btn.setAttribute('data-zeefe-header-adv', item.key);
       btn.hidden = true;
       if (portalBtn) {
         menu.insertBefore(btn, portalBtn);
@@ -371,6 +411,7 @@
   document.addEventListener('DOMContentLoaded', async () => {
     initDom();
     ensureClientMenuItems();
+    ensureAdvertiserMenuItems();
     renderHeader();
     setupMenuEvents();
     setupEntryChoiceModal();
