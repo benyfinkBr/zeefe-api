@@ -232,6 +232,7 @@
   }
 
   function ensureClientMenuItems() {
+    if (!document.body.classList.contains('client-portal-page')) return;
     if (!domRefs?.accountSection) return;
     const menu = domRefs.accountSection.querySelector('.user-menu-dropdown');
     if (!menu || menu.querySelector('[data-zeefe-header-client]')) return;

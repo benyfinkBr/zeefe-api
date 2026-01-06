@@ -3578,6 +3578,8 @@ function aplicarClienteAtivo(cliente) {
   rememberActiveClientId(activeClient?.id);
   try { window.activeClient = cliente; } catch (_) {}
   setBodyAuthState(true);
+  if (headerGuestWrap) headerGuestWrap.hidden = true;
+  if (headerAccountWrap) headerAccountWrap.hidden = false;
   syncHeaderScopeButtons();
   hideAuthOverlay();
   if (clientPanels) {
@@ -3634,6 +3636,8 @@ function fazerLogout() {
     updateCompanyAccessUi();
     if (clientPanels) clientPanels.hidden = true;
     setBodyAuthState(false);
+    if (headerGuestWrap) headerGuestWrap.hidden = false;
+    if (headerAccountWrap) headerAccountWrap.hidden = true;
     setAuthView('login');
     showAuthOverlay();
     if (reservationsContainer) reservationsContainer.innerHTML = '';
