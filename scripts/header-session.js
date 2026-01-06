@@ -293,7 +293,7 @@
       const res = await fetch(url, { credentials: 'include' });
       return await res.json();
     } catch (_) {
-      return null;
+      return { __error: true };
     }
   }
 
@@ -321,7 +321,14 @@
       return;
     }
 
-    setHeaderState(currentSession, { skipStorage: true });
+    const clientErrored = Boolean(client?.__error);
+    const advertiserErrored = Boolean(advertiser?.__error);
+    if (clientErrored && advertiserErrored) {
+      setHeaderState(currentSession, { skipStorage: true });
+      renderHeader();
+      return;
+    }
+    setHeaderState(null);
     renderHeader();
   }
 

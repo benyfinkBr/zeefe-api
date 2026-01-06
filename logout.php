@@ -9,5 +9,20 @@ if (ini_get('session.use_cookies')) {
 }
 session_destroy();
 
+// Clear JS header session cookie used for back-compat hydration.
+$host = $_SERVER['HTTP_HOST'] ?? '';
+$headerCookieOptions = [
+    'expires' => time() - 3600,
+    'path' => '/',
+    'secure' => $secure,
+    'httponly' => false,
+    'samesite' => 'Lax',
+];
+setcookie('ZEEFE_HEADER_SESSION', '', $headerCookieOptions);
+if ($host && substr($host, -10) === 'zeefe.com.br') {
+    $headerCookieOptions['domain'] = '.zeefe.com.br';
+    setcookie('ZEEFE_HEADER_SESSION', '', $headerCookieOptions);
+}
+
 header('Location: /index.php');
 exit;
