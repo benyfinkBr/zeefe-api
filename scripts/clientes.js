@@ -587,6 +587,7 @@ const clientNameEl = document.getElementById('clientName');
 const clientCompanyEl = document.getElementById('clientCompany');
 const logoutBtn = document.getElementById('logoutBtn');
 const refreshBtn = document.getElementById('refreshBtn');
+const headerGuestWrap = document.querySelector('[data-zeefe-header="guest"]');
 const headerAccountWrap = document.getElementById('clientHeaderAccount');
 const headerAccountBtn = document.getElementById('clientHeaderAccountBtn');
 const headerScopePFHeaderBtn = document.getElementById('clientHeaderScopePF');
@@ -1408,6 +1409,8 @@ function setBodyAuthState(isAuthenticated) {
   if (!bodyEl) return;
   bodyEl.classList.toggle('client-authenticated', Boolean(isAuthenticated));
   bodyEl.classList.toggle('client-logged-out', !isAuthenticated);
+  if (headerGuestWrap) headerGuestWrap.hidden = Boolean(isAuthenticated);
+  if (headerAccountWrap) headerAccountWrap.hidden = !isAuthenticated;
 }
 
 function setupHeaderMenu() {
