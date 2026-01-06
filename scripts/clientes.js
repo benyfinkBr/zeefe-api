@@ -20,6 +20,7 @@ const hasPaymentToken = currentUrl.searchParams.has('stripetoken') || currentUrl
 const isPaymentReturn = hasPaymentToken;
 const preselectRoomId = currentUrl.searchParams.get('room_id');
 const preselectPolicyId = currentUrl.searchParams.get('policy_id');
+const preselectPanel = currentUrl.searchParams.get('panel');
 const PENDING_ROOM_KEY = 'zeefePendingRoomSelection';
 const autoLoginIdentifier = currentUrl.searchParams.get('identifier') || '';
 const autoLoginPassword = currentUrl.searchParams.get('password') || '';
@@ -1016,6 +1017,24 @@ function applyRoomSelectionFromQuery() {
   if (usedPending) consumePendingRoomSelection();
 }
 
+let pendingPanelSelection = preselectPanel || null;
+
+function applyPanelSelectionFromQuery() {
+  const panel = pendingPanelSelection || currentUrl.searchParams.get('panel');
+  if (!panel) return;
+  if (!activeClient) {
+    pendingPanelSelection = panel;
+    return;
+  }
+  pendingPanelSelection = null;
+  if (panel === 'messages') {
+    setActivePanel('book');
+    openSupportChatBtn?.click();
+    return;
+  }
+  setActivePanel(panel);
+}
+
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', initialize, { once: true });
 } else {
@@ -1378,6 +1397,7 @@ async function initialize() {
   }
   setActivePanel('book');
   applyRoomSelectionFromQuery();
+  applyPanelSelectionFromQuery();
 }
 
 function isReducedMotionPreferred() {
@@ -3590,6 +3610,7 @@ function aplicarClienteAtivo(cliente) {
   startPortalAutoRefresh();
   // Permanece no portal após login
   applyRoomSelectionFromQuery();
+  applyPanelSelectionFromQuery();
 }
 
 function fazerLogout() {

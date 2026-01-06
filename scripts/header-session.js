@@ -104,6 +104,12 @@
 
     if (guestSection) guestSection.hidden = isLogged;
     if (accountSection) accountSection.hidden = !isLogged;
+    if (accountSection) {
+      const clientItems = accountSection.querySelectorAll('[data-zeefe-header-client]');
+      clientItems.forEach(item => {
+        item.hidden = !(isLogged && currentSession?.type === 'client');
+      });
+    }
 
     if (simpleLoginBtn && !accountSection && !guestSection) {
       if (!isLogged) {
@@ -215,6 +221,40 @@
       await performLogout();
       setMenuState(false);
     });
+
+    accountSection?.addEventListener('click', (event) => {
+      const target = event.target?.closest('[data-zeefe-header-client]');
+      if (!target) return;
+      event.preventDefault();
+      const panel = target.getAttribute('data-zeefe-header-client');
+      const destino = panel ? `/clientes.html?panel=${encodeURIComponent(panel)}` : '/clientes.html';
+      window.location.href = destino;
+    });
+  }
+
+  function ensureClientMenuItems() {
+    if (!domRefs?.accountSection) return;
+    const menu = domRefs.accountSection.querySelector('.user-menu-dropdown');
+    if (!menu || menu.querySelector('[data-zeefe-header-client]')) return;
+    const portalBtn = menu.querySelector('[data-zeefe-header-btn="portal"]');
+    const items = [
+      { key: 'reservations', label: 'Minhas Reservas' },
+      { key: 'profile', label: 'Meu Perfil' },
+      { key: 'messages', label: 'Mensagens' }
+    ];
+    items.forEach(item => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'user-menu-item';
+      btn.textContent = item.label;
+      btn.setAttribute('data-zeefe-header-client', item.key);
+      btn.hidden = true;
+      if (portalBtn) {
+        menu.insertBefore(btn, portalBtn);
+      } else {
+        menu.appendChild(btn);
+      }
+    });
   }
 
   function setupEntryChoiceModal() {
@@ -294,11 +334,12 @@
       ? '/api/advertiser_logout.php'
       : '/api/apilogout.php';
     try {
-      await fetch(endpoint, { credentials: 'include' });
+      await fetch(endpoint, { credentials: 'include', cache: 'no-store' });
     } catch (_) {}
     try {
       if (currentSession.type === 'client') {
         localStorage.removeItem('portalRememberToken');
+        localStorage.removeItem('zeefeActiveClientId');
       } else {
         localStorage.removeItem('advRememberToken');
       }
@@ -323,6 +364,7 @@
 
   document.addEventListener('DOMContentLoaded', async () => {
     initDom();
+    ensureClientMenuItems();
     renderHeader();
     setupMenuEvents();
     setupEntryChoiceModal();

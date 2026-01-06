@@ -33,15 +33,16 @@
         </nav>
       </div>
       <div class="site-header-actions">
-        <div class="site-header-guest">
+        <div class="site-header-guest" data-zeefe-header="guest">
           <a href="index.html#contato" class="site-link">Contato</a>
           <button class="btn btn-outline" type="button" onclick="window.location='clientes.html'">Entrar</button>
         </div>
-        <div class="site-header-user" id="clientHeaderAccount">
-          <button class="user-menu-trigger" type="button" id="clientHeaderAccountBtn" aria-haspopup="true" aria-expanded="false">
-            Minha Conta
+        <div class="site-header-user" id="clientHeaderAccount" data-zeefe-header="account" hidden>
+          <button class="user-menu-trigger" type="button" id="clientHeaderAccountBtn" data-zeefe-header-btn="account" aria-haspopup="true" aria-expanded="false">
+            <span data-zeefe-header-label="account">Minha Conta</span>
           </button>
           <div class="user-menu-dropdown" id="clientHeaderAccountMenu" role="menu">
+            <p class="user-menu-label" data-zeefe-header-label="user"></p>
             <div class="user-menu-section" id="clientHeaderLoginType">
               <p class="user-menu-label">Tipo de login</p>
               <div class="user-menu-pills">
@@ -49,10 +50,10 @@
                 <button type="button" class="user-menu-pill" id="clientHeaderScopeCompany" data-scope="company" hidden>Empresa</button>
               </div>
             </div>
-            <button type="button" class="user-menu-item" id="clientHeaderReservations">Minhas Reservas</button>
-            <button type="button" class="user-menu-item" id="clientHeaderProfile">Meu Perfil</button>
-            <button type="button" class="user-menu-item" id="clientHeaderMessages">Mensagens</button>
-            <button type="button" class="user-menu-item user-menu-danger" id="clientHeaderLogout">Sair</button>
+            <button type="button" class="user-menu-item" id="clientHeaderReservations" data-zeefe-header-client="reservations">Minhas Reservas</button>
+            <button type="button" class="user-menu-item" id="clientHeaderProfile" data-zeefe-header-client="profile">Meu Perfil</button>
+            <button type="button" class="user-menu-item" id="clientHeaderMessages" data-zeefe-header-client="messages">Mensagens</button>
+            <button type="button" class="user-menu-item user-menu-danger" id="clientHeaderLogout" data-zeefe-header-btn="logout">Sair</button>
           </div>
         </div>
       </div>
