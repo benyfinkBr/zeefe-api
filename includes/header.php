@@ -25,7 +25,7 @@ $role = $user['role'] ?? '';
       </div>
       <div class="site-header-user" data-zeefe-header="account" <?php echo $logged ? '' : 'hidden'; ?>>
         <button class="user-menu-trigger" type="button" data-zeefe-header-btn="account" aria-haspopup="true" aria-expanded="false">
-          <span data-zeefe-header-label="account"><?php echo htmlspecialchars($logged ? ($user['name'] ?? 'Minha Conta') : 'Minha Conta'); ?></span>
+          <span data-zeefe-header-label="account">Minha Conta</span>
         </button>
         <div class="user-menu-dropdown" role="menu">
           <p class="user-menu-label" data-zeefe-header-label="user">

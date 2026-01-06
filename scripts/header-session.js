@@ -133,7 +133,7 @@
       return;
     }
     const typeLabel = currentSession.type === 'advertiser' ? 'Portal do Anunciante' : 'Portal do Cliente';
-    if (accountLabel) accountLabel.textContent = currentSession.name || 'Minha Conta';
+    if (accountLabel) accountLabel.textContent = 'Minha Conta';
     if (userLabel) {
       userLabel.textContent = currentSession.name
         ? `${currentSession.name} · ${typeLabel}`
