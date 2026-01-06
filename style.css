@@ -92,6 +92,9 @@ a:hover {
   display: none;
   position: relative;
 }
+.site-header-user:not([hidden]) {
+  display: flex;
+}
 .client-portal-page.client-authenticated .site-header-guest,
 .anunciante-page.client-authenticated .site-header-guest {
   display: none;
