@@ -118,9 +118,8 @@
         }
         return;
       }
-      const name = currentSession.name || 'Minha Conta';
       if (simpleLoginBtn.tagName === 'A' || simpleLoginBtn.tagName === 'BUTTON') {
-        simpleLoginBtn.textContent = name;
+        simpleLoginBtn.textContent = 'Minha Conta';
       }
       return;
     }
