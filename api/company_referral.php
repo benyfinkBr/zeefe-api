@@ -43,7 +43,7 @@ try {
     }
   }
 
-  $subject = 'Ze.EFE - Indicacao de empresa (Indique e Ganhe)';
+  $subject = 'Você tem uma nova indicação da empresa: ' . $company;
   $body = [];
   $body[] = '<h2>Nova indicacao de empresa</h2>';
   $body[] = '<p><strong>Empresa:</strong> ' . htmlspecialchars($company, ENT_QUOTES, 'UTF-8') . '</p>';
@@ -64,12 +64,35 @@ try {
   }
 
   $htmlBody = implode('', $body);
-  $sent = mailer_send('indique@zeefe.com.br', $subject, $htmlBody);
+  $sent = false;
+
+  try {
+    $mail = new PHPMailer\PHPMailer\PHPMailer(true);
+    $mail->isSMTP();
+    $mail->Host = MAIL_HOST;
+    $mail->SMTPAuth = true;
+    $mail->Username = MAIL_USERNAME;
+    $mail->Password = MAIL_PASSWORD;
+    $mail->SMTPSecure = PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
+    $mail->Port = 587;
+    $mail->CharSet = 'UTF-8';
+    $mail->setFrom('indique@zeefe.com.br', 'Ze.EFE');
+    $mail->addAddress('indique@zeefe.com.br');
+    $mail->isHTML(true);
+    $mail->Subject = $subject;
+    $mail->Body = $htmlBody;
+    $mail->AltBody = strip_tags($htmlBody);
+    $mail->send();
+    $sent = true;
+  } catch (Throwable $mailError) {
+    error_log('Referral mailer error: ' . $mailError->getMessage());
+  }
+
   if (!$sent) {
     $headers = [];
     $headers[] = 'MIME-Version: 1.0';
     $headers[] = 'Content-Type: text/html; charset=UTF-8';
-    $headers[] = 'From: ' . MAIL_FROM_NAME . ' <' . MAIL_FROM_ADDRESS . '>';
+    $headers[] = 'From: Ze.EFE <indique@zeefe.com.br>';
     $fallbackSent = @mail('indique@zeefe.com.br', $subject, $htmlBody, implode("\r\n", $headers));
     if (!$fallbackSent) {
       http_response_code(500);
