@@ -1,4 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
+  const headerAccountLabel = document.querySelector('[data-zeefe-header-label="account"]');
+  if (headerAccountLabel) headerAccountLabel.textContent = 'Minha Conta';
   const benefitsContainer = document.getElementById('benefits-cards');
   const roomsStrip = document.getElementById('rooms-strip');
   const roomsMessage = document.getElementById('rooms-message');
