@@ -34,7 +34,19 @@
       </div>
       <div class="site-header-actions">
         <a href="#contato" class="site-link">Contato</a>
-        <button class="btn btn-outline" type="button" id="openLoginChoice">Entrar</button>
+        <div class="site-header-guest" data-zeefe-header="guest">
+          <button class="btn btn-outline" type="button" id="openLoginChoice" data-zeefe-header-btn="login">Entrar</button>
+        </div>
+        <div class="site-header-user" data-zeefe-header="account" hidden>
+          <button class="user-menu-trigger" type="button" data-zeefe-header-btn="account" aria-haspopup="true" aria-expanded="false">
+            <span data-zeefe-header-label="account">Minha Conta</span>
+          </button>
+          <div class="user-menu-dropdown" role="menu">
+            <p class="user-menu-label" data-zeefe-header-label="user"></p>
+            <button type="button" class="user-menu-item" data-zeefe-header-btn="portal">Ir para o portal</button>
+            <button type="button" class="user-menu-item user-menu-danger" data-zeefe-header-btn="logout">Sair</button>
+          </div>
+        </div>
       </div>
     </div>
   </header>
@@ -183,6 +195,7 @@
   </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="" defer></script>
+  <script src="scripts/header-session.js" defer></script>
   <script src="scripts/components/carousel.js" defer></script>
   <script src="scripts/index.js" defer></script>
   <script src="scripts/cookies.js" defer></script>
