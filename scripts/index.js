@@ -1206,12 +1206,34 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function createWorkshopPromoCard() {
     const card = document.createElement('article');
-    card.className = 'promo-card';
-    card.innerHTML = `
-      <h4>Você também pode oferecer cursos</h4>
-      <p>Transforme sua sala em palco para workshops e monetize sua expertise com a Ze.EFE.</p>
-      <button class="btn btn-secondary" type="button" data-destino="/anunciante.html">Quero oferecer cursos</button>
-    `;
+    card.className = 'card workshop-card promo-card promo-workshop-card';
+
+    const title = document.createElement('h4');
+    title.textContent = 'Você também pode oferecer cursos';
+    card.appendChild(title);
+
+    const meta = document.createElement('p');
+    meta.className = 'workshop-meta';
+    meta.textContent = 'Destaque sua sala para workshops e treinamentos.';
+    card.appendChild(meta);
+
+    const description = document.createElement('p');
+    description.textContent = 'Transforme sua sala em palco para workshops e monetize sua expertise com a Ze.EFE.';
+    card.appendChild(description);
+
+    const actions = document.createElement('div');
+    actions.className = 'workshop-actions';
+    const btn = document.createElement('button');
+    btn.className = 'btn btn-secondary btn-sm';
+    btn.type = 'button';
+    btn.setAttribute('data-destino', '/anunciante.html');
+    btn.textContent = 'Quero oferecer cursos';
+    actions.appendChild(btn);
+    card.appendChild(actions);
+
+    const detailUrl = new URL('/anunciante.html', window.location.href).toString();
+    card.appendChild(createShareActions('Ofereça cursos na Ze.EFE', detailUrl));
+
     card.querySelector('[data-destino]')?.addEventListener('click', (event) => {
       event.preventDefault();
       window.location.href = '/anunciante.html';
