@@ -64,35 +64,12 @@ try {
   }
 
   $htmlBody = implode('', $body);
-  $sent = false;
-
-  try {
-    $mail = new PHPMailer\PHPMailer\PHPMailer(true);
-    $mail->isSMTP();
-    $mail->Host = MAIL_HOST;
-    $mail->SMTPAuth = true;
-    $mail->Username = MAIL_USERNAME;
-    $mail->Password = MAIL_PASSWORD;
-    $mail->SMTPSecure = PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
-    $mail->Port = 587;
-    $mail->CharSet = 'UTF-8';
-    $mail->setFrom('indique@zeefe.com.br', 'Ze.EFE');
-    $mail->addAddress('indique@zeefe.com.br');
-    $mail->isHTML(true);
-    $mail->Subject = $subject;
-    $mail->Body = $htmlBody;
-    $mail->AltBody = strip_tags($htmlBody);
-    $mail->send();
-    $sent = true;
-  } catch (Throwable $mailError) {
-    error_log('Referral mailer error: ' . $mailError->getMessage());
-  }
-
+  $sent = mailer_send('indique@zeefe.com.br', $subject, $htmlBody);
   if (!$sent) {
     $headers = [];
     $headers[] = 'MIME-Version: 1.0';
     $headers[] = 'Content-Type: text/html; charset=UTF-8';
-    $headers[] = 'From: Ze.EFE <indique@zeefe.com.br>';
+    $headers[] = 'From: ' . MAIL_FROM_NAME . ' <' . MAIL_FROM_ADDRESS . '>';
     $fallbackSent = @mail('indique@zeefe.com.br', $subject, $htmlBody, implode("\r\n", $headers));
     if (!$fallbackSent) {
       http_response_code(500);
