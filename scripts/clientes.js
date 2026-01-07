@@ -15,6 +15,7 @@ let bookingCurrentMonth = new Date();
 const bookingToday = new Date();
 const bookingTodayISO = toISODate(bookingToday);
 const ACTIVE_CLIENT_STORAGE_KEY = 'zeefeActiveClientId';
+const PENDING_INVITE_PROMPT_KEY = 'zeefePendingInvitePromptShown';
 const currentUrl = new URL(window.location.href);
 const hasPaymentToken = currentUrl.searchParams.has('stripetoken') || currentUrl.searchParams.has('token');
 const isPaymentReturn = hasPaymentToken;
@@ -27,6 +28,8 @@ const autoLoginPassword = currentUrl.searchParams.get('password') || '';
 const shouldAutoLoginFromParams = Boolean(autoLoginIdentifier && autoLoginPassword);
 let autoLoginAlreadyTriggered = false;
 let cardPaymentsFeature = null;
+let pendingCompanyInvites = [];
+let hasPendingCompanyInvite = false;
 
 function peekPendingRoomSelection() {
   try {
@@ -68,6 +71,8 @@ function hasCompanyAssociation() {
 function updateCompanyAccessUi() {
   const isAssociated = hasCompanyAssociation();
   const canUseCompany = hasCompanyAccess();
+  const hasPendingInvite = hasPendingCompanyInvite;
+  const showCompanyEntry = isAssociated || hasPendingInvite;
   if (authScopeCompanyBtn) {
     authScopeCompanyBtn.hidden = !isAssociated;
     authScopeCompanyBtn.disabled = !canUseCompany;
@@ -84,8 +89,10 @@ function updateCompanyAccessUi() {
     scopeCompanyBtn.classList.toggle('active', canUseCompany && currentScope === 'company');
   }
   if (companyTabButton) {
-    companyTabButton.hidden = !isAssociated;
-    if (!canUseCompany && portalSections.company) portalSections.company.hidden = true;
+    companyTabButton.hidden = !showCompanyEntry;
+    if (!canUseCompany && !hasPendingInvite && portalSections.company) {
+      portalSections.company.hidden = true;
+    }
   }
   if (companyBookingRow) {
     companyBookingRow.hidden = !isAssociated;
@@ -98,6 +105,12 @@ function updateCompanyAccessUi() {
   }
   if (!canUseCompany && bookingCompanyToggle) {
     bookingCompanyToggle.checked = false;
+  }
+  if (companyContent) {
+    companyContent.hidden = !canUseCompany;
+  }
+  if (companyPendingBlock) {
+    companyPendingBlock.hidden = !(hasPendingInvite && !canUseCompany);
   }
   updateReferralSlots();
 }
@@ -613,9 +626,128 @@ function syncHeaderWithClientSession(cliente) {
   }
 }
 
-function checkPendingCompanyInvites() {
-  // Placeholder seguro para evitar ReferenceError quando não houver implementação
-  return;
+function markPendingInvitePromptShown() {
+  try { sessionStorage.setItem(PENDING_INVITE_PROMPT_KEY, String(Date.now())); } catch (_) {}
+}
+
+function clearPendingInvitePrompt() {
+  try { sessionStorage.removeItem(PENDING_INVITE_PROMPT_KEY); } catch (_) {}
+}
+
+function shouldShowPendingInvitePrompt() {
+  try { return !sessionStorage.getItem(PENDING_INVITE_PROMPT_KEY); } catch (_) { return true; }
+}
+
+function buildPendingInviteItems(invites, includeLater = false) {
+  return (invites || []).map(inv => {
+    const companyName = escapeHtml(inv.company_name || inv.nome_fantasia || inv.razao_social || 'Empresa');
+    const inviterName = escapeHtml(inv.inviter_name || 'Equipe da empresa');
+    const role = escapeHtml(inv.role || 'membro');
+    const created = inv.created_at ? escapeHtml(formatDate(String(inv.created_at).slice(0, 10))) : '';
+    const createdLabel = created ? ` • ${created}` : '';
+    const title = `${inviterName} convidou você para ${companyName}`;
+    const subtitle = `Perfil: ${role}${createdLabel}`;
+    return `
+      <div class="invite-item" data-invite-token="${escapeHtml(inv.token || '')}">
+        <div class="invite-meta">
+          <div class="invite-title">${title}</div>
+          <div class="invite-sub">${subtitle}</div>
+        </div>
+        <div class="invite-actions">
+          <button type="button" class="btn btn-primary btn-sm" data-invite-accept="${escapeHtml(inv.token || '')}">Aceitar</button>
+          <button type="button" class="btn btn-secondary btn-sm" data-invite-decline="${escapeHtml(inv.token || '')}">Negar</button>
+          ${includeLater ? `<button type="button" class="btn btn-secondary btn-sm" data-invite-later="${escapeHtml(inv.token || '')}">Responder depois</button>` : ''}
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function renderPendingCompanyInvites() {
+  const listHtml = pendingCompanyInvites.length
+    ? buildPendingInviteItems(pendingCompanyInvites, false)
+    : '<div class="rooms-message">Nenhum convite pendente.</div>';
+  if (companyPendingList) companyPendingList.innerHTML = listHtml;
+  if (companyPendingMessage) companyPendingMessage.textContent = '';
+
+  const inboxHtml = pendingCompanyInvites.length
+    ? buildPendingInviteItems(pendingCompanyInvites, true)
+    : '<div class="rooms-message">Nenhum convite pendente.</div>';
+  if (inviteInboxList) inviteInboxList.innerHTML = inboxHtml;
+}
+
+function openInviteInboxModal() {
+  if (!inviteInboxModal) return;
+  renderPendingCompanyInvites();
+  inviteInboxModal.classList.add('show');
+  inviteInboxModal.setAttribute('aria-hidden', 'false');
+}
+
+function closeInviteInboxModal() {
+  if (!inviteInboxModal) return;
+  inviteInboxModal.classList.remove('show');
+  inviteInboxModal.setAttribute('aria-hidden', 'true');
+  markPendingInvitePromptShown();
+}
+
+async function handleInviteAction(action, token, source = 'panel') {
+  if (!token) return;
+  try {
+    if (action === 'accept') {
+      const res = await fetch(`${API_BASE}/company_accept_invite_json.php?token=${encodeURIComponent(token)}`);
+      const json = await parseJsonSafe(res);
+      if (!json.success) throw new Error(json.error || 'Não foi possível aceitar o convite.');
+      await hydrateSessionFromServer();
+      await checkPendingCompanyInvites();
+      if (hasCompanyAccess()) {
+        setPortalScope('company');
+        setActivePanel('company');
+      }
+      closeInviteInboxModal();
+      return;
+    }
+    if (action === 'decline') {
+      const res = await fetch(`${API_BASE}/company_decline_invite.php`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token })
+      });
+      const json = await parseJsonSafe(res);
+      if (!json.success) throw new Error(json.error || 'Não foi possível negar o convite.');
+      await checkPendingCompanyInvites();
+      if (source === 'panel' && companyPendingMessage) {
+        companyPendingMessage.textContent = 'Convite negado.';
+      }
+      return;
+    }
+    if (action === 'later') {
+      closeInviteInboxModal();
+      return;
+    }
+  } catch (err) {
+    const msg = err.message || 'Falha ao processar convite.';
+    if (source === 'panel' && companyPendingMessage) {
+      companyPendingMessage.textContent = msg;
+    } else {
+      alert(msg);
+    }
+  }
+}
+
+async function checkPendingCompanyInvites() {
+  if (!activeClient) return;
+  try {
+    const res = await fetch(`${API_BASE}/company_pending_invites.php`, { credentials: 'include' });
+    const json = await parseJsonSafe(res);
+    pendingCompanyInvites = Array.isArray(json.invites) ? json.invites : [];
+    hasPendingCompanyInvite = pendingCompanyInvites.length > 0;
+    renderPendingCompanyInvites();
+    updateCompanyAccessUi();
+    if (hasPendingCompanyInvite && shouldShowPendingInvitePrompt()) {
+      openInviteInboxModal();
+    }
+  } catch (err) {
+    console.warn('[Portal] Falha ao checar convites pendentes', err);
+  }
 }
 
 function clearAutoLoginParams() {
@@ -720,6 +852,14 @@ const referralContactNameInput = document.getElementById('referralContactName');
 const referralContactPhoneInput = document.getElementById('referralContactPhone');
 const referralContactEmailInput = document.getElementById('referralContactEmail');
 const referralReasonInput = document.getElementById('referralReason');
+const companyPendingBlock = document.getElementById('companyPendingBlock');
+const companyPendingList = document.getElementById('companyPendingList');
+const companyPendingMessage = document.getElementById('companyPendingMessage');
+const companyContent = document.getElementById('companyContent');
+const inviteInboxModal = document.getElementById('inviteInboxModal');
+const inviteInboxList = document.getElementById('inviteInboxList');
+const inviteInboxClose = document.getElementById('inviteInboxClose');
+const inviteInboxDismiss = document.getElementById('inviteInboxDismiss');
 
 function prefillPortalRegisterForm() {
   if (!REGISTER_PREFILL_ENABLED || !portalRegisterForm) return;
@@ -1467,6 +1607,25 @@ async function initialize() {
   inviteMemberModal?.addEventListener('click', (e) => { if (e.target === inviteMemberModal) closeInviteMemberModal(); });
   inviteLookupBtn?.addEventListener('click', onInviteLookup);
   inviteMemberSend?.addEventListener('click', onInviteSend);
+  inviteInboxClose?.addEventListener('click', closeInviteInboxModal);
+  inviteInboxDismiss?.addEventListener('click', closeInviteInboxModal);
+  inviteInboxModal?.addEventListener('click', (e) => { if (e.target === inviteInboxModal) closeInviteInboxModal(); });
+  companyPendingList?.addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-invite-accept], button[data-invite-decline], button[data-invite-later]');
+    if (!btn) return;
+    const token = btn.getAttribute('data-invite-accept') || btn.getAttribute('data-invite-decline') || btn.getAttribute('data-invite-later');
+    if (btn.hasAttribute('data-invite-accept')) handleInviteAction('accept', token, 'panel');
+    if (btn.hasAttribute('data-invite-decline')) handleInviteAction('decline', token, 'panel');
+    if (btn.hasAttribute('data-invite-later')) handleInviteAction('later', token, 'panel');
+  });
+  inviteInboxList?.addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-invite-accept], button[data-invite-decline], button[data-invite-later]');
+    if (!btn) return;
+    const token = btn.getAttribute('data-invite-accept') || btn.getAttribute('data-invite-decline') || btn.getAttribute('data-invite-later');
+    if (btn.hasAttribute('data-invite-accept')) handleInviteAction('accept', token, 'modal');
+    if (btn.hasAttribute('data-invite-decline')) handleInviteAction('decline', token, 'modal');
+    if (btn.hasAttribute('data-invite-later')) handleInviteAction('later', token, 'modal');
+  });
 
   manualMembersClose?.addEventListener('click', closeManualMembersModal);
   manualMembersCancel?.addEventListener('click', closeManualMembersModal);
@@ -2071,6 +2230,10 @@ function setActivePanel(panelName = 'book') {
     renderProfile();
   } else if (target === 'company' && activeClient) {
     if (!hasCompanyAccess()) {
+      if (hasPendingCompanyInvite) {
+        renderPendingCompanyInvites();
+        return;
+      }
       // fallback caso alguém force via hash/URL
       setPortalScope('pf');
       return;
@@ -3764,6 +3927,9 @@ function fazerLogout() {
     activeClient = null;
     syncHeaderWithClientSession(null);
     clearStoredActiveClientId();
+    clearPendingInvitePrompt();
+    pendingCompanyInvites = [];
+    hasPendingCompanyInvite = false;
     currentReservations = [];
     currentVisitors = [];
     bookingVisitorIds = [];

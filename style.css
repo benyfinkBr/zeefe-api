@@ -4454,6 +4454,13 @@ body.client-portal-page.client-authenticated .auth-container {
 /* Inbox convites */
 .inbox-list { display:grid; gap:10px; }
 .inbox-list .invite-item { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px; border:1px solid rgba(29,65,58,.15); border-radius:10px; background:#fff; }
+.invite-item .invite-meta { display:flex; flex-direction:column; gap:2px; }
+.invite-item .invite-title { font-weight:600; color:#1D413A; }
+.invite-item .invite-sub { font-size:.92rem; color:#7A6758; }
+.invite-item .invite-actions { display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; }
+
+.company-pending-card { border:1px solid rgba(29,65,58,.12); border-radius:18px; padding:18px; background:#fff; box-shadow: var(--shadow-soft); margin-bottom:16px; }
+.company-pending-card h4 { margin:0 0 6px; }
 
 .modal-dialog.wide { max-width: 1040px; }
 

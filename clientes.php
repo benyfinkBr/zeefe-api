@@ -330,110 +330,119 @@
         </section>
 
         <section class="portal-section" id="panel-company" hidden>
-          <div class="panel-header">
-            <h2>Empresa</h2>
+          <div class="company-pending-card" id="companyPendingBlock" hidden>
+            <h4>Convite pendente</h4>
+            <p class="rooms-message">Você recebeu um convite para participar de uma empresa na Ze.EFE. Aceite para liberar os recursos empresariais.</p>
+            <div id="companyPendingList" class="inbox-list"></div>
+            <div id="companyPendingMessage" class="rooms-message"></div>
+          </div>
+
+          <div id="companyContent">
+            <div class="panel-header">
+              <h2>Empresa</h2>
+              <div class="portal-actions">
+                <button type="button" class="btn btn-secondary btn-sm" id="openInviteModal">Convidar membro</button>
+                <button type="button" class="btn btn-secondary btn-sm" id="openManualModal">Adicionar manualmente</button>
+                <button type="button" class="btn btn-secondary btn-sm" id="openImportModal">Importar</button>
+              </div>
+            </div>
+
             <div class="portal-actions">
-              <button type="button" class="btn btn-secondary btn-sm" id="openInviteModal">Convidar membro</button>
-              <button type="button" class="btn btn-secondary btn-sm" id="openManualModal">Adicionar manualmente</button>
-              <button type="button" class="btn btn-secondary btn-sm" id="openImportModal">Importar</button>
+              <button type="button" class="btn btn-secondary btn-sm company-tab active" data-company-tab="overview">Visão geral</button>
+              <button type="button" class="btn btn-secondary btn-sm company-tab" data-company-tab="users">Usuários</button>
+              <button type="button" class="btn btn-secondary btn-sm company-tab" data-company-tab="reservations">Reservas</button>
+              <button type="button" class="btn btn-secondary btn-sm company-tab" data-company-tab="finance">Financeiro</button>
             </div>
-          </div>
 
-          <div class="portal-actions">
-            <button type="button" class="btn btn-secondary btn-sm company-tab active" data-company-tab="overview">Visão geral</button>
-            <button type="button" class="btn btn-secondary btn-sm company-tab" data-company-tab="users">Usuários</button>
-            <button type="button" class="btn btn-secondary btn-sm company-tab" data-company-tab="reservations">Reservas</button>
-            <button type="button" class="btn btn-secondary btn-sm company-tab" data-company-tab="finance">Financeiro</button>
-          </div>
-
-          <div id="companyTab-overview">
-            <div class="panel-box">
-              <h3>Resumo</h3>
-              <div class="quick-actions">
-                <button type="button" class="btn btn-secondary btn-sm" data-panel="reservations">Ver reservas</button>
-                <button type="button" class="btn btn-secondary btn-sm" data-panel="finance">Ver financeiro</button>
-              </div>
-              <div id="companyOverviewNext"></div>
-            </div>
-          </div>
-
-          <div id="companyTab-users" hidden>
-            <div class="panel-box">
-              <h3>Usuários da empresa</h3>
-              <div id="companyUsersContainer"></div>
-            </div>
-            <div class="panel-box">
-              <h3>Convidar usuário</h3>
-              <div class="form-grid-mini">
-                <div>
-                  <label for="companyInviteCpf">CPF</label>
-                  <input type="text" id="companyInviteCpf" />
+            <div id="companyTab-overview">
+              <div class="panel-box">
+                <h3>Resumo</h3>
+                <div class="quick-actions">
+                  <button type="button" class="btn btn-secondary btn-sm" data-panel="reservations">Ver reservas</button>
+                  <button type="button" class="btn btn-secondary btn-sm" data-panel="finance">Ver financeiro</button>
                 </div>
-                <div>
-                  <label for="companyInviteEmail">E-mail</label>
-                  <input type="email" id="companyInviteEmail" />
-                </div>
-              </div>
-              <div class="form-grid-mini">
-                <div>
-                  <label for="companyInviteRole">Perfil</label>
-                  <select id="companyInviteRole">
-                    <option value="membro">Membro</option>
-                    <option value="gestor">Gestor</option>
-                    <option value="leitor">Leitor</option>
-                    <option value="admin">Admin</option>
-                  </select>
-                </div>
-                <div style="display:flex; gap:8px; align-items:flex-end;">
-                  <button type="button" class="btn btn-primary" id="companyInviteBtn">Enviar convite</button>
-                  <button type="button" class="btn btn-secondary" id="companyResendBtn">Reenviar</button>
-                </div>
-              </div>
-              <div class="portal-actions">
-                <button type="button" class="btn btn-secondary btn-sm" id="companyManualBtn">Adicionar manualmente</button>
-                <button type="button" class="btn btn-secondary btn-sm" id="importPickFile">Importar XLSX</button>
-                <input type="file" id="companyCsvInput" accept=".csv" hidden />
-                <input type="file" id="companyXlsxInput" accept=".xlsx" hidden />
+                <div id="companyOverviewNext"></div>
               </div>
             </div>
 
-            <div class="panel-box" id="companyInvitesBlock">
-              <div class="panel-header">
-                <h3>Convites enviados</h3>
-                <button type="button" class="btn btn-secondary btn-sm" id="companyInvitesClose">Fechar</button>
+            <div id="companyTab-users" hidden>
+              <div class="panel-box">
+                <h3>Usuários da empresa</h3>
+                <div id="companyUsersContainer"></div>
               </div>
-              <div id="companyInvitesContainer"></div>
-              <div class="portal-actions">
-                <button type="button" class="btn btn-secondary btn-sm" id="openManageInvites">Gerenciar convites</button>
+              <div class="panel-box">
+                <h3>Convidar usuário</h3>
+                <div class="form-grid-mini">
+                  <div>
+                    <label for="companyInviteCpf">CPF</label>
+                    <input type="text" id="companyInviteCpf" />
+                  </div>
+                  <div>
+                    <label for="companyInviteEmail">E-mail</label>
+                    <input type="email" id="companyInviteEmail" />
+                  </div>
+                </div>
+                <div class="form-grid-mini">
+                  <div>
+                    <label for="companyInviteRole">Perfil</label>
+                    <select id="companyInviteRole">
+                      <option value="membro">Membro</option>
+                      <option value="gestor">Gestor</option>
+                      <option value="leitor">Leitor</option>
+                      <option value="admin">Admin</option>
+                    </select>
+                  </div>
+                  <div style="display:flex; gap:8px; align-items:flex-end;">
+                    <button type="button" class="btn btn-primary" id="companyInviteBtn">Enviar convite</button>
+                    <button type="button" class="btn btn-secondary" id="companyResendBtn">Reenviar</button>
+                  </div>
+                </div>
+                <div class="portal-actions">
+                  <button type="button" class="btn btn-secondary btn-sm" id="companyManualBtn">Adicionar manualmente</button>
+                  <button type="button" class="btn btn-secondary btn-sm" id="importPickFile">Importar XLSX</button>
+                  <input type="file" id="companyCsvInput" accept=".csv" hidden />
+                  <input type="file" id="companyXlsxInput" accept=".xlsx" hidden />
+                </div>
+              </div>
+
+              <div class="panel-box" id="companyInvitesBlock">
+                <div class="panel-header">
+                  <h3>Convites enviados</h3>
+                  <button type="button" class="btn btn-secondary btn-sm" id="companyInvitesClose">Fechar</button>
+                </div>
+                <div id="companyInvitesContainer"></div>
+                <div class="portal-actions">
+                  <button type="button" class="btn btn-secondary btn-sm" id="openManageInvites">Gerenciar convites</button>
+                </div>
               </div>
             </div>
-          </div>
 
-          <div id="companyTab-reservations" hidden>
-            <div class="panel-box">
-              <h3>Reservas da empresa</h3>
-              <div id="companyReservationsContainer"></div>
+            <div id="companyTab-reservations" hidden>
+              <div class="panel-box">
+                <h3>Reservas da empresa</h3>
+                <div id="companyReservationsContainer"></div>
+              </div>
             </div>
-          </div>
 
-          <div id="companyTab-finance" hidden>
-            <div class="panel-box">
-              <h3>Financeiro</h3>
-              <div class="form-grid-mini">
-                <div>
-                  <label for="finFrom">De</label>
-                  <input type="date" id="finFrom" />
+            <div id="companyTab-finance" hidden>
+              <div class="panel-box">
+                <h3>Financeiro</h3>
+                <div class="form-grid-mini">
+                  <div>
+                    <label for="finFrom">De</label>
+                    <input type="date" id="finFrom" />
+                  </div>
+                  <div>
+                    <label for="finTo">Até</label>
+                    <input type="date" id="finTo" />
+                  </div>
                 </div>
-                <div>
-                  <label for="finTo">Até</label>
-                  <input type="date" id="finTo" />
+                <div class="portal-actions">
+                  <button type="button" class="btn btn-secondary" id="finApply">Aplicar</button>
+                  <button type="button" class="btn btn-secondary" id="finExport">Exportar</button>
                 </div>
+                <div id="companyFinanceContainer"></div>
               </div>
-              <div class="portal-actions">
-                <button type="button" class="btn btn-secondary" id="finApply">Aplicar</button>
-                <button type="button" class="btn btn-secondary" id="finExport">Exportar</button>
-              </div>
-              <div id="companyFinanceContainer"></div>
             </div>
           </div>
         </section>
@@ -900,6 +909,22 @@
         <div class="modal-footer">
           <button class="btn btn-secondary" type="button" id="inviteMemberCancel">Cancelar</button>
           <button class="btn btn-primary" type="button" id="inviteMemberSend">Enviar convite</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="inviteInboxModal" aria-hidden="true">
+  <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="inviteInboxTitle">
+    <button class="modal-close" type="button" id="inviteInboxClose" aria-label="Fechar">&times;</button>
+    <div class="modal-body">
+      <div class="modal-info" style="padding:24px; width:100%">
+        <h2 id="inviteInboxTitle" style="margin-top:0">Convites para empresas</h2>
+        <p class="rooms-message">Você recebeu convites para participar de empresas. Aceite para ter acesso às funcionalidades de gestão.</p>
+        <div id="inviteInboxList" class="inbox-list"></div>
+        <div class="modal-actions" style="display:flex; gap:12px; justify-content:flex-end; margin-top:12px;">
+          <button type="button" class="btn btn-secondary" id="inviteInboxDismiss">Fechar</button>
         </div>
       </div>
     </div>

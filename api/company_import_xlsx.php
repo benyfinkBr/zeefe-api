@@ -5,6 +5,18 @@ require_once __DIR__ . '/lib/company_access.php';
 header('Content-Type: application/json');
 
 try {
+  $inviterId = isset($_SESSION['client_id']) ? (int)$_SESSION['client_id'] : null;
+  $inviterName = '';
+  if ($inviterId) {
+    try {
+      $istmt = $pdo->prepare('SELECT name FROM clients WHERE id = :id LIMIT 1');
+      $istmt->execute([':id' => $inviterId]);
+      $inviterName = (string)($istmt->fetchColumn() ?: '');
+    } catch (Throwable $e) { $inviterName = ''; }
+  }
+  if ($inviterName === '' && !empty($_SESSION['auth']['name'])) {
+    $inviterName = (string)$_SESSION['auth']['name'];
+  }
   if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
     echo json_encode(['success' => false, 'error' => 'Método inválido']);
@@ -30,10 +42,17 @@ try {
       if (!in_array($roleRow, ['admin','gestor','membro','leitor'], true)) $roleRow = 'membro';
       if ($name==='' || $email==='' || !filter_var($email,FILTER_VALIDATE_EMAIL) || strlen($cpfDigits)!==11) { $failed++; $errors[]='Linha '.($idx+1).': dados inválidos'; continue; }
       try {
-        try { $pdo->exec("CREATE TABLE IF NOT EXISTS company_invitations (id BIGINT AUTO_INCREMENT PRIMARY KEY, company_id BIGINT NOT NULL, client_id BIGINT NULL, invite_email VARCHAR(255) NULL, invite_name VARCHAR(255) NULL, cpf VARCHAR(14) NOT NULL, role ENUM('admin','gestor','membro','leitor') NOT NULL DEFAULT 'membro', token VARCHAR(128) NOT NULL, status ENUM('pendente','aceito','cancelado','expirado') NOT NULL DEFAULT 'pendente', expires_at DATETIME NOT NULL, created_at DATETIME NOT NULL, accepted_at DATETIME NULL, INDEX idx_inv_company (company_id), UNIQUE KEY uk_inv_token (token)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"); } catch (Throwable $e) {}
+        try {
+          $pdo->exec("CREATE TABLE IF NOT EXISTS company_invitations (id BIGINT AUTO_INCREMENT PRIMARY KEY, company_id BIGINT NOT NULL, client_id BIGINT NULL, inviter_id BIGINT NULL, inviter_name VARCHAR(255) NULL, invite_email VARCHAR(255) NULL, invite_name VARCHAR(255) NULL, cpf VARCHAR(14) NOT NULL, role ENUM('admin','gestor','membro','leitor') NOT NULL DEFAULT 'membro', token VARCHAR(128) NOT NULL, status ENUM('pendente','aceito','cancelado','expirado') NOT NULL DEFAULT 'pendente', expires_at DATETIME NOT NULL, created_at DATETIME NOT NULL, accepted_at DATETIME NULL, INDEX idx_inv_company (company_id), UNIQUE KEY uk_inv_token (token)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+          @$pdo->exec("ALTER TABLE company_invitations MODIFY client_id BIGINT NULL");
+          @$pdo->exec("ALTER TABLE company_invitations ADD COLUMN inviter_id BIGINT NULL");
+          @$pdo->exec("ALTER TABLE company_invitations ADD COLUMN inviter_name VARCHAR(255) NULL");
+          @$pdo->exec("ALTER TABLE company_invitations ADD COLUMN invite_email VARCHAR(255) NULL");
+          @$pdo->exec("ALTER TABLE company_invitations ADD COLUMN invite_name VARCHAR(255) NULL");
+        } catch (Throwable $e) {}
         $token = bin2hex(random_bytes(24)); $expires=(new DateTime('+48 hours'))->format('Y-m-d H:i:s'); $now=(new DateTime())->format('Y-m-d H:i:s');
-        $ins=$pdo->prepare('INSERT INTO company_invitations (company_id, client_id, invite_email, invite_name, cpf, role, token, status, expires_at, created_at) VALUES (:company_id, NULL, :invite_email, :invite_name, :cpf, :role, :token, :status, :expires, :created)');
-        $ins->execute([':company_id'=>$companyId, ':invite_email'=>$email, ':invite_name'=>$name, ':cpf'=>$cpfDigits, ':role'=>$roleRow, ':token'=>$token, ':status'=>'pendente', ':expires'=>$expires, ':created'=>$now]);
+        $ins=$pdo->prepare('INSERT INTO company_invitations (company_id, client_id, inviter_id, inviter_name, invite_email, invite_name, cpf, role, token, status, expires_at, created_at) VALUES (:company_id, NULL, :inviter_id, :inviter_name, :invite_email, :invite_name, :cpf, :role, :token, :status, :expires, :created)');
+        $ins->execute([':company_id'=>$companyId, ':inviter_id'=>$inviterId ?: null, ':inviter_name'=>$inviterName ?: null, ':invite_email'=>$email, ':invite_name'=>$name, ':cpf'=>$cpfDigits, ':role'=>$roleRow, ':token'=>$token, ':status'=>'pendente', ':expires'=>$expires, ':created'=>$now]);
         $cstmt=$pdo->prepare('SELECT nome_fantasia, razao_social FROM companies WHERE id = :id LIMIT 1'); $cstmt->execute([':id'=>$companyId]); $company=$cstmt->fetch(PDO::FETCH_ASSOC)?:[]; $companyName=$company['nome_fantasia']??$company['razao_social']??'sua empresa';
         $host=(isset($_SERVER['HTTPS'])&&$_SERVER['HTTPS']==='on'?'https://':'http://').($_SERVER['HTTP_HOST']??'localhost'); $acceptUrl=$host.'/clientes.html?invite='.urlencode($token);
         $html=mailer_render('company_user_invite.php',['company_name'=>$companyName,'accept_url'=>$acceptUrl,'client_name'=>$name]); mailer_send([$email],'Convite para acessar empresa no portal Ze.EFE',$html);
@@ -260,6 +279,8 @@ try {
           id BIGINT AUTO_INCREMENT PRIMARY KEY,
           company_id BIGINT NOT NULL,
           client_id BIGINT NULL,
+          inviter_id BIGINT NULL,
+          inviter_name VARCHAR(255) NULL,
           invite_email VARCHAR(255) NULL,
           invite_name VARCHAR(255) NULL,
           cpf VARCHAR(14) NOT NULL,
@@ -273,6 +294,8 @@ try {
           UNIQUE KEY uk_inv_token (token)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
         @$pdo->exec("ALTER TABLE company_invitations MODIFY client_id BIGINT NULL");
+        @$pdo->exec("ALTER TABLE company_invitations ADD COLUMN inviter_id BIGINT NULL");
+        @$pdo->exec("ALTER TABLE company_invitations ADD COLUMN inviter_name VARCHAR(255) NULL");
         @$pdo->exec("ALTER TABLE company_invitations ADD COLUMN invite_email VARCHAR(255) NULL");
         @$pdo->exec("ALTER TABLE company_invitations ADD COLUMN invite_name VARCHAR(255) NULL");
       } catch (Throwable $e) {}
@@ -281,8 +304,8 @@ try {
       $expires = (new DateTime('+48 hours'))->format('Y-m-d H:i:s');
       $now = (new DateTime())->format('Y-m-d H:i:s');
 
-      $ins = $pdo->prepare('INSERT INTO company_invitations (company_id, client_id, invite_email, invite_name, cpf, role, token, status, expires_at, created_at) VALUES (:company_id, NULL, :invite_email, :invite_name, :cpf, :role, :token, :status, :expires, :created)');
-      $ins->execute([':company_id'=>$companyId, ':invite_email'=>$email, ':invite_name'=>$name, ':cpf'=>$cpfDigits, ':role'=>$role, ':token'=>$token, ':status'=>'pendente', ':expires'=>$expires, ':created'=>$now]);
+      $ins = $pdo->prepare('INSERT INTO company_invitations (company_id, client_id, inviter_id, inviter_name, invite_email, invite_name, cpf, role, token, status, expires_at, created_at) VALUES (:company_id, NULL, :inviter_id, :inviter_name, :invite_email, :invite_name, :cpf, :role, :token, :status, :expires, :created)');
+      $ins->execute([':company_id'=>$companyId, ':inviter_id'=>$inviterId ?: null, ':inviter_name'=>$inviterName ?: null, ':invite_email'=>$email, ':invite_name'=>$name, ':cpf'=>$cpfDigits, ':role'=>$role, ':token'=>$token, ':status'=>'pendente', ':expires'=>$expires, ':created'=>$now]);
 
       // E‑mail
       $cstmt = $pdo->prepare('SELECT nome_fantasia, razao_social FROM companies WHERE id = :id LIMIT 1');

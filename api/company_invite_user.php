@@ -28,6 +28,8 @@ try {
       id BIGINT AUTO_INCREMENT PRIMARY KEY,
       company_id BIGINT NOT NULL,
       client_id BIGINT NULL,
+      inviter_id BIGINT NULL,
+      inviter_name VARCHAR(255) NULL,
       invite_email VARCHAR(255) NULL,
       invite_name VARCHAR(255) NULL,
       cpf VARCHAR(14) NOT NULL,
@@ -41,6 +43,8 @@ try {
       UNIQUE KEY uk_inv_token (token)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
     @$pdo->exec("ALTER TABLE company_invitations MODIFY client_id BIGINT NULL");
+    @$pdo->exec("ALTER TABLE company_invitations ADD COLUMN inviter_id BIGINT NULL");
+    @$pdo->exec("ALTER TABLE company_invitations ADD COLUMN inviter_name VARCHAR(255) NULL");
     @$pdo->exec("ALTER TABLE company_invitations ADD COLUMN invite_email VARCHAR(255) NULL");
     @$pdo->exec("ALTER TABLE company_invitations ADD COLUMN invite_name VARCHAR(255) NULL");
   } catch (Throwable $e) { }
@@ -65,10 +69,25 @@ try {
   $expires = (new DateTime('+48 hours'))->format('Y-m-d H:i:s');
   $now = (new DateTime())->format('Y-m-d H:i:s');
 
-  $ins = $pdo->prepare('INSERT INTO company_invitations (company_id, client_id, invite_email, invite_name, cpf, role, token, status, expires_at, created_at) VALUES (:company_id, :client_id, :invite_email, :invite_name, :cpf, :role, :token, :status, :expires, :created)');
+  $inviterId = isset($_SESSION['client_id']) ? (int)$_SESSION['client_id'] : null;
+  $inviterName = '';
+  if ($inviterId) {
+    try {
+      $istmt = $pdo->prepare('SELECT name FROM clients WHERE id = :id LIMIT 1');
+      $istmt->execute([':id' => $inviterId]);
+      $inviterName = (string)($istmt->fetchColumn() ?: '');
+    } catch (Throwable $e) { $inviterName = ''; }
+  }
+  if ($inviterName === '' && !empty($_SESSION['auth']['name'])) {
+    $inviterName = (string)$_SESSION['auth']['name'];
+  }
+
+  $ins = $pdo->prepare('INSERT INTO company_invitations (company_id, client_id, inviter_id, inviter_name, invite_email, invite_name, cpf, role, token, status, expires_at, created_at) VALUES (:company_id, :client_id, :inviter_id, :inviter_name, :invite_email, :invite_name, :cpf, :role, :token, :status, :expires, :created)');
   $ins->execute([
     ':company_id' => $companyId,
     ':client_id' => $client ? (int)$client['id'] : null,
+    ':inviter_id' => $inviterId ?: null,
+    ':inviter_name' => $inviterName ?: null,
     ':invite_email' => $client['email'] ?? $email,
     ':invite_name' => $client['name'] ?? $name,
     ':cpf' => $cpf,
