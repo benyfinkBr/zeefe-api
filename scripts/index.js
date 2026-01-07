@@ -43,6 +43,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const heroNeighborhoodSelect = document.getElementById('heroNeighborhoodSelect');
   const sharePanels = new Set();
   let locationIndex = new Map();
+  let userLocation = null;
   const PENDING_ROOM_KEY = 'zeefePendingRoomSelection';
 
   const persistRoomSelection = (roomId) => {
@@ -204,6 +205,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   carregarSalas();
+  initUserLocation();
 
   async function carregarSalas() {
     if (!roomsStrip) return;
@@ -257,7 +259,6 @@ document.addEventListener('DOMContentLoaded', () => {
       roomsMessage.textContent = '';
       renderRooms();
       initMapIfNeeded();
-      renderMapMarkers(allRooms);
       renderFeaturedWorkshops();
       requestAnimationFrame(() => updateCarouselNavState());
       carregarPostsHero();
@@ -281,14 +282,14 @@ document.addEventListener('DOMContentLoaded', () => {
       if (type === 'workshops') {
         okType = workshopsByRoom.has(Number(room.id));
       }
-      return okQuery && okType;
+      return okQuery && okType && isRoomActiveForHome(room, today);
     });
     if (!filtered.length) {
       roomsMessage.textContent = 'Nenhuma sala encontrada com os filtros atuais.';
       return;
     }
     roomsMessage.textContent = '';
-    const roomItems = filtered.slice(0, 4);
+    const roomItems = rotateRoomsByLocation(filtered).slice(0, 4);
     roomItems.forEach(room => {
       const available = isRoomAvailable(room, today);
         const photos = getRoomPhotos(room.photo_path);
@@ -503,6 +504,76 @@ document.addEventListener('DOMContentLoaded', () => {
       if (neighborhood) cityMap.get(city).add(neighborhood);
     });
     populateStateOptions();
+  }
+
+  function initUserLocation() {
+    if (!navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        userLocation = {
+          lat: pos.coords.latitude,
+          lon: pos.coords.longitude
+        };
+        renderRooms();
+      },
+      () => {},
+      { maximumAge: 600000, timeout: 5000 }
+    );
+  }
+
+  function getRoomLatLon(room) {
+    const lat = Number(room.lat || room.latitude);
+    const lon = Number(room.lon || room.lng || room.longitude);
+    if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
+    return { lat, lon };
+  }
+
+  function haversineKm(a, b) {
+    const toRad = (deg) => deg * Math.PI / 180;
+    const dLat = toRad(b.lat - a.lat);
+    const dLon = toRad(b.lon - a.lon);
+    const lat1 = toRad(a.lat);
+    const lat2 = toRad(b.lat);
+    const h = Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLon / 2) ** 2;
+    return 6371 * (2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h)));
+  }
+
+  function daySeed() {
+    const now = new Date();
+    const start = new Date(now.getFullYear(), 0, 0);
+    const diff = now - start;
+    return Math.floor(diff / 86400000);
+  }
+
+  function rotateRoomsByLocation(rooms) {
+    const list = [...rooms];
+    if (userLocation) {
+      list.sort((a, b) => {
+        const al = getRoomLatLon(a);
+        const bl = getRoomLatLon(b);
+        if (!al && !bl) return 0;
+        if (!al) return 1;
+        if (!bl) return -1;
+        return haversineKm(userLocation, al) - haversineKm(userLocation, bl);
+      });
+    }
+    const seed = daySeed();
+    const offset = list.length ? seed % list.length : 0;
+    return list.slice(offset).concat(list.slice(0, offset));
+  }
+
+  function isRoomActiveForHome(room, today) {
+    const status = (room.status || '').toLowerCase();
+    if (status === 'inativo') return false;
+    if (status === 'desativada') return false;
+    if (status === 'manutencao') {
+      const start = room.maintenance_start || null;
+      const end = room.maintenance_end || null;
+      const started = !start || start <= today;
+      const notFinished = !end || end >= today;
+      if (started && notFinished) return false;
+    }
+    return status === 'ativo';
   }
 
   function populateStateOptions() {
