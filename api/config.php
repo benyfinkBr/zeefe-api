@@ -8,7 +8,7 @@ return [
     'host' => 'localhost',        // change if different (ex: 127.0.0.1 or mysql.hosting.com)
     'dbname' => 'benyfi15_zeefe_db',
     'user' => 'benyfi15_zeefe_user',
-    'pass' => getenv('dbpass') ?: '',
+    'pass' => 'Gafin123!',
     'charset' => 'utf8mb4'
   ],
   'allowed_origins' => [
