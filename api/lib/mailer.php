@@ -6,20 +6,29 @@ require_once __DIR__ . '/../PHPMailer/src/Exception.php';
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
+function mailer_get_config(string $key, string $fallback = ''): string {
+  $iniKey = 'zeefe_' . $key;
+  $iniVal = ini_get($iniKey);
+  if (is_string($iniVal) && $iniVal !== '') return $iniVal;
+  $envVal = getenv(strtoupper($iniKey));
+  if (is_string($envVal) && $envVal !== '') return $envVal;
+  return $fallback;
+}
+
 if (!defined('MAIL_HOST')) {
-  define('MAIL_HOST', 'smtp.titan.email');
+  define('MAIL_HOST', mailer_get_config('mail_host', 'smtp.titan.email'));
 }
 if (!defined('MAIL_USERNAME')) {
-  define('MAIL_USERNAME', 'contato@zeefe.com.br');
+  define('MAIL_USERNAME', mailer_get_config('mail_username', 'contato@zeefe.com.br'));
 }
 if (!defined('MAIL_PASSWORD')) {
-  define('MAIL_PASSWORD', 'teste123!');
+  define('MAIL_PASSWORD', mailer_get_config('mail_password', ''));
 }
 if (!defined('MAIL_FROM_ADDRESS')) {
-  define('MAIL_FROM_ADDRESS', 'contato@zeefe.com.br');
+  define('MAIL_FROM_ADDRESS', mailer_get_config('mail_from_address', 'contato@zeefe.com.br'));
 }
 if (!defined('MAIL_FROM_NAME')) {
-  define('MAIL_FROM_NAME', 'Ze.EFE');
+  define('MAIL_FROM_NAME', mailer_get_config('mail_from_name', 'Ze.EFE'));
 }
 
 function mailer_render(string $template, array $placeholders = []): string {

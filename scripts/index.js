@@ -44,6 +44,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const sharePanels = new Set();
   let locationIndex = new Map();
   let userLocation = null;
+  let geoNotice = null;
   const PENDING_ROOM_KEY = 'zeefePendingRoomSelection';
 
   const persistRoomSelection = (roomId) => {
@@ -514,9 +515,15 @@ document.addEventListener('DOMContentLoaded', () => {
           lat: pos.coords.latitude,
           lon: pos.coords.longitude
         };
+        if (geoNotice) {
+          geoNotice.remove();
+          geoNotice = null;
+        }
         renderRooms();
       },
-      () => {},
+      () => {
+        showGeoNotice();
+      },
       { maximumAge: 600000, timeout: 5000 }
     );
   }
@@ -538,11 +545,8 @@ document.addEventListener('DOMContentLoaded', () => {
     return 6371 * (2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h)));
   }
 
-  function daySeed() {
-    const now = new Date();
-    const start = new Date(now.getFullYear(), 0, 0);
-    const diff = now - start;
-    return Math.floor(diff / 86400000);
+  function hourSeed() {
+    return Math.floor(Date.now() / 3600000);
   }
 
   function rotateRoomsByLocation(rooms) {
@@ -557,9 +561,11 @@ document.addEventListener('DOMContentLoaded', () => {
         return haversineKm(userLocation, al) - haversineKm(userLocation, bl);
       });
     }
-    const seed = daySeed();
-    const offset = list.length ? seed % list.length : 0;
-    return list.slice(offset).concat(list.slice(0, offset));
+    const limit = 12;
+    const limited = list.slice(0, limit);
+    const seed = hourSeed();
+    const offset = limited.length ? seed % limited.length : 0;
+    return limited.slice(offset).concat(limited.slice(0, offset));
   }
 
   function isRoomActiveForHome(room, today) {
@@ -574,6 +580,16 @@ document.addEventListener('DOMContentLoaded', () => {
       if (started && notFinished) return false;
     }
     return status === 'ativo';
+  }
+
+  function showGeoNotice() {
+    if (!roomsStrip) return;
+    if (!geoNotice) {
+      geoNotice = document.createElement('p');
+      geoNotice.className = 'rooms-message rooms-message-subtle';
+      geoNotice.textContent = 'Ative a localização para ver salas mais próximas de você.';
+      roomsStrip.insertAdjacentElement('beforebegin', geoNotice);
+    }
   }
 
   function populateStateOptions() {

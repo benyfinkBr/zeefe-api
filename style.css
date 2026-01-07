@@ -1769,6 +1769,13 @@ section h3 {
   color: var(--brand-muted);
 }
 
+.rooms-message-subtle {
+  margin-top: -8px;
+  margin-bottom: 16px;
+  font-size: 13px;
+  color: var(--brand-muted);
+}
+
 .rooms-showcase {
   background: linear-gradient(180deg, rgba(244, 238, 232, 0.5), rgba(255, 255, 255, 0));
   padding: 48px 0;
