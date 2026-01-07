@@ -65,7 +65,7 @@ try {
   $expires = (new DateTime('+48 hours'))->format('Y-m-d H:i:s');
   $now = (new DateTime())->format('Y-m-d H:i:s');
 
-  $ins = $pdo->prepare('INSERT INTO company_invitations (company_id, client_id, invite_email, invite_name, cpf, role, token, status, expires_at, created_at) VALUES (:company_id, :client_id, :invite_email, :invite_name, :cpf, :role, :token, \"pendente\", :expires, :created)');
+  $ins = $pdo->prepare('INSERT INTO company_invitations (company_id, client_id, invite_email, invite_name, cpf, role, token, status, expires_at, created_at) VALUES (:company_id, :client_id, :invite_email, :invite_name, :cpf, :role, :token, :status, :expires, :created)');
   $ins->execute([
     ':company_id' => $companyId,
     ':client_id' => $client ? (int)$client['id'] : null,
@@ -74,6 +74,7 @@ try {
     ':cpf' => $cpf,
     ':role' => $role,
     ':token' => $token,
+    ':status' => 'pendente',
     ':expires' => $expires,
     ':created' => $now
   ]);

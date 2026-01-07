@@ -163,6 +163,15 @@ async function submitReferralForm(event) {
     }
     return;
   }
+  const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactEmail);
+  if (!emailOk) {
+    if (referralMessage) {
+      referralMessage.textContent = 'Informe um e-mail válido.';
+      referralMessage.hidden = false;
+    }
+    referralContactEmailInput?.focus();
+    return;
+  }
   try {
     if (referralMessage) {
       referralMessage.textContent = 'Enviando indicação...';
