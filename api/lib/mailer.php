@@ -39,7 +39,7 @@ if (!defined('MAIL_USERNAME')) {
   define('MAIL_USERNAME', mailer_get_config('mail_username', 'contato@zeefe.com.br'));
 }
 if (!defined('MAIL_PASSWORD')) {
-  define('MAIL_PASSWORD', mailer_get_config('mail_password', ''));
+  define('MAIL_PASSWORD', mailer_get_config('mail_password', 'Gafin123!'));
 }
 if (!defined('MAIL_FROM_ADDRESS')) {
   define('MAIL_FROM_ADDRESS', mailer_get_config('mail_from_address', 'contato@zeefe.com.br'));
