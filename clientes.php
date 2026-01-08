@@ -830,7 +830,7 @@
         </div>
         <div class="form-field">
           <label for="referralContactEmail">E-mail da pessoa responsável</label>
-          <input type="email" id="referralContactEmail" name="contact_email" required pattern="^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$" />
+          <input type="email" id="referralContactEmail" name="contact_email" required pattern="^[^\s@]+@[^\s@]+\.[^\s@]+$" placeholder="nome@empresa.com.br" inputmode="email" />
         </div>
         <div class="form-field">
           <label for="referralReason">Porque você acha que a empresa usaria a plataforma da Ze.EFE?</label>

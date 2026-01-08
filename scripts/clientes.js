@@ -140,6 +140,24 @@ function formatReferralPhone(digits) {
   return `(${ddd}) ${part1}.${part2}-${part3}`;
 }
 
+function normalizeReferralEmail(value) {
+  return String(value || '').trim().toLowerCase().replace(/\s+/g, '');
+}
+
+function setReferralEmailValidity() {
+  if (!referralContactEmailInput) return true;
+  referralContactEmailInput.setCustomValidity('');
+  const normalized = normalizeReferralEmail(referralContactEmailInput.value);
+  if (normalized !== referralContactEmailInput.value) {
+    referralContactEmailInput.value = normalized;
+  }
+  const ok = referralContactEmailInput.checkValidity();
+  if (!ok) {
+    referralContactEmailInput.setCustomValidity('Use o formato nome@empresa.com.br');
+  }
+  return ok;
+}
+
 function openReferralModal() {
   if (!referralModal) return;
   referralModal.classList.add('show');
@@ -167,7 +185,11 @@ async function submitReferralForm(event) {
   const company = referralCompanyInput?.value.trim() || '';
   const contactName = referralContactNameInput?.value.trim() || '';
   const contactPhone = referralContactPhoneInput?.value.trim() || '';
-  const contactEmail = referralContactEmailInput?.value.trim() || '';
+  if (!setReferralEmailValidity()) {
+    referralContactEmailInput?.reportValidity();
+    return;
+  }
+  const contactEmail = normalizeReferralEmail(referralContactEmailInput?.value || '');
   const reason = referralReasonInput?.value.trim() || '';
   if (!company || !contactName || !contactPhone || !contactEmail || !reason) {
     if (referralMessage) {
@@ -1343,6 +1365,15 @@ async function initialize() {
   referralContactPhoneInput?.addEventListener('input', () => {
     const digits = somenteDigitos(referralContactPhoneInput.value).slice(0, 11);
     referralContactPhoneInput.value = formatReferralPhone(digits);
+  });
+  referralContactEmailInput?.addEventListener('input', () => {
+    if (!referralContactEmailInput) return;
+    referralContactEmailInput.setCustomValidity('');
+  });
+  referralContactEmailInput?.addEventListener('blur', () => {
+    if (!setReferralEmailValidity()) {
+      referralContactEmailInput?.reportValidity();
+    }
   });
   if (referralContactPhoneInput?.value) {
     const digits = somenteDigitos(referralContactPhoneInput.value).slice(0, 11);
