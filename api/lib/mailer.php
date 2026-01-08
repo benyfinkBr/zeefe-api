@@ -6,12 +6,29 @@ require_once __DIR__ . '/../PHPMailer/src/Exception.php';
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
+function mailer_strip_quotes(string $value): string {
+  $value = trim($value);
+  $len = strlen($value);
+  if ($len >= 2) {
+    $first = $value[0];
+    $last = $value[$len - 1];
+    if (($first === '"' && $last === '"') || ($first === "'" && $last === "'")) {
+      return substr($value, 1, -1);
+    }
+  }
+  return $value;
+}
+
 function mailer_get_config(string $key, string $fallback = ''): string {
   $iniKey = 'zeefe_' . $key;
   $iniVal = ini_get($iniKey);
-  if (is_string($iniVal) && $iniVal !== '') return $iniVal;
+  if (is_string($iniVal) && $iniVal !== '') {
+    return mailer_strip_quotes($iniVal);
+  }
   $envVal = getenv(strtoupper($iniKey));
-  if (is_string($envVal) && $envVal !== '') return $envVal;
+  if (is_string($envVal) && $envVal !== '') {
+    return mailer_strip_quotes($envVal);
+  }
   return $fallback;
 }
 
