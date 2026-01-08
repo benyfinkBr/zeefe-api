@@ -3223,6 +3223,35 @@ body.client-portal-page.client-logged-out .portal-shell {
   flex-wrap: wrap;
 }
 
+body.client-portal-page .portal-header {
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+body.client-portal-page .portal-actions {
+  margin-left: auto;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(160px, 1fr));
+  gap: 12px;
+  align-items: center;
+}
+
+body.client-portal-page .portal-actions .btn,
+body.client-portal-page .portal-actions .referral-slot-top {
+  width: 100%;
+  min-width: 0;
+}
+
+@media (max-width: 900px) {
+  body.client-portal-page .portal-actions {
+    grid-template-columns: 1fr;
+    width: 100%;
+  }
+  body.client-portal-page .portal-header {
+    align-items: flex-start;
+  }
+}
+
 .referral-slot {
   background: var(--brand-sand);
   color: var(--brand-green);
