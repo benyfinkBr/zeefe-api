@@ -58,7 +58,9 @@ let chatPollTimer = null;
 let workshopSelectedDates = [];
 let advHeaderMenuOpen = false;
 let advEventsBound = false;
+const ADV_AUTO_REFRESH_MS = 60000;
 let advAutoRefreshTimer = null;
+let advRefreshRunning = false;
 
 function persistHeaderSessionLocal(session) {
   try {
@@ -1066,10 +1068,12 @@ async function refreshPortalData() {
 function startAdvAutoRefresh() {
   stopAdvAutoRefresh();
   advAutoRefreshTimer = setInterval(() => {
-    if (advClient) {
-      refreshPortalData();
-    }
-  }, 60000);
+    if (!advClient || advRefreshRunning) return;
+    advRefreshRunning = true;
+    Promise.resolve(refreshPortalData()).finally(() => {
+      advRefreshRunning = false;
+    });
+  }, ADV_AUTO_REFRESH_MS);
 }
 
 function stopAdvAutoRefresh() {

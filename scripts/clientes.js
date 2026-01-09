@@ -1,6 +1,7 @@
 const API_BASE = '/api';
 const DEFAULT_START_TIME = '08:00';
 const DEFAULT_END_TIME = '20:00';
+const AUTO_REFRESH_MS = 60000;
 
 let roomsCache = [];
 let companiesCache = [];
@@ -970,6 +971,7 @@ const workshopDetailsCache = new Map();
 let courseModalContext = { courseId: null, course: null, enrollment: null, voucher: null, voucherData: null, focusEnroll: false };
 let headerMenuOpen = false;
 let portalRefreshTimer = null;
+let portalRefreshRunning = false;
 let pendingWorkshopEnrollment = null;
 
 const reservationsContainer = document.getElementById('reservationsContainer');
@@ -1854,9 +1856,15 @@ function startPortalAutoRefresh() {
   stopPortalAutoRefresh();
   portalRefreshTimer = setInterval(() => {
     if (!activeClient) return;
-    carregarReservasGlobais().catch(() => {});
-    carregarCursosCliente();
-  }, 60000);
+    if (portalRefreshRunning) return;
+    portalRefreshRunning = true;
+    Promise.all([
+      atualizarPainel(),
+      carregarCursosCliente()
+    ]).finally(() => {
+      portalRefreshRunning = false;
+    });
+  }, AUTO_REFRESH_MS);
 }
 
 function stopPortalAutoRefresh() {

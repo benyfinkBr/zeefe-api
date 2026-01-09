@@ -107,7 +107,7 @@
     if (accountSection) {
       const clientItems = accountSection.querySelectorAll('[data-zeefe-header-client]');
       clientItems.forEach(item => {
-        item.hidden = !isLogged;
+        item.hidden = !(isLogged && currentSession?.type === 'client');
       });
     }
     if (accountSection) {
@@ -230,6 +230,7 @@
     accountSection?.addEventListener('click', (event) => {
       const target = event.target?.closest('[data-zeefe-header-client]');
       if (!target) return;
+      if (!currentSession || currentSession.type !== 'client') return;
       event.preventDefault();
       const panel = target.getAttribute('data-zeefe-header-client');
       const destino = panel ? `/clientes.html?panel=${encodeURIComponent(panel)}` : '/clientes.html';
@@ -239,6 +240,7 @@
     accountSection?.addEventListener('click', (event) => {
       const target = event.target?.closest('[data-zeefe-header-adv]');
       if (!target) return;
+      if (!currentSession || currentSession.type !== 'advertiser') return;
       event.preventDefault();
       const panel = target.getAttribute('data-zeefe-header-adv');
       const destino = panel ? `/anunciante.html?panel=${encodeURIComponent(panel)}` : '/anunciante.html';

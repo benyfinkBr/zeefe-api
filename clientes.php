@@ -559,10 +559,6 @@
           <h4>Área do Cliente</h4>
           <a href="/clientes.html">Reservas e visitantes</a>
         </div>
-        <div>
-          <h4>Anunciante</h4>
-          <a href="/anunciante.html">Cadastrar salas e cursos</a>
-        </div>
       </div>
     </div>
     <div class="footer-column footer-contact">
