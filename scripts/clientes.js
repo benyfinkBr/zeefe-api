@@ -3707,12 +3707,12 @@ function renderRoomOptions(date) {
   const capacityValue = Number(bookingCapacityFilterInput?.value || 0);
   const amenityIds = Array.from(bookingSelectedAmenities);
   const filtersActive = !!(searchTerm || cityFilter || stateFilter || capacityValue || amenityIds.length);
-  const sortChoice = bookingRoomSortSelect?.value || 'name';
+  const sortChoice = bookingRoomSortSelect?.value || 'price-asc';
   const collator = new Intl.Collator('pt-BR', { sensitivity: 'base' });
   let effectiveSort = sortChoice;
   if (sortChoice === 'distance' && !bookingUserLocation) {
     ensureBookingLocation();
-    effectiveSort = 'name';
+    effectiveSort = 'name-asc';
     if (feedbackEl && !feedbackEl.textContent) {
       feedbackEl.textContent = 'Ative a localização para ordenar por distância.';
     }
@@ -3734,7 +3734,7 @@ function renderRoomOptions(date) {
   const sortRooms = (rooms) => {
     const list = rooms.slice();
     list.sort((a, b) => {
-      if (effectiveSort === 'price') {
+      if (effectiveSort === 'price-asc' || effectiveSort === 'price-desc') {
         const priceA = Number(a.daily_rate);
         const priceB = Number(b.daily_rate);
         const aVal = Number.isFinite(priceA) ? priceA : Number.POSITIVE_INFINITY;
@@ -3752,6 +3752,9 @@ function renderRoomOptions(date) {
       const nameB = (b.name || `Sala #${b.id}`).toString();
       return collator.compare(nameA, nameB);
     });
+    if (effectiveSort === 'price-desc' || effectiveSort === 'name-desc') {
+      list.reverse();
+    }
     return list;
   };
 

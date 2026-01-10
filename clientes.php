@@ -222,8 +222,10 @@
                   </select>
                   <label class="input-label" for="bookingRoomSort">Ordenar por</label>
                   <select id="bookingRoomSort" aria-label="Ordenar por">
-                    <option value="name">Nome</option>
-                    <option value="price">Preço</option>
+                    <option value="price-asc">Preço (baixo - alto)</option>
+                    <option value="price-desc">Preço (alto - baixo)</option>
+                    <option value="name-asc">Nome (A-Z)</option>
+                    <option value="name-desc">Nome (Z-A)</option>
                     <option value="distance">Distância</option>
                   </select>
                   <button id="bookingOpenAdvancedFilters" class="btn btn-secondary btn-sm" type="button">Filtros avançados</button>
