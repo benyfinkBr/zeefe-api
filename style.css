@@ -3308,6 +3308,72 @@ body.client-portal-page.client-logged-out .portal-shell {
   margin-left: 2px;
 }
 
+.reservations-calendar-card .calendar-dot.is-company {
+  background: var(--brand-green);
+}
+
+.reservations-calendar-card .calendar-dot.is-personal {
+  background: #c7b6a5;
+}
+
+.reservations-calendar-card .calendar-day.is-selected {
+  border-color: var(--brand-green);
+  box-shadow: inset 0 0 0 2px rgba(29, 65, 58, 0.2);
+}
+
+.reservations-day-list {
+  background: #fff;
+  border-radius: 16px;
+  padding: 16px;
+  border: 1px solid rgba(29, 65, 58, 0.08);
+  box-shadow: var(--shadow-soft);
+  margin-bottom: 18px;
+}
+
+.reservations-day-list .day-list-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.reservations-day-list .day-list-title {
+  font-weight: 700;
+  color: var(--brand-green);
+}
+
+.reservations-day-list .day-list-items {
+  display: grid;
+  gap: 10px;
+}
+
+.reservations-day-list .day-list-item {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px 12px;
+  padding: 12px;
+  border: 1px solid rgba(29, 65, 58, 0.08);
+  border-radius: 12px;
+  background: var(--brand-cream);
+}
+
+.reservations-day-list .day-item-title {
+  font-weight: 600;
+}
+
+.reservations-day-list .day-item-meta {
+  color: var(--brand-muted);
+  font-size: 0.9rem;
+}
+
+.reservations-day-list .day-item-tags {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
 body.client-portal-page .portal-header {
   flex-wrap: wrap;
   align-items: center;

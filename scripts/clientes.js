@@ -887,6 +887,10 @@ const reservationsCalGrid = document.getElementById('reservationsCalGrid');
 const reservationsCalLabel = document.getElementById('reservationsCalLabel');
 const reservationsCalPrev = document.getElementById('reservationsCalPrev');
 const reservationsCalNext = document.getElementById('reservationsCalNext');
+const reservationsDayList = document.getElementById('reservationsDayList');
+const reservationsDayTitle = document.getElementById('reservationsDayTitle');
+const reservationsDayClear = document.getElementById('reservationsDayClear');
+const reservationsDayItems = document.getElementById('reservationsDayItems');
 
 function prefillPortalRegisterForm() {
   if (!REGISTER_PREFILL_ENABLED || !portalRegisterForm) return;
@@ -978,6 +982,7 @@ let portalRefreshTimer = null;
 let portalRefreshRunning = false;
 let pendingWorkshopEnrollment = null;
 let reservationsCalendarMonth = new Date();
+let selectedReservationsDate = null;
 
 const reservationsContainer = document.getElementById('reservationsContainer');
 const clientMessagesBadge = document.getElementById('clientMessagesBadge');
@@ -1369,6 +1374,7 @@ async function initialize() {
     const digits = somenteDigitos(registerPhoneInput.value).slice(0, 11);
     registerPhoneInput.value = formatPhone(digits);
   });
+  renderReservationsCalendar();
   referralContactPhoneInput?.addEventListener('input', () => {
     const digits = somenteDigitos(referralContactPhoneInput.value).slice(0, 11);
     referralContactPhoneInput.value = formatReferralPhone(digits);
@@ -1452,6 +1458,20 @@ async function initialize() {
   logoutBtn?.addEventListener('click', fazerLogout);
   refreshBtn?.addEventListener('click', () => {
     if (activeClient) atualizarPainel();
+  });
+  reservationsCalGrid?.addEventListener('click', (event) => {
+    const cell = event.target.closest('.calendar-day[data-date]');
+    if (!cell) return;
+    const dateKey = cell.getAttribute('data-date') || '';
+    if (!dateKey) return;
+    selectedReservationsDate = dateKey;
+    renderReservationsCalendar();
+    renderReservas(currentReservations);
+  });
+  reservationsDayClear?.addEventListener('click', () => {
+    selectedReservationsDate = null;
+    renderReservationsCalendar();
+    renderReservas(currentReservations);
   });
   reservationsCalPrev?.addEventListener('click', () => {
     reservationsCalendarMonth = new Date(
@@ -2281,6 +2301,7 @@ function setActivePanel(panelName = 'book') {
     renderBookingCalendar(bookingCurrentMonth);
   } else if (target === 'reservations' && activeClient) {
     carregarReservasGlobais().finally(() => carregarReservas(activeClient.id));
+    renderReservationsCalendar();
   } else if (target === 'visitors' && activeClient) {
     carregarVisitantes(activeClient.id);
   } else if (target === 'courses' && activeClient) {
@@ -2322,13 +2343,68 @@ function setPortalScope(scope) {
 function buildReservationsMap(list) {
   const map = new Map();
   (list || []).forEach(res => {
-    if (!res?.date) return;
-    const key = String(res.date).slice(0, 10);
+    const key = toReservationDateKey(res?.date);
+    if (!key) return;
     const items = map.get(key) || [];
     items.push(res);
     map.set(key, items);
   });
   return map;
+}
+
+function toReservationDateKey(value) {
+  if (!value) return '';
+  const str = String(value);
+  if (/^\d{4}-\d{2}-\d{2}/.test(str)) return str.slice(0, 10);
+  const br = str.match(/^(\d{2})\/(\d{2})\/(\d{4})/);
+  if (br) return `${br[3]}-${br[2]}-${br[1]}`;
+  const parsed = new Date(str);
+  if (!isNaN(parsed.getTime())) return parsed.toISOString().slice(0, 10);
+  return '';
+}
+
+function getFilteredReservations(list) {
+  if (!selectedReservationsDate) return list || [];
+  return (list || []).filter(res => toReservationDateKey(res.date) === selectedReservationsDate);
+}
+
+function renderReservationsDayList(list) {
+  if (!reservationsDayItems || !reservationsDayTitle) return;
+  if (!selectedReservationsDate) {
+    reservationsDayTitle.textContent = 'Selecione um dia no calendário';
+    if (reservationsDayClear) reservationsDayClear.hidden = true;
+    reservationsDayItems.innerHTML = '<div class="rooms-message">Clique em um dia para ver as reservas.</div>';
+    return;
+  }
+  const title = new Intl.DateTimeFormat('pt-BR', { dateStyle: 'full' }).format(new Date(selectedReservationsDate));
+  reservationsDayTitle.textContent = title.charAt(0).toUpperCase() + title.slice(1);
+  if (reservationsDayClear) reservationsDayClear.hidden = false;
+  const items = getFilteredReservations(list);
+  if (!items.length) {
+    reservationsDayItems.innerHTML = '<div class="rooms-message">Nenhuma reserva para este dia.</div>';
+    return;
+  }
+  reservationsDayItems.innerHTML = items.map(res => {
+    const room = buscarSala(res.room_id);
+    const roomName = escapeHtml(res.room_name || room?.name || `Sala #${res.room_id}`);
+    const timeRange = escapeHtml(formatTimeRange(res.time_start, res.time_end));
+    const statusText = escapeHtml(statusLabel(res.status));
+    const statusClassName = statusClass(res.status);
+    const isCompany = Boolean(res.company_id);
+    const typeLabel = isCompany ? 'Empresa' : 'Pessoa física';
+    return `
+      <div class="day-list-item">
+        <div>
+          <div class="day-item-title">${roomName}</div>
+          <div class="day-item-meta">${timeRange}</div>
+        </div>
+        <div class="day-item-tags">
+          <span class="status-badge ${statusClassName}">${statusText}</span>
+          <span class="table-chip">${typeLabel}</span>
+        </div>
+      </div>
+    `;
+  }).join('');
 }
 
 function renderReservationsCalendar() {
@@ -2359,10 +2435,10 @@ function renderReservationsCalendar() {
     const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
     const items = map.get(dateKey) || [];
     const isToday = dateKey === todayKey;
-    const dots = items.slice(0, 3).map((res, idx) => {
-      const status = String(res.status || '').toLowerCase();
-      const highlight = ['confirmada', 'pagamento_confirmado', 'em_andamento'].includes(status);
-      return `<span class="calendar-dot${highlight ? ' is-highlight' : ''}" aria-hidden="true"></span>`;
+    const dots = items.slice(0, 3).map(res => {
+      const isCompany = Boolean(res.company_id);
+      const dotClass = isCompany ? ' is-company' : ' is-personal';
+      return `<span class="calendar-dot${dotClass}" aria-hidden="true"></span>`;
     }).join('');
     const extraCount = items.length > 3 ? ` +${items.length - 3}` : '';
     const title = items.map(res => {
@@ -2372,7 +2448,7 @@ function renderReservationsCalendar() {
       return `${roomName} • ${time}`;
     }).join('\n');
     html += `
-      <div class="calendar-day${isToday ? ' is-today' : ''}" title="${escapeHtml(title)}">
+      <div class="calendar-day${isToday ? ' is-today' : ''}${selectedReservationsDate === dateKey ? ' is-selected' : ''}" data-date="${dateKey}" title="${escapeHtml(title)}">
         <span class="calendar-day-number">${day}</span>
         <div class="calendar-dots">${dots}${extraCount ? `<span class="calendar-dot-text">${extraCount}</span>` : ''}</div>
       </div>`;
@@ -2385,6 +2461,7 @@ function renderReservationsCalendar() {
   }
 
   reservationsCalGrid.innerHTML = html;
+  renderReservationsDayList(currentReservations);
 }
 
 async function carregarEmpresaOverview() {
@@ -4196,11 +4273,15 @@ async function carregarReservas(clientId) {
 
 function renderReservas(reservas) {
   if (!reservationsContainer) return;
-  if (!reservas.length) {
-    reservationsContainer.innerHTML = '<div class=\"rooms-message\">Nenhuma reserva cadastrada.</div>';
+  const list = getFilteredReservations(reservas);
+  if (!list.length) {
+    const emptyMsg = selectedReservationsDate
+      ? 'Nenhuma reserva para este dia.'
+      : 'Nenhuma reserva cadastrada.';
+    reservationsContainer.innerHTML = `<div class="rooms-message">${emptyMsg}</div>`;
     return;
   }
-  const rows = reservas.map(reserva => {
+  const rows = list.map(reserva => {
     const statusNormalized = (reserva.status || '').toLowerCase();
     const room = buscarSala(reserva.room_id);
     const roomName = reserva.room_name || room?.name || `Sala #${reserva.room_id}`;
