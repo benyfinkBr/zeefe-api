@@ -2368,6 +2368,27 @@ function getFilteredReservations(list) {
   return (list || []).filter(res => toReservationDateKey(res.date) === selectedReservationsDate);
 }
 
+function formatMonthYearPt(date) {
+  const months = ['janeiro','fevereiro','marco','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+  const month = months[date.getMonth()] || '';
+  return `${month} de ${date.getFullYear()}`;
+}
+
+function zeroPad(value) {
+  const num = Number(value) || 0;
+  return num < 10 ? `0${num}` : String(num);
+}
+
+function formatFullDatePt(dateKey) {
+  const d = new Date(dateKey);
+  if (isNaN(d.getTime())) return '';
+  const weekdays = ['domingo','segunda-feira','terca-feira','quarta-feira','quinta-feira','sexta-feira','sabado'];
+  const months = ['janeiro','fevereiro','marco','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+  const weekday = weekdays[d.getDay()] || '';
+  const month = months[d.getMonth()] || '';
+  return `${weekday}, ${zeroPad(d.getDate())} de ${month} de ${d.getFullYear()}`;
+}
+
 function renderReservationsDayList(list) {
   if (!reservationsDayItems || !reservationsDayTitle) return;
   if (!selectedReservationsDate) {
@@ -2376,8 +2397,8 @@ function renderReservationsDayList(list) {
     reservationsDayItems.innerHTML = '<div class="rooms-message">Clique em um dia para ver as reservas.</div>';
     return;
   }
-  const title = new Intl.DateTimeFormat('pt-BR', { dateStyle: 'full' }).format(new Date(selectedReservationsDate));
-  reservationsDayTitle.textContent = title.charAt(0).toUpperCase() + title.slice(1);
+  const title = formatFullDatePt(selectedReservationsDate);
+  reservationsDayTitle.textContent = title ? (title.charAt(0).toUpperCase() + title.slice(1)) : selectedReservationsDate;
   if (reservationsDayClear) reservationsDayClear.hidden = false;
   const items = getFilteredReservations(list);
   if (!items.length) {
@@ -2420,8 +2441,8 @@ function renderReservationsCalendar() {
   const prevMonthLast = new Date(year, month, 0).getDate();
   const todayKey = new Date().toISOString().slice(0, 10);
   const map = buildReservationsMap(currentReservations);
-  const monthLabel = new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric' }).format(firstDay);
-  reservationsCalLabel.textContent = monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1);
+  const monthLabel = formatMonthYearPt(firstDay);
+  reservationsCalLabel.textContent = monthLabel ? (monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1)) : '';
 
   const weekdayLabels = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sab', 'Dom'];
   let html = weekdayLabels.map(label => `<div class="calendar-weekday">${label}</div>`).join('');
@@ -2432,7 +2453,7 @@ function renderReservationsCalendar() {
   }
 
   for (let day = 1; day <= totalDays; day++) {
-    const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    const dateKey = `${year}-${zeroPad(month + 1)}-${zeroPad(day)}`;
     const items = map.get(dateKey) || [];
     const isToday = dateKey === todayKey;
     const dots = items.slice(0, 3).map(res => {
