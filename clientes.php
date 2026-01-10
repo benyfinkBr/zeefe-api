@@ -275,6 +275,14 @@
             <h2>Minhas Reservas</h2>
             <button type="button" class="btn btn-secondary" id="newReservationBtn">Nova reserva</button>
           </div>
+          <div class="reservations-calendar-card">
+            <div class="calendar-header">
+              <button type="button" class="btn btn-secondary btn-sm" id="reservationsCalPrev" aria-label="Mês anterior">◀</button>
+              <div class="calendar-label" id="reservationsCalLabel"></div>
+              <button type="button" class="btn btn-secondary btn-sm" id="reservationsCalNext" aria-label="Próximo mês">▶</button>
+            </div>
+            <div class="calendar-grid" id="reservationsCalGrid"></div>
+          </div>
           <div id="reservationsContainer"></div>
         </section>
 

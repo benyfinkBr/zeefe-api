@@ -883,6 +883,10 @@ const inviteInboxModal = document.getElementById('inviteInboxModal');
 const inviteInboxList = document.getElementById('inviteInboxList');
 const inviteInboxClose = document.getElementById('inviteInboxClose');
 const inviteInboxDismiss = document.getElementById('inviteInboxDismiss');
+const reservationsCalGrid = document.getElementById('reservationsCalGrid');
+const reservationsCalLabel = document.getElementById('reservationsCalLabel');
+const reservationsCalPrev = document.getElementById('reservationsCalPrev');
+const reservationsCalNext = document.getElementById('reservationsCalNext');
 
 function prefillPortalRegisterForm() {
   if (!REGISTER_PREFILL_ENABLED || !portalRegisterForm) return;
@@ -973,6 +977,7 @@ let headerMenuOpen = false;
 let portalRefreshTimer = null;
 let portalRefreshRunning = false;
 let pendingWorkshopEnrollment = null;
+let reservationsCalendarMonth = new Date();
 
 const reservationsContainer = document.getElementById('reservationsContainer');
 const clientMessagesBadge = document.getElementById('clientMessagesBadge');
@@ -1447,6 +1452,22 @@ async function initialize() {
   logoutBtn?.addEventListener('click', fazerLogout);
   refreshBtn?.addEventListener('click', () => {
     if (activeClient) atualizarPainel();
+  });
+  reservationsCalPrev?.addEventListener('click', () => {
+    reservationsCalendarMonth = new Date(
+      reservationsCalendarMonth.getFullYear(),
+      reservationsCalendarMonth.getMonth() - 1,
+      1
+    );
+    renderReservationsCalendar();
+  });
+  reservationsCalNext?.addEventListener('click', () => {
+    reservationsCalendarMonth = new Date(
+      reservationsCalendarMonth.getFullYear(),
+      reservationsCalendarMonth.getMonth() + 1,
+      1
+    );
+    renderReservationsCalendar();
   });
 
   if (bookingForm) {
@@ -2296,6 +2317,74 @@ function setPortalScope(scope) {
   }
   syncHeaderScopeButtons();
   updateCompanyAccessUi();
+}
+
+function buildReservationsMap(list) {
+  const map = new Map();
+  (list || []).forEach(res => {
+    if (!res?.date) return;
+    const key = String(res.date).slice(0, 10);
+    const items = map.get(key) || [];
+    items.push(res);
+    map.set(key, items);
+  });
+  return map;
+}
+
+function renderReservationsCalendar() {
+  if (!reservationsCalGrid || !reservationsCalLabel) return;
+  const monthDate = new Date(reservationsCalendarMonth);
+  if (!Number.isFinite(monthDate.getTime())) return;
+  const year = monthDate.getFullYear();
+  const month = monthDate.getMonth();
+  const firstDay = new Date(year, month, 1);
+  const lastDay = new Date(year, month + 1, 0);
+  const totalDays = lastDay.getDate();
+  const startWeekday = (firstDay.getDay() + 6) % 7; // Monday start
+  const prevMonthLast = new Date(year, month, 0).getDate();
+  const todayKey = new Date().toISOString().slice(0, 10);
+  const map = buildReservationsMap(currentReservations);
+  const monthLabel = new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric' }).format(firstDay);
+  reservationsCalLabel.textContent = monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1);
+
+  const weekdayLabels = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sab', 'Dom'];
+  let html = weekdayLabels.map(label => `<div class="calendar-weekday">${label}</div>`).join('');
+
+  for (let i = 0; i < startWeekday; i++) {
+    const dayNum = prevMonthLast - startWeekday + i + 1;
+    html += `<div class="calendar-day is-muted"><span class="calendar-day-number">${dayNum}</span></div>`;
+  }
+
+  for (let day = 1; day <= totalDays; day++) {
+    const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    const items = map.get(dateKey) || [];
+    const isToday = dateKey === todayKey;
+    const dots = items.slice(0, 3).map((res, idx) => {
+      const status = String(res.status || '').toLowerCase();
+      const highlight = ['confirmada', 'pagamento_confirmado', 'em_andamento'].includes(status);
+      return `<span class="calendar-dot${highlight ? ' is-highlight' : ''}" aria-hidden="true"></span>`;
+    }).join('');
+    const extraCount = items.length > 3 ? ` +${items.length - 3}` : '';
+    const title = items.map(res => {
+      const room = buscarSala(res.room_id);
+      const roomName = res.room_name || room?.name || `Sala #${res.room_id}`;
+      const time = formatTimeRange(res.time_start, res.time_end);
+      return `${roomName} • ${time}`;
+    }).join('\n');
+    html += `
+      <div class="calendar-day${isToday ? ' is-today' : ''}" title="${escapeHtml(title)}">
+        <span class="calendar-day-number">${day}</span>
+        <div class="calendar-dots">${dots}${extraCount ? `<span class="calendar-dot-text">${extraCount}</span>` : ''}</div>
+      </div>`;
+  }
+
+  const filled = startWeekday + totalDays;
+  const remaining = (7 - (filled % 7)) % 7;
+  for (let i = 0; i < remaining; i++) {
+    html += `<div class="calendar-day is-muted"><span class="calendar-day-number">${i + 1}</span></div>`;
+  }
+
+  reservationsCalGrid.innerHTML = html;
 }
 
 async function carregarEmpresaOverview() {
@@ -4094,10 +4183,14 @@ async function carregarReservas(clientId) {
       visitor_names: Array.isArray(item.visitor_names) ? item.visitor_names : []
     }));
     renderReservas(currentReservations);
+    renderReservationsCalendar();
     renderRoomOptions(bookingDateInput?.value || '');
   } catch (err) {
     console.error(err);
     reservationsContainer.innerHTML = '<div class=\"rooms-message\">Não foi possível carregar as reservas.</div>';
+    if (reservationsCalGrid) {
+      reservationsCalGrid.innerHTML = '<div class="rooms-message">Não foi possível carregar o calendário.</div>';
+    }
   }
 }
 
