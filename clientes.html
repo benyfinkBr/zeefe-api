@@ -278,6 +278,22 @@
                 <section class="booking-step" data-step-index="1" hidden>
                   <h4>Salas disponíveis</h4>
                   <p class="form-help">Selecione uma sala disponível para a data escolhida.</p>
+                  <div class="booking-room-toolbar">
+                    <div class="booking-room-filters">
+                      <label class="input-label" for="bookingRoomSearch">Filtro</label>
+                      <input type="search" id="bookingRoomSearch" placeholder="Buscar por nome, bairro ou cidade" />
+                      <label class="input-label" for="bookingRoomSort">Ordenar por</label>
+                      <select id="bookingRoomSort">
+                        <option value="name">Nome</option>
+                        <option value="price">Preço</option>
+                        <option value="distance">Distância</option>
+                      </select>
+                    </div>
+                    <div class="booking-room-view">
+                      <button type="button" class="btn btn-secondary btn-sm active" id="bookingRoomViewGrid">Grid</button>
+                      <button type="button" class="btn btn-secondary btn-sm" id="bookingRoomViewList">Lista</button>
+                    </div>
+                  </div>
                   <div id="bookingRoomsMap" class="rooms-map booking-rooms-map" role="region" aria-label="Mapa de salas disponíveis"></div>
                   <div id="bookingRoomOptions" class="booking-room-options"></div>
                   <div id="bookingRoomFeedback" class="rooms-message"></div>

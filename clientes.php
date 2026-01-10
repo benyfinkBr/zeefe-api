@@ -203,8 +203,24 @@
             </section>
 
             <section class="booking-step" hidden>
+              <div class="booking-room-toolbar">
+                <div class="booking-room-filters">
+                  <label class="input-label" for="bookingRoomSearch">Filtro</label>
+                  <input type="search" id="bookingRoomSearch" placeholder="Buscar por nome, bairro ou cidade" />
+                  <label class="input-label" for="bookingRoomSort">Ordenar por</label>
+                  <select id="bookingRoomSort">
+                    <option value="name">Nome</option>
+                    <option value="price">Preço</option>
+                    <option value="distance">Distância</option>
+                  </select>
+                </div>
+                <div class="booking-room-view">
+                  <button type="button" class="btn btn-secondary btn-sm active" id="bookingRoomViewGrid">Grid</button>
+                  <button type="button" class="btn btn-secondary btn-sm" id="bookingRoomViewList">Lista</button>
+                </div>
+              </div>
               <div id="bookingRoomFeedback" class="rooms-message"></div>
-              <div id="bookingRoomOptions" class="rooms-grid"></div>
+              <div id="bookingRoomOptions" class="booking-room-options"></div>
               <div id="bookingRoomsMap" class="rooms-map"></div>
             </section>
 

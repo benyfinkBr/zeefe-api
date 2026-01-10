@@ -956,13 +956,21 @@ const bookingPolicyLabelInput = document.getElementById('bookingPolicyLabel');
 const bookingPolicyCancelDaysInput = document.getElementById('bookingPolicyCancelDays');
 const bookingPolicyCancelFeeInput = document.getElementById('bookingPolicyCancelFee');
 const bookingPolicyChargeTimingInput = document.getElementById('bookingPolicyChargeTiming');
-// Filtros removidos do portal para simplificação
-const bookingRoomSearchInput = null;
+const bookingRoomSearchInput = document.getElementById('bookingRoomSearch');
+const bookingRoomSortSelect = document.getElementById('bookingRoomSort');
+const bookingRoomViewGridBtn = document.getElementById('bookingRoomViewGrid');
+const bookingRoomViewListBtn = document.getElementById('bookingRoomViewList');
+const bookingRoomOptionsInline = document.getElementById('bookingRoomOptionsInline');
+const roomPickerInline = document.getElementById('roomPickerInline');
 const bookingCityFilterInput = null;
 const bookingStateFilterInput = null;
 const bookingAmenityFilters = null;
 const bookingClearFiltersBtn = null;
 let bookingSelectedAmenities = new Set();
+let bookingRoomViewMode = 'grid';
+let bookingUserLocation = null;
+let bookingLocationStatus = 'idle';
+const bookingRoomDistanceCache = new Map();
 const bookingTitleInput = bookingForm?.querySelector('input[name="title"]');
 const bookingDescriptionInput = bookingForm?.querySelector('textarea[name="description"]');
 const bookingVoucherInput = document.getElementById('bookingVoucherCode');
@@ -1510,7 +1518,10 @@ async function initialize() {
   bookingPrevMonthBtn?.addEventListener('click', () => changeCalendarMonth(-1));
   bookingNextMonthBtn?.addEventListener('click', () => changeCalendarMonth(1));
   bookingRoomSearchInput?.addEventListener('input', () => renderRoomOptions(bookingDateInput?.value || ''));
-  // Sem filtros no portal
+  bookingRoomSortSelect?.addEventListener('change', () => renderRoomOptions(bookingDateInput?.value || ''));
+  bookingRoomViewGridBtn?.addEventListener('click', () => setBookingRoomView('grid'));
+  bookingRoomViewListBtn?.addEventListener('click', () => setBookingRoomView('list'));
+  setBookingRoomView(bookingRoomViewMode);
   bookingTitleInput?.addEventListener('input', onBookingDetailsChange);
   bookingDescriptionInput?.addEventListener('input', onBookingDetailsChange);
   bookingCardSelect?.addEventListener('change', () => {
@@ -3517,6 +3528,68 @@ function validateBookingStep(step) {
   return true;
 }
 
+function setBookingRoomView(mode) {
+  bookingRoomViewMode = mode === 'list' ? 'list' : 'grid';
+  const targets = [bookingRoomOptions, bookingRoomOptionsInline].filter(Boolean);
+  targets.forEach(el => {
+    el.classList.toggle('is-list', bookingRoomViewMode === 'list');
+  });
+  bookingRoomViewGridBtn?.classList.toggle('active', bookingRoomViewMode === 'grid');
+  bookingRoomViewListBtn?.classList.toggle('active', bookingRoomViewMode === 'list');
+}
+
+function getRoomLatLon(room) {
+  const lat = Number(room.lat || room.latitude || room.latitud);
+  const lon = Number(room.lon || room.lng || room.longitude);
+  if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
+  return { lat, lon };
+}
+
+function haversineKm(a, b) {
+  const toRad = (deg) => deg * Math.PI / 180;
+  const dLat = toRad(b.lat - a.lat);
+  const dLon = toRad(b.lon - a.lon);
+  const lat1 = toRad(a.lat);
+  const lat2 = toRad(b.lat);
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLon / 2) ** 2;
+  return 6371 * (2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h)));
+}
+
+function ensureBookingLocation() {
+  if (bookingUserLocation || bookingLocationStatus === 'pending') return;
+  if (!navigator.geolocation) {
+    bookingLocationStatus = 'denied';
+    return;
+  }
+  bookingLocationStatus = 'pending';
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      bookingUserLocation = { lat: pos.coords.latitude, lon: pos.coords.longitude };
+      bookingLocationStatus = 'ready';
+      bookingRoomDistanceCache.clear();
+      renderRoomOptions(bookingDateInput?.value || '');
+    },
+    () => {
+      bookingLocationStatus = 'denied';
+      if (bookingRoomFeedback && !bookingRoomFeedback.textContent) {
+        bookingRoomFeedback.textContent = 'Para ordenar por distância, permita a localização no navegador.';
+      }
+    },
+    { maximumAge: 600000, timeout: 5000 }
+  );
+}
+
+function getRoomDistanceKm(room) {
+  if (!bookingUserLocation) return null;
+  const cacheKey = String(room.id || '');
+  if (bookingRoomDistanceCache.has(cacheKey)) return bookingRoomDistanceCache.get(cacheKey);
+  const coords = getRoomLatLon(room);
+  if (!coords) return null;
+  const value = haversineKm(bookingUserLocation, coords);
+  bookingRoomDistanceCache.set(cacheKey, value);
+  return value;
+}
+
 function renderRoomOptions(date) {
   const optionsEl = bookingRoomOptions;
   const feedbackEl = bookingRoomFeedback;
@@ -3531,8 +3604,15 @@ function renderRoomOptions(date) {
     }
     // Sem data: lista todas as salas para não travar o fluxo
     optionsEl.innerHTML = '';
-    if (feedbackEl) feedbackEl.textContent = 'Selecione uma sala; a disponibilidade será validada no envio.';
-    const roomsSorted = roomsCache.slice().sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'pt-BR'));
+    if (feedbackEl && !feedbackEl.textContent) {
+      feedbackEl.textContent = 'Selecione uma sala; a disponibilidade será validada no envio.';
+    }
+    const roomsSorted = sortRooms(roomsCache.filter(matchesSearch));
+    if (!roomsSorted.length) {
+      if (feedbackEl) feedbackEl.textContent = 'Nenhuma sala encontrada com o filtro atual.';
+      renderBookingMapMarkers([]);
+      return;
+    }
     roomsSorted.forEach(room => {
       const button = document.createElement('button');
       button.type = 'button';
@@ -3542,9 +3622,12 @@ function renderRoomOptions(date) {
       const cityText = room.city ? escapeHtml(room.city) : '--';
       const stateText = room.state || room.uf ? escapeHtml((room.state || room.uf).toUpperCase()) : '--';
       const priceHtml = room.daily_rate ? `<span class=\"price\"><strong>${formatCurrency(room.daily_rate)}</strong> / diária</span>` : '';
+      const distanceKm = getRoomDistanceKm(room);
+      const distanceHtml = Number.isFinite(distanceKm) ? `<span class=\"distance\">${distanceKm.toFixed(1)} km</span>` : '';
       button.innerHTML = `
         <strong>${escapeHtml(room.name || `Sala #${room.id}`)}</strong>
         <span class=\"meta\">${cityText} ${stateText ? ' - ' + stateText : ''} · ${capacityText} pessoas</span>
+        ${distanceHtml}
         ${priceHtml}
       `;
       button.addEventListener('click', () => selectRoomOption(room.id));
@@ -3565,22 +3648,60 @@ function renderRoomOptions(date) {
   }
   const normalize = (v) => (v || '').toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
   const searchTerm = normalize(bookingRoomSearchInput?.value || '');
-  const cityFilter = normalize(bookingCityFilterInput?.value || '');
-  const stateFilter = normalize(bookingStateFilterInput?.value || '');
-  const amenityIds = Array.from(bookingSelectedAmenities);
+  const sortChoice = bookingRoomSortSelect?.value || 'name';
+  const collator = new Intl.Collator('pt-BR', { sensitivity: 'base' });
+  let effectiveSort = sortChoice;
+  if (sortChoice === 'distance' && !bookingUserLocation) {
+    ensureBookingLocation();
+    effectiveSort = 'name';
+    if (feedbackEl && !feedbackEl.textContent) {
+      feedbackEl.textContent = 'Ative a localização para ordenar por distância.';
+    }
+  }
+
+  const matchesSearch = (room) => {
+    if (!searchTerm) return true;
+    const hay = normalize(`${room.name || ''} ${room.city || ''} ${room.state || room.uf || ''} ${room.location || ''}`);
+    return hay.includes(searchTerm);
+  };
+
+  const sortRooms = (rooms) => {
+    const list = rooms.slice();
+    list.sort((a, b) => {
+      if (effectiveSort === 'price') {
+        const priceA = Number(a.daily_rate);
+        const priceB = Number(b.daily_rate);
+        const aVal = Number.isFinite(priceA) ? priceA : Number.POSITIVE_INFINITY;
+        const bVal = Number.isFinite(priceB) ? priceB : Number.POSITIVE_INFINITY;
+        if (aVal !== bVal) return aVal - bVal;
+      }
+      if (effectiveSort === 'distance') {
+        const distA = getRoomDistanceKm(a);
+        const distB = getRoomDistanceKm(b);
+        const aVal = Number.isFinite(distA) ? distA : Number.POSITIVE_INFINITY;
+        const bVal = Number.isFinite(distB) ? distB : Number.POSITIVE_INFINITY;
+        if (aVal !== bVal) return aVal - bVal;
+      }
+      const nameA = (a.name || `Sala #${a.id}`).toString();
+      const nameB = (b.name || `Sala #${b.id}`).toString();
+      return collator.compare(nameA, nameB);
+    });
+    return list;
+  };
 
   // Listar todas as salas disponíveis na data selecionada (sem filtros)
 
-  const availableRooms = getAvailableRoomsForDate(date, reservationIdInput?.value).sort((a, b) => {
-    const nameA = (a.name || `Sala #${a.id}`).toString().toLowerCase();
-    const nameB = (b.name || `Sala #${b.id}`).toString().toLowerCase();
-    return nameA.localeCompare(nameB, 'pt-BR');
-  });
+  const availableRooms = sortRooms(getAvailableRoomsForDate(date, reservationIdInput?.value).filter(matchesSearch));
   if (!availableRooms.length) {
+    if (searchTerm) {
+      if (bookingRoomFeedback) bookingRoomFeedback.textContent = 'Nenhuma sala encontrada com o filtro atual.';
+      renderBookingMapMarkers([]);
+      return;
+    }
     // Segurança máxima: se não detectou disponibilidade, ainda assim mostro TODAS as salas cadastradas
     // para permitir solicitar a reserva e o admin confirmar. Isso evita a sensação de vazio.
     if (bookingRoomFeedback) bookingRoomFeedback.textContent = 'Nenhuma disponibilidade detectada nesta data. Você ainda pode selecionar uma sala e enviar a solicitação.';
-    const fallbackRooms = roomsCache.slice().sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'pt-BR'));
+    const fallbackRooms = sortRooms(roomsCache.filter(matchesSearch));
     const selectedId = bookingRoomHiddenInput?.value ? String(bookingRoomHiddenInput.value) : '';
     let hasSelected = false;
     fallbackRooms.forEach(room => {
@@ -3592,9 +3713,12 @@ function renderRoomOptions(date) {
       const cityText = room.city ? escapeHtml(room.city) : '--';
       const stateText = room.state || room.uf ? escapeHtml((room.state || room.uf).toUpperCase()) : '--';
       const priceHtml = room.daily_rate ? `<span class=\"price\"><strong>${formatCurrency(room.daily_rate)}</strong> / diária</span>` : '';
+      const distanceKm = getRoomDistanceKm(room);
+      const distanceHtml = Number.isFinite(distanceKm) ? `<span class=\"distance\">${distanceKm.toFixed(1)} km</span>` : '';
       button.innerHTML = `
         <strong>${escapeHtml(room.name || `Sala #${room.id}`)}</strong>
         <span class=\"meta\">${cityText} - ${stateText} · ${capacityText} pessoas</span>
+        ${distanceHtml}
         ${priceHtml}
       `;
       if (selectedId && selectedId === String(room.id)) {
@@ -3623,10 +3747,12 @@ function renderRoomOptions(date) {
     const cityText = room.city ? escapeHtml(room.city) : '--';
     const stateText = room.state || room.uf ? escapeHtml((room.state || room.uf).toUpperCase()) : '--';
     const priceHtml = room.daily_rate ? `<span class=\"price\"><strong>${formatCurrency(room.daily_rate)}</strong> / diária</span>` : '';
-    const amenityNames = Array.isArray(room.amenities) ? room.amenities.slice(0,4).map(id => escapeHtml(String(id))).join(', ') : '';
+    const distanceKm = getRoomDistanceKm(room);
+    const distanceHtml = Number.isFinite(distanceKm) ? `<span class=\"distance\">${distanceKm.toFixed(1)} km</span>` : '';
     button.innerHTML = `
       <strong>${escapeHtml(room.name || `Sala #${room.id}`)}</strong>
       <span class=\"meta\">${cityText} - ${stateText} · ${capacityText} pessoas</span>
+      ${distanceHtml}
       ${priceHtml}
     `;
     if (selectedId && selectedId === String(room.id)) {
@@ -3654,6 +3780,20 @@ function initBookingMapIfNeeded() {
   bookingMarkersLayer = L.layerGroup().addTo(bookingMap);
 }
 
+function attemptBookingFromMap(roomId) {
+  if (!roomId) return;
+  selectRoomOption(roomId);
+  if (bookingSearchMode === 'room') {
+    setBookingStep(1);
+    return;
+  }
+  if (!isStepComplete(1)) {
+    if (bookingMessage) bookingMessage.textContent = 'Selecione a data da reserva antes de continuar.';
+    return;
+  }
+  setBookingStep(2);
+}
+
 function renderBookingMapMarkers(rooms) {
   if (!bookingRoomsMapEl || typeof L === 'undefined') return;
   initBookingMapIfNeeded();
@@ -3668,9 +3808,27 @@ function renderBookingMapMarkers(rooms) {
     const name = escapeHtml(room.name || `Sala #${room.id}`);
     const city = escapeHtml(room.city || '');
     const uf = escapeHtml(room.state || room.uf || '');
-    marker.bindPopup(`<strong>${name}</strong><br>${city}${uf ? ' - ' + uf : ''}`);
+    const popupHtml =
+      `<strong>${name}</strong><br>${city}${uf ? ' - ' + uf : ''}<br>` +
+      `<div style="margin-top:6px;display:flex;gap:8px;flex-wrap:wrap">` +
+      `<button type="button" class="btn btn-secondary btn-sm" data-room-select="${room.id}">Selecionar</button>` +
+      `<button type="button" class="btn btn-primary btn-sm" data-room-reserve="${room.id}">Reservar</button>` +
+      `</div>`;
+    marker.bindPopup(popupHtml);
     marker.on('click', () => {
       selectRoomOption(room.id);
+    });
+    marker.on('popupopen', (e) => {
+      const popupEl = e.popup.getElement();
+      if (!popupEl) return;
+      const selectBtn = popupEl.querySelector(`button[data-room-select="${room.id}"]`);
+      if (selectBtn) {
+        selectBtn.addEventListener('click', () => selectRoomOption(room.id), { once: true });
+      }
+      const reserveBtn = popupEl.querySelector(`button[data-room-reserve="${room.id}"]`);
+      if (reserveBtn) {
+        reserveBtn.addEventListener('click', () => attemptBookingFromMap(room.id), { once: true });
+      }
     });
     marker.addTo(bookingMarkersLayer);
     bounds.push([lat, lon]);
