@@ -276,25 +276,40 @@
                 </section>
 
                 <section class="booking-step" data-step-index="1" hidden>
-                  <h4>Salas disponíveis</h4>
-                  <p class="form-help">Selecione uma sala disponível para a data escolhida.</p>
-                  <div class="booking-room-toolbar">
-                    <div class="booking-room-filters">
-                      <label class="input-label" for="bookingRoomSearch">Filtro</label>
-                      <input type="search" id="bookingRoomSearch" placeholder="Buscar por nome, bairro ou cidade" />
+                  <div id="bookingRoomsMap" class="rooms-map booking-rooms-map" role="region" aria-label="Mapa de salas disponíveis"></div>
+                  <section class="rooms-filters booking-room-filters" aria-label="Filtros de salas">
+                    <div class="filters-wrap">
+                      <input id="bookingRoomSearch" type="text" placeholder="Buscar por nome ou local" aria-label="Buscar por nome ou local" />
+                      <select id="bookingStateFilter" aria-label="Estado (UF)">
+                        <option value="">UF (todas)</option>
+                      </select>
+                      <select id="bookingCityFilter" aria-label="Cidade">
+                        <option value="">Cidade (todas)</option>
+                      </select>
+                      <select id="bookingCapacityFilter" aria-label="Capacidade">
+                        <option value="">Capacidade (todas)</option>
+                        <option value="10">Até 10</option>
+                        <option value="20">Até 20</option>
+                        <option value="50">Até 50</option>
+                        <option value="51">Mais de 50</option>
+                      </select>
                       <label class="input-label" for="bookingRoomSort">Ordenar por</label>
-                      <select id="bookingRoomSort">
+                      <select id="bookingRoomSort" aria-label="Ordenar por">
                         <option value="name">Nome</option>
                         <option value="price">Preço</option>
                         <option value="distance">Distância</option>
                       </select>
+                      <button id="bookingOpenAdvancedFilters" class="btn btn-secondary btn-sm" type="button">Filtros avançados</button>
+                      <button id="bookingClearFilters" class="btn btn-secondary btn-sm" type="button">Limpar filtros</button>
                     </div>
+                  </section>
+                  <div class="booking-room-view-row">
+                    <span class="input-label">Visualização</span>
                     <div class="booking-room-view">
                       <button type="button" class="btn btn-secondary btn-sm active" id="bookingRoomViewGrid">Grid</button>
                       <button type="button" class="btn btn-secondary btn-sm" id="bookingRoomViewList">Lista</button>
                     </div>
                   </div>
-                  <div id="bookingRoomsMap" class="rooms-map booking-rooms-map" role="region" aria-label="Mapa de salas disponíveis"></div>
                   <div id="bookingRoomOptions" class="booking-room-options"></div>
                   <div id="bookingRoomFeedback" class="rooms-message"></div>
                 </section>
@@ -932,6 +947,25 @@
           <div style="display:flex; gap:10px; justify-content:flex-end; flex-wrap:wrap">
             <button type="button" class="btn btn-secondary" id="bookingVisitorsAddBtn">Adicionar convidados</button>
             <button type="button" class="btn btn-primary" id="bookingVisitorsContinueBtn">Continuar assim mesmo</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="bookingAdvancedFiltersModal" aria-hidden="true">
+    <div class="modal-dialog modal-small advanced-filters-dialog" role="dialog" aria-modal="true" aria-labelledby="bookingAdvancedFiltersTitle">
+      <button class="modal-close" type="button" aria-label="Fechar" id="bookingAdvancedFiltersClose">&times;</button>
+      <div class="modal-body">
+        <div class="modal-info advanced-filters-modal">
+          <h2 id="bookingAdvancedFiltersTitle">Filtros avançados</h2>
+          <div class="advanced-filters-section">
+            <h4>Comodidades</h4>
+            <div id="bookingAmenityFilters" class="checkbox-grid" aria-label="Comodidades"></div>
+          </div>
+          <div class="advanced-filters-actions">
+            <button id="bookingAdvancedFiltersClear" class="btn btn-secondary" type="button">Limpar</button>
+            <button id="bookingAdvancedFiltersApply" class="btn btn-primary" type="button">Aplicar</button>
           </div>
         </div>
       </div>

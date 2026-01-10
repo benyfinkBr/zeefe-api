@@ -3628,21 +3628,7 @@ body.client-portal-page .portal-actions .referral-slot-top {
 }
 
 .booking-room-filters {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px 12px;
-}
-
-.booking-room-filters .input-label {
-  font-size: 0.85rem;
-  color: var(--brand-muted);
-  font-weight: 600;
-}
-
-.booking-room-filters input,
-.booking-room-filters select {
-  min-width: 180px;
+  margin: 6px 0 4px;
 }
 
 .booking-room-view {
@@ -3655,6 +3641,20 @@ body.client-portal-page .portal-actions .referral-slot-top {
   background: var(--brand-green);
   color: var(--brand-cream);
   border-color: var(--brand-green);
+}
+
+.booking-room-view-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  margin: 4px 0 6px;
+}
+
+.booking-room-view-row .input-label {
+  font-size: 0.85rem;
+  color: var(--brand-muted);
+  font-weight: 600;
 }
 
 .booking-room-options.is-list {

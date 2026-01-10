@@ -962,10 +962,16 @@ const bookingRoomViewGridBtn = document.getElementById('bookingRoomViewGrid');
 const bookingRoomViewListBtn = document.getElementById('bookingRoomViewList');
 const bookingRoomOptionsInline = document.getElementById('bookingRoomOptionsInline');
 const roomPickerInline = document.getElementById('roomPickerInline');
-const bookingCityFilterInput = null;
-const bookingStateFilterInput = null;
-const bookingAmenityFilters = null;
-const bookingClearFiltersBtn = null;
+const bookingCityFilterInput = document.getElementById('bookingCityFilter');
+const bookingStateFilterInput = document.getElementById('bookingStateFilter');
+const bookingCapacityFilterInput = document.getElementById('bookingCapacityFilter');
+const bookingAmenityFilters = document.getElementById('bookingAmenityFilters');
+const bookingOpenAdvancedFilters = document.getElementById('bookingOpenAdvancedFilters');
+const bookingAdvancedFiltersModal = document.getElementById('bookingAdvancedFiltersModal');
+const bookingAdvancedFiltersClose = document.getElementById('bookingAdvancedFiltersClose');
+const bookingAdvancedFiltersApply = document.getElementById('bookingAdvancedFiltersApply');
+const bookingAdvancedFiltersClear = document.getElementById('bookingAdvancedFiltersClear');
+const bookingClearFiltersBtn = document.getElementById('bookingClearFilters');
 let bookingSelectedAmenities = new Set();
 let bookingRoomViewMode = 'grid';
 let bookingUserLocation = null;
@@ -1521,6 +1527,36 @@ async function initialize() {
   bookingRoomSortSelect?.addEventListener('change', () => renderRoomOptions(bookingDateInput?.value || ''));
   bookingRoomViewGridBtn?.addEventListener('click', () => setBookingRoomView('grid'));
   bookingRoomViewListBtn?.addEventListener('click', () => setBookingRoomView('list'));
+  bookingStateFilterInput?.addEventListener('change', () => {
+    hydrateCitiesForUfBooking(bookingStateFilterInput.value || '');
+    renderRoomOptions(bookingDateInput?.value || '');
+  });
+  bookingCityFilterInput?.addEventListener('change', () => renderRoomOptions(bookingDateInput?.value || ''));
+  bookingCapacityFilterInput?.addEventListener('change', () => renderRoomOptions(bookingDateInput?.value || ''));
+  bookingClearFiltersBtn?.addEventListener('click', () => {
+    clearBookingFilters();
+    renderRoomOptions(bookingDateInput?.value || '');
+  });
+  bookingOpenAdvancedFilters?.addEventListener('click', () => {
+    if (!bookingAdvancedFiltersModal) return;
+    bookingAdvancedFiltersModal.classList.add('show');
+    bookingAdvancedFiltersModal.setAttribute('aria-hidden', 'false');
+  });
+  bookingAdvancedFiltersClose?.addEventListener('click', () => closeBookingAdvancedFilters());
+  bookingAdvancedFiltersModal?.addEventListener('click', (event) => {
+    if (event.target === bookingAdvancedFiltersModal) closeBookingAdvancedFilters();
+  });
+  bookingAdvancedFiltersApply?.addEventListener('click', () => {
+    closeBookingAdvancedFilters();
+    renderRoomOptions(bookingDateInput?.value || '');
+  });
+  bookingAdvancedFiltersClear?.addEventListener('click', () => {
+    bookingSelectedAmenities.clear();
+    bookingAmenityFilters?.querySelectorAll('input[type="checkbox"]').forEach(input => {
+      input.checked = false;
+    });
+    renderRoomOptions(bookingDateInput?.value || '');
+  });
   setBookingRoomView(bookingRoomViewMode);
   bookingTitleInput?.addEventListener('input', onBookingDetailsChange);
   bookingDescriptionInput?.addEventListener('input', onBookingDetailsChange);
@@ -3579,6 +3615,24 @@ function ensureBookingLocation() {
   );
 }
 
+function closeBookingAdvancedFilters() {
+  if (!bookingAdvancedFiltersModal) return;
+  bookingAdvancedFiltersModal.classList.remove('show');
+  bookingAdvancedFiltersModal.setAttribute('aria-hidden', 'true');
+}
+
+function clearBookingFilters() {
+  if (bookingRoomSearchInput) bookingRoomSearchInput.value = '';
+  if (bookingStateFilterInput) bookingStateFilterInput.value = '';
+  if (bookingCityFilterInput) bookingCityFilterInput.value = '';
+  if (bookingCapacityFilterInput) bookingCapacityFilterInput.value = '';
+  bookingSelectedAmenities.clear();
+  bookingAmenityFilters?.querySelectorAll('input[type="checkbox"]').forEach(input => {
+    input.checked = false;
+  });
+  hydrateCitiesForUfBooking('');
+}
+
 function getRoomDistanceKm(room) {
   if (!bookingUserLocation) return null;
   const cacheKey = String(room.id || '');
@@ -3607,7 +3661,7 @@ function renderRoomOptions(date) {
     if (feedbackEl && !feedbackEl.textContent) {
       feedbackEl.textContent = 'Selecione uma sala; a disponibilidade será validada no envio.';
     }
-    const roomsSorted = sortRooms(roomsCache.filter(matchesSearch));
+    const roomsSorted = sortRooms(roomsCache.filter(matchesFilters));
     if (!roomsSorted.length) {
       if (feedbackEl) feedbackEl.textContent = 'Nenhuma sala encontrada com o filtro atual.';
       renderBookingMapMarkers([]);
@@ -3648,6 +3702,11 @@ function renderRoomOptions(date) {
   }
   const normalize = (v) => (v || '').toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
   const searchTerm = normalize(bookingRoomSearchInput?.value || '');
+  const cityFilter = normalize(bookingCityFilterInput?.value || '');
+  const stateFilter = normalize(bookingStateFilterInput?.value || '');
+  const capacityValue = Number(bookingCapacityFilterInput?.value || 0);
+  const amenityIds = Array.from(bookingSelectedAmenities);
+  const filtersActive = !!(searchTerm || cityFilter || stateFilter || capacityValue || amenityIds.length);
   const sortChoice = bookingRoomSortSelect?.value || 'name';
   const collator = new Intl.Collator('pt-BR', { sensitivity: 'base' });
   let effectiveSort = sortChoice;
@@ -3659,10 +3718,17 @@ function renderRoomOptions(date) {
     }
   }
 
-  const matchesSearch = (room) => {
-    if (!searchTerm) return true;
+  const matchesFilters = (room) => {
     const hay = normalize(`${room.name || ''} ${room.city || ''} ${room.state || room.uf || ''} ${room.location || ''}`);
-    return hay.includes(searchTerm);
+    const okQuery = !searchTerm || hay.includes(searchTerm);
+    const roomCity = normalize(room.city || '');
+    const roomState = normalize(room.state || room.uf || '');
+    const roomCap = Number(room.capacity || 0);
+    const okCity = !cityFilter || roomCity.includes(cityFilter);
+    const okState = !stateFilter || roomState === stateFilter;
+    const okCap = !capacityValue || (capacityValue === 51 ? roomCap > 50 : roomCap <= capacityValue);
+    const okAmenities = !amenityIds.length || amenityIds.every(id => (room.amenities || []).includes(Number(id)) || (room.amenities || []).includes(String(id)));
+    return okQuery && okCity && okState && okCap && okAmenities;
   };
 
   const sortRooms = (rooms) => {
@@ -3691,9 +3757,9 @@ function renderRoomOptions(date) {
 
   // Listar todas as salas disponíveis na data selecionada (sem filtros)
 
-  const availableRooms = sortRooms(getAvailableRoomsForDate(date, reservationIdInput?.value).filter(matchesSearch));
+  const availableRooms = sortRooms(getAvailableRoomsForDate(date, reservationIdInput?.value).filter(matchesFilters));
   if (!availableRooms.length) {
-    if (searchTerm) {
+    if (filtersActive) {
       if (bookingRoomFeedback) bookingRoomFeedback.textContent = 'Nenhuma sala encontrada com o filtro atual.';
       renderBookingMapMarkers([]);
       return;
@@ -3701,7 +3767,7 @@ function renderRoomOptions(date) {
     // Segurança máxima: se não detectou disponibilidade, ainda assim mostro TODAS as salas cadastradas
     // para permitir solicitar a reserva e o admin confirmar. Isso evita a sensação de vazio.
     if (bookingRoomFeedback) bookingRoomFeedback.textContent = 'Nenhuma disponibilidade detectada nesta data. Você ainda pode selecionar uma sala e enviar a solicitação.';
-    const fallbackRooms = sortRooms(roomsCache.filter(matchesSearch));
+    const fallbackRooms = sortRooms(roomsCache.filter(matchesFilters));
     const selectedId = bookingRoomHiddenInput?.value ? String(bookingRoomHiddenInput.value) : '';
     let hasSelected = false;
     fallbackRooms.forEach(room => {
