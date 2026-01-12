@@ -4094,7 +4094,7 @@ function isRoomSelectable(room, date) {
 
 function isRoomAvailableOnDate(room, date, reservationId) {
   const roomId = String(room.id);
-  const blockingStatuses = ['pendente', 'confirmada', 'concluida'];
+  const blockingStatuses = ['pendente', 'confirmada', 'concluida', 'bloqueada', 'bloqueio'];
   return !allReservationsCache.some(res => {
     if (String(res.room_id) !== roomId) return false;
     if (reservationId && String(res.id) === String(reservationId)) return false;

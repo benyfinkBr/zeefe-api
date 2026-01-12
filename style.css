@@ -1866,6 +1866,40 @@ section h3 {
   gap: 28px;
 }
 
+.adv-rooms-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  margin: 8px 0 16px;
+}
+
+.rooms-grid.rooms-list {
+  grid-template-columns: 1fr;
+}
+
+.rooms-grid.rooms-list .room-card {
+  display: flex;
+  gap: 18px;
+}
+
+.rooms-grid.rooms-list .room-photo {
+  height: 160px;
+  min-width: 220px;
+}
+
+.rooms-grid.rooms-list .room-info {
+  padding: 16px 18px 18px;
+  flex: 1;
+}
+
+.rooms-grid.rooms-list .room-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+}
+
 .rooms-grid.small {
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 22px;
@@ -3314,6 +3348,10 @@ body.client-portal-page.client-logged-out .portal-shell {
 
 .reservations-calendar-card .calendar-dot.is-personal {
   background: #c7b6a5;
+}
+
+.reservations-calendar-card .calendar-dot.is-blocked {
+  background: #b54a3a;
 }
 
 .reservations-calendar-card .calendar-day.is-selected {

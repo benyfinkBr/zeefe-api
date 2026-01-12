@@ -61,6 +61,14 @@ let advEventsBound = false;
 const ADV_AUTO_REFRESH_MS = 60000;
 let advAutoRefreshTimer = null;
 let advRefreshRunning = false;
+let advRoomsViewMode = 'grid';
+let advReservationsRoomFilterId = null;
+let advResCalendarMonth = new Date();
+let advResSelectedDate = null;
+let advRoomBlockMonth = new Date();
+let advRoomBlockRoomId = null;
+let advRoomBlockSelectedDates = new Set();
+let advRoomBlockExistingMap = new Map();
 
 function persistHeaderSessionLocal(session) {
   try {
@@ -246,6 +254,8 @@ const ovNext = document.getElementById('ovNextReservations');
 // Salas / Reservas / Financeiro / Mensagens / Reviews / Workshops
 const roomsContainer = document.getElementById('advRoomsContainer');
 const resContainer = document.getElementById('advReservationsContainer');
+const advRoomsViewGridBtn = document.getElementById('advRoomsViewGrid');
+const advRoomsViewListBtn = document.getElementById('advRoomsViewList');
 const finContainer = document.getElementById('advFinanceContainer');
 const threadsContainer = document.getElementById('advThreadsContainer');
 const reviewsContainer = document.getElementById('advReviewsContainer');
@@ -274,6 +284,14 @@ const advResCancelClose = document.getElementById('advResCancelClose');
 const advResCancelBack = document.getElementById('advResCancelBack');
 const advResCancelConfirm = document.getElementById('advResCancelConfirm');
 let advResCurrentId = null;
+const advResCalGrid = document.getElementById('advResCalGrid');
+const advResCalLabel = document.getElementById('advResCalLabel');
+const advResCalPrev = document.getElementById('advResCalPrev');
+const advResCalNext = document.getElementById('advResCalNext');
+const advResDayList = document.getElementById('advResDayList');
+const advResDayTitle = document.getElementById('advResDayTitle');
+const advResDayClear = document.getElementById('advResDayClear');
+const advResDayItems = document.getElementById('advResDayItems');
 // Room details modal
 const advRoomDetModal = document.getElementById('advRoomDetailsModal');
 const advRoomDetClose = document.getElementById('advRoomDetClose');
@@ -300,6 +318,15 @@ const roomState = document.getElementById('roomState');
 const roomPrice = document.getElementById('roomPrice');
 const roomStatus = document.getElementById('roomStatus');
 const roomDesc = document.getElementById('roomDescription');
+const advRoomBlockModal = document.getElementById('advRoomBlockModal');
+const advRoomBlockClose = document.getElementById('advRoomBlockClose');
+const advRoomBlockCancel = document.getElementById('advRoomBlockCancel');
+const advRoomBlockSave = document.getElementById('advRoomBlockSave');
+const advRoomBlockPrev = document.getElementById('advRoomBlockPrev');
+const advRoomBlockNext = document.getElementById('advRoomBlockNext');
+const advRoomBlockLabel = document.getElementById('advRoomBlockLabel');
+const advRoomBlockGrid = document.getElementById('advRoomBlockGrid');
+const advRoomBlockMessage = document.getElementById('advRoomBlockMessage');
 const roomDescEditor = document.getElementById('advRoomDescriptionEditor');
 const roomDescToolbar = document.getElementById('advRoomDescToolbar');
 const roomAmenitiesGrid = document.getElementById('advAmenitiesGrid');
@@ -996,6 +1023,27 @@ function setActivePanel(name) {
     if (el) el.hidden = (p !== name);
   });
   navButtons.forEach(b => b.classList.toggle('active', b.dataset.panel === name));
+  if (name === 'reservations') {
+    renderAdvReservationsCalendar();
+    renderAdvReservationsDayList();
+  }
+}
+
+function setAdvRoomsView(mode) {
+  advRoomsViewMode = mode === 'list' ? 'list' : 'grid';
+  roomsContainer?.classList.toggle('rooms-list', advRoomsViewMode === 'list');
+  advRoomsViewGridBtn?.classList.toggle('active', advRoomsViewMode === 'grid');
+  advRoomsViewListBtn?.classList.toggle('active', advRoomsViewMode === 'list');
+}
+
+function openRoomReservations(roomId) {
+  if (!roomId) return;
+  advReservationsRoomFilterId = String(roomId);
+  setActivePanel('reservations');
+  renderAdvReservations();
+  renderAdvReservationsCalendar();
+  renderAdvReservationsDayList();
+  document.getElementById('panel-reservations')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function renderAdvProfileView() {
@@ -1128,6 +1176,40 @@ async function afterLogin() {
     advPasswordCancel?.addEventListener('click', closeAdvPasswordModal);
     advPasswordModal?.addEventListener('click', (e)=>{ if (e.target === advPasswordModal) closeAdvPasswordModal(); });
     advPasswordForm?.addEventListener('submit', onAdvPasswordSubmit);
+    advRoomsViewGridBtn?.addEventListener('click', () => setAdvRoomsView('grid'));
+    advRoomsViewListBtn?.addEventListener('click', () => setAdvRoomsView('list'));
+    advResCalGrid?.addEventListener('click', (event) => {
+      const cell = event.target.closest('.calendar-day[data-date]');
+      if (!cell) return;
+      advResSelectedDate = cell.getAttribute('data-date');
+      renderAdvReservationsCalendar();
+      renderAdvReservationsDayList();
+    });
+    advResDayClear?.addEventListener('click', () => {
+      advResSelectedDate = null;
+      renderAdvReservationsCalendar();
+      renderAdvReservationsDayList();
+    });
+    advResCalPrev?.addEventListener('click', () => {
+      advResCalendarMonth = new Date(advResCalendarMonth.getFullYear(), advResCalendarMonth.getMonth() - 1, 1);
+      renderAdvReservationsCalendar();
+    });
+    advResCalNext?.addEventListener('click', () => {
+      advResCalendarMonth = new Date(advResCalendarMonth.getFullYear(), advResCalendarMonth.getMonth() + 1, 1);
+      renderAdvReservationsCalendar();
+    });
+    advRoomBlockClose?.addEventListener('click', closeRoomBlockModal);
+    advRoomBlockCancel?.addEventListener('click', closeRoomBlockModal);
+    advRoomBlockModal?.addEventListener('click', (event) => { if (event.target === advRoomBlockModal) closeRoomBlockModal(); });
+    advRoomBlockPrev?.addEventListener('click', () => changeAdvRoomBlockMonth(-1));
+    advRoomBlockNext?.addEventListener('click', () => changeAdvRoomBlockMonth(1));
+    advRoomBlockGrid?.addEventListener('click', (event) => {
+      const cell = event.target.closest('.calendar-day[data-date]');
+      if (!cell || cell.classList.contains('disabled')) return;
+      const dateKey = cell.getAttribute('data-date');
+      toggleRoomBlockDate(dateKey);
+    });
+    advRoomBlockSave?.addEventListener('click', saveRoomBlocks);
   }
 
   // Mantem no portal do anunciante
@@ -1162,7 +1244,9 @@ async function loadRooms() {
           <h4>${escapeHtml(r.name || 'Sala')}</h4>
           <p class="room-meta">${escapeHtml(r.city || '')} - ${escapeHtml(r.state || '')} ${r.lat && r.lon ? ' • <span title="Tem localização no mapa">📍</span>' : ''}</p>
           <div class="room-actions">
-            <button class="btn btn-secondary btn-sm" data-room="${r.id}" data-act="details">Ver detalhes</button>
+            <button class="btn btn-secondary btn-sm" data-room="${r.id}" data-act="details">Editar</button>
+            <button class="btn btn-secondary btn-sm" data-room="${r.id}" data-act="reservations">Reservas</button>
+            <button class="btn btn-primary btn-sm" data-room="${r.id}" data-act="manage">Gestão de Sala</button>
           </div>
         </div>
       </article>
@@ -1170,6 +1254,9 @@ async function loadRooms() {
     }).join('');
     // Eventos dos botões de sala
     roomsContainer.querySelectorAll('button[data-room][data-act="details"]').forEach(btn => btn.addEventListener('click', () => openRoomDetailsModal(btn.getAttribute('data-room'))));
+    roomsContainer.querySelectorAll('button[data-room][data-act="reservations"]').forEach(btn => btn.addEventListener('click', () => openRoomReservations(btn.getAttribute('data-room'))));
+    roomsContainer.querySelectorAll('button[data-room][data-act="manage"]').forEach(btn => btn.addEventListener('click', () => openRoomBlockModal(btn.getAttribute('data-room'))));
+    setAdvRoomsView(advRoomsViewMode);
   } catch (e) {
     roomsContainer.innerHTML = '<div class="rooms-message">Falha ao carregar salas.</div>';
   }
@@ -1189,6 +1276,8 @@ async function loadReservations() {
     }
     myReservations = all;
     renderAdvReservations();
+    renderAdvReservationsCalendar();
+    renderAdvReservationsDayList();
   } catch (e) {
     resContainer.innerHTML = '<div class="rooms-message">Falha ao carregar reservas.</div>';
   }
@@ -1205,12 +1294,11 @@ function getReservationFilters() {
   };
 }
 
-function renderAdvReservations() {
-  if (!resContainer) return;
+function getFilteredAdvReservations() {
+  if (!resContainer) return [];
   const all = myReservations || [];
   if (!all.length) {
-    resContainer.innerHTML = '<div class="rooms-message">Nenhuma reserva.</div>';
-    return;
+    return [];
   }
   const { status, payment, order } = getReservationFilters();
   let list = all.slice();
@@ -1220,29 +1308,52 @@ function renderAdvReservations() {
   if (payment) {
     list = list.filter(r => String(r.payment_status || '').toLowerCase() === payment.toLowerCase());
   }
+  if (advReservationsRoomFilterId) {
+    list = list.filter(r => String(r.room_id) === String(advReservationsRoomFilterId));
+  }
   list.sort((a,b) => {
     const da = new Date(a.date || '1970-01-01');
     const db = new Date(b.date || '1970-01-01');
     if (order === 'date_desc') return db - da;
     return da - db;
   });
+  return list;
+}
+
+function renderAdvReservations() {
+  if (!resContainer) return;
+  const list = getFilteredAdvReservations();
+  if (!list.length) {
+    resContainer.innerHTML = '<div class="rooms-message">Nenhuma reserva.</div>';
+    return;
+  }
 
   const rows = list.map(r => {
     const room = (myRooms||[]).find(rr => String(rr.id)===String(r.room_id));
     const roomName = r.room_name || room?.name || `Sala ${r.room_id}`;
-    const clientName = r.client_name || '';
+    const isBlocked = ['bloqueada', 'bloqueio'].includes(String(r.status || '').toLowerCase());
+    const clientName = isBlocked ? 'Agenda bloqueada' : (r.client_name || '');
     const when = r.date ? escapeHtml(r.date) : '';
+    const statusLabel = isBlocked ? 'bloqueada' : (r.status || '');
     return `
       <tr>
         <td>${when}</td>
         <td>${escapeHtml(roomName)}</td>
         <td>${escapeHtml(clientName)}</td>
-        <td>${escapeHtml(r.status || '')}</td>
+        <td>${escapeHtml(statusLabel)}</td>
         <td>${escapeHtml(r.payment_status || '')}</td>
         <td><button class="btn btn-secondary btn-sm" data-res="${r.id}" data-act="open">Ações</button></td>
       </tr>
     `;
   }).join('');
+
+  const roomFilterChip = advReservationsRoomFilterId
+    ? (() => {
+        const room = (myRooms || []).find(r => String(r.id) === String(advReservationsRoomFilterId));
+        const label = room?.name ? escapeHtml(room.name) : `Sala ${escapeHtml(advReservationsRoomFilterId)}`;
+        return `<div class="rooms-message">Filtro ativo: ${label} <button type="button" class="btn btn-secondary btn-sm" id="advResRoomClear">Limpar filtro</button></div>`;
+      })()
+    : '';
 
   resContainer.innerHTML = `
       <div class="res-filters">
@@ -1252,6 +1363,7 @@ function renderAdvReservations() {
             <option value="pendente">Pendente</option>
             <option value="confirmada">Confirmada</option>
             <option value="cancelada">Cancelada</option>
+            <option value="bloqueada">Bloqueada</option>
             <option value="concluida">Concluída</option>
           </select>
         </label>
@@ -1270,17 +1382,274 @@ function renderAdvReservations() {
           </select>
         </label>
       </div>
+      ${roomFilterChip}
       <table>
         <thead><tr><th>Data</th><th>Sala</th><th>Cliente</th><th>Status</th><th>Pagamento</th><th></th></tr></thead>
         <tbody>${rows || '<tr><td colspan="6" style="text-align:center;padding:16px">Nenhuma reserva.</td></tr>'}</tbody>
       </table>`;
 
   resContainer.querySelectorAll('#advResStatusFilter,#advResPaymentFilter,#advResOrder').forEach(el => {
-    el.addEventListener('change', renderAdvReservations);
+    el.addEventListener('change', () => {
+      renderAdvReservations();
+      renderAdvReservationsCalendar();
+      renderAdvReservationsDayList();
+    });
   });
+  const clearBtn = resContainer.querySelector('#advResRoomClear');
+  if (clearBtn) {
+    clearBtn.addEventListener('click', () => {
+      advReservationsRoomFilterId = null;
+      renderAdvReservations();
+      renderAdvReservationsCalendar();
+      renderAdvReservationsDayList();
+    });
+  }
   resContainer.querySelectorAll('button[data-res][data-act="open"]').forEach(btn =>
     btn.addEventListener('click', () => openReservationModal(btn.getAttribute('data-res')))
   );
+}
+
+function formatMonthYearPtAdv(date) {
+  const months = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+  return `${months[date.getMonth()]} de ${date.getFullYear()}`;
+}
+
+function formatFullDatePtAdv(dateKey) {
+  if (!dateKey) return '';
+  const parts = dateKey.split('-');
+  if (parts.length !== 3) return dateKey;
+  const day = Number(parts[2]);
+  const month = Number(parts[1]) - 1;
+  const year = Number(parts[0]);
+  const date = new Date(year, month, day);
+  if (Number.isNaN(date.getTime())) return dateKey;
+  const weekdays = ['domingo','segunda-feira','terça-feira','quarta-feira','quinta-feira','sexta-feira','sábado'];
+  const months = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+  return `${weekdays[date.getDay()]}, ${day} de ${months[month]} de ${year}`;
+}
+
+function renderAdvReservationsCalendar() {
+  if (!advResCalGrid || !advResCalLabel) return;
+  const monthDate = new Date(advResCalendarMonth);
+  const startOfMonth = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1);
+  advResCalLabel.textContent = formatMonthYearPtAdv(startOfMonth);
+  const list = getFilteredAdvReservations();
+  const byDate = new Map();
+  list.forEach(res => {
+    if (!res.date) return;
+    const key = String(res.date).slice(0, 10);
+    if (!byDate.has(key)) byDate.set(key, []);
+    byDate.get(key).push(res);
+  });
+
+  const weekdayLabels = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+  let html = weekdayLabels.map(label => `<div class="calendar-weekday">${label}</div>`).join('');
+  const startWeekday = startOfMonth.getDay();
+  for (let i = 0; i < startWeekday; i++) {
+    html += `<div class="calendar-day is-muted"><span class="calendar-day-number"></span></div>`;
+  }
+  const lastDay = new Date(startOfMonth.getFullYear(), startOfMonth.getMonth() + 1, 0).getDate();
+  const todayKey = new Date().toISOString().slice(0, 10);
+  for (let day = 1; day <= lastDay; day++) {
+    const dateKey = `${startOfMonth.getFullYear()}-${String(startOfMonth.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    const items = byDate.get(dateKey) || [];
+    const dots = items.slice(0, 3).map(item => {
+      const status = String(item.status || '').toLowerCase();
+      const cls = status === 'bloqueada' || status === 'bloqueio' ? ' is-blocked' : ' is-highlight';
+      return `<span class="calendar-dot${cls}" aria-hidden="true"></span>`;
+    }).join('');
+    const extraCount = items.length > 3 ? (items.length - 3) : 0;
+    const isToday = dateKey === todayKey;
+    html += `
+      <div class="calendar-day${isToday ? ' is-today' : ''}${advResSelectedDate === dateKey ? ' is-selected' : ''}" data-date="${dateKey}">
+        <span class="calendar-day-number">${day}</span>
+        <div class="calendar-dots">${dots}${extraCount ? `<span class="calendar-dot-text">${extraCount}</span>` : ''}</div>
+      </div>`;
+  }
+  advResCalGrid.innerHTML = html;
+}
+
+function renderAdvReservationsDayList() {
+  if (!advResDayItems || !advResDayTitle) return;
+  const list = getFilteredAdvReservations();
+  if (!advResSelectedDate) {
+    advResDayTitle.textContent = 'Selecione um dia no calendário';
+    if (advResDayClear) advResDayClear.hidden = true;
+    advResDayItems.innerHTML = '<div class="rooms-message">Clique em um dia para ver as reservas.</div>';
+    return;
+  }
+  const title = formatFullDatePtAdv(advResSelectedDate);
+  advResDayTitle.textContent = title || advResSelectedDate;
+  if (advResDayClear) advResDayClear.hidden = false;
+  const items = list.filter(r => String(r.date || '').slice(0, 10) === advResSelectedDate);
+  if (!items.length) {
+    advResDayItems.innerHTML = '<div class="rooms-message">Nenhuma reserva para este dia.</div>';
+    return;
+  }
+  advResDayItems.innerHTML = items.map(res => {
+    const room = (myRooms || []).find(rr => String(rr.id) === String(res.room_id));
+    const roomName = res.room_name || room?.name || `Sala ${res.room_id}`;
+    const status = String(res.status || '').toLowerCase();
+    const label = status === 'bloqueada' || status === 'bloqueio' ? 'Bloqueio de agenda' : (res.client_name || 'Reserva');
+    return `
+      <div class="day-list-item">
+        <div>
+          <strong>${escapeHtml(roomName)}</strong>
+          <div class="rooms-message" style="margin:4px 0 0">${escapeHtml(label)}</div>
+        </div>
+        <span class="chip">${escapeHtml(res.status || '')}</span>
+      </div>
+    `;
+  }).join('');
+}
+
+function pad2(value) {
+  return String(value).padStart(2, '0');
+}
+
+function buildDateKey(year, monthIndex, day) {
+  return `${year}-${pad2(monthIndex + 1)}-${pad2(day)}`;
+}
+
+function openRoomBlockModal(roomId) {
+  if (!roomId) return;
+  advRoomBlockRoomId = String(roomId);
+  advRoomBlockSelectedDates = new Set();
+  advRoomBlockExistingMap = new Map();
+  const blocked = (myReservations || []).filter(r => {
+    const status = String(r.status || '').toLowerCase();
+    return (status === 'bloqueada' || status === 'bloqueio') && String(r.room_id) === String(roomId);
+  });
+  blocked.forEach(res => {
+    if (!res.date) return;
+    const key = String(res.date).slice(0, 10);
+    advRoomBlockSelectedDates.add(key);
+    advRoomBlockExistingMap.set(key, res.id);
+  });
+  advRoomBlockMonth = new Date();
+  if (advRoomBlockMessage) advRoomBlockMessage.textContent = '';
+  renderAdvRoomBlockCalendar();
+  if (!advRoomBlockModal) return;
+  advRoomBlockModal.classList.add('show');
+  advRoomBlockModal.setAttribute('aria-hidden', 'false');
+}
+
+function closeRoomBlockModal() {
+  if (!advRoomBlockModal) return;
+  advRoomBlockModal.classList.remove('show');
+  advRoomBlockModal.setAttribute('aria-hidden', 'true');
+  advRoomBlockRoomId = null;
+  advRoomBlockSelectedDates = new Set();
+  advRoomBlockExistingMap = new Map();
+}
+
+function changeAdvRoomBlockMonth(delta) {
+  advRoomBlockMonth = new Date(advRoomBlockMonth.getFullYear(), advRoomBlockMonth.getMonth() + delta, 1);
+  renderAdvRoomBlockCalendar();
+}
+
+function toggleRoomBlockDate(dateKey) {
+  if (!dateKey) return;
+  if (advRoomBlockSelectedDates.has(dateKey)) {
+    advRoomBlockSelectedDates.delete(dateKey);
+  } else {
+    advRoomBlockSelectedDates.add(dateKey);
+  }
+  renderAdvRoomBlockCalendar();
+}
+
+function renderAdvRoomBlockCalendar() {
+  if (!advRoomBlockGrid || !advRoomBlockLabel) return;
+  const monthRef = new Date(advRoomBlockMonth.getFullYear(), advRoomBlockMonth.getMonth(), 1);
+  advRoomBlockLabel.textContent = formatMonthYearPtAdv(monthRef);
+  advRoomBlockGrid.innerHTML = '';
+  const weekdays = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+  weekdays.forEach(label => {
+    const headerCell = document.createElement('div');
+    headerCell.className = 'calendar-day disabled';
+    headerCell.textContent = label;
+    advRoomBlockGrid.appendChild(headerCell);
+  });
+  const startWeekday = monthRef.getDay();
+  for (let i = 0; i < startWeekday; i++) {
+    const filler = document.createElement('div');
+    filler.className = 'calendar-day disabled';
+    advRoomBlockGrid.appendChild(filler);
+  }
+  const today = new Date();
+  const monthEnd = new Date(monthRef.getFullYear(), monthRef.getMonth() + 1, 0);
+  for (let day = 1; day <= monthEnd.getDate(); day++) {
+    const dateKey = buildDateKey(monthRef.getFullYear(), monthRef.getMonth(), day);
+    const dateObj = new Date(monthRef.getFullYear(), monthRef.getMonth(), day);
+    const isPast = dateObj < new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const hasReservation = (myReservations || []).some(res => {
+      if (!res.date) return false;
+      if (String(res.date).slice(0, 10) !== dateKey) return false;
+      if (String(res.room_id) !== String(advRoomBlockRoomId)) return false;
+      const status = String(res.status || '').toLowerCase();
+      return status !== 'bloqueada' && status !== 'bloqueio' && status !== 'cancelada';
+    });
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.textContent = String(day);
+    btn.dataset.date = dateKey;
+    btn.className = 'calendar-day';
+    if (isPast || hasReservation) {
+      btn.classList.add('disabled');
+    }
+    if (advRoomBlockSelectedDates.has(dateKey)) {
+      btn.classList.add('selected');
+    }
+    advRoomBlockGrid.appendChild(btn);
+  }
+}
+
+async function saveRoomBlocks() {
+  if (!advRoomBlockRoomId) return;
+  const roomId = advRoomBlockRoomId;
+  const selected = new Set(advRoomBlockSelectedDates);
+  const existingDates = new Set(advRoomBlockExistingMap.keys());
+  const toCreate = Array.from(selected).filter(d => !existingDates.has(d));
+  const toRemove = Array.from(existingDates).filter(d => !selected.has(d));
+  if (advRoomBlockMessage) advRoomBlockMessage.textContent = '';
+  try {
+    for (const date of toCreate) {
+      const payload = {
+        room_id: roomId,
+        date,
+        status: 'bloqueada',
+        payment_status: 'bloqueado',
+        title: 'Bloqueio agenda',
+        time_start: '08:00',
+        time_end: '20:00'
+      };
+      const res = await fetch(`${API_BASE}/apisave.php`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ table: 'reservations', record: payload })
+      });
+      const json = await parseJsonSafe(res);
+      if (!json.success) throw new Error(json.error || 'Não foi possível bloquear a data.');
+    }
+    for (const date of toRemove) {
+      const reservationId = advRoomBlockExistingMap.get(date);
+      if (!reservationId) continue;
+      const res = await fetch(`${API_BASE}/apidelete.php`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ table: 'reservations', id: reservationId })
+      });
+      const json = await parseJsonSafe(res);
+      if (!json.success) throw new Error(json.error || 'Não foi possível liberar a data.');
+    }
+    await loadReservations();
+    if (advRoomBlockMessage) advRoomBlockMessage.textContent = 'Bloqueios atualizados com sucesso.';
+    closeRoomBlockModal();
+  } catch (err) {
+    if (advRoomBlockMessage) advRoomBlockMessage.textContent = err.message || 'Erro ao salvar bloqueios.';
+  }
 }
 
 // Finance helpers
@@ -2622,12 +2991,18 @@ function openReservationModal(id){
   }
   advResMessage.textContent='';
   const statusLower = (r?.status || '').toLowerCase();
-  if (['confirmada', 'concluida'].includes(statusLower)) {
+  if (statusLower === 'bloqueada' || statusLower === 'bloqueio') {
     setAdvResConfirmMode('close');
     if (advResDeny) advResDeny.hidden = true;
+    if (advResCancel) advResCancel.hidden = true;
+  } else if (['confirmada', 'concluida'].includes(statusLower)) {
+    setAdvResConfirmMode('close');
+    if (advResDeny) advResDeny.hidden = true;
+    if (advResCancel) advResCancel.hidden = false;
   } else {
     setAdvResConfirmMode('confirm');
     if (advResDeny) advResDeny.hidden = false;
+    if (advResCancel) advResCancel.hidden = false;
   }
   advResModal?.classList.add('show'); advResModal?.setAttribute('aria-hidden','false');
 }

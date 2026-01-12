@@ -162,6 +162,13 @@
             <h2>Minhas Salas</h2>
             <button class="btn btn-primary" id="advNewRoomBtn" type="button">Nova sala</button>
           </div>
+          <div class="adv-rooms-toolbar">
+            <span class="input-label">Visualização</span>
+            <div class="booking-room-view">
+              <button type="button" class="btn btn-secondary btn-sm active" id="advRoomsViewGrid">Grid</button>
+              <button type="button" class="btn btn-secondary btn-sm" id="advRoomsViewList">Lista</button>
+            </div>
+          </div>
           <div id="advRoomsContainer" class="rooms-grid"></div>
         </section>
 
@@ -177,6 +184,21 @@
 
         <section class="portal-section" id="panel-reservations" hidden>
           <h2>Reservas</h2>
+          <div class="reservations-calendar-card">
+            <div class="calendar-header">
+              <button type="button" class="btn btn-secondary btn-sm" id="advResCalPrev" aria-label="Mês anterior">◀</button>
+              <div class="calendar-label" id="advResCalLabel"></div>
+              <button type="button" class="btn btn-secondary btn-sm" id="advResCalNext" aria-label="Próximo mês">▶</button>
+            </div>
+            <div class="calendar-grid" id="advResCalGrid"></div>
+          </div>
+          <div class="reservations-day-list" id="advResDayList">
+            <div class="day-list-header">
+              <div class="day-list-title" id="advResDayTitle">Selecione um dia no calendário</div>
+              <button type="button" class="btn btn-secondary btn-sm" id="advResDayClear" hidden>Limpar filtro</button>
+            </div>
+            <div class="day-list-items" id="advResDayItems"></div>
+          </div>
           <div class="filters-wrap">
             <select id="advResStatusFilter" aria-label="Status">
               <option value="">Status (todos)</option>
@@ -723,6 +745,31 @@
           </div>
         </form>
         <div class="rooms-message" id="advRoomMessage"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="advRoomBlockModal" aria-hidden="true">
+  <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="advRoomBlockTitle">
+    <button class="modal-close" type="button" aria-label="Fechar" id="advRoomBlockClose">&times;</button>
+    <div class="modal-body">
+      <div class="modal-info">
+        <h2 id="advRoomBlockTitle">Gestão de Sala</h2>
+        <p class="form-help">Selecione as datas para bloquear a agenda desta sala.</p>
+        <div class="booking-calendar adv-block-calendar">
+          <header class="calendar-header">
+            <button type="button" id="advRoomBlockPrev" aria-label="Mês anterior">&#10094;</button>
+            <div id="advRoomBlockLabel"></div>
+            <button type="button" id="advRoomBlockNext" aria-label="Próximo mês">&#10095;</button>
+          </header>
+          <div class="calendar-grid" id="advRoomBlockGrid" role="grid" aria-labelledby="advRoomBlockLabel"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" id="advRoomBlockCancel">Cancelar</button>
+          <button type="button" class="btn btn-primary" id="advRoomBlockSave">Salvar bloqueios</button>
+        </div>
+        <div id="advRoomBlockMessage" class="rooms-message"></div>
       </div>
     </div>
   </div>
