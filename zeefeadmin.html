@@ -122,6 +122,11 @@
     .section-header h2{margin:0;font-size:20px;font-weight:600}
     .search-filters{background:#FFF;padding:12px 24px;display:flex;align-items:center;gap:12px;border-bottom:1px solid #E0DAD1}
     .search-filters input{flex:1;border:1px solid #CCC;border-radius:8px;padding:8px 10px;font-size:14px}
+    .column-selector{border:1px solid #CCC;border-radius:8px;padding:6px 10px;background:#F9F9F8}
+    .column-selector summary{cursor:pointer;font-size:13px;font-weight:600;color:#1D413A}
+    .column-selector-body{margin-top:8px;display:flex;flex-wrap:wrap;gap:8px 12px;max-width:560px}
+    .column-option{display:flex;align-items:center;gap:6px;font-size:12px;color:#1D413A}
+    .column-selector-actions{display:flex;gap:8px;margin-top:8px}
 .btn{background:#1D413A;color:#F5F0E9;border:none;padding:8px 14px;border-radius:6px;cursor:pointer;font-size:14px}
 .btn-warning{background:#B54A3A;color:#F5F0E9;border:none;padding:8px 14px;border-radius:6px;cursor:pointer;font-size:14px}
 .btn-warning:hover{background:#9c3f32}
@@ -588,6 +593,34 @@ input, select {
     ];
 
     const ADMIN_REMEMBER_STORAGE = 'zeefeAdminRememberToken';
+    const COLUMN_STORAGE_PREFIX = 'zeefeAdminColumns:';
+    const inventoryCategoryOptions = [
+      'Móveis de escritório',
+      'Mesas e estações de trabalho',
+      'Cadeiras e assentos',
+      'Armários e arquivos',
+      'Gaveteiros e estantes',
+      'Informática',
+      'Computadores e notebooks',
+      'Monitores',
+      'Periféricos (mouse, teclado, webcam)',
+      'Impressão e digitalização',
+      'Equipamentos audiovisuais',
+      'Projetores e telas',
+      'Câmeras',
+      'Controles remotos e acessórios',
+      'Caixas de som e microfones',
+      'Equipamentos de videoconferência',
+      'Telefonia e comunicação',
+      'Equipamentos de rede',
+      'Cabos e adaptadores',
+      'Eletroeletrônicos',
+      'Equipamentos de climatização',
+      'Equipamentos de segurança',
+      'Decoração e apoio'
+    ];
+    const inventoryStatusOptions = ['Em Uso', 'Estoque', 'Manutenção'];
+    const inventoryConditionOptions = ['Novo', 'Bom', 'Regular', 'Ruim'];
 
     function normalizePermissions(raw) {
       if (!raw || typeof raw !== 'object') return {};
@@ -642,6 +675,11 @@ input, select {
 
     const voucherFilters = {
       status: ''
+    };
+    const inventoryFilters = {
+      categoria: '',
+      status: '',
+      condicao: ''
     };
 
     let cachedRooms = null;
@@ -977,6 +1015,71 @@ input, select {
       return d.toLocaleString('pt-BR');
     }
 
+    function getStoredColumns(section) {
+      try {
+        const raw = localStorage.getItem(COLUMN_STORAGE_PREFIX + section);
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        return Array.isArray(parsed) ? parsed : null;
+      } catch (e) {
+        return null;
+      }
+    }
+
+    function setStoredColumns(section, keys) {
+      localStorage.setItem(COLUMN_STORAGE_PREFIX + section, JSON.stringify(keys));
+    }
+
+    function buildColumnList(section, rows) {
+      const configCols = sectionConfigs[section]?.columns || [];
+      const map = {};
+      configCols.forEach(col => { map[col.key] = col; });
+      const keySet = new Set();
+      (rows || []).forEach(row => {
+        Object.keys(row || {}).forEach(key => keySet.add(key));
+      });
+      const ordered = [];
+      configCols.forEach(col => {
+        if (keySet.has(col.key)) {
+          ordered.push(col.key);
+          keySet.delete(col.key);
+        }
+      });
+      Array.from(keySet).sort().forEach(key => ordered.push(key));
+      return ordered.map(key => map[key] ? map[key] : { key, label: friendlyLabel(key) });
+    }
+
+    function resetColumnSelection(section, mode) {
+      const rows = Array.isArray(dadosJSON) ? dadosJSON : [];
+      const allColumns = buildColumnList(section, rows);
+      let keys = [];
+      if (mode === 'all') {
+        keys = allColumns.map(col => col.key);
+      } else {
+        const defaults = sectionConfigs[section]?.columns;
+        keys = (defaults && defaults.length)
+          ? defaults.map(col => col.key)
+          : allColumns.map(col => col.key);
+      }
+      setStoredColumns(section, keys);
+      renderFilters(section);
+      renderTable();
+    }
+
+    function toggleColumnSelection(section, key, checked) {
+      const rows = Array.isArray(dadosJSON) ? dadosJSON : [];
+      const allColumns = buildColumnList(section, rows);
+      const fallback = (sectionConfigs[section]?.columns || allColumns).map(col => col.key);
+      let keys = getStoredColumns(section) || fallback.slice();
+      if (checked) {
+        if (!keys.includes(key)) keys.push(key);
+      } else {
+        keys = keys.filter(k => k !== key);
+      }
+      setStoredColumns(section, keys);
+      renderTable();
+    }
+
     const sectionConfigs = {
       companies: {
         columns: [
@@ -1015,6 +1118,14 @@ input, select {
           { key: 'responsavel_nome', label: 'Responsável' },
           { key: 'capacity', label: 'Capacidade' },
           { key: 'status', label: 'Status', formatter: statusFormatter }
+        ]
+      },
+      inventory_items: {
+        columns: [
+          { key: 'id_patrimonio', label: 'ID Patrimônio' },
+          { key: 'descricao', label: 'Descrição' },
+          { key: 'valor_aquisicao', label: 'Valor aquisição' },
+          { key: 'responsavel', label: 'Responsável' }
         ]
       },
       reservations: {
@@ -1428,6 +1539,17 @@ input, select {
       if (filtro) {
         linhas = linhas.filter(reg => recordToSearchString(reg).toLowerCase().includes(filtro));
       }
+      if (sec === 'inventory_items') {
+        if (inventoryFilters.categoria) {
+          linhas = linhas.filter(item => String(item.categoria || '') === inventoryFilters.categoria);
+        }
+        if (inventoryFilters.status) {
+          linhas = linhas.filter(item => String(item.status || '') === inventoryFilters.status);
+        }
+        if (inventoryFilters.condicao) {
+          linhas = linhas.filter(item => String(item.condicao || '') === inventoryFilters.condicao);
+        }
+      }
       if (sec === 'vouchers' && voucherFilters.status) {
         const st = voucherFilters.status.toLowerCase();
         linhas = linhas.filter(v => {
@@ -1443,7 +1565,15 @@ input, select {
       }
 
       const config = sectionConfigs[sec] || {};
-      const columns = config.columns || Object.keys(linhas[0]).map(key => ({ key, label: friendlyLabel(key) }));
+      const allColumns = buildColumnList(sec, linhas);
+      let columns = (config.columns && config.columns.length)
+        ? config.columns
+        : allColumns;
+      const storedColumns = getStoredColumns(sec);
+      if (storedColumns && storedColumns.length) {
+        const mapped = storedColumns.map(key => allColumns.find(col => col.key === key)).filter(Boolean);
+        columns = mapped.length ? mapped : columns;
+      }
 
       let resumo = '';
       if (sec === 'vouchers') {
@@ -1532,8 +1662,11 @@ input, select {
     function exportarCSV() {
       const rows = Array.isArray(dadosJSON) ? [...dadosJSON] : [];
       if (!rows.length) { alert('Nada para exportar'); return; }
-      const colsDef = sectionConfigs[sec]?.columns;
-      const cols = colsDef ? colsDef.map(c=>c.key) : Object.keys(rows[0]);
+      const allColumns = buildColumnList(sec, rows);
+      const storedColumns = getStoredColumns(sec);
+      let cols = storedColumns && storedColumns.length
+        ? storedColumns.filter(key => allColumns.some(col => col.key === key))
+        : (sectionConfigs[sec]?.columns || allColumns).map(c => c.key);
       const esc = s => '"' + String(s==null?'':s).replace(/"/g,'""') + '"';
       const header = cols.join(',');
       const lines = rows.map(r => cols.map(k => esc(r[k])).join(','));
@@ -1609,6 +1742,40 @@ input, select {
             <option value="inativo">Inativo</option>
             <option value="expirado">Expirado</option>
           </select>
+          ${canCreate ? `<button class="btn" onclick="abrirModalNovo()">+ Novo</button>` : ''}
+          <button class="btn-secondary" onclick="exportarCSV()">Exportar CSV</button>`;
+      } else if (section === 'inventory_items') {
+        const allColumns = buildColumnList(section, dadosJSON || []);
+        const selectedKeys = getStoredColumns(section)
+          || (sectionConfigs[section]?.columns || allColumns).map(col => col.key);
+        const columnOptions = allColumns.map(col => {
+          const checked = selectedKeys.includes(col.key) ? ' checked' : '';
+          return `<label class="column-option"><input type="checkbox"${checked} onchange="toggleColumnSelection('${section}', '${col.key}', this.checked)"> ${escapeHtml(col.label)}</label>`;
+        }).join('');
+        container.innerHTML = `
+          <input type="text" id="inputBusca" placeholder="Buscar..." value="${escapeHtml(filtro)}" oninput="buscar(this.value)">
+          <select onchange="(function(s){ inventoryFilters.categoria=s.value; renderTable(); })(this)">
+            <option value="">Categoria</option>
+            ${inventoryCategoryOptions.map(opt => `<option value="${escapeHtml(opt)}"${inventoryFilters.categoria === opt ? ' selected' : ''}>${escapeHtml(opt)}</option>`).join('')}
+          </select>
+          <select onchange="(function(s){ inventoryFilters.status=s.value; renderTable(); })(this)">
+            <option value="">Status</option>
+            ${inventoryStatusOptions.map(opt => `<option value="${escapeHtml(opt)}"${inventoryFilters.status === opt ? ' selected' : ''}>${escapeHtml(opt)}</option>`).join('')}
+          </select>
+          <select onchange="(function(s){ inventoryFilters.condicao=s.value; renderTable(); })(this)">
+            <option value="">Condição</option>
+            ${inventoryConditionOptions.map(opt => `<option value="${escapeHtml(opt)}"${inventoryFilters.condicao === opt ? ' selected' : ''}>${escapeHtml(opt)}</option>`).join('')}
+          </select>
+          <details class="column-selector">
+            <summary>Colunas</summary>
+            <div class="column-selector-body">
+              ${columnOptions}
+            </div>
+            <div class="column-selector-actions">
+              <button class="btn-secondary" type="button" onclick="resetColumnSelection('${section}', 'default')">Padrão</button>
+              <button class="btn-secondary" type="button" onclick="resetColumnSelection('${section}', 'all')">Todas</button>
+            </div>
+          </details>
           ${canCreate ? `<button class="btn" onclick="abrirModalNovo()">+ Novo</button>` : ''}
           <button class="btn-secondary" onclick="exportarCSV()">Exportar CSV</button>`;
       } else {
