@@ -103,6 +103,21 @@ try {
     $linkColExists = in_array('link_qr', $validCols, true);
     $hasToken = $tokenColExists && !empty($record['qr_token']);
     $isInsert = empty($rawRecord['id']);
+    $codeInput = isset($record['codigo_patrimonio']) ? (string) $record['codigo_patrimonio'] : '';
+    $codeDigits = preg_replace('/\D/', '', $codeInput);
+    if ($isInsert || $codeInput !== '') {
+      if ($codeDigits === '') {
+        try {
+          $stmt = $pdo->query("SELECT MAX(CAST(SUBSTRING(codigo_patrimonio, 4) AS UNSIGNED)) AS max_code FROM inventory_items WHERE codigo_patrimonio LIKE 'ZF\\_%'");
+          $row = $stmt->fetch(PDO::FETCH_ASSOC);
+          $next = isset($row['max_code']) ? ((int) $row['max_code'] + 1) : 1;
+          $codeDigits = (string) $next;
+        } catch (Throwable $e) {
+          $codeDigits = '1';
+        }
+      }
+      $record['codigo_patrimonio'] = 'ZF_' . str_pad($codeDigits, 4, '0', STR_PAD_LEFT);
+    }
     if ($isInsert && empty($record['id_patrimonio'])) {
       if (!empty($record['codigo_patrimonio'])) {
         $record['id_patrimonio'] = $record['codigo_patrimonio'];
