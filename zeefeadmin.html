@@ -360,6 +360,7 @@ input, select {
           <li data-section="visitors">Visitantes</li>
           <li class="menu-group">Anunciantes & Ofertas</li>
           <li data-section="rooms">Salas</li>
+          <li data-section="inventory_items">Inventário</li>
           <li data-section="advertisers">Anunciantes</li>
           <li data-section="workshops">Workshops</li>
           <li class="menu-group">Participantes de Workshops</li>
@@ -558,6 +559,7 @@ input, select {
       amenities: 'Comodidade',
       vouchers: 'Voucher',
       campaigns: 'Campanha',
+      inventory_items: 'Item de Inventário',
       workshops: 'Workshop',
       workshop_participants: 'Participante de Workshop',
       workshop_enrollments: 'Inscrição de Workshop',
@@ -571,6 +573,7 @@ input, select {
       { key: 'reservations', label: 'Reservas' },
       { key: 'visitors', label: 'Visitantes' },
       { key: 'rooms', label: 'Salas' },
+      { key: 'inventory_items', label: 'Inventário' },
       { key: 'advertisers', label: 'Anunciantes' },
       { key: 'workshops', label: 'Workshops' },
       { key: 'workshop_participants', label: 'Participantes' },
@@ -1339,6 +1342,7 @@ input, select {
           label: 'Anunciantes & Ofertas',
           items: [
             { id: 'rooms', title: 'Salas', desc: 'Inventário e disponibilidade de salas.' },
+            { id: 'inventory_items', title: 'Inventário', desc: 'Gestão de bens e patrimônio.' },
             { id: 'advertisers', title: 'Anunciantes', desc: 'Gestão de anunciantes e taxas.' },
             { id: 'workshops', title: 'Workshops', desc: 'Eventos e cursos publicados.' }
           ]
@@ -1891,6 +1895,54 @@ input, select {
         { type: 'break' },
         { name: 'photo_path', label: 'Fotos da Sala', span: 4, type: 'file-multiple' },
         { name: 'amenities', label: 'Comodidades Disponíveis', span: 4, type: 'checkbox-grid', optionsSource: 'amenities' }
+      ],
+      inventory_items: [
+        { name: 'id_patrimonio', label: 'ID Patrimônio', span: 1, cls: 'sm' },
+        { name: 'codigo_patrimonio', label: 'Código Patrimônio', span: 1, cls: 'sm' },
+        { name: 'descricao', label: 'Descrição', span: 2 },
+        { type: 'break' },
+        { name: 'categoria', label: 'Categoria', span: 2 },
+        { name: 'marca', label: 'Marca', span: 1, cls: 'sm' },
+        { name: 'modelo', label: 'Modelo', span: 1, cls: 'sm' },
+        { type: 'break' },
+        { name: 'numero_serie', label: 'Número de série', span: 2 },
+        { name: 'data_aquisicao', label: 'Data de aquisição', span: 1, cls: 'sm', type: 'date' },
+        { name: 'fornecedor', label: 'Fornecedor', span: 1 },
+        { type: 'break' },
+        { name: 'nota_fiscal', label: 'Nota fiscal', span: 1, cls: 'sm' },
+        { name: 'valor_aquisicao', label: 'Valor de aquisição', span: 1, cls: 'sm' },
+        { name: 'forma_aquisicao', label: 'Forma de aquisição', span: 2 },
+        { type: 'break' },
+        { name: 'unidade', label: 'Unidade', span: 2 },
+        { name: 'setor', label: 'Setor', span: 2 },
+        { type: 'break' },
+        { name: 'localizacao_endereco', label: 'Endereço', span: 3 },
+        { name: 'localizacao_cep', label: 'CEP', span: 1, cls: 'sm' },
+        { type: 'break' },
+        { name: 'localizacao_complemento', label: 'Local físico', span: 2 },
+        { name: 'responsavel', label: 'Responsável', span: 2 },
+        { type: 'break' },
+        { name: 'status', label: 'Status', span: 1, cls: 'sm' },
+        { name: 'condicao', label: 'Condição', span: 1, cls: 'sm' },
+        { name: 'data_ultimo_inventario', label: 'Último inventário', span: 1, cls: 'sm', type: 'date' },
+        { name: 'vida_util_anos', label: 'Vida útil (anos)', span: 1, cls: 'sm' },
+        { type: 'break' },
+        { name: 'taxa_depreciacao', label: 'Taxa de depreciação (%)', span: 1, cls: 'sm' },
+        { name: 'valor_contabil', label: 'Valor contábil', span: 1, cls: 'sm' },
+        { name: 'centro_custo', label: 'Centro de custo', span: 2 },
+        { type: 'break' },
+        { name: 'garantia_ate', label: 'Garantia até', span: 1, cls: 'sm', type: 'date' },
+        { name: 'historico_manutencao', label: 'Histórico de manutenção', span: 3, type: 'textarea' },
+        { type: 'break' },
+        { name: 'custo_manutencao', label: 'Custo manutenção', span: 1, cls: 'sm' },
+        { name: 'data_baixa', label: 'Data de baixa', span: 1, cls: 'sm', type: 'date' },
+        { name: 'motivo_baixa', label: 'Motivo da baixa', span: 2 },
+        { type: 'break' },
+        { name: 'valor_baixa', label: 'Valor de baixa', span: 1, cls: 'sm' },
+        { name: 'link_qr', label: 'Link QR', span: 3, readonly: true },
+        { type: 'break' },
+        { name: 'created_at', label: 'Criado em', span: 1, cls: 'sm', type: 'date', readonly: true },
+        { name: 'updated_at', label: 'Atualizado em', span: 1, cls: 'sm', type: 'date', readonly: true }
       ],
       reservations: [
         { name: 'title', label: 'Título', span: 3 },

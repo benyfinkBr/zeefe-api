@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Tempo de geração: 04/01/2026 às 12:52
+-- Tempo de geração: 13/01/2026 às 10:50
 -- Versão do servidor: 5.7.23-23
 -- Versão do PHP: 8.1.34
 
@@ -58,7 +58,8 @@ CREATE TABLE `admins` (
 --
 
 INSERT INTO `admins` (`id`, `username`, `email`, `name`, `password`, `password_hash`, `status`, `profile_id`, `is_master`, `created_at`, `updated_at`) VALUES
-(1, '123', 'admin@zeefe.com.br', NULL, '123', NULL, 'ativo', NULL, 1, '2025-10-30 22:36:01', NULL);
+(1, '123', 'admin@zeefe.com.br', NULL, '123', NULL, 'ativo', NULL, 1, '2025-10-30 22:36:01', NULL),
+(3, 'benymidia', 'benyfink@gmail.com', 'Beny', '$2y$10$wzXoOYZlu.18lhMkW4/F5u14e7rSUwNRPPtWXmHqVQrUFfomf8JyS', '$2y$10$wzXoOYZlu.18lhMkW4/F5u14e7rSUwNRPPtWXmHqVQrUFfomf8JyS', 'ativo', 1, 0, '2026-01-04 15:57:39', NULL);
 
 -- --------------------------------------------------------
 
@@ -75,6 +76,13 @@ CREATE TABLE `admin_profiles` (
   `updated_at` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+--
+-- Despejando dados para a tabela `admin_profiles`
+--
+
+INSERT INTO `admin_profiles` (`id`, `name`, `permissions_json`, `status`, `created_at`, `updated_at`) VALUES
+(1, 'Midia Manager', '{\"companies\":{\"read\":false},\"reservations\":{\"read\":false},\"clients\":{\"read\":false,\"create\":false},\"visitors\":{\"read\":false,\"create\":false},\"posts\":{\"read\":true,\"create\":true,\"update\":true,\"delete\":true}}', 'ativo', '2026-01-04 12:57:00', NULL);
+
 -- --------------------------------------------------------
 
 --
@@ -89,6 +97,16 @@ CREATE TABLE `admin_remember_tokens` (
   `expires_at` datetime NOT NULL,
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Despejando dados para a tabela `admin_remember_tokens`
+--
+
+INSERT INTO `admin_remember_tokens` (`id`, `admin_id`, `token_hash`, `user_agent`, `expires_at`, `created_at`) VALUES
+(1, 1, '83406d41ff41150fe979dbcae5e081a3967f5e31a169ae6e5658c9aa34df2523', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', '2026-01-05 12:55:00', '2026-01-04 12:55:00'),
+(2, 3, '64e46217f9fcf7b1a047df17f0a01e5564cfacab6acaf0abea21bd5dc4a76c01', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.6 Safari/605.1.15', '2026-01-05 12:58:07', '2026-01-04 12:58:07'),
+(3, 1, '991f06990b1670b1ea173c59e56fa0f3f0490df386d646f8e427b9a600ae7dc0', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', '2026-01-06 13:59:51', '2026-01-05 13:59:51'),
+(4, 1, '67836a97c0f827ddedc156e5d878963f10243cc8a25a870362c6be35a012f4d9', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', '2026-01-07 16:12:10', '2026-01-06 16:12:10');
 
 -- --------------------------------------------------------
 
@@ -113,6 +131,8 @@ CREATE TABLE `advertisers` (
   `last_login` datetime DEFAULT NULL,
   `status` enum('ativo','inativo','suspenso') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'ativo',
   `fee_pct` decimal(5,2) DEFAULT NULL,
+  `fee_pct_room` decimal(5,2) DEFAULT NULL,
+  `fee_pct_workshop` decimal(5,2) DEFAULT NULL,
   `bank_name` varchar(120) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `account_type` enum('corrente','poupanca','pix') COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `agency_number` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
@@ -126,8 +146,8 @@ CREATE TABLE `advertisers` (
 -- Despejando dados para a tabela `advertisers`
 --
 
-INSERT INTO `advertisers` (`id`, `owner_type`, `owner_id`, `bank_code`, `display_name`, `full_name`, `login_email`, `login_cpf`, `contact_phone`, `password_hash`, `email_verified_at`, `verification_token`, `verification_token_expires`, `last_login`, `status`, `fee_pct`, `bank_name`, `account_type`, `agency_number`, `account_number`, `pix_key`, `created_at`, `updated_at`) VALUES
-(1, 'client', 0, '0001', 'MZF', 'Mira Zlotnik', 'benyfinkelstein@gmail.com', '41836484836', NULL, '$2y$10$coY86ax3NyQXEr1DAE4Q4uX6JMCV6LAI.gAHpLTdZ2Q7MdCTO.nW6', '2025-11-16 22:46:54', NULL, NULL, '2026-01-01 12:21:59', 'ativo', NULL, '', 'corrente', '0001', '6506487-7', '37333590895', '2025-11-16 22:46:39', '2025-12-29 15:07:44');
+INSERT INTO `advertisers` (`id`, `owner_type`, `owner_id`, `bank_code`, `display_name`, `full_name`, `login_email`, `login_cpf`, `contact_phone`, `password_hash`, `email_verified_at`, `verification_token`, `verification_token_expires`, `last_login`, `status`, `fee_pct`, `fee_pct_room`, `fee_pct_workshop`, `bank_name`, `account_type`, `agency_number`, `account_number`, `pix_key`, `created_at`, `updated_at`) VALUES
+(1, 'client', 0, '0001', 'MZF', 'Mira Zlotnik', 'benyfinkelstein@gmail.com', '41836484836', NULL, '$2y$10$coY86ax3NyQXEr1DAE4Q4uX6JMCV6LAI.gAHpLTdZ2Q7MdCTO.nW6', '2025-11-16 22:46:54', NULL, NULL, '2026-01-10 15:16:57', 'ativo', NULL, NULL, NULL, '', 'corrente', '0001', '6506487-7', '37333590895', '2025-11-16 22:46:39', '2025-12-29 15:07:44');
 
 -- --------------------------------------------------------
 
@@ -175,7 +195,10 @@ INSERT INTO `advertiser_remember_tokens` (`id`, `advertiser_id`, `token_hash`, `
 (35, 1, 'd9409fbb0e7182b97c90892fdeeca9077c1172946b44e131d80a20d0a352351e', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', '2025-12-30 21:07:42', '2025-12-31 21:07:42'),
 (36, 1, 'dedde8813d21a3ad1fccf64d3ac9becfedb672309be726e47fdd2031a1ab4a32', 'Mozilla/5.0 (iPhone; CPU iPhone OS 26_1_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) EdgiOS/143.0.3650.112 Version/26.0 Mobile/15E148 Safari/604.1', '2025-12-30 21:33:28', '2025-12-31 21:33:28'),
 (37, 1, '65d3bb509c74ae6efaf1a48a13924a890709382246237f71b82f680fcae5ef21', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.6 Safari/605.1.15', '2025-12-30 21:36:39', '2025-12-31 21:36:39'),
-(38, 1, 'd44d5f13fa92d44444df68fb12e199b6176b15771f0d00329d1bcd569448ef4b', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', '2026-01-01 12:21:59', '2026-01-02 12:21:59');
+(38, 1, 'd44d5f13fa92d44444df68fb12e199b6176b15771f0d00329d1bcd569448ef4b', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', '2026-01-01 12:21:59', '2026-01-02 12:21:59'),
+(39, 1, '857eb7949349b4d0546200150526212bfb3e3cdc2daa60842ed1e046af68efcc', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', '2026-01-06 14:26:44', '2026-01-07 14:26:44'),
+(40, 1, '2ce9f7e9e0b5b8f75c60c41df29a29b029178d342a896dd2066c40141ef27010', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', '2026-01-06 15:32:30', '2026-01-07 15:32:30'),
+(41, 1, 'e84f8ece54b9c0ef82955c9409a4e4c53f102b79c9e3fd3970a5b26b3e9e25a9', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', '2026-01-07 14:51:09', '2026-01-08 14:51:09');
 
 -- --------------------------------------------------------
 
@@ -251,7 +274,8 @@ CREATE TABLE `clients` (
 
 INSERT INTO `clients` (`id`, `company_id`, `company_role`, `stripe_customer_id`, `name`, `email`, `email_verified_at`, `verification_token`, `verification_token_expires`, `password`, `login`, `password_hash`, `cpf`, `rg`, `phone`, `whatsapp`, `type`, `birth_date`, `profession`, `status`, `created_at`, `last_login`, `updated_at`) VALUES
 (26, NULL, 'membro', 'cus_TfzrwBc3nbZUrt', 'Beny Finkelstein', 'benyfink@zeefe.com.br', '2025-12-26 13:27:55', NULL, NULL, NULL, 'benyfink@zeefe.com.br', '$2y$10$iefG5QemENqQt8oJU10JQuhxVINdcfBXCjxViTCwU5XjRbWjAzFeq', '37333590895', NULL, NULL, NULL, 'PF', NULL, NULL, 'ativo', '2025-12-26 13:27:47', NULL, '2025-12-28 11:31:55'),
-(27, NULL, 'membro', 'cus_TgQBcUNKCm1KcV', 'Mira', 'benyfink@gmail.com', '2025-12-27 16:40:14', NULL, NULL, NULL, 'benyfink@gmail.com', '$2y$10$LxhXED.JMa2gRiXOwIdoDuJis44lm0Jzh6xuKbNfjZg10VNbfLSYW', '41836484836', NULL, NULL, NULL, 'PF', NULL, NULL, 'ativo', '2025-12-27 16:39:46', NULL, '2025-12-27 22:37:46');
+(27, 1, 'membro', 'cus_TgQBcUNKCm1KcV', 'Mira', 'benyfink@gmail.com', '2025-12-27 16:40:14', NULL, NULL, NULL, 'benyfink@gmail.com', '$2y$10$LxhXED.JMa2gRiXOwIdoDuJis44lm0Jzh6xuKbNfjZg10VNbfLSYW', '41836484836', '', '', '', 'PF', NULL, NULL, 'ativo', NULL, NULL, '2026-01-07 15:31:19'),
+(28, NULL, 'membro', NULL, 'Adrian Zborowski', 'www.zeefe.com.br.zips019@passmail.net', '2026-01-11 19:49:44', NULL, NULL, NULL, 'www.zeefe.com.br.zips019@passmail.net', '$2y$10$R/E6.cjRis.8M7dylX1aqOjsFeJt54QvppyaM2.yaNMgbVCIxQsFi', '39182048800', NULL, NULL, NULL, 'PF', NULL, NULL, 'ativo', '2026-01-11 19:49:22', NULL, '2026-01-11 19:49:44');
 
 -- --------------------------------------------------------
 
@@ -316,7 +340,23 @@ INSERT INTO `client_remember_tokens` (`id`, `client_id`, `token_hash`, `user_age
 (35, 27, '4cfe66af4b2fd41cf80ebf4a6c9f2aa49826f4ccb8cb13345eda79ab09cf5889', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', '2025-12-27 21:47:01', '2025-12-28 21:47:01'),
 (36, 26, '932b1c729cba59340344349b0abcdec53af6f2ebf40271c4ea221bb8ce5085ae', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.6 Safari/605.1.15', '2025-12-27 21:48:43', '2025-12-28 21:48:43'),
 (37, 27, '331ca6852c8f18a126be36a30f401212e3eef424112b54704af59ea9fc512b83', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', '2025-12-28 18:22:42', '2025-12-29 18:22:42'),
-(38, 26, '5705d707e72a76b8a4323fb1860b57afc907363a249316c7ddcff7dbec0f2e42', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', '2025-12-30 06:47:34', '2025-12-31 06:47:34');
+(38, 26, '5705d707e72a76b8a4323fb1860b57afc907363a249316c7ddcff7dbec0f2e42', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', '2025-12-30 06:47:34', '2025-12-31 06:47:34'),
+(39, 27, 'b6d179ae46127a9410da922dcb79ff13f1eb4654bc45454ce8c64c51383cd40c', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', '2026-01-06 10:19:19', '2026-01-07 10:19:19'),
+(40, 26, '1963a49471102c7c9814dd94de45aa207e10cb31078a88b0f748b61cacbfee99', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', '2026-01-06 11:14:32', '2026-01-07 11:14:32'),
+(41, 26, 'ffe6b934b9e59478e01938372763c2d4eb283e221369451d4032580f0b945269', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', '2026-01-06 12:35:38', '2026-01-07 12:35:38'),
+(42, 27, 'bf1e208565a87091bb1d501d2224588960809d5cae2d32c62ecd970b05328f39', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', '2026-01-06 12:40:29', '2026-01-07 12:40:29'),
+(43, 27, 'ac7d8c6a24a6bcf31611fd133eae66d8e10bbdaa48f7d116c4af69cd50257c70', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', '2026-01-06 13:21:32', '2026-01-07 13:21:32'),
+(44, 27, '2a56cd356b46156366215657d715d87d83e6e76536ea32dec5b2c72c623f6966', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', '2026-01-06 13:21:34', '2026-01-07 13:21:34'),
+(45, 27, 'f6227b642b2686f4257b86be33a76e40f525b44598a891492e43b2dad2d89484', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', '2026-01-06 13:21:34', '2026-01-07 13:21:34'),
+(46, 27, '9a4c517b6c1daff8152035c09884a66c1753c57f4958547974b5d27f91cc503a', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', '2026-01-06 13:21:34', '2026-01-07 13:21:34'),
+(47, 27, '8a3755531948756d54c8834578e5f487110c8139147fdf894564b64774215339', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', '2026-01-06 13:21:34', '2026-01-07 13:21:34'),
+(48, 27, '9fde8c01d74674c4c1f57eba3cb81663185ae974f4fc9eaffdd285a827af8596', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', '2026-01-06 13:21:36', '2026-01-07 13:21:36'),
+(49, 27, '3b99ab5e63dc5c2e2ff9b52fc2a2028eb52f226d2785b1bdbdd3d39b3482838e', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', '2026-01-06 15:28:08', '2026-01-07 15:28:08'),
+(50, 27, '7be2dff4e585fb5783bd8e9b68bceb76ec88a3da40b50160fd2d28955e9ba9b6', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', '2026-01-06 18:21:07', '2026-01-07 18:21:07'),
+(51, 27, '7743d8129b341b71dcab77f6726895589c69394ba0dba1cda5655fa2dc3f2f0a', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', '2026-01-10 12:24:37', '2026-01-11 12:24:37'),
+(52, 27, 'de6ef747c686d4ec63d981d53f26c180a3f92bdb075771052b2125b7d194f28f', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', '2026-01-10 12:48:48', '2026-01-11 12:48:48'),
+(53, 27, '629df27c80104061583fee368b200d26d5c4a776d8e3e1397d558715c0f57a57', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.2 Safari/605.1.15', '2026-01-10 12:49:09', '2026-01-11 12:49:09'),
+(54, 28, '57f481b8210f5e9d0b5b9d0db5cfd55610cc7202197d61178aecda904e28ad2c', 'Mozilla/5.0 (Android 16; Mobile; rv:146.0) Gecko/146.0 Firefox/146.0', '2026-01-11 19:50:05', '2026-01-12 19:50:05');
 
 -- --------------------------------------------------------
 
@@ -353,7 +393,7 @@ CREATE TABLE `companies` (
 --
 
 INSERT INTO `companies` (`id`, `razao_social`, `nome_fantasia`, `cnpj`, `inscricao_estadual`, `discount_pct`, `account_manager_id`, `street`, `number`, `complement`, `zip_code`, `city`, `state`, `email`, `phone`, `whatsapp`, `master_client_id`, `status`, `created_at`, `updated_at`, `is_active`) VALUES
-(1, 'Empresa Exemplo LTDA', 'Exemplo', '12.345.678/0001-99', '123456', NULL, NULL, 'Rua Alfa', '100', 'Sala 501', '01234-567', 'São Paulo', 'SP', 'contato@exemplo.com', '1133224455', '', NULL, 'ativo', '2025-10-23 21:58:21', '2025-11-10 14:45:02', 1);
+(1, 'Empresa Exemplo LTDA', 'Exemplo', '12.345.678/0001-99', '123456', NULL, NULL, 'Rua Alfa', '100', 'Sala 501', '01234-567', 'São Paulo', 'SP', 'contato@exemplo.com', '1133224455', '', 27, 'ativo', '2025-10-23 21:58:21', '2026-01-07 15:31:19', 1);
 
 -- --------------------------------------------------------
 
@@ -399,8 +439,19 @@ CREATE TABLE `company_invitations` (
   `created_at` datetime NOT NULL,
   `accepted_at` datetime DEFAULT NULL,
   `invite_email` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `invite_name` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
+  `invite_name` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `inviter_id` bigint(20) DEFAULT NULL,
+  `inviter_name` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Despejando dados para a tabela `company_invitations`
+--
+
+INSERT INTO `company_invitations` (`id`, `company_id`, `client_id`, `cpf`, `role`, `token`, `status`, `expires_at`, `created_at`, `accepted_at`, `invite_email`, `invite_name`, `inviter_id`, `inviter_name`) VALUES
+(6, 1, 26, '37333590895', 'membro', 'e6df0b3298dcd0dea28a3a54db927c608269122c8c708e10', 'pendente', '2026-01-09 15:36:12', '2026-01-07 15:36:12', NULL, 'benyfink@zeefe.com.br', 'Beny Finkelstein', NULL, NULL),
+(7, 1, 26, '37333590895', 'membro', 'f61d77276485954ac3010ad0096c8999625b2dfe9bafe8db', 'pendente', '2026-01-09 17:12:09', '2026-01-07 17:12:09', NULL, 'benyfink@zeefe.com.br', 'Beny Finkelstein', 27, 'Mira'),
+(8, 1, 26, '37333590895', 'membro', 'efa7680be0572e69ff11247f1b32f98435bde994124ee505', 'pendente', '2026-01-10 18:27:33', '2026-01-08 18:27:33', NULL, 'benyfink@zeefe.com.br', 'Beny Finkelstein', 27, 'Mira');
 
 -- --------------------------------------------------------
 
@@ -500,6 +551,51 @@ INSERT INTO `import_batches` (`id`, `company_id`, `file_name`, `total_rows`, `pr
 -- --------------------------------------------------------
 
 --
+-- Estrutura para tabela `inventory_items`
+--
+
+CREATE TABLE `inventory_items` (
+  `id` int(11) NOT NULL,
+  `id_patrimonio` varchar(64) COLLATE utf8_unicode_ci NOT NULL,
+  `codigo_patrimonio` varchar(64) COLLATE utf8_unicode_ci NOT NULL,
+  `descricao` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
+  `categoria` varchar(120) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `marca` varchar(120) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `modelo` varchar(120) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `numero_serie` varchar(120) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `data_aquisicao` date DEFAULT NULL,
+  `fornecedor` varchar(160) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `nota_fiscal` varchar(80) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `valor_aquisicao` decimal(12,2) DEFAULT NULL,
+  `forma_aquisicao` varchar(80) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `unidade` varchar(120) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `setor` varchar(120) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `localizacao_endereco` varchar(200) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `localizacao_cep` varchar(12) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `localizacao_complemento` varchar(160) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `responsavel` varchar(160) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `status` varchar(60) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `condicao` varchar(60) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `data_ultimo_inventario` date DEFAULT NULL,
+  `vida_util_anos` int(11) DEFAULT NULL,
+  `taxa_depreciacao` decimal(6,2) DEFAULT NULL,
+  `valor_contabil` decimal(12,2) DEFAULT NULL,
+  `centro_custo` varchar(120) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `garantia_ate` date DEFAULT NULL,
+  `historico_manutencao` text COLLATE utf8_unicode_ci,
+  `custo_manutencao` decimal(12,2) DEFAULT NULL,
+  `data_baixa` date DEFAULT NULL,
+  `motivo_baixa` varchar(160) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `valor_baixa` decimal(12,2) DEFAULT NULL,
+  `qr_token` varchar(64) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `link_qr` text COLLATE utf8_unicode_ci,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Estrutura para tabela `ledger_entries`
 --
 
@@ -522,7 +618,9 @@ CREATE TABLE `ledger_entries` (
 --
 
 INSERT INTO `ledger_entries` (`id`, `advertiser_id`, `reservation_id`, `type`, `description`, `amount`, `status`, `available_at`, `paid_at`, `txid`, `created_at`) VALUES
-(33, 1, NULL, 'credito', 'Crédito workshop: Workshop Teste 2', 150.00, 'pendente', '2026-01-30 19:21:38', '2025-12-31 19:21:38', 'workshop_enrollment_27', '2025-12-31 19:21:38');
+(33, 1, NULL, 'credito', 'Crédito workshop: Workshop Teste 2', 150.00, 'pendente', '2026-01-30 19:21:38', '2025-12-31 19:21:38', 'workshop_enrollment_27', '2025-12-31 19:21:38'),
+(34, 1, 77, 'credito', 'Crédito de reserva #77', 1200.00, 'pendente', '2026-02-04 15:07:55', '2026-01-05 15:07:55', 'pi_3SmIC6RGALXK8tGE0l4lfHBO', '2026-01-05 15:07:55'),
+(35, 1, 76, 'credito', 'Crédito de reserva #76', 1500.00, 'pendente', '2026-02-04 15:09:37', '2026-01-05 15:09:37', 'pi_3SmIDkRGALXK8tGE1ySEGEni', '2026-01-05 15:09:37');
 
 -- --------------------------------------------------------
 
@@ -678,7 +776,9 @@ INSERT INTO `payments` (`id`, `reservation_id`, `method`, `amount`, `status`, `t
 (7, 73, 'cartao', 1100.00, 'pago', 'pi_3SjVLDRGALXK8tGE1KWTsipc', '2025-12-28 22:33:48', '2025-12-28 22:33:48', '2025-12-28 22:33:48', 'stripe', 'BRL', 110000, 'pi_3SjVLDRGALXK8tGE1KWTsipc', NULL, 'cus_TgQBcUNKCm1KcV', 'pm_1SjKDSRGALXK8tGEOh0QmBPs', NULL, NULL),
 (8, 74, 'cartao', 1.00, 'pago', 'pi_3SjziuRGALXK8tGE15HJzFhg', '2025-12-30 07:00:16', '2025-12-30 07:00:16', '2025-12-30 07:00:16', 'stripe', 'BRL', 100, 'pi_3SjziuRGALXK8tGE15HJzFhg', NULL, 'cus_TfzrwBc3nbZUrt', 'pm_1SjzcqRGALXK8tGELGfbr1rz', NULL, NULL),
 (9, 75, 'cartao', 150.00, 'pendente', 'pi_3SjzlcRGALXK8tGE097azVfj', NULL, '2025-12-30 07:03:05', '2025-12-30 07:03:05', 'stripe', 'BRL', 15000, 'pi_3SjzlcRGALXK8tGE097azVfj', 'ch_3SjzlcRGALXK8tGE0HWrW43B', 'cus_TgQBcUNKCm1KcV', 'pm_1SjKDSRGALXK8tGEOh0QmBPs', NULL, NULL),
-(10, 74, 'cartao', 1.00, 'estornado', 're_3SjziuRGALXK8tGE1cE3MeWU', '2025-12-30 07:05:57', '2025-12-30 07:05:58', '2025-12-30 07:05:58', 'stripe', 'BRL', 100, 'pi_3SjziuRGALXK8tGE15HJzFhg', NULL, NULL, 'pm_1SjzcqRGALXK8tGELGfbr1rz', NULL, NULL);
+(10, 74, 'cartao', 1.00, 'estornado', 're_3SjziuRGALXK8tGE1cE3MeWU', '2025-12-30 07:05:57', '2025-12-30 07:05:58', '2025-12-30 07:05:58', 'stripe', 'BRL', 100, 'pi_3SjziuRGALXK8tGE15HJzFhg', NULL, NULL, 'pm_1SjzcqRGALXK8tGELGfbr1rz', NULL, NULL),
+(11, 77, 'cartao', 1200.00, 'pago', 'pi_3SmIC6RGALXK8tGE0l4lfHBO', '2026-01-05 15:07:55', '2026-01-05 15:07:55', '2026-01-05 15:07:55', 'stripe', 'BRL', 120000, 'pi_3SmIC6RGALXK8tGE0l4lfHBO', NULL, 'cus_TfzrwBc3nbZUrt', 'pm_1SjzcqRGALXK8tGELGfbr1rz', NULL, NULL),
+(12, 76, 'cartao', 1500.00, 'pago', 'pi_3SmIDkRGALXK8tGE1ySEGEni', '2026-01-05 15:09:37', '2026-01-05 15:09:37', '2026-01-05 15:09:37', 'stripe', 'BRL', 150000, 'pi_3SmIDkRGALXK8tGE1ySEGEni', NULL, 'cus_TfzrwBc3nbZUrt', 'pm_1SjzcqRGALXK8tGELGfbr1rz', NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -770,9 +870,9 @@ INSERT INTO `posts` (`id`, `slug`, `title`, `summary`, `content`, `category`, `c
 (16, '', 'A diminuição dos espaços de trabalho e a necessidade de reuniões presenciais', 'Com escritórios cada vez menores, cresce a necessidade de encontros presenciais em ambientes profissionais, equipados e prontos para decisões rápidas.', '<p data-start=\"140\" data-end=\"445\">A redução das áreas físicas nas empresas tornou-se uma tendência irreversível. Modelos híbridos, escritórios menores e equipes distribuídas levaram muitas organizações a repensar o papel do espaço corporativo. Mas, ao mesmo tempo em que as mesas diminuíram, a necessidade de encontros presenciais cresceu.</p>\n<p data-start=\"447\" data-end=\"779\">Reuniões presenciais seguem essenciais para decisões complexas, alinhamentos estratégicos, construção de confiança e resolução de conflitos. Elas aceleram ciclos de negociação e reduzem ruídos que, no digital, se acumulam. Com menos salas internas, porém, muitos times ficam sem infraestrutura adequada para esses momentos críticos.</p>\n<p data-start=\"781\" data-end=\"1101\">Esse cenário abre espaço para ambientes profissionais compartilhados, bem localizados e já preparados para receber equipes com tecnologia, conforto e privacidade. O escritório deixou de ser um local fixo: virou um recurso a ser acionado conforme a necessidade — especialmente quando o encontro cara a cara faz diferença.</p>', 'Espaços', NULL, 'publicado', 'img/posts/16/cover.webp', 'Beny Finkelstein', '2025-11-27 19:13:00', '2025-11-27 19:15:02', '2025-11-27 19:15:02'),
 (21, '123', 'Workshops e Produtividade', 'Workshops presenciais impulsionam colaboração, alinhamento e aprendizado, aumentando produtividade e fortalecendo a retenção de talentos.', '<p data-start=\"1189\" data-end=\"1505\">Workshops presenciais se tornaram ferramentas de alto impacto para empresas que buscam produtividade e retenção de talentos. Diferentemente de treinamentos tradicionais, o formato de workshop combina conteúdo prático, troca entre equipes e resolução de problemas reais — tudo em um ambiente que estimula colaboração.</p>\n<p data-start=\"1507\" data-end=\"1853\">Ao trabalhar em grupo, os profissionais ganham clareza sobre processos, entendem expectativas, fortalecem relações e desenvolvem senso de pertencimento. Isso reduz retrabalho, melhora a comunicação interna e acelera entregas. Além disso, a experiência presencial cria memórias positivas, reforça cultura e dá visibilidade ao propósito da empresa.</p>\n<p data-start=\"1855\" data-end=\"2223\">Do ponto de vista de retenção, workshops funcionam como investimento direto no desenvolvimento do colaborador. Pessoas que sentem evolução, aprendizado contínuo e conexão humana tendem a permanecer mais tempo e produzir mais. Para organizações que já operam com times híbridos ou remotos, encontros estruturados tornam-se fundamentais para manter coesão e engajamento.</p>', 'Workshop', NULL, 'publicado', 'img/posts/21/cover.webp', 'Beny Finkelstein', '2025-11-28 01:19:00', '2025-11-27 19:19:17', '2025-12-19 15:53:55'),
 (22, 'locais', 'Locais privativos para reuniões', 'Reuniões de negócios exigem foco e confidencialidade. Espaços privativos garantem profissionalismo, segurança e eficiência nas decisões.', '<p data-start=\"2307\" data-end=\"2594\">Reuniões de negócios exigem confidencialidade, foco e ambiente adequado. Mesmo com o avanço do trabalho remoto, muitos profissionais perceberam que cafés, escritórios improvisados ou salas compartilhadas não garantem a privacidade e a concentração necessárias para negociações sensíveis.</p>\n<p data-start=\"2596\" data-end=\"2871\">Ambientes privativos oferecem segurança para tratar temas estratégicos, números financeiros, contratos e decisões que não podem vazar. Além disso, geram percepção de profissionalismo — algo que impacta diretamente a credibilidade diante de clientes, parceiros e investidores.</p>\n<p data-start=\"2873\" data-end=\"3219\">Outro ponto crítico é a eficiência. Em salas planejadas para reuniões, a tecnologia funciona, a acústica ajuda, e o espaço convida à objetividade. Isso reduz atrasos, interrupções e improvisos. Ter um local reservado, confortável e bem equipado deixou de ser luxo: tornou-se elemento básico para quem conduz negócios de forma séria e competitiva.</p>', 'Locais', NULL, 'publicado', 'img/posts/22/cover.jpg', 'Beny Finkelstein', '2025-11-27 19:19:00', '2025-11-27 19:20:48', '2025-11-27 19:20:48'),
-(24, 'o-dilema-da-gest-o-moderna-home-office-x-presencial-2', 'Dilema: Homeoffice ou Presencial?', 'Flexibilidade ou conexão real? A gestão moderna busca equilíbrio entre trabalho remoto e encontros presenciais estratégicos para decisões que realmente importam.', '<p data-start=\"194\" data-end=\"469\">A gestão moderna vive um paradoxo. De um lado, o home office trouxe flexibilidade, redução de custos e maior autonomia para profissionais. De outro, a ausência de encontros presenciais tem impactado colaboração, alinhamento estratégico e construção de cultura organizacional.</p>\n<p data-start=\"471\" data-end=\"805\">Reuniões virtuais funcionam bem para decisões operacionais e acompanhamentos rápidos. Porém, quando o objetivo é criar, negociar, alinhar expectativas ou tomar decisões críticas, o presencial ainda exerce um papel insubstituível. Linguagem corporal, foco compartilhado e troca espontânea são elementos difíceis de replicar no digital.</p>\n<p data-start=\"807\" data-end=\"1076\">O desafio atual não é escolher entre remoto ou presencial, mas <strong data-start=\"870\" data-end=\"916\">saber quando cada formato faz mais sentido</strong>. Empresas mais eficientes têm adotado modelos híbridos inteligentes, utilizando encontros presenciais pontuais e bem planejados para momentos de maior impacto.</p>\n<p data-start=\"1078\" data-end=\"1253\">Nesse contexto, espaços flexíveis e prontos para uso tornam-se aliados da gestão: permitem reunir pessoas quando realmente importa, sem a rigidez de manter um escritório fixo.</p>', 'espaços', NULL, 'publicado', 'img/posts/24/cover.png', 'Beny Finkelstein', '2025-12-19 20:19:00', '2025-12-19 08:20:12', '2026-01-01 21:12:07'),
-(25, 'impressionar-um-cliente-come-a-pelo-local-da-reuni-o', 'Impressionar um cliente começa pelo local da reunião', 'O local da reunião comunica antes das palavras. Ambientes certos geram confiança, foco e impacto nas negociações com clientes.', '<p data-start=\"1320\" data-end=\"1519\">Antes mesmo da primeira palavra, o ambiente já comunica. O local escolhido para uma reunião influencia diretamente a percepção de profissionalismo, organização e cuidado com a experiência do cliente.</p>\n<p data-start=\"1521\" data-end=\"1798\">Salas improvisadas, ruído excessivo, falta de privacidade ou infraestrutura limitada podem comprometer negociações importantes — independentemente da qualidade da proposta apresentada. Por outro lado, um espaço bem projetado transmite confiança, preparo e atenção aos detalhes.</p>\n<p data-start=\"1800\" data-end=\"2019\">Iluminação adequada, conforto, tecnologia funcional e hospitalidade criam um cenário favorável para conversas estratégicas. O cliente se sente valorizado, o diálogo flui melhor e as decisões tendem a ser mais objetivas.</p>\n<p data-start=\"2021\" data-end=\"2219\">Impressionar não é exagerar. É oferecer o ambiente certo para que a reunião aconteça com foco, privacidade e fluidez. Escolher bem onde receber um cliente é parte essencial da estratégia de negócio.</p>', 'clientes', NULL, 'publicado', 'img/posts/25/cover.png', 'Beny Finkelstein', '2025-12-19 23:20:00', '2025-12-19 08:22:24', '2026-01-01 21:12:46'),
-(26, 'alugar-sob-demanda-ou-possuir-um-espa-o-pr-s-e-contras', 'Alugar sob demanda ou possuir um espaço? Prós e contras', 'Espaço próprio ou sob demanda? Entenda os prós e contras de cada modelo e como escolher a opção mais eficiente para o seu negócio.', '<p data-start=\"2289\" data-end=\"2465\">A decisão entre possuir um espaço próprio ou alugar sob demanda envolve muito mais do que custo mensal. Trata-se de flexibilidade, eficiência e adequação ao momento da empresa.</p>\n<p data-start=\"2467\" data-end=\"2737\"><strong data-start=\"2467\" data-end=\"2496\">Possuir um espaço próprio</strong> oferece controle total, identidade fixa e disponibilidade constante. Em contrapartida, exige investimento inicial elevado, custos fixos recorrentes, manutenção, ociosidade em períodos de menor uso e menor capacidade de adaptação a mudanças.</p>\n<p data-start=\"2739\" data-end=\"3041\">Já <strong data-start=\"2742\" data-end=\"2772\">alugar espaços sob demanda</strong> reduz compromissos financeiros, elimina custos ocultos e permite escolher o local ideal para cada necessidade: reuniões, workshops, apresentações ou encontros estratégicos. A principal limitação está na dependência de disponibilidade e na ausência de um endereço fixo.</p>\n<p data-start=\"3043\" data-end=\"3299\">Para empresas enxutas, times híbridos ou profissionais que se reúnem presencialmente apenas em momentos-chave, o modelo sob demanda tende a ser mais racional. Ele converte estrutura fixa em variável e libera energia para o que realmente importa: o negócio.</p>\n<p data-start=\"3301\" data-end=\"3442\">Cada modelo tem seu papel. A escolha certa depende do estágio da empresa, da frequência de uso e da importância estratégica do espaço físico.</p>', 'Locais', 9, 'publicado', 'img/posts/26/cover.png', 'Beny Finkelstein', '2026-01-03 14:56:00', '2025-12-19 08:25:31', '2026-01-04 08:57:59');
+(24, 'o-dilema-da-gest-o-moderna-home-office-x-presencial-2', 'Dilema: Homeoffice ou Presencial?', 'Flexibilidade ou conexão real? A gestão moderna busca equilíbrio entre trabalho remoto e encontros presenciais estratégicos para decisões que realmente importam.', '<p data-start=\"194\" data-end=\"469\">A gestão moderna vive um paradoxo. De um lado, o home office trouxe flexibilidade, redução de custos e maior autonomia para profissionais. De outro, a ausência de encontros presenciais tem impactado colaboração, alinhamento estratégico e construção de cultura organizacional.</p>\n<p data-start=\"471\" data-end=\"805\">Reuniões virtuais funcionam bem para decisões operacionais e acompanhamentos rápidos. Porém, quando o objetivo é criar, negociar, alinhar expectativas ou tomar decisões críticas, o presencial ainda exerce um papel insubstituível. Linguagem corporal, foco compartilhado e troca espontânea são elementos difíceis de replicar no digital.</p>\n<p data-start=\"807\" data-end=\"1076\">O desafio atual não é escolher entre remoto ou presencial, mas <strong data-start=\"870\" data-end=\"916\">saber quando cada formato faz mais sentido</strong>. Empresas mais eficientes têm adotado modelos híbridos inteligentes, utilizando encontros presenciais pontuais e bem planejados para momentos de maior impacto.</p>\n<p data-start=\"1078\" data-end=\"1253\">Nesse contexto, espaços flexíveis e prontos para uso tornam-se aliados da gestão: permitem reunir pessoas quando realmente importa, sem a rigidez de manter um escritório fixo.</p>', 'espaços', 9, 'publicado', 'img/posts/24/cover.png', 'Beny Finkelstein', '2025-12-20 05:19:00', '2025-12-19 08:20:12', '2026-01-06 16:14:40'),
+(25, 'impressionar-um-cliente-come-a-pelo-local-da-reuni-o', 'Impressionar um cliente começa pelo local da reunião', 'O local da reunião comunica antes das palavras. Ambientes certos geram confiança, foco e impacto nas negociações com clientes.', '<p data-start=\"1320\" data-end=\"1519\">Antes mesmo da primeira palavra, o ambiente já comunica. O local escolhido para uma reunião influencia diretamente a percepção de profissionalismo, organização e cuidado com a experiência do cliente.</p>\n<p data-start=\"1521\" data-end=\"1798\">Salas improvisadas, ruído excessivo, falta de privacidade ou infraestrutura limitada podem comprometer negociações importantes — independentemente da qualidade da proposta apresentada. Por outro lado, um espaço bem projetado transmite confiança, preparo e atenção aos detalhes.</p>\n<p data-start=\"1800\" data-end=\"2019\">Iluminação adequada, conforto, tecnologia funcional e hospitalidade criam um cenário favorável para conversas estratégicas. O cliente se sente valorizado, o diálogo flui melhor e as decisões tendem a ser mais objetivas.</p>\n<p data-start=\"2021\" data-end=\"2219\">Impressionar não é exagerar. É oferecer o ambiente certo para que a reunião aconteça com foco, privacidade e fluidez. Escolher bem onde receber um cliente é parte essencial da estratégia de negócio.</p>', 'clientes', 9, 'publicado', 'img/posts/25/cover.png', 'Beny Finkelstein', '2025-12-20 08:20:00', '2025-12-19 08:22:24', '2026-01-06 16:13:51'),
+(26, 'alugar-sob-demanda-ou-possuir-um-espa-o-pr-s-e-contras', 'Alugar sob demanda ou possuir um espaço? Prós e contras', 'Espaço próprio ou sob demanda? Entenda os prós e contras de cada modelo e como escolher a opção mais eficiente para o seu negócio.', '<p data-start=\"2289\" data-end=\"2465\">A decisão entre possuir um espaço próprio ou alugar sob demanda envolve muito mais do que custo mensal. Trata-se de flexibilidade, eficiência e adequação ao momento da empresa.</p>\n<p data-start=\"2467\" data-end=\"2737\"><strong data-start=\"2467\" data-end=\"2496\">Possuir um espaço próprio</strong> oferece controle total, identidade fixa e disponibilidade constante. Em contrapartida, exige investimento inicial elevado, custos fixos recorrentes, manutenção, ociosidade em períodos de menor uso e menor capacidade de adaptação a mudanças.</p>\n<p data-start=\"2739\" data-end=\"3041\">Já <strong data-start=\"2742\" data-end=\"2772\">alugar espaços sob demanda</strong> reduz compromissos financeiros, elimina custos ocultos e permite escolher o local ideal para cada necessidade: reuniões, workshops, apresentações ou encontros estratégicos. A principal limitação está na dependência de disponibilidade e na ausência de um endereço fixo.</p>\n<p data-start=\"3043\" data-end=\"3299\">Para empresas enxutas, times híbridos ou profissionais que se reúnem presencialmente apenas em momentos-chave, o modelo sob demanda tende a ser mais racional. Ele converte estrutura fixa em variável e libera energia para o que realmente importa: o negócio.</p>\n<p data-start=\"3301\" data-end=\"3442\">Cada modelo tem seu papel. A escolha certa depende do estágio da empresa, da frequência de uso e da importância estratégica do espaço físico.</p>', 'Locais', 9, 'publicado', 'img/posts/26/cover.jpg', 'Beny Finkelstein', '2026-01-03 17:56:00', '2025-12-19 08:25:31', '2026-01-05 11:47:02');
 
 -- --------------------------------------------------------
 
@@ -887,7 +987,11 @@ INSERT INTO `reservations` (`id`, `room_id`, `client_id`, `participants`, `price
 (72, 6, 27, 1, 1100.00, NULL, '123', '', '2025-12-29', '08:00:00', '20:00:00', 1100.00, 1100.00, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, 'cancelada', 'confirmado', NULL, NULL, NULL, '2025-12-28 21:27:11', 'ZF-28UH-M599NN', 'pi_3SjKEtRGALXK8tGE1rHL86s1', NULL, '2025-12-28 10:42:31', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
 (73, 6, 27, 1, 1100.00, NULL, 'teste123', '', '2025-12-28', '08:00:00', '20:00:00', 1100.00, 1100.00, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, 'cancelada', 'confirmado', NULL, NULL, NULL, '2025-12-28 22:34:47', 'ZF-J4CN-ZEZN2H', 'pi_3SjVLDRGALXK8tGE1KWTsipc', NULL, '2025-12-28 22:33:48', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
 (74, 45, 26, 1, 1.00, NULL, '123', '', '2025-12-31', '08:00:00', '20:00:00', 1.00, 1.00, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, 'cancelada', 'confirmado', NULL, NULL, NULL, '2025-12-30 07:05:58', 'ZF-YSZZ-P9YLV7', 'pi_3SjziuRGALXK8tGE15HJzFhg', NULL, '2025-12-30 07:00:16', 7, 'immediate', 'Pagamento no momento da Reserva (Sem cancelamento)', 0, 0.00, 'confirm', '2025-12-30 06:57:58', 'pm_1SjzcqRGALXK8tGELGfbr1rz'),
-(75, 50, 27, 1, 100.00, NULL, 'Reserva', '', '2025-12-31', '08:00:00', '20:00:00', 100.00, 100.00, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, 'confirmada', 'pendente', '2025-12-30 08:00:00', NULL, NULL, '2025-12-30 07:03:05', NULL, 'pi_3SjzlcRGALXK8tGE097azVfj', 'ch_3SjzlcRGALXK8tGE0HWrW43B', NULL, 8, 'immediate', 'Pagamento no momento da Reserva (Sem cancelamento)', 0, 0.00, 'confirm', '2025-12-30 12:28:12', 'pm_1SjKDSRGALXK8tGEOh0QmBPs');
+(75, 50, 27, 1, 100.00, NULL, 'Reserva', '', '2025-12-31', '08:00:00', '20:00:00', 100.00, 100.00, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, 'confirmada', 'pendente', '2025-12-30 08:00:00', NULL, NULL, '2025-12-30 07:03:05', NULL, 'pi_3SjzlcRGALXK8tGE097azVfj', 'ch_3SjzlcRGALXK8tGE0HWrW43B', NULL, 8, 'immediate', 'Pagamento no momento da Reserva (Sem cancelamento)', 0, 0.00, 'confirm', '2025-12-30 12:28:12', 'pm_1SjKDSRGALXK8tGEOh0QmBPs'),
+(76, 50, 26, 1, 1500.00, NULL, 'Reserva Teste', '', '2026-01-05', '08:00:00', '20:00:00', 1500.00, 1500.00, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, 'confirmada', 'confirmado', NULL, NULL, NULL, '2026-01-05 15:09:37', 'ZF-HSM5-ZHN28K', 'pi_3SmIDkRGALXK8tGE1ySEGEni', NULL, '2026-01-05 15:09:37', 25, 'immediate', 'Pagamento no momento da Reserva (Sem cancelamento)', 0, 0.00, 'confirm', '2026-01-05 14:35:22', 'pm_1SjzcqRGALXK8tGELGfbr1rz'),
+(77, 6, 26, 1, 1200.00, NULL, 'TEste222', '', '2026-01-05', '08:00:00', '20:00:00', 1200.00, 1200.00, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, 'confirmada', 'confirmado', NULL, NULL, NULL, '2026-01-05 15:07:55', 'ZF-PCYV-ANLUJD', 'pi_3SmIC6RGALXK8tGE0l4lfHBO', NULL, '2026-01-05 15:07:55', 1, 'immediate', 'Pagamento no momento da Reserva (Sem cancelamento)', 0, 0.00, 'confirm', '2026-01-05 14:36:52', 'pm_1SjzcqRGALXK8tGELGfbr1rz'),
+(78, 6, 26, 1, 1200.00, NULL, 'teste', 'teste', '2026-01-08', '08:00:00', '20:00:00', 1200.00, 1200.00, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, 'pendente', 'pendente', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 29, 'immediate', 'Pagamento no momento da Reserva (Sem cancelamento)', 0, 0.00, 'confirm', '2026-01-08 11:41:47', 'pm_1SjzcqRGALXK8tGELGfbr1rz'),
+(79, 6, 26, 1, 1200.00, NULL, 'teste2', '', '2026-01-09', '08:00:00', '20:00:00', 1200.00, 1200.00, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, 'pendente', 'pendente', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 29, 'immediate', 'Pagamento no momento da Reserva (Sem cancelamento)', 0, 0.00, 'confirm', '2026-01-08 11:44:38', 'pm_1SjzcqRGALXK8tGELGfbr1rz');
 
 -- --------------------------------------------------------
 
@@ -953,6 +1057,7 @@ CREATE TABLE `rooms` (
   `dailyrate` decimal(10,2) DEFAULT NULL,
   `daily_rate` decimal(10,2) NOT NULL DEFAULT '0.00',
   `location` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `room_formats` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `lat` decimal(10,7) DEFAULT NULL,
   `lon` decimal(10,7) DEFAULT NULL,
   `status` enum('ativo','inativo','manutencao','desativada') COLLATE utf8mb4_unicode_ci DEFAULT 'ativo',
@@ -970,43 +1075,43 @@ CREATE TABLE `rooms` (
 -- Despejando dados para a tabela `rooms`
 --
 
-INSERT INTO `rooms` (`id`, `name`, `capacity`, `description`, `street`, `complement`, `cep`, `city`, `state`, `responsavel_nome`, `responsavel_telefone`, `responsavel_email`, `portaria_telefone`, `portaria_email`, `portaria_inteligente`, `dailyrate`, `daily_rate`, `location`, `lat`, `lon`, `status`, `maintenance_start`, `maintenance_end`, `deactivated_from`, `photo_path`, `facilitated_access`, `created_at`, `updated_at`, `advertiser_id`) VALUES
-(6, 'Teste', 10, '', 'Avenida Rouxinol', '84', '04516-000', 'São Paulo', 'SP', '', '', '', '', '', 'Não', NULL, 1200.00, '78', -23.6012764, -46.6734966, 'ativo', NULL, NULL, NULL, 'img/rooms/6/room_6_69529e23e4e638.40210668.jpg,img/rooms/6/room_6_69529e23e53b98.33524449.jpg,img/rooms/6/room_6_69529e23e58292.80864174.jpg,img/rooms/6/room_6_69529e23e5c591.56375096.jpg,img/rooms/6/room_6_69529e23e60d62.09424441.jpg', 0, '2025-12-25 22:00:09', '2025-12-29 12:27:58', 1),
-(7, 'Incow Coworking', 12, 'Tipo: Coworking | Rating: 4.9 | Fonte: Website + Google Maps reviews | Website: www.incow.com.br', 'Av. dos Eucaliptos, 500', 'Moema', NULL, 'São Paulo', 'SP', 'Incow Coworking', '+55 11 4210-1055', 'contato@incow.com.br', '+55 11 4210-1055', 'contato@incow.com.br', 'Não', NULL, 70.00, 'Moema', -23.6079676, -46.6716347, 'ativo', NULL, NULL, NULL, NULL, 0, '2025-12-29 15:20:12', '2025-12-29 15:36:07', 1),
-(8, 'IN Moema – Consultórios e Escritórios', 10, 'Tipo: Coworking | Rating: 4.9 | Fonte: Google Maps + Website | Website: www.inmoema.com.br', 'Av. Moema, 622', 'Moema', NULL, 'São Paulo', 'SP', 'IN Moema – Consultórios e Escritórios', '+55 11 99991-3909', 'info@inmoema.com.br', '+55 11 99991-3909', 'info@inmoema.com.br', 'Não', NULL, 80.00, 'Moema', -23.6068971, -46.6556810, 'ativo', NULL, NULL, NULL, NULL, 0, '2025-12-29 15:20:12', '2025-12-29 15:36:08', 1),
-(9, 'Inspira Coworking', 12, 'Tipo: Coworking | Rating: 4.8 | Fonte: Google Maps | Website: www.inspiracoworking.com.br', 'Av. Agami, 40', 'Indianópolis', NULL, 'São Paulo', 'SP', 'Inspira Coworking', '+55 11 5052-4748', 'contato@inspiracoworking.com.br', '+55 11 5052-4748', 'contato@inspiracoworking.com.br', 'Não', NULL, 75.00, 'Indianópolis', -23.5986768, -46.6624575, 'ativo', NULL, NULL, NULL, NULL, 0, '2025-12-29 15:20:12', '2025-12-29 15:36:09', 1),
-(10, 'PROGEO Cowork', 10, 'Tipo: Coworking | Rating: 4.8 | Fonte: Google Maps | Website: progeocowork.etc.br', 'Av. Pavão, 955', 'Indianópolis', NULL, 'São Paulo', 'SP', 'PROGEO Cowork', '+55 11 97636-9957', 'contato@progeocowork.com.br', '+55 11 97636-9957', 'contato@progeocowork.com.br', 'Não', NULL, 70.00, 'Indianópolis', -23.6071971, -46.6669054, 'ativo', NULL, NULL, NULL, NULL, 0, '2025-12-29 15:20:12', '2025-12-29 15:36:10', 1),
-(11, 'Banco Santander Work Café Moema', 8, 'Tipo: Coworking Híbrido | Rating: 3.9 | Fonte: Google Maps | Website: www.santander.com.br', 'Av. Pavão, 505', 'Moema', NULL, 'São Paulo', 'SP', 'Banco Santander Work Café Moema', '+55 11 4004-3535', 'workcafe@santander.com.br', '+55 11 4004-3535', 'workcafe@santander.com.br', 'Não', NULL, 50.00, 'Moema', -23.6046052, -46.6703479, 'ativo', NULL, NULL, NULL, NULL, 0, '2025-12-29 15:20:12', '2025-12-29 15:36:13', 1),
-(12, 'Espaço APESP', 15, 'Tipo: Espaço Eventos | Rating: 4.6 | Fonte: Google Maps (espaço + avaliações) | Website: espacoapesp.org.br', 'Rua Tuim, 932', 'Moema', NULL, 'São Paulo', 'SP', 'Espaço APESP', '+55 11 5535-2157', 'eventos@espacoapesp.org.br', '+55 11 5535-2157', 'eventos@espacoapesp.org.br', 'Não', NULL, 0.00, 'Moema', -23.6038882, -46.6727185, 'ativo', NULL, NULL, NULL, NULL, 0, '2025-12-29 15:20:12', '2025-12-29 15:36:14', 1),
-(13, 'Casa Petra', 20, 'Tipo: Espaço Eventos | Rating: 4.6 | Fonte: Google Maps (eventos corporativos) | Website: casapetra.com.br', 'Av. Aratãs, 1010', 'Moema', NULL, 'São Paulo', 'SP', 'Casa Petra', '+55 11 5053-2231', 'contato@casapetra.com.br', '+55 11 5053-2231', 'contato@casapetra.com.br', 'Não', NULL, 0.00, 'Moema', -23.6134129, -46.6584645, 'ativo', NULL, NULL, NULL, NULL, 0, '2025-12-29 15:20:12', '2025-12-29 15:36:15', 1),
-(17, 'WeWork Berrini', 20, 'Tipo: Coworking Premium | Rating: 4.7 | Fonte: WeWork Brasil + Website oficial | Website: www.wework.com/pt-BR', 'Av. Nações Unidas, 12901', 'Brooklin', NULL, 'São Paulo', 'SP', 'WeWork Berrini', '+55 11 3195-6449', 'saopaulo@wework.com', '+55 11 3195-6449', 'saopaulo@wework.com', 'Não', NULL, 114.00, 'Brooklin', -23.6110936, -46.6966677, 'ativo', NULL, NULL, NULL, NULL, 0, '2025-12-29 15:20:12', '2025-12-29 15:36:22', 1),
-(18, 'Coworking Smart Berrini', 12, 'Tipo: Coworking | Rating: 4.9 | Fonte: Website + contato telefônico | Website: www.coworkingsmart.com.br', 'Av. Eng. Luís Carlos Berrini, 1681', 'Berrini', NULL, 'São Paulo', 'SP', 'Coworking Smart Berrini', '+55 11 92126-2191', 'contato@coworkingsmart.com.br', '+55 11 92126-2191', 'contato@coworkingsmart.com.br', 'Não', NULL, 90.00, 'Berrini', -23.6097057, -46.6948427, 'ativo', NULL, NULL, NULL, NULL, 0, '2025-12-29 15:20:12', '2025-12-29 15:36:23', 1),
-(19, 'NetCoworking Berrini', 10, 'Tipo: Coworking | Rating: 4.8 | Fonte: Google Maps | Website: www.netcoworking.com.br', 'Av. Eng. Luís Carlos Berrini, 1700', 'Berrini', NULL, 'São Paulo', 'SP', 'NetCoworking Berrini', '+55 11 5555-3212', 'contato@netcoworking.com.br', '+55 11 5555-3212', 'contato@netcoworking.com.br', 'Não', NULL, 80.00, 'Berrini', -23.6097057, -46.6948427, 'ativo', NULL, NULL, NULL, NULL, 0, '2025-12-29 15:20:12', '2025-12-29 15:36:24', 1),
-(20, 'My Place Office Berrini', 12, 'Tipo: Coworking | Rating: 4.9 | Fonte: Website + Google Maps | Website: www.myplaceoffice-berrini.com.br', 'Av. Eng. Luís Carlos Berrini, 1140', 'Berrini', NULL, 'São Paulo', 'SP', 'My Place Office Berrini', '+55 11 94038-2318', 'contato@myplaceoffice.com.br', '+55 11 94038-2318', 'contato@myplaceoffice.com.br', 'Não', NULL, 90.00, 'Berrini', -23.6097057, -46.6948427, 'ativo', NULL, NULL, NULL, NULL, 0, '2025-12-29 15:20:12', '2025-12-29 15:36:26', 1),
-(24, 'Coworking Offices Vila Olímpia', 14, 'Tipo: Coworking | Rating: 4.8 | Fonte: Website + Google Maps | Website: coworkingoffices.com.br', 'R. Tenerife, 31', 'Vila Olímpia', NULL, 'São Paulo', 'SP', 'Coworking Offices Vila Olímpia', '+55 11 3044-0710', 'contato@coworkingoffices.com.br', '+55 11 3044-0710', 'contato@coworkingoffices.com.br', 'Não', NULL, 90.00, 'Vila Olímpia', -23.5963637, -46.6877272, 'ativo', NULL, NULL, NULL, NULL, 0, '2025-12-29 15:20:12', '2025-12-29 15:36:31', 1),
-(26, 'Office House Coworking e Eventos Itaim', 14, 'Tipo: Coworking | Rating: 4.9 | Fonte: Website + Google Maps | Website: www.officehousecoworking.com.br', 'Rua Sader Macul, 107', 'Itaim Bibi', NULL, 'São Paulo', 'SP', 'Office House Coworking e Eventos Itaim', '+55 11 94309-1279', 'contato@officehouse.com.br', '+55 11 94309-1279', 'contato@officehouse.com.br', 'Não', NULL, 95.00, 'Itaim Bibi', -23.5887837, -46.6797772, 'ativo', NULL, NULL, NULL, NULL, 0, '2025-12-29 15:20:12', '2025-12-29 15:36:36', 1),
-(27, 'AKASAHUB Itaim', 12, 'Tipo: Coworking | Rating: 4.7 | Fonte: Website + Google Maps | Website: www.akasahub.com.br', 'Rua Sader Macul, 96', 'Itaim Bibi', NULL, 'São Paulo', 'SP', 'AKASAHUB Itaim', '+55 11 4890-2255', 'contato@akasahub.com.br', '+55 11 4890-2255', 'contato@akasahub.com.br', 'Não', NULL, 85.00, 'Itaim Bibi', -23.5887837, -46.6797772, 'ativo', NULL, NULL, NULL, NULL, 0, '2025-12-29 15:20:12', '2025-12-29 15:36:37', 1),
-(28, 'CENTRAL9 Coworking', 10, 'Tipo: Coworking | Rating: 4.7 | Fonte: Google Maps (reuniões periódicas) | Website: www.central9.com.br', 'Av. Nove de Julho, 5617', 'Itaim Bibi', NULL, 'São Paulo', 'SP', 'CENTRAL9 Coworking', '+55 11 3071-1947', 'contato@central9.com.br', '+55 11 3071-1947', 'contato@central9.com.br', 'Não', NULL, 80.00, 'Itaim Bibi', -23.5806945, -46.6794002, 'ativo', NULL, NULL, NULL, NULL, 0, '2025-12-29 15:20:12', '2025-12-29 15:36:39', 1),
-(31, 'Regus Faria Lima', 12, 'Tipo: Coworking Corporativo | Rating: 4.7 | Fonte: Regus Brasil + Website | Website: www.regus.com/pt-br/brazil/sao-paulo', 'Av. Brig. Faria Lima, 3729', 'Itaim Bibi', NULL, 'São Paulo', 'SP', 'Regus Faria Lima', '+55 11 3443-6200', 'saopaulo@regus.com', '+55 11 3443-6200', 'saopaulo@regus.com', 'Não', NULL, 120.00, 'Itaim Bibi', NULL, NULL, 'ativo', NULL, NULL, NULL, NULL, 0, '2025-12-29 15:20:12', '2025-12-29 15:20:12', 1),
-(32, 'Regus Ed. Seculum', 10, 'Tipo: Coworking Corporativo | Rating: 4.3 | Fonte: Regus Brasil | Website: www.regus.com/pt-br/brazil/sao-paulo', 'Av. Brig. Faria Lima, 3144', 'Itaim Bibi', NULL, 'São Paulo', 'SP', 'Regus Ed. Seculum', '+55 11 3568-2500', 'saopaulo@regus.com', '+55 11 3568-2500', 'saopaulo@regus.com', 'Não', NULL, 110.00, 'Itaim Bibi', NULL, NULL, 'ativo', NULL, NULL, NULL, NULL, 0, '2025-12-29 15:20:12', '2025-12-29 15:20:12', 1),
-(33, 'Regus JK 1455', 12, 'Tipo: Coworking Corporativo | Rating: 4.6 | Fonte: Regus Brasil + Website | Website: www.regus.com/pt-br/brazil/sao-paulo', 'Av. Pres. Juscelino Kubitschek, 1455', 'Vila Nova Conceição', NULL, 'São Paulo', 'SP', 'Regus JK 1455', '+55 11 2124-3400', 'saopaulo@regus.com', '+55 11 2124-3400', 'saopaulo@regus.com', 'Não', NULL, 120.00, 'Vila Nova Conceição', NULL, NULL, 'ativo', NULL, NULL, NULL, NULL, 0, '2025-12-29 15:20:12', '2025-12-29 15:20:12', 1),
-(34, 'Regus São Paulo eTower', 12, 'Tipo: Coworking Corporativo | Rating: 4.2 | Fonte: Regus Brasil + Website | Website: www.regus.com/pt-br/brazil/sao-paulo', 'Rua Funchal, 418', 'Vila Olímpia', NULL, 'São Paulo', 'SP', 'Regus São Paulo eTower', '+55 11 3521-7000', 'saopaulo@regus.com', '+55 11 3521-7000', 'saopaulo@regus.com', 'Não', NULL, 120.00, 'Vila Olímpia', -23.5936301, -46.6905142, 'ativo', NULL, NULL, NULL, NULL, 0, '2025-12-29 15:20:12', '2025-12-29 15:36:47', 1),
-(35, 'Regus JK Iguatemi', 14, 'Tipo: Coworking Corporativo | Rating: 4.5 | Fonte: Regus Brasil | Website: www.regus.com/pt-br/brazil/sao-paulo', 'Av. Pres. Juscelino Kubitschek, 2041', 'Vila Olímpia', NULL, 'São Paulo', 'SP', 'Regus JK Iguatemi', '+55 11 2844-8000', 'saopaulo@regus.com', '+55 11 2844-8000', 'saopaulo@regus.com', 'Não', NULL, 120.00, 'Vila Olímpia', NULL, NULL, 'ativo', NULL, NULL, NULL, NULL, 0, '2025-12-29 15:20:12', '2025-12-29 15:20:12', 1),
-(36, 'Regus Continental Square', 14, 'Tipo: Coworking Corporativo | Rating: 4.6 | Fonte: Regus Brasil + Google Maps reviews | Website: www.regus.com/pt-br/brazil/sao-paulo', 'R. Olimpíadas, 205', 'Vila Olímpia', NULL, 'São Paulo', 'SP', 'Regus Continental Square', '+55 11 3728-9200', 'saopaulo@regus.com', '+55 11 3728-9200', 'saopaulo@regus.com', 'Não', NULL, 120.00, 'Vila Olímpia', -23.5954762, -46.6848824, 'ativo', NULL, NULL, NULL, NULL, 0, '2025-12-29 15:20:12', '2025-12-29 15:36:49', 1),
-(37, 'Regus Santo Amaro', 12, 'Tipo: Coworking Corporativo | Rating: 4.3 | Fonte: Regus Brasil | Website: www.regus.com/pt-br/brazil/sao-paulo', 'Av. Guido Caloi, 1000 - Bloco 5', 'Santo Amaro', NULL, 'São Paulo', 'SP', 'Regus Santo Amaro', '+55 11 3202-2600', 'saopaulo@regus.com', '+55 11 3202-2600', 'saopaulo@regus.com', 'Não', NULL, 110.00, 'Santo Amaro', NULL, NULL, 'ativo', NULL, NULL, NULL, NULL, 0, '2025-12-29 15:20:12', '2025-12-29 15:20:12', 1),
-(38, 'Regus EZTower', 14, 'Tipo: Coworking Corporativo | Rating: 4.6 | Fonte: Regus Brasil + Google Maps | Website: www.regus.com/pt-br/brazil/sao-paulo', 'R. Arquiteto Olavo Redig de Campos, 105', 'Chácara Santo Antônio', NULL, 'São Paulo', 'SP', 'Regus EZTower', '+55 11 2657-7400', 'saopaulo@regus.com', '+55 11 2657-7400', 'saopaulo@regus.com', 'Não', NULL, 120.00, 'Chácara Santo Antônio', -23.6253205, -46.7020138, 'ativo', NULL, NULL, NULL, NULL, 0, '2025-12-29 15:20:12', '2025-12-29 15:36:52', 1),
-(39, 'Regus Torre Z', 14, 'Tipo: Coworking Corporativo | Rating: 4.6 | Fonte: Regus Brasil | Website: www.regus.com/pt-br/brazil/sao-paulo', 'Av. Dr. Chucri Zaidan, 296', 'Vila Cordeiro', NULL, 'São Paulo', 'SP', 'Regus Torre Z', '+55 11 3376-6000', 'saopaulo@regus.com', '+55 11 3376-6000', 'saopaulo@regus.com', 'Não', NULL, 120.00, 'Vila Cordeiro', NULL, NULL, 'ativo', NULL, NULL, NULL, NULL, 0, '2025-12-29 15:20:12', '2025-12-29 15:20:12', 1),
-(40, 'Regus E-Business', 14, 'Tipo: Coworking Corporativo | Rating: 4.6 | Fonte: Regus Brasil + Google Maps reviews | Website: www.regus.com/pt-br/brazil/sao-paulo', 'Rua Werner Von Siemens, 111', 'Lapa de Baixo', NULL, 'São Paulo', 'SP', 'Regus E-Business', '+55 800 707 3487', 'saopaulo@regus.com', '+55 800 707 3487', 'saopaulo@regus.com', 'Não', NULL, 120.00, 'Lapa de Baixo', NULL, NULL, 'ativo', NULL, NULL, NULL, NULL, 0, '2025-12-29 15:20:12', '2025-12-29 15:20:12', 1),
-(41, 'Premium Flats Berrini', 12, 'Tipo: Hotel (salas até 20p) | Rating: 4.3 | Fonte: Google Maps (infraestrutura estimada) | Website: premiumflats.com.br', 'R. Indiana, 1165', 'Brooklin', NULL, 'São Paulo', 'SP', 'Premium Flats Berrini', '+55 11 5105-0000', 'reservas@premiumflats.com.br', '+55 11 5105-0000', 'reservas@premiumflats.com.br', 'Não', NULL, 0.00, 'Brooklin', -23.6079861, -46.6880632, 'ativo', NULL, NULL, NULL, NULL, 0, '2025-12-29 15:20:12', '2025-12-29 15:36:57', 1),
-(42, 'Mercure São Paulo Berrini', 14, 'Tipo: Hotel (salas até 20p) | Rating: 4.5 | Fonte: Accor Hotels + Website oficial | Website: www.accorhotels.com/mercure', 'R. Sansão Alves dos Santos', 'Cidade Monções', NULL, 'São Paulo', 'SP', 'Mercure São Paulo Berrini', '+55 11 5501-6911', 'h2700@accor.com', '+55 11 5501-6911', 'h2700@accor.com', 'Não', NULL, 500.00, 'Cidade Monções', NULL, NULL, 'ativo', NULL, NULL, NULL, NULL, 0, '2025-12-29 15:20:12', '2025-12-29 15:20:12', 1),
-(43, 'Wyndham São Paulo Berrini', 16, 'Tipo: Hotel (salas até 20p) | Rating: 4.4 | Fonte: Wyndham Hotels + Website | Website: www.wyndhamhotels.com/pt-br', 'R. Heinrich Hertz, 14', 'Cidade Monções', NULL, 'São Paulo', 'SP', 'Wyndham São Paulo Berrini', '+55 11 4210-2203', 'saopaulo@wyndhamhotels.com', '+55 11 4210-2203', 'saopaulo@wyndhamhotels.com', 'Não', NULL, 600.00, 'Cidade Monções', NULL, NULL, 'ativo', NULL, NULL, NULL, NULL, 0, '2025-12-29 15:20:12', '2025-12-29 15:20:12', 1),
-(44, 'Estanplaza Berrini', 14, 'Tipo: Hotel (salas até 20p) | Rating: 4.4 | Fonte: Estanplaza Hotéis + Website | Website: estanplaza.com.br', 'Av. Eng. Luís Carlos Berrini, 853', 'Brooklin Novo', NULL, 'São Paulo', 'SP', 'Estanplaza Berrini', '+55 11 5509-8900', 'berrini@estanplaza.com.br', '+55 11 5509-8900', 'berrini@estanplaza.com.br', 'Não', NULL, 550.00, 'Brooklin Novo', -23.6117153, -46.6953355, 'ativo', NULL, NULL, NULL, NULL, 0, '2025-12-29 15:20:12', '2025-12-29 15:37:00', 1),
-(45, 'Bristol The Time Hotel', 16, 'Tipo: Hotel (salas até 20p) | Rating: 4.6 | Fonte: Bristol Hotels + Website + Google Maps | Website: www.bristolhoteis.com.br', 'R. Hans Oersted', '115', '', 'São Paulo', 'SP', 'Bristol The Time Hotel', '551155041600', 'saopaulo@bristolhoteis.com.br', '551155041600', 'saopaulo@bristolhoteis.com.br', 'Não', NULL, 1.00, 'Cidade Monções', -23.6088798, -46.6949347, 'ativo', NULL, NULL, NULL, NULL, 0, '2025-12-29 15:20:12', '2025-12-29 15:35:37', 1),
-(46, 'Golden Tower Express Berrini', 12, 'Tipo: Hotel (salas até 20p) | Rating: 4.3 | Fonte: Fênix Hotéis + Google Maps | Website: www.fenixhoteis.com.br', 'R. Miguel Sutil, 577', 'Vila Cordeiro', '', 'São Paulo', 'SP', 'Golden Tower Express Berrini', '551130146277', 'berrini@fenixhoteis.com.br', '551130146277', 'berrini@fenixhoteis.com.br', 'Não', NULL, 1.00, 'Vila Cordeiro', NULL, NULL, 'ativo', NULL, NULL, NULL, NULL, 0, '2025-12-29 15:20:12', '2025-12-29 15:20:12', 1),
-(47, 'INNSiDE by Meliá Itaim', 16, 'Tipo: Hotel (salas até 20p) | Rating: 4.6 | Fonte: Meliá Hotels + Website (Centro de Conferências) | Website: www.melia.com/pt/hoteis/brasil/sao-paulo', 'R. Jesuíno Arruda, 806', 'Itaim Bibi', '', 'São Paulo', 'SP', 'INNSiDE by Meliá Itaim', '551137044400', 'innside.itaim@melia.com', '551137044400', 'innside.itaim@melia.com', 'Não', NULL, 1.00, 'Itaim Bibi', -23.5832044, -46.6788041, 'ativo', NULL, NULL, NULL, 'img/rooms/47/room_47_695a61b0012d21.86611459.jpeg', 0, '2025-12-29 15:20:12', '2025-12-29 15:33:39', 1),
-(48, 'INNSiDE by Meliá Iguatemi', 16, 'Tipo: Hotel (salas até 20p) | Rating: 4.4 | Fonte: Meliá Hotels + Website (Centro de Conferências) | Website: www.melia.com/pt/hoteis/brasil/sao-paulo', 'R. Iguatemi, 150', 'Itaim Bibi', '', 'São Paulo', 'SP', 'INNSiDE by Meliá Iguatemi', '551137045100', 'innside.iguatemi@melia.com', '551137045100', 'innside.iguatemi@melia.com', 'Não', NULL, 1.00, 'Itaim Bibi', -23.5850117, -46.6816399, 'ativo', NULL, NULL, NULL, 'img/rooms/48/room_48_695a61aa0a0aa2.81375484.jpeg', 0, '2025-12-29 15:20:12', '2025-12-29 15:33:29', 1),
-(49, 'DoubleTree by Hilton Itaim', 14, 'Tipo: Hotel (salas até 20p) | Rating: 4.3 | Fonte: Hilton Hotels + Website (Convention Center) | Website: www.hilton.com', 'R. Manuel Guedes, 320', 'Itaim Bibi', '', 'São Paulo', 'SP', 'DoubleTree by Hilton Itaim', '551130662699', 'saopaulo.itaim@hilton.com', '551130662699', 'saopaulo.itaim@hilton.com', 'Não', NULL, 1.00, 'Itaim Bibi', -23.5833267, -46.6793872, 'ativo', NULL, NULL, NULL, 'img/rooms/49/room_49_695a61a2c3aa93.06805101.jpeg', 0, '2025-12-29 15:20:12', '2025-12-29 15:33:14', 1),
-(50, 'Radisson Vila Olimpia', 18, 'Tipo: Hotel (salas até 20p) | Rating: 4.5 | Fonte: Radisson Hotels + Website | Website: www.radisson.com/pt-br', 'R. Fidêncio Ramos, 420', 'Vila Olímpia', '', 'São Paulo', 'SP', 'Radisson Vila Olimpia', '551143953279', 'saopaulo.vilaolimpia@radisson.com', '551143953279', 'saopaulo.vilaolimpia@radisson.com', 'Não', NULL, 100.00, 'Vila Olímpia', -23.5950688, -46.6877514, 'ativo', NULL, NULL, NULL, 'img/rooms/50/room_50_695a619ac4b3a6.26078386.jpg', 0, '2025-12-29 15:20:12', '2025-12-29 15:32:53', 1);
+INSERT INTO `rooms` (`id`, `name`, `capacity`, `description`, `street`, `complement`, `cep`, `city`, `state`, `responsavel_nome`, `responsavel_telefone`, `responsavel_email`, `portaria_telefone`, `portaria_email`, `portaria_inteligente`, `dailyrate`, `daily_rate`, `location`, `room_formats`, `lat`, `lon`, `status`, `maintenance_start`, `maintenance_end`, `deactivated_from`, `photo_path`, `facilitated_access`, `created_at`, `updated_at`, `advertiser_id`) VALUES
+(6, 'Teste', 10, '', 'Avenida Rouxinol', '84', '04516-000', 'São Paulo', 'SP', '', '', '', '', '', 'Não', NULL, 1200.00, '78', 'reuniao,workshop', -23.6012764, -46.6734966, 'ativo', NULL, NULL, NULL, 'img/rooms/6/room_6_695c02750c7fc7.42326814.jpg,img/rooms/6/room_6_695c02750cad50.42833662.jpg,img/rooms/6/room_6_695c02750ccd33.94139110.jpg,img/rooms/6/room_6_695c02750cea30.08892281.jpg,img/rooms/6/room_6_695c02750d0373.69640280.jpg,img/rooms/6/room_6_6', 0, '2025-12-25 22:00:09', '2025-12-29 12:27:58', 1),
+(7, 'Incow Coworking', 12, 'Tipo: Coworking | Rating: 4.9 | Fonte: Website + Google Maps reviews | Website: www.incow.com.br', 'Av. dos Eucaliptos, 500', 'Moema', NULL, 'São Paulo', 'SP', 'Incow Coworking', '+55 11 4210-1055', 'contato@incow.com.br', '+55 11 4210-1055', 'contato@incow.com.br', 'Não', NULL, 70.00, 'Moema', NULL, -23.6079676, -46.6716347, 'ativo', NULL, NULL, NULL, NULL, 0, '2025-12-29 15:20:12', '2025-12-29 15:36:07', 1),
+(8, 'IN Moema – Consultórios e Escritórios', 10, 'Tipo: Coworking | Rating: 4.9 | Fonte: Google Maps + Website | Website: www.inmoema.com.br', 'Av. Moema, 622', 'Moema', NULL, 'São Paulo', 'SP', 'IN Moema – Consultórios e Escritórios', '+55 11 99991-3909', 'info@inmoema.com.br', '+55 11 99991-3909', 'info@inmoema.com.br', 'Não', NULL, 80.00, 'Moema', NULL, -23.6068971, -46.6556810, 'ativo', NULL, NULL, NULL, NULL, 0, '2025-12-29 15:20:12', '2025-12-29 15:36:08', 1),
+(9, 'Inspira Coworking', 12, 'Tipo: Coworking | Rating: 4.8 | Fonte: Google Maps | Website: www.inspiracoworking.com.br', 'Av. Agami, 40', 'Indianópolis', NULL, 'São Paulo', 'SP', 'Inspira Coworking', '+55 11 5052-4748', 'contato@inspiracoworking.com.br', '+55 11 5052-4748', 'contato@inspiracoworking.com.br', 'Não', NULL, 75.00, 'Indianópolis', NULL, -23.5986768, -46.6624575, 'ativo', NULL, NULL, NULL, NULL, 0, '2025-12-29 15:20:12', '2025-12-29 15:36:09', 1),
+(10, 'PROGEO Cowork', 10, 'Tipo: Coworking | Rating: 4.8 | Fonte: Google Maps | Website: progeocowork.etc.br', 'Av. Pavão, 955', 'Indianópolis', NULL, 'São Paulo', 'SP', 'PROGEO Cowork', '+55 11 97636-9957', 'contato@progeocowork.com.br', '+55 11 97636-9957', 'contato@progeocowork.com.br', 'Não', NULL, 70.00, 'Indianópolis', NULL, -23.6071971, -46.6669054, 'ativo', NULL, NULL, NULL, NULL, 0, '2025-12-29 15:20:12', '2025-12-29 15:36:10', 1),
+(11, 'Banco Santander Work Café Moema', 8, 'Tipo: Coworking Híbrido | Rating: 3.9 | Fonte: Google Maps | Website: www.santander.com.br', 'Av. Pavão, 505', 'Moema', NULL, 'São Paulo', 'SP', 'Banco Santander Work Café Moema', '+55 11 4004-3535', 'workcafe@santander.com.br', '+55 11 4004-3535', 'workcafe@santander.com.br', 'Não', NULL, 50.00, 'Moema', NULL, -23.6046052, -46.6703479, 'ativo', NULL, NULL, NULL, NULL, 0, '2025-12-29 15:20:12', '2025-12-29 15:36:13', 1),
+(12, 'Espaço APESP', 15, 'Tipo: Espaço Eventos | Rating: 4.6 | Fonte: Google Maps (espaço + avaliações) | Website: espacoapesp.org.br', 'Rua Tuim, 932', 'Moema', NULL, 'São Paulo', 'SP', 'Espaço APESP', '+55 11 5535-2157', 'eventos@espacoapesp.org.br', '+55 11 5535-2157', 'eventos@espacoapesp.org.br', 'Não', NULL, 0.00, 'Moema', NULL, -23.6038882, -46.6727185, 'ativo', NULL, NULL, NULL, NULL, 0, '2025-12-29 15:20:12', '2025-12-29 15:36:14', 1),
+(13, 'Casa Petra', 20, 'Tipo: Espaço Eventos | Rating: 4.6 | Fonte: Google Maps (eventos corporativos) | Website: casapetra.com.br', 'Av. Aratãs, 1010', 'Moema', NULL, 'São Paulo', 'SP', 'Casa Petra', '+55 11 5053-2231', 'contato@casapetra.com.br', '+55 11 5053-2231', 'contato@casapetra.com.br', 'Não', NULL, 0.00, 'Moema', NULL, -23.6134129, -46.6584645, 'ativo', NULL, NULL, NULL, NULL, 0, '2025-12-29 15:20:12', '2025-12-29 15:36:15', 1),
+(17, 'WeWork Berrini', 20, 'Tipo: Coworking Premium | Rating: 4.7 | Fonte: WeWork Brasil + Website oficial | Website: www.wework.com/pt-BR', 'Av. Nações Unidas, 12901', 'Brooklin', NULL, 'São Paulo', 'SP', 'WeWork Berrini', '+55 11 3195-6449', 'saopaulo@wework.com', '+55 11 3195-6449', 'saopaulo@wework.com', 'Não', NULL, 114.00, 'Brooklin', NULL, -23.6110936, -46.6966677, 'ativo', NULL, NULL, NULL, NULL, 0, '2025-12-29 15:20:12', '2025-12-29 15:36:22', 1),
+(18, 'Coworking Smart Berrini', 12, 'Tipo: Coworking | Rating: 4.9 | Fonte: Website + contato telefônico | Website: www.coworkingsmart.com.br', 'Av. Eng. Luís Carlos Berrini, 1681', 'Berrini', NULL, 'São Paulo', 'SP', 'Coworking Smart Berrini', '+55 11 92126-2191', 'contato@coworkingsmart.com.br', '+55 11 92126-2191', 'contato@coworkingsmart.com.br', 'Não', NULL, 90.00, 'Berrini', NULL, -23.6097057, -46.6948427, 'ativo', NULL, NULL, NULL, NULL, 0, '2025-12-29 15:20:12', '2025-12-29 15:36:23', 1),
+(19, 'NetCoworking Berrini', 10, 'Tipo: Coworking | Rating: 4.8 | Fonte: Google Maps | Website: www.netcoworking.com.br', 'Av. Eng. Luís Carlos Berrini, 1700', 'Berrini', NULL, 'São Paulo', 'SP', 'NetCoworking Berrini', '+55 11 5555-3212', 'contato@netcoworking.com.br', '+55 11 5555-3212', 'contato@netcoworking.com.br', 'Não', NULL, 80.00, 'Berrini', NULL, -23.6097057, -46.6948427, 'ativo', NULL, NULL, NULL, NULL, 0, '2025-12-29 15:20:12', '2025-12-29 15:36:24', 1),
+(20, 'My Place Office Berrini', 12, 'Tipo: Coworking | Rating: 4.9 | Fonte: Website + Google Maps | Website: www.myplaceoffice-berrini.com.br', 'Av. Eng. Luís Carlos Berrini, 1140', 'Berrini', NULL, 'São Paulo', 'SP', 'My Place Office Berrini', '+55 11 94038-2318', 'contato@myplaceoffice.com.br', '+55 11 94038-2318', 'contato@myplaceoffice.com.br', 'Não', NULL, 90.00, 'Berrini', NULL, -23.6097057, -46.6948427, 'ativo', NULL, NULL, NULL, NULL, 0, '2025-12-29 15:20:12', '2025-12-29 15:36:26', 1),
+(24, 'Coworking Offices Vila Olímpia', 14, 'Tipo: Coworking | Rating: 4.8 | Fonte: Website + Google Maps | Website: coworkingoffices.com.br', 'R. Tenerife, 31', 'Vila Olímpia', NULL, 'São Paulo', 'SP', 'Coworking Offices Vila Olímpia', '+55 11 3044-0710', 'contato@coworkingoffices.com.br', '+55 11 3044-0710', 'contato@coworkingoffices.com.br', 'Não', NULL, 90.00, 'Vila Olímpia', NULL, -23.5963637, -46.6877272, 'ativo', NULL, NULL, NULL, NULL, 0, '2025-12-29 15:20:12', '2025-12-29 15:36:31', 1),
+(26, 'Office House Coworking e Eventos Itaim', 14, 'Tipo: Coworking | Rating: 4.9 | Fonte: Website + Google Maps | Website: www.officehousecoworking.com.br', 'Rua Sader Macul, 107', 'Itaim Bibi', NULL, 'São Paulo', 'SP', 'Office House Coworking e Eventos Itaim', '+55 11 94309-1279', 'contato@officehouse.com.br', '+55 11 94309-1279', 'contato@officehouse.com.br', 'Não', NULL, 95.00, 'Itaim Bibi', NULL, -23.5887837, -46.6797772, 'ativo', NULL, NULL, NULL, NULL, 0, '2025-12-29 15:20:12', '2025-12-29 15:36:36', 1),
+(27, 'AKASAHUB Itaim', 12, 'Tipo: Coworking | Rating: 4.7 | Fonte: Website + Google Maps | Website: www.akasahub.com.br', 'Rua Sader Macul, 96', 'Itaim Bibi', NULL, 'São Paulo', 'SP', 'AKASAHUB Itaim', '+55 11 4890-2255', 'contato@akasahub.com.br', '+55 11 4890-2255', 'contato@akasahub.com.br', 'Não', NULL, 85.00, 'Itaim Bibi', NULL, -23.5887837, -46.6797772, 'ativo', NULL, NULL, NULL, NULL, 0, '2025-12-29 15:20:12', '2025-12-29 15:36:37', 1),
+(28, 'CENTRAL9 Coworking', 10, 'Tipo: Coworking | Rating: 4.7 | Fonte: Google Maps (reuniões periódicas) | Website: www.central9.com.br', 'Av. Nove de Julho, 5617', 'Itaim Bibi', NULL, 'São Paulo', 'SP', 'CENTRAL9 Coworking', '+55 11 3071-1947', 'contato@central9.com.br', '+55 11 3071-1947', 'contato@central9.com.br', 'Não', NULL, 80.00, 'Itaim Bibi', NULL, -23.5806945, -46.6794002, 'ativo', NULL, NULL, NULL, NULL, 0, '2025-12-29 15:20:12', '2025-12-29 15:36:39', 1),
+(31, 'Regus Faria Lima', 12, 'Tipo: Coworking Corporativo | Rating: 4.7 | Fonte: Regus Brasil + Website | Website: www.regus.com/pt-br/brazil/sao-paulo', 'Av. Brig. Faria Lima, 3729', 'Itaim Bibi', NULL, 'São Paulo', 'SP', 'Regus Faria Lima', '+55 11 3443-6200', 'saopaulo@regus.com', '+55 11 3443-6200', 'saopaulo@regus.com', 'Não', NULL, 120.00, 'Itaim Bibi', NULL, NULL, NULL, 'ativo', NULL, NULL, NULL, NULL, 0, '2025-12-29 15:20:12', '2025-12-29 15:20:12', 1),
+(32, 'Regus Ed. Seculum', 10, 'Tipo: Coworking Corporativo | Rating: 4.3 | Fonte: Regus Brasil | Website: www.regus.com/pt-br/brazil/sao-paulo', 'Av. Brig. Faria Lima, 3144', 'Itaim Bibi', NULL, 'São Paulo', 'SP', 'Regus Ed. Seculum', '+55 11 3568-2500', 'saopaulo@regus.com', '+55 11 3568-2500', 'saopaulo@regus.com', 'Não', NULL, 110.00, 'Itaim Bibi', NULL, NULL, NULL, 'ativo', NULL, NULL, NULL, NULL, 0, '2025-12-29 15:20:12', '2025-12-29 15:20:12', 1),
+(33, 'Regus JK 1455', 12, 'Tipo: Coworking Corporativo | Rating: 4.6 | Fonte: Regus Brasil + Website | Website: www.regus.com/pt-br/brazil/sao-paulo', 'Av. Pres. Juscelino Kubitschek, 1455', 'Vila Nova Conceição', NULL, 'São Paulo', 'SP', 'Regus JK 1455', '+55 11 2124-3400', 'saopaulo@regus.com', '+55 11 2124-3400', 'saopaulo@regus.com', 'Não', NULL, 120.00, 'Vila Nova Conceição', NULL, NULL, NULL, 'ativo', NULL, NULL, NULL, NULL, 0, '2025-12-29 15:20:12', '2025-12-29 15:20:12', 1),
+(34, 'Regus São Paulo eTower', 12, 'Tipo: Coworking Corporativo | Rating: 4.2 | Fonte: Regus Brasil + Website | Website: www.regus.com/pt-br/brazil/sao-paulo', 'Rua Funchal, 418', 'Vila Olímpia', NULL, 'São Paulo', 'SP', 'Regus São Paulo eTower', '+55 11 3521-7000', 'saopaulo@regus.com', '+55 11 3521-7000', 'saopaulo@regus.com', 'Não', NULL, 120.00, 'Vila Olímpia', NULL, -23.5936301, -46.6905142, 'ativo', NULL, NULL, NULL, NULL, 0, '2025-12-29 15:20:12', '2025-12-29 15:36:47', 1),
+(35, 'Regus JK Iguatemi', 14, 'Tipo: Coworking Corporativo | Rating: 4.5 | Fonte: Regus Brasil | Website: www.regus.com/pt-br/brazil/sao-paulo', 'Av. Pres. Juscelino Kubitschek, 2041', 'Vila Olímpia', NULL, 'São Paulo', 'SP', 'Regus JK Iguatemi', '+55 11 2844-8000', 'saopaulo@regus.com', '+55 11 2844-8000', 'saopaulo@regus.com', 'Não', NULL, 120.00, 'Vila Olímpia', NULL, NULL, NULL, 'ativo', NULL, NULL, NULL, NULL, 0, '2025-12-29 15:20:12', '2025-12-29 15:20:12', 1),
+(36, 'Regus Continental Square', 14, 'Tipo: Coworking Corporativo | Rating: 4.6 | Fonte: Regus Brasil + Google Maps reviews | Website: www.regus.com/pt-br/brazil/sao-paulo', 'R. Olimpíadas, 205', 'Vila Olímpia', NULL, 'São Paulo', 'SP', 'Regus Continental Square', '+55 11 3728-9200', 'saopaulo@regus.com', '+55 11 3728-9200', 'saopaulo@regus.com', 'Não', NULL, 120.00, 'Vila Olímpia', NULL, -23.5954762, -46.6848824, 'ativo', NULL, NULL, NULL, NULL, 0, '2025-12-29 15:20:12', '2025-12-29 15:36:49', 1),
+(37, 'Regus Santo Amaro', 12, 'Tipo: Coworking Corporativo | Rating: 4.3 | Fonte: Regus Brasil | Website: www.regus.com/pt-br/brazil/sao-paulo', 'Av. Guido Caloi, 1000 - Bloco 5', 'Santo Amaro', NULL, 'São Paulo', 'SP', 'Regus Santo Amaro', '+55 11 3202-2600', 'saopaulo@regus.com', '+55 11 3202-2600', 'saopaulo@regus.com', 'Não', NULL, 110.00, 'Santo Amaro', NULL, NULL, NULL, 'ativo', NULL, NULL, NULL, NULL, 0, '2025-12-29 15:20:12', '2025-12-29 15:20:12', 1),
+(38, 'Regus EZTower', 14, 'Tipo: Coworking Corporativo | Rating: 4.6 | Fonte: Regus Brasil + Google Maps | Website: www.regus.com/pt-br/brazil/sao-paulo', 'R. Arquiteto Olavo Redig de Campos, 105', 'Chácara Santo Antônio', NULL, 'São Paulo', 'SP', 'Regus EZTower', '+55 11 2657-7400', 'saopaulo@regus.com', '+55 11 2657-7400', 'saopaulo@regus.com', 'Não', NULL, 120.00, 'Chácara Santo Antônio', NULL, -23.6253205, -46.7020138, 'ativo', NULL, NULL, NULL, NULL, 0, '2025-12-29 15:20:12', '2025-12-29 15:36:52', 1),
+(39, 'Regus Torre Z', 14, 'Tipo: Coworking Corporativo | Rating: 4.6 | Fonte: Regus Brasil | Website: www.regus.com/pt-br/brazil/sao-paulo', 'Av. Dr. Chucri Zaidan, 296', 'Vila Cordeiro', NULL, 'São Paulo', 'SP', 'Regus Torre Z', '+55 11 3376-6000', 'saopaulo@regus.com', '+55 11 3376-6000', 'saopaulo@regus.com', 'Não', NULL, 120.00, 'Vila Cordeiro', NULL, NULL, NULL, 'ativo', NULL, NULL, NULL, NULL, 0, '2025-12-29 15:20:12', '2025-12-29 15:20:12', 1),
+(40, 'Regus E-Business', 14, 'Tipo: Coworking Corporativo | Rating: 4.6 | Fonte: Regus Brasil + Google Maps reviews | Website: www.regus.com/pt-br/brazil/sao-paulo', 'Rua Werner Von Siemens, 111', 'Lapa de Baixo', NULL, 'São Paulo', 'SP', 'Regus E-Business', '+55 800 707 3487', 'saopaulo@regus.com', '+55 800 707 3487', 'saopaulo@regus.com', 'Não', NULL, 120.00, 'Lapa de Baixo', NULL, NULL, NULL, 'ativo', NULL, NULL, NULL, NULL, 0, '2025-12-29 15:20:12', '2025-12-29 15:20:12', 1),
+(41, 'Premium Flats Berrini', 12, 'Tipo: Hotel (salas até 20p) | Rating: 4.3 | Fonte: Google Maps (infraestrutura estimada) | Website: premiumflats.com.br', 'R. Indiana, 1165', 'Brooklin', NULL, 'São Paulo', 'SP', 'Premium Flats Berrini', '+55 11 5105-0000', 'reservas@premiumflats.com.br', '+55 11 5105-0000', 'reservas@premiumflats.com.br', 'Não', NULL, 0.00, 'Brooklin', NULL, -23.6079861, -46.6880632, 'ativo', NULL, NULL, NULL, NULL, 0, '2025-12-29 15:20:12', '2025-12-29 15:36:57', 1),
+(42, 'Mercure São Paulo Berrini', 14, 'Tipo: Hotel (salas até 20p) | Rating: 4.5 | Fonte: Accor Hotels + Website oficial | Website: www.accorhotels.com/mercure', 'R. Sansão Alves dos Santos', 'Cidade Monções', NULL, 'São Paulo', 'SP', 'Mercure São Paulo Berrini', '+55 11 5501-6911', 'h2700@accor.com', '+55 11 5501-6911', 'h2700@accor.com', 'Não', NULL, 500.00, 'Cidade Monções', NULL, NULL, NULL, 'ativo', NULL, NULL, NULL, NULL, 0, '2025-12-29 15:20:12', '2025-12-29 15:20:12', 1),
+(43, 'Wyndham São Paulo Berrini', 16, 'Tipo: Hotel (salas até 20p) | Rating: 4.4 | Fonte: Wyndham Hotels + Website | Website: www.wyndhamhotels.com/pt-br', 'R. Heinrich Hertz, 14', 'Cidade Monções', NULL, 'São Paulo', 'SP', 'Wyndham São Paulo Berrini', '+55 11 4210-2203', 'saopaulo@wyndhamhotels.com', '+55 11 4210-2203', 'saopaulo@wyndhamhotels.com', 'Não', NULL, 600.00, 'Cidade Monções', NULL, NULL, NULL, 'ativo', NULL, NULL, NULL, NULL, 0, '2025-12-29 15:20:12', '2025-12-29 15:20:12', 1),
+(44, 'Estanplaza Berrini', 14, 'Tipo: Hotel (salas até 20p) | Rating: 4.4 | Fonte: Estanplaza Hotéis + Website | Website: estanplaza.com.br', 'Av. Eng. Luís Carlos Berrini, 853', 'Brooklin Novo', NULL, 'São Paulo', 'SP', 'Estanplaza Berrini', '+55 11 5509-8900', 'berrini@estanplaza.com.br', '+55 11 5509-8900', 'berrini@estanplaza.com.br', 'Não', NULL, 550.00, 'Brooklin Novo', NULL, -23.6117153, -46.6953355, 'ativo', NULL, NULL, NULL, NULL, 0, '2025-12-29 15:20:12', '2025-12-29 15:37:00', 1),
+(45, 'Bristol The Time Hotel', 16, 'Tipo: Hotel (salas até 20p) | Rating: 4.6 | Fonte: Bristol Hotels + Website + Google Maps | Website: www.bristolhoteis.com.br', 'R. Hans Oersted', '115', '', 'São Paulo', 'SP', 'Bristol The Time Hotel', '551155041600', 'saopaulo@bristolhoteis.com.br', '551155041600', 'saopaulo@bristolhoteis.com.br', 'Não', NULL, 1.00, 'Cidade Monções', NULL, -23.6088798, -46.6949347, 'ativo', NULL, NULL, NULL, NULL, 0, '2025-12-29 15:20:12', '2025-12-29 15:35:37', 1),
+(46, 'Golden Tower Express Berrini', 12, 'Tipo: Hotel (salas até 20p) | Rating: 4.3 | Fonte: Fênix Hotéis + Google Maps | Website: www.fenixhoteis.com.br', 'R. Miguel Sutil, 577', 'Vila Cordeiro', '', 'São Paulo', 'SP', 'Golden Tower Express Berrini', '551130146277', 'berrini@fenixhoteis.com.br', '551130146277', 'berrini@fenixhoteis.com.br', 'Não', NULL, 1.00, 'Vila Cordeiro', NULL, NULL, NULL, 'ativo', NULL, NULL, NULL, NULL, 0, '2025-12-29 15:20:12', '2025-12-29 15:20:12', 1),
+(47, 'INNSiDE by Meliá Itaim', 16, 'Tipo: Hotel (salas até 20p) | Rating: 4.6 | Fonte: Meliá Hotels + Website (Centro de Conferências) | Website: www.melia.com/pt/hoteis/brasil/sao-paulo', 'R. Jesuíno Arruda, 806', 'Itaim Bibi', '', 'São Paulo', 'SP', 'INNSiDE by Meliá Itaim', '551137044400', 'innside.itaim@melia.com', '551137044400', 'innside.itaim@melia.com', 'Não', NULL, 1.00, 'Itaim Bibi', NULL, -23.5832044, -46.6788041, 'desativada', NULL, NULL, '2026-01-07', 'img/rooms/47/room_47_695bcc2cd39782.08567842.jpeg', 0, '2025-12-29 15:20:12', '2025-12-29 15:33:39', 1),
+(48, 'INNSiDE by Meliá Iguatemi', 16, 'Tipo: Hotel (salas até 20p) | Rating: 4.4 | Fonte: Meliá Hotels + Website (Centro de Conferências) | Website: www.melia.com/pt/hoteis/brasil/sao-paulo', 'R. Iguatemi, 150', 'Itaim Bibi', '', 'São Paulo', 'SP', 'INNSiDE by Meliá Iguatemi', '551137045100', 'innside.iguatemi@melia.com', '551137045100', 'innside.iguatemi@melia.com', 'Não', NULL, 1.00, 'Itaim Bibi', 'workshop', -23.5850117, -46.6816399, 'ativo', NULL, NULL, NULL, 'img/rooms/48/room_48_695e9de3cfa1c5.52566884.jpg', 0, '2025-12-29 15:20:12', '2025-12-29 15:33:29', 1),
+(49, 'DoubleTree by Hilton Itaim', 14, 'Tipo: Hotel (salas até 20p) | Rating: 4.3 | Fonte: Hilton Hotels + Website (Convention Center) | Website: www.hilton.com', 'R. Manuel Guedes, 320', 'Itaim Bibi', '', 'São Paulo', 'SP', 'DoubleTree by Hilton Itaim', '551130662699', 'saopaulo.itaim@hilton.com', '551130662699', 'saopaulo.itaim@hilton.com', 'Não', NULL, 1.00, 'Itaim Bibi', 'reuniao', -23.5833267, -46.6793872, 'ativo', NULL, NULL, NULL, 'img/rooms/49/room_49_695e9dffd01923.13403452.jpeg', 0, '2025-12-29 15:20:12', '2025-12-29 15:33:14', 1),
+(50, 'Radisson Vila Olimpia', 18, 'Tipo: Hotel (salas até 20p) | Rating: 4.5 | Fonte: Radisson Hotels + Website | Website: www.radisson.com/pt-br', 'R. Fidêncio Ramos, 420', 'Vila Olímpia', '', 'São Paulo', 'SP', 'Radisson Vila Olimpia', '551143953279', 'saopaulo.vilaolimpia@radisson.com', '551143953279', 'saopaulo.vilaolimpia@radisson.com', 'Não', NULL, 1500.00, 'Vila Olímpia', 'reuniao,workshop', -23.5950688, -46.6877514, 'ativo', NULL, NULL, NULL, 'img/rooms/50/room_50_695e9e44f38a07.64126798.jpeg', 0, '2025-12-29 15:20:12', '2025-12-29 15:32:53', 1);
 
 -- --------------------------------------------------------
 
@@ -1024,8 +1129,13 @@ CREATE TABLE `room_amenities` (
 --
 
 INSERT INTO `room_amenities` (`room_id`, `amenity_id`) VALUES
+(6, 1),
+(49, 1),
+(6, 2),
 (6, 3),
-(6, 4);
+(48, 3),
+(6, 4),
+(50, 4);
 
 -- --------------------------------------------------------
 
@@ -1065,15 +1175,13 @@ CREATE TABLE `room_policies` (
 --
 
 INSERT INTO `room_policies` (`id`, `room_id`, `option_key`, `label`, `cancel_days`, `cancel_fee_pct`, `charge_timing`, `active`, `created_at`, `updated_at`, `base_price`) VALUES
-(1, 6, 'immediate', 'Pagamento no momento da Reserva (Sem cancelamento)', NULL, NULL, 'confirm', 1, '2025-12-29 14:56:42', '2025-12-29 14:56:42', 1200.00),
 (6, 46, 'immediate', 'Pagamento no momento da Reserva (Sem cancelamento)', NULL, NULL, 'confirm', 1, '2025-12-29 15:33:51', '2025-12-29 15:33:51', 1.00),
 (7, 45, 'immediate', 'Pagamento no momento da Reserva (Sem cancelamento)', NULL, NULL, 'confirm', 1, '2025-12-29 15:35:38', '2025-12-29 15:35:38', 1.00),
-(11, 50, 'immediate', 'Pagamento no momento da Reserva (Sem cancelamento)', NULL, NULL, 'confirm', 1, '2026-01-04 09:48:26', '2026-01-04 09:48:26', 100.00),
-(12, 50, 'cancel_window', 'Cancelamento da Reserva', 2, 10.00, 'cancel_window', 1, '2026-01-04 09:48:26', '2026-01-04 09:48:26', 120.00),
-(13, 50, 'free_cancel', 'Sem taxa de cancelamento', NULL, NULL, 'day_before', 1, '2026-01-04 09:48:26', '2026-01-04 09:48:26', 150.00),
-(14, 49, 'immediate', 'Pagamento no momento da Reserva (Sem cancelamento)', NULL, NULL, 'confirm', 1, '2026-01-04 09:48:34', '2026-01-04 09:48:34', 1.00),
-(15, 48, 'immediate', 'Pagamento no momento da Reserva (Sem cancelamento)', NULL, NULL, 'confirm', 1, '2026-01-04 09:48:42', '2026-01-04 09:48:42', 1.00),
-(16, 47, 'immediate', 'Pagamento no momento da Reserva (Sem cancelamento)', NULL, NULL, 'confirm', 1, '2026-01-04 09:48:48', '2026-01-04 09:48:48', 1.00);
+(29, 6, 'immediate', 'Pagamento no momento da Reserva (Sem cancelamento)', NULL, NULL, 'confirm', 1, '2026-01-05 15:27:01', '2026-01-05 15:27:01', 1200.00),
+(30, 47, 'immediate', 'Pagamento no momento da Reserva (Sem cancelamento)', NULL, NULL, 'confirm', 1, '2026-01-07 14:53:32', '2026-01-07 14:53:32', 1.00),
+(31, 48, 'immediate', 'Pagamento no momento da Reserva (Sem cancelamento)', NULL, NULL, 'confirm', 1, '2026-01-07 14:54:44', '2026-01-07 14:54:44', 1.00),
+(33, 49, 'immediate', 'Pagamento no momento da Reserva (Sem cancelamento)', NULL, NULL, 'confirm', 1, '2026-01-07 14:55:12', '2026-01-07 14:55:12', 1.00),
+(34, 50, 'immediate', 'Pagamento no momento da Reserva (Sem cancelamento)', NULL, NULL, 'confirm', 1, '2026-01-07 14:56:21', '2026-01-07 14:56:21', 1500.00);
 
 -- --------------------------------------------------------
 
@@ -1129,7 +1237,19 @@ INSERT INTO `room_views` (`id`, `room_id`, `session_id`, `user_agent`, `ip`, `vi
 (1, 6, 'rv_j0asokoqoa9_mjrbcrlz', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', '186.249.142.155', '2025-12-29 12:28:52'),
 (2, 44, 'rv_ftf9abj6hm_mjri64fn', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', '186.249.142.155', '2025-12-29 15:39:40'),
 (3, 50, 'rv_ftf9abj6hm_mjri64fn', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', '201.95.205.173', '2026-01-04 09:18:39'),
-(4, 49, 'rv_ftf9abj6hm_mjri64fn', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', '201.95.205.173', '2026-01-04 09:51:32');
+(4, 49, 'rv_ftf9abj6hm_mjri64fn', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', '201.95.205.173', '2026-01-04 09:51:32'),
+(5, 49, 'rv_6fqfm4ocich_mk19nnvo', 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.1 Mobile/15E148 Safari/604.1', '2804:18:18b5:e06f:75eb:142b:b297:996f', '2026-01-05 11:39:04'),
+(6, 6, 'rv_ftf9abj6hm_mjri64fn', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', '201.95.205.173', '2026-01-05 15:27:35'),
+(7, 7, 'rv_ftf9abj6hm_mjri64fn', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', '201.95.205.173', '2026-01-05 15:28:10'),
+(8, 6, 'rv_ftf9abj6hm_mjri64fn', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', '201.95.205.173', '2026-01-05 15:28:25'),
+(9, 6, 'rv_ftf9abj6hm_mjri64fn', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', '201.95.205.173', '2026-01-05 16:01:23'),
+(10, 50, 'rv_ftf9abj6hm_mjri64fn', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', '201.95.205.173', '2026-01-05 16:04:41'),
+(11, 50, 'rv_ftf9abj6hm_mjri64fn', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', '201.95.205.173', '2026-01-05 17:14:29'),
+(12, 6, 'rv_ftf9abj6hm_mjri64fn', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', '201.95.205.173', '2026-01-05 17:14:56'),
+(13, 9, 'rv_ftf9abj6hm_mjri64fn', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', '201.95.205.173', '2026-01-05 17:15:26'),
+(14, 49, 'rv_ftf9abj6hm_mjri64fn', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', '201.95.205.173', '2026-01-05 17:15:51'),
+(15, 50, 'rv_ftf9abj6hm_mjri64fn', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', '201.95.205.173', '2026-01-05 17:16:47'),
+(16, 11, 'rv_x8w4gnd55i_mkabgtc8', 'Mozilla/5.0 (Android 16; Mobile; rv:146.0) Gecko/146.0 Firefox/146.0', '2a02:6ea0:c041:6648::18', '2026-01-11 19:39:40');
 
 -- --------------------------------------------------------
 
@@ -1284,8 +1404,9 @@ INSERT INTO `workshops` (`id`, `public_code`, `advertiser_id`, `room_id`, `title
 (1, NULL, 1, 1, 'Teste', NULL, '<b>MEIA ENTRADA ESTUDANTES </b><div><br></div><div>\n\nEstudantes do território nacional de instituições públicas ou particulares do ensino infantil, fundamental, <b>médio, superior,</b> especialização, pós-graduação, mestrado, doutorado, supletivo e técnico profissionalizante, seja ensino presencial ou à distância, possuem o benefício da meia-entrada.  Fonte: Lei 12.933, Lei Federal 12.852, de 26 de dezembro de 2013 e Decreto Federal 8.537, de 05 de outubro de 2015.\n\nCaso não apresente na portaria o documento que comprove o beneficio, será cobrado o complemento de meia para igualar a categoria do ingresso de interia.\n\nJOVENS DE 15 A 29 ANOS PERTENCENTES A FAMÍLIAS DE BAIXA RENDA \n\nJovens 15 a 29 anos pertencentes a famílias de baixa renda possuem o benefício de meia-entrada, desde que estejam inscritos, obrigatoriamente, no Cadastro Único para Programas Sociais do Governo Federal (CADÚNICO), e cuja renda mensal seja de até 02 (dois) salários mínimos.  Como comprovar: apresentação obrigatória da Carteirinha de Identidade Jovem, emitida pela Secretaria Nacional de Juventude, e o Documento de Identidade oficial com foto, expedido por órgão público e válido em todo território nacional, original ou cópia autenticada. Fonte: Lei Federal 12. 933, de 26 de dezembro de 2013 e Decreto 8.537, de 5 de outubro de 2015\n\nPcD – PESSOA COM DEFICIÊNCIA  \n\nPessoas com deficiência (PcD) possuem o benefício da meia-entrada. Se o PcD necessita de auxílio para locomoção, a meia-entrada também se estende ao seu acompanhante, sendo permitido apenas um acompanhante pagando meia-entrada para cada PcD.  Como comprovar: apresentação obrigatória do cartão de Benefício de Prestação Continuada da Assistência Social da pessoa com deficiência ou de documento emitido pelo Instituto Nacional do Seguro Social - INSS que ateste a aposentadoria de acordo com os critérios estabelecidos na Lei Complementar nº 142, de 8 de maio de 2013; em ambos os casos estes documentos devem ser acompanhados de um Documento de Identidade oficial com foto, expedido por órgão público e válido em todo território nacional, original ou cópia autenticada. Fonte: Lei Federal 12.933, de 26 de dezembro de 2013 e Decreto 8.537, de 5 de outubro de 2015\n\nIDOSOS (ADULTOS COM IDADE IGUAL OU SUPERIOR A 60 ANOS) \n\nAdultos com idade igual ou superior a 60 anos possuem o benefício da meia-entrada.  Como comprovar:  apresentação obrigatória do Documento de Identidade original (RG) ou cópia autenticada. Fonte: Lei Federal 10.741 de 01 de outubro de 2003\n\nMENORES DE 21 ANOS DO MUNICÍPIO DE BELO HORIZONTE \n\nMenores de 21 anos do Município de Belo Horizonte possuem o benefício da meia-entrada.  Como comprovar: apresentação obrigatória do Documento de Identidade oficial com foto, expedido por órgão público e válido em todo território nacional, original ou cópia autenticada. Fonte: Lei Municipal 9.070, de 17 janeiro de 2005\n\nOUTRAS INFORMAÇÕES IMPORTANTES \n\nO benefício da meia-entrada não é cumulativa com outros descontos A carteira estudantil provisória / voucher emitido pelos sites UNE, Ubes e Anpg são aceitos para compra de meia-entrada, desde que apresentados impressos Crianças de até 12 meses não pagam ingresso e devem permanecer no colo. \n\nO ingresso é válido somente para data, horário local e assento para o qual foi emitido.\n\nÓrgãos Responsáveis Pela Fiscalização\n\nProcon Estadual Telefone: (31) 3250-5033 Site: www.mp.mg.gov.br/procon E-mail:  proconcr@mp.mg.gov.br \n\nProcon Municipal Telefone: (31) 156 Site: www.pbh.gov.br/procon E-mail:  procon@pbh.gov.br \n\nProcon Assembleia Telefone: (31) 2108-5500 Site: www.almg.gov.br/procon E-mail:  procon@almg.gov.br \n\nProcon Assembleia – Posto Psiu Telefone: (31) 3272-0108 Site: www.almg.gov.br/procon E-mail:  procon@almg.gov.br \n\nProcon Câmara Municipal Telefone: (31) 3555-1268 E-mail:  procon@cmbh.mg.gov.br</div>', 'Psicologia / Terapia', '2025-12-30', '07:00:00', '10:15:00', 100.00, 15, 0, 'publicado', 'img/workshops/1/ws_1_69245462a548b8.17740968.jpg', '2025-11-22 22:44:30', '2025-12-01 08:01:59'),
 (2, NULL, 1, 1, 'Evento teste', 'descobrindo o nada', 'teste', 'Arte e criatividade', '2025-12-30', '08:00:00', '17:00:00', 100.00, 10, 1, 'publicado', 'img/workshops/2/ws_2_692b4445781d59.46608580.jpg', '2025-11-29 16:03:38', '2025-12-01 08:01:48'),
 (3, NULL, 1, 1, 'Evento teste 2', NULL, 'teste', 'Saúde e bem-estar', '2025-12-31', '06:00:00', '08:00:00', 1.00, 5, 1, 'publicado', 'img/workshops/3/ws_3_692b44a506d0c9.81676450.webp', '2025-11-29 16:07:34', '2025-12-01 08:01:39'),
-(4, NULL, 1, 6, 'Workshop Teste', 'Teste subtitulo', NULL, 'Desenvolvimento pessoal', '2025-12-31', '08:00:00', '19:00:00', 100.00, 10, 1, 'publicado', 'img/workshops/4/ws_4_6953cc380a38c1.80963826.jpeg', '2025-12-30 09:51:35', '2025-12-30 09:57:28'),
-(5, NULL, 1, 6, 'Workshop Teste 2', NULL, 'Teste Workshop', 'Desenvolvimento pessoal', '2026-01-01', '07:00:00', '19:00:00', 150.00, 2, 0, 'cancelado', 'img/workshops/5/ws_5_6953ea133b87d1.23708964.jpeg', '2025-12-30 12:04:51', '2025-12-31 19:22:26');
+(4, NULL, 1, 6, 'Workshop Teste', 'Teste subtitulo', NULL, 'Desenvolvimento pessoal', '2026-03-31', '08:00:00', '19:00:00', 100.00, 10, 1, 'publicado', 'img/workshops/4/ws_4_695ea10a93c650.83115939.png', '2025-12-30 09:51:35', '2026-01-07 15:08:10'),
+(5, NULL, 1, 6, 'Workshop Teste 2', NULL, 'Teste Workshop', 'Desenvolvimento pessoal', '2026-04-30', '07:00:00', '19:00:00', 150.00, 2, 0, 'publicado', 'img/workshops/5/ws_5_695ea136503414.10049803.png', '2025-12-30 12:04:51', '2026-01-07 15:08:54'),
+(6, NULL, 1, 6, 'Lançamento Plataforma', 'Evento de Lançamento da plataforma', NULL, 'Desenvolvimento pessoal', '2026-07-01', '19:00:00', '22:00:00', 150.00, 12, 1, 'publicado', 'img/workshops/6/ws_6_695ea0bf34c301.19542013.jpg', '2026-01-07 15:06:55', '2026-01-07 15:06:55');
 
 -- --------------------------------------------------------
 
@@ -1514,6 +1635,13 @@ ALTER TABLE `feedback_nps`
 ALTER TABLE `import_batches`
   ADD PRIMARY KEY (`id`),
   ADD KEY `company_id` (`company_id`);
+
+--
+-- Índices de tabela `inventory_items`
+--
+ALTER TABLE `inventory_items`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `qr_token` (`qr_token`);
 
 --
 -- Índices de tabela `ledger_entries`
@@ -1786,19 +1914,19 @@ ALTER TABLE `workshop_participants`
 -- AUTO_INCREMENT de tabela `admins`
 --
 ALTER TABLE `admins`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT de tabela `admin_profiles`
 --
 ALTER TABLE `admin_profiles`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT de tabela `admin_remember_tokens`
 --
 ALTER TABLE `admin_remember_tokens`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT de tabela `advertisers`
@@ -1810,7 +1938,7 @@ ALTER TABLE `advertisers`
 -- AUTO_INCREMENT de tabela `advertiser_remember_tokens`
 --
 ALTER TABLE `advertiser_remember_tokens`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=39;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=42;
 
 --
 -- AUTO_INCREMENT de tabela `amenities`
@@ -1822,13 +1950,13 @@ ALTER TABLE `amenities`
 -- AUTO_INCREMENT de tabela `clients`
 --
 ALTER TABLE `clients`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=28;
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=29;
 
 --
 -- AUTO_INCREMENT de tabela `client_remember_tokens`
 --
 ALTER TABLE `client_remember_tokens`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=39;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=55;
 
 --
 -- AUTO_INCREMENT de tabela `companies`
@@ -1846,7 +1974,7 @@ ALTER TABLE `company_employees`
 -- AUTO_INCREMENT de tabela `company_invitations`
 --
 ALTER TABLE `company_invitations`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
 -- AUTO_INCREMENT de tabela `customer_cards`
@@ -1867,10 +1995,16 @@ ALTER TABLE `import_batches`
   MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
+-- AUTO_INCREMENT de tabela `inventory_items`
+--
+ALTER TABLE `inventory_items`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT de tabela `ledger_entries`
 --
 ALTER TABLE `ledger_entries`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=34;
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=36;
 
 --
 -- AUTO_INCREMENT de tabela `messages`
@@ -1906,7 +2040,7 @@ ALTER TABLE `panel_users`
 -- AUTO_INCREMENT de tabela `payments`
 --
 ALTER TABLE `payments`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
 
 --
 -- AUTO_INCREMENT de tabela `payment_intents`
@@ -1942,7 +2076,7 @@ ALTER TABLE `pre_reservations`
 -- AUTO_INCREMENT de tabela `reservations`
 --
 ALTER TABLE `reservations`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=76;
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=80;
 
 --
 -- AUTO_INCREMENT de tabela `reviews`
@@ -1966,7 +2100,7 @@ ALTER TABLE `room_photos`
 -- AUTO_INCREMENT de tabela `room_policies`
 --
 ALTER TABLE `room_policies`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17;
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=35;
 
 --
 -- AUTO_INCREMENT de tabela `room_policy_prices`
@@ -1978,7 +2112,7 @@ ALTER TABLE `room_policy_prices`
 -- AUTO_INCREMENT de tabela `room_views`
 --
 ALTER TABLE `room_views`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17;
 
 --
 -- AUTO_INCREMENT de tabela `stripe_events`
@@ -2008,7 +2142,7 @@ ALTER TABLE `voucher_redemptions`
 -- AUTO_INCREMENT de tabela `workshops`
 --
 ALTER TABLE `workshops`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- AUTO_INCREMENT de tabela `workshop_enrollments`
