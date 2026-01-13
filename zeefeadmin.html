@@ -1617,6 +1617,10 @@ input, select {
         if (canUpdate) {
           actionButtons.push(`<button class="btn" onclick="abrirModalEdit(${rowId})">Editar</button>`);
         }
+        if (sec === 'inventory_items' && canUpdate) {
+          const link = row.link_qr || '';
+          actionButtons.push(`<button class="btn" onclick="copiarLinkInventario('${escapeHtml(link).replace(/'/g, "\\'")}')">Copiar Link</button>`);
+        }
         if (canDelete) {
           const isMasterRow = sec === 'admins' && Number(row.is_master) === 1;
           if (!isMasterRow) {
@@ -1674,6 +1678,31 @@ input, select {
       const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a'); a.href = url; a.download = `${sec}.csv`; a.click(); URL.revokeObjectURL(url);
+    }
+
+    async function copiarLinkInventario(link) {
+      if (!link) {
+        showToast('Link indisponível.');
+        return;
+      }
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(link);
+        } else {
+          const temp = document.createElement('textarea');
+          temp.value = link;
+          temp.style.position = 'fixed';
+          temp.style.opacity = '0';
+          document.body.appendChild(temp);
+          temp.focus();
+          temp.select();
+          document.execCommand('copy');
+          document.body.removeChild(temp);
+        }
+        showToast('Link copiado.');
+      } catch (err) {
+        showToast('Não foi possível copiar o link.');
+      }
     }
 
     // ===== Modal Anunciante (vínculo de sala) =====
