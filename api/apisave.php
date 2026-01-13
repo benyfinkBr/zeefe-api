@@ -103,6 +103,13 @@ try {
     $linkColExists = in_array('link_qr', $validCols, true);
     $hasToken = $tokenColExists && !empty($record['qr_token']);
     $isInsert = empty($rawRecord['id']);
+    if ($isInsert && empty($record['id_patrimonio'])) {
+      if (!empty($record['codigo_patrimonio'])) {
+        $record['id_patrimonio'] = $record['codigo_patrimonio'];
+      } else {
+        $record['id_patrimonio'] = strtoupper('PAT-' . bin2hex(random_bytes(4)));
+      }
+    }
     if ($isInsert && $tokenColExists && !$hasToken) {
       $record['qr_token'] = bin2hex(random_bytes(16));
       $hasToken = true;

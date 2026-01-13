@@ -30,10 +30,6 @@ $token = isset($_GET['token']) ? htmlspecialchars($_GET['token'], ENT_QUOTES, 'U
       <form id="inventoryItemForm">
         <div class="inventory-grid">
           <div class="form-row">
-            <label>ID Patrimônio</label>
-            <input type="text" name="id_patrimonio">
-          </div>
-          <div class="form-row">
             <label>Código Patrimônio</label>
             <input type="text" name="codigo_patrimonio">
           </div>
