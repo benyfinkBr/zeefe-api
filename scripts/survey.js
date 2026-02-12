@@ -97,58 +97,98 @@
     return wrapper;
   }
 
-  function buildAnswers(questions) {
-    const answers = [];
-    for (const q of questions) {
-      const qid = q.id;
-      const required = !!q.required;
-      const type = q.type;
-      let answer = null;
-
-      if (type === 'short_text') {
-        const input = formEl.querySelector(`input[name="q_${qid}"]`);
-        const value = input ? input.value.trim() : '';
-        if (required && !value) return { error: 'Responda todas as perguntas obrigatórias.' };
-        if (value) answer = { question_id: qid, value };
-      } else if (type === 'number') {
-        const input = formEl.querySelector(`input[name="q_${qid}"]`);
-        const value = input ? input.value.trim() : '';
-        if (required && value === '') return { error: 'Responda todas as perguntas obrigatórias.' };
-        if (value !== '') answer = { question_id: qid, value };
-      } else if (type === 'scale') {
-        const selected = formEl.querySelector(`input[name="q_${qid}"]:checked`);
-        const value = selected ? selected.value : '';
-        if (required && !value) return { error: 'Responda todas as perguntas obrigatórias.' };
-        if (value) answer = { question_id: qid, value };
-      } else if (type === 'single_choice') {
-        const selected = formEl.querySelector(`input[name="q_${qid}"]:checked`);
-        const value = selected ? selected.value : '';
-        if (required && !value) return { error: 'Responda todas as perguntas obrigatórias.' };
-        if (value) answer = { question_id: qid, option_id: value };
-      } else if (type === 'multiple_choice') {
-        const selected = Array.from(formEl.querySelectorAll(`input[name="q_${qid}[]"]:checked`)).map(el => el.value);
-        if (required && selected.length === 0) return { error: 'Responda todas as perguntas obrigatórias.' };
-        if (selected.length) answer = { question_id: qid, option_ids: selected };
-      }
-
-      if (answer) answers.push(answer);
+  function applyAnswerToQuestion(q, answer) {
+    if (!answer) return;
+    const qid = q.id;
+    if (q.type === 'short_text' || q.type === 'number') {
+      const input = formEl.querySelector(`input[name="q_${qid}"]`);
+      if (input && answer.value !== undefined) input.value = answer.value;
+    } else if (q.type === 'scale') {
+      const input = formEl.querySelector(`input[name="q_${qid}"][value="${answer.value}"]`);
+      if (input) input.checked = true;
+    } else if (q.type === 'single_choice') {
+      const input = formEl.querySelector(`input[name="q_${qid}"][value="${answer.option_id}"]`);
+      if (input) input.checked = true;
+    } else if (q.type === 'multiple_choice' && Array.isArray(answer.option_ids)) {
+      answer.option_ids.forEach(id => {
+        const input = formEl.querySelector(`input[name="q_${qid}[]"][value="${id}"]`);
+        if (input) input.checked = true;
+      });
     }
-
-    return { answers };
   }
 
-  async function submitAnswers(questions) {
-    hideMessage();
-    const res = buildAnswers(questions);
-    if (res.error) {
-      showMessage(res.error, false);
-      return;
+  function getAnswerForQuestion(q) {
+    const qid = q.id;
+    if (q.type === 'short_text') {
+      const input = formEl.querySelector(`input[name="q_${qid}"]`);
+      const value = input ? input.value.trim() : '';
+      if (!value) return null;
+      return { question_id: qid, value };
     }
+    if (q.type === 'number') {
+      const input = formEl.querySelector(`input[name="q_${qid}"]`);
+      const value = input ? input.value.trim() : '';
+      if (value === '') return null;
+      return { question_id: qid, value };
+    }
+    if (q.type === 'scale') {
+      const selected = formEl.querySelector(`input[name="q_${qid}"]:checked`);
+      if (!selected) return null;
+      return { question_id: qid, value: selected.value };
+    }
+    if (q.type === 'single_choice') {
+      const selected = formEl.querySelector(`input[name="q_${qid}"]:checked`);
+      if (!selected) return null;
+      return { question_id: qid, option_id: selected.value };
+    }
+    if (q.type === 'multiple_choice') {
+      const selected = Array.from(formEl.querySelectorAll(`input[name="q_${qid}[]"]:checked`)).map(el => el.value);
+      if (!selected.length) return null;
+      return { question_id: qid, option_ids: selected };
+    }
+    return null;
+  }
+
+  function validateQuestion(q) {
+    if (!q.required) return true;
+    return !!getAnswerForQuestion(q);
+  }
+
+  function decideNextIndex(q, questions, rulesMap, answer) {
+    if (!answer) return -1;
+    const rules = rulesMap[q.id] || [];
+    if (!rules.length) return -1;
+    if (q.type === 'single_choice' && answer.option_id) {
+      const match = rules.find(r => String(r.option_id) === String(answer.option_id));
+      if (match) return questions.findIndex(item => item.id === match.target_question_id);
+    }
+    if (q.type === 'multiple_choice' && Array.isArray(answer.option_ids)) {
+      for (const rule of rules) {
+        if (answer.option_ids.map(String).includes(String(rule.option_id))) {
+          return questions.findIndex(item => item.id === rule.target_question_id);
+        }
+      }
+    }
+    return -1;
+  }
+
+  function buildAnswersFromState(stateAnswers, visitedSet) {
+    const answers = [];
+    Object.keys(stateAnswers).forEach(key => {
+      if (!visitedSet.has(Number(key))) return;
+      const value = stateAnswers[key];
+      if (value) answers.push(value);
+    });
+    return answers;
+  }
+
+  async function submitAnswers(answers) {
+    hideMessage();
     try {
       const response = await fetch('/api/survey_submit.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token, answers: res.answers })
+        body: JSON.stringify({ token, answers })
       });
       const data = await response.json();
       if (!data.success) {
@@ -180,23 +220,92 @@
       descEl.textContent = survey.description || '';
       window.surveyThankYou = survey.thank_you_message || '';
 
+      const rulesMap = {};
+      questions.forEach(q => {
+        const rules = [];
+        (q.options || []).forEach(opt => {
+          if (opt.branch_to) {
+            rules.push({ option_id: opt.id, target_question_id: opt.branch_to });
+          }
+        });
+        if (rules.length) rulesMap[q.id] = rules;
+      });
+
+      let currentIndex = 0;
+      const answersState = {};
+      const visited = new Set();
+      const history = [];
+
       formEl.innerHTML = '';
-      questions.forEach(q => formEl.appendChild(renderQuestion(q)));
+      const questionHolder = document.createElement('div');
+      formEl.appendChild(questionHolder);
       const actions = document.createElement('div');
       actions.className = 'actions';
-      const submit = document.createElement('button');
-      submit.type = 'submit';
-      submit.className = 'btn';
-      submit.textContent = 'Enviar respostas';
-      actions.appendChild(submit);
+      const backBtn = document.createElement('button');
+      backBtn.type = 'button';
+      backBtn.className = 'btn-secondary';
+      backBtn.textContent = 'Voltar';
+      const nextBtn = document.createElement('button');
+      nextBtn.type = 'button';
+      nextBtn.className = 'btn';
+      nextBtn.textContent = 'Próximo';
+      actions.appendChild(backBtn);
+      actions.appendChild(nextBtn);
       formEl.appendChild(actions);
+
+      function renderCurrent() {
+        questionHolder.innerHTML = '';
+        const q = questions[currentIndex];
+        if (!q) return;
+        questionHolder.appendChild(renderQuestion(q));
+        applyAnswerToQuestion(q, answersState[q.id] || null);
+        backBtn.style.display = history.length ? '' : 'none';
+        nextBtn.textContent = currentIndex === questions.length - 1 ? 'Enviar' : 'Próximo';
+      }
+
+      function goToIndex(index) {
+        if (index < 0 || index >= questions.length) return;
+        currentIndex = index;
+        renderCurrent();
+      }
+
+      backBtn.addEventListener('click', () => {
+        if (!history.length) return;
+        const prev = history.pop();
+        currentIndex = prev;
+        renderCurrent();
+      });
+
+      nextBtn.addEventListener('click', async () => {
+        const q = questions[currentIndex];
+        if (!validateQuestion(q)) {
+          showMessage('Responda todas as perguntas obrigatórias.', false);
+          return;
+        }
+        hideMessage();
+        const ans = getAnswerForQuestion(q);
+        if (ans) answersState[q.id] = ans;
+        else delete answersState[q.id];
+        visited.add(q.id);
+
+        let nextIndex = decideNextIndex(q, questions, rulesMap, ans);
+        if (nextIndex === -1) nextIndex = currentIndex + 1;
+
+        if (nextIndex >= questions.length) {
+          nextBtn.disabled = true;
+          const answersPayload = buildAnswersFromState(answersState, visited);
+          await submitAnswers(answersPayload);
+          nextBtn.disabled = false;
+          return;
+        }
+
+        history.push(currentIndex);
+        goToIndex(nextIndex);
+      });
 
       bodyEl.style.display = 'none';
       formEl.style.display = 'block';
-      formEl.addEventListener('submit', (e) => {
-        e.preventDefault();
-        submitAnswers(questions);
-      });
+      renderCurrent();
     } catch (err) {
       bodyEl.textContent = 'Erro ao carregar questionário.';
     }

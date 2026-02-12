@@ -38,9 +38,24 @@ try {
     }
   }
 
+  $ruleStmt = $pdo->prepare('SELECT * FROM survey_branch_rules WHERE survey_id = :sid ORDER BY id ASC');
+  $ruleStmt->execute([':sid' => $survey['id']]);
+  $rules = $ruleStmt->fetchAll(PDO::FETCH_ASSOC);
+
   foreach ($questions as &$q) {
     $qid = (int) $q['id'];
-    $q['options'] = $optionsByQuestion[$qid] ?? [];
+    $opts = $optionsByQuestion[$qid] ?? [];
+    foreach ($opts as &$opt) {
+      $opt['branch_to'] = null;
+      foreach ($rules as $rule) {
+        if ((int) $rule['option_id'] === (int) $opt['id']) {
+          $opt['branch_to'] = (int) $rule['target_question_id'];
+          break;
+        }
+      }
+    }
+    unset($opt);
+    $q['options'] = $opts;
   }
   unset($q);
 

@@ -2407,3 +2407,17 @@ CREATE TABLE `survey_answers` (
   KEY `response_id` (`response_id`),
   KEY `question_id` (`question_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Estrutura para tabela `survey_branch_rules`
+CREATE TABLE `survey_branch_rules` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `survey_id` int NOT NULL,
+  `question_id` int NOT NULL,
+  `option_id` int NOT NULL,
+  `target_question_id` int NOT NULL,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `survey_id` (`survey_id`),
+  KEY `question_id` (`question_id`),
+  KEY `option_id` (`option_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

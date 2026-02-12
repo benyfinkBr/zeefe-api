@@ -66,9 +66,23 @@ if ($method === 'GET') {
       $optionsByQuestion[$qid][] = $opt;
     }
   }
+  $ruleStmt = $pdo->prepare('SELECT * FROM survey_branch_rules WHERE survey_id = :sid ORDER BY id ASC');
+  $ruleStmt->execute([':sid' => $surveyId]);
+  $rules = $ruleStmt->fetchAll(PDO::FETCH_ASSOC);
+  $rulesByOption = [];
+  foreach ($rules as $rule) {
+    $rulesByOption[(int) $rule['option_id']] = (int) $rule['target_question_id'];
+  }
+
   foreach ($questions as &$q) {
     $qid = (int) $q['id'];
-    $q['options'] = $optionsByQuestion[$qid] ?? [];
+    $opts = $optionsByQuestion[$qid] ?? [];
+    foreach ($opts as &$opt) {
+      $optId = (int) $opt['id'];
+      $opt['target_question_id'] = $rulesByOption[$optId] ?? null;
+    }
+    unset($opt);
+    $q['options'] = $opts;
   }
   unset($q);
   echo json_encode(['success' => true, 'survey' => $survey, 'questions' => $questions]);
@@ -96,6 +110,7 @@ if (!$payload || empty($payload['survey_id']) || !isset($payload['questions'])) 
 
 $surveyId = (int) $payload['survey_id'];
 $questions = is_array($payload['questions']) ? $payload['questions'] : [];
+$rules = is_array($payload['rules'] ?? null) ? $payload['rules'] : [];
 $validTypes = ['short_text', 'number', 'single_choice', 'multiple_choice', 'scale'];
 
 try {
@@ -108,6 +123,8 @@ try {
   $insertStmt = $pdo->prepare('INSERT INTO survey_questions (survey_id, question_text, type, required, order_index, scale_min, scale_max, number_min, number_max, is_active) VALUES (:sid, :text, :type, :required, :ord, :smin, :smax, :nmin, :nmax, 1)');
   $deleteOptionsStmt = $pdo->prepare('DELETE FROM survey_options WHERE question_id = :qid');
   $insertOptionStmt = $pdo->prepare('INSERT INTO survey_options (question_id, label, value, order_index) VALUES (:qid, :label, :value, :ord)');
+  $deleteRulesStmt = $pdo->prepare('DELETE FROM survey_branch_rules WHERE survey_id = :sid');
+  $insertRuleStmt = $pdo->prepare('INSERT INTO survey_branch_rules (survey_id, question_id, option_id, target_question_id) VALUES (:sid, :qid, :oid, :tid)');
 
   foreach ($questions as $idx => $q) {
     $text = trim((string) ($q['question_text'] ?? ''));
@@ -163,6 +180,20 @@ try {
         ':ord' => (int) ($opt['order_index'] ?? ($optIdx + 1))
       ]);
     }
+  }
+
+  $deleteRulesStmt->execute([':sid' => $surveyId]);
+  foreach ($rules as $rule) {
+    $qid = (int) ($rule['question_id'] ?? 0);
+    $oid = (int) ($rule['option_id'] ?? 0);
+    $tid = (int) ($rule['target_question_id'] ?? 0);
+    if ($qid <= 0 || $oid <= 0 || $tid <= 0) continue;
+    $insertRuleStmt->execute([
+      ':sid' => $surveyId,
+      ':qid' => $qid,
+      ':oid' => $oid,
+      ':tid' => $tid
+    ]);
   }
 
   $pdo->commit();

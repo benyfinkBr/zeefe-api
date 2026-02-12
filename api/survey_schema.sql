@@ -34,6 +34,15 @@ CREATE TABLE IF NOT EXISTS survey_options (
   order_index INT DEFAULT 0
 );
 
+CREATE TABLE IF NOT EXISTS survey_branch_rules (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  survey_id INT NOT NULL,
+  question_id INT NOT NULL,
+  option_id INT NOT NULL,
+  target_question_id INT NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE TABLE IF NOT EXISTS survey_responses (
   id INT AUTO_INCREMENT PRIMARY KEY,
   survey_id INT NOT NULL,

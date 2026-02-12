@@ -136,6 +136,9 @@
     .survey-question-row input[type="text"], .survey-question-row input[type="number"], .survey-question-row select, .survey-question-row textarea{width:100%;border:1px solid #CCC;border-radius:8px;padding:8px 10px;font-size:13px}
     .survey-options-area{width:100%;min-height:90px}
     .survey-inline-note{font-size:12px;color:#6B5D50}
+    .survey-branch-list{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+    .survey-branch-row{display:flex;justify-content:space-between;align-items:center;gap:10px}
+    .survey-branch-row select{max-width:240px}
 .btn{background:#1D413A;color:#F5F0E9;border:none;padding:8px 14px;border-radius:6px;cursor:pointer;font-size:14px}
 .btn-warning{background:#B54A3A;color:#F5F0E9;border:none;padding:8px 14px;border-radius:6px;cursor:pointer;font-size:14px}
 .btn-warning:hover{background:#9c3f32}
@@ -1928,12 +1931,20 @@ input, select {
         <textarea class="survey-options-area" placeholder="Opção 1\nOpção 2">${escapeHtml(optionsText)}</textarea>
       `;
 
+      const branchField = document.createElement('div');
+      branchField.className = 'field survey-branch-fields';
+      branchField.innerHTML = `
+        <label>Ramificação</label>
+        <div class="survey-inline-note">Salve e reabra para configurar ramificação por opção.</div>
+      `;
+
       row.appendChild(questionField);
       row.appendChild(typeField);
       row.appendChild(requiredField);
       row.appendChild(numberField);
       row.appendChild(scaleField);
       row.appendChild(optionsField);
+      row.appendChild(branchField);
 
       card.appendChild(header);
       card.appendChild(row);
@@ -1947,7 +1958,29 @@ input, select {
       if (q.number_min !== null && q.number_min !== undefined) numMin.value = q.number_min;
       if (q.number_max !== null && q.number_max !== undefined) numMax.value = q.number_max;
 
-      typeSelect.addEventListener('change', () => atualizarSurveyQuestionVisibilidade(card));
+      card._surveyOptions = Array.isArray(q.options) ? q.options.map(opt => ({
+        id: opt.id,
+        label: opt.label,
+        target_question_id: opt.target_question_id || null
+      })) : [];
+
+      typeSelect.addEventListener('change', () => {
+        atualizarSurveyQuestionVisibilidade(card);
+        atualizarSurveyBranchFields(card);
+      });
+      const optionsArea = card.querySelector('.survey-options-area');
+      if (optionsArea) {
+        optionsArea.addEventListener('blur', () => {
+          const lines = optionsArea.value.split(/\r?\n/).map(v => v.trim()).filter(Boolean);
+          card._surveyOptions = lines.map((label, idx) => ({
+            id: null,
+            label,
+            target_question_id: null,
+            order_index: idx + 1
+          }));
+          atualizarSurveyBranchFields(card);
+        });
+      }
       card.querySelectorAll('[data-action]').forEach(btn => {
         btn.addEventListener('click', () => {
           const action = btn.getAttribute('data-action');
@@ -1963,6 +1996,7 @@ input, select {
       });
 
       atualizarSurveyQuestionVisibilidade(card);
+      atualizarSurveyBranchFields(card);
       return card;
     }
 
@@ -1971,15 +2005,55 @@ input, select {
       const optionsBlock = card.querySelector('.survey-options-fields');
       const scaleBlock = card.querySelector('.survey-scale-fields');
       const numberBlock = card.querySelector('.survey-number-fields');
+      const branchBlock = card.querySelector('.survey-branch-fields');
       optionsBlock.style.display = (type === 'single_choice' || type === 'multiple_choice') ? '' : 'none';
       scaleBlock.style.display = type === 'scale' ? '' : 'none';
       numberBlock.style.display = type === 'number' ? '' : 'none';
+      branchBlock.style.display = (type === 'single_choice' || type === 'multiple_choice') ? '' : 'none';
+    }
+
+    function atualizarSurveyBranchFields(card) {
+      const branchBlock = card.querySelector('.survey-branch-fields');
+      if (!branchBlock) return;
+      const type = card.querySelector('.survey-question-type').value;
+      if (type !== 'single_choice' && type !== 'multiple_choice') {
+        branchBlock.innerHTML = `<label>Ramificação</label><div class="survey-inline-note">Disponível apenas para múltipla escolha/checkbox.</div>`;
+        return;
+      }
+      const questionId = card.dataset.id ? Number(card.dataset.id) : 0;
+      const options = (card._surveyOptions || []);
+      if (!questionId || !options.length) {
+        branchBlock.innerHTML = `<label>Ramificação</label><div class="survey-inline-note">Salve e reabra para configurar ramificação por opção.</div>`;
+        return;
+      }
+      const targets = Array.from(surveyBuilderList.children).map(c => ({
+        id: c.dataset.id ? Number(c.dataset.id) : 0,
+        label: c.querySelector('.survey-question-text')?.value || ''
+      })).filter(t => t.id && t.id !== questionId);
+      if (!targets.length) {
+        branchBlock.innerHTML = `<label>Ramificação</label><div class="survey-inline-note">Não há perguntas de destino.</div>`;
+        return;
+      }
+      const rows = options.map(opt => {
+        const selected = opt.target_question_id ? String(opt.target_question_id) : '';
+        const optionsHtml = ['<option value=\"\">Sem ramificação</option>']
+          .concat(targets.map(t => `<option value=\"${t.id}\"${selected === String(t.id) ? ' selected' : ''}>${escapeHtml(t.label || ('Pergunta #' + t.id))}</option>`))
+          .join('');
+        return `
+          <div class=\"survey-branch-row\" data-option-id=\"${opt.id}\">
+            <div class=\"survey-inline-note\">${escapeHtml(opt.label)}</div>
+            <select class=\"survey-branch-select\">${optionsHtml}</select>
+          </div>
+        `;
+      }).join('');
+      branchBlock.innerHTML = `<label>Ramificação (opção → pergunta)</label><div class=\"survey-branch-list\">${rows}</div>`;
     }
 
     function atualizarTitulosPerguntas() {
       Array.from(surveyBuilderList.children).forEach((card, index) => {
         const title = card.querySelector('.survey-question-title');
         if (title) title.textContent = `Pergunta ${index + 1}`;
+        atualizarSurveyBranchFields(card);
       });
     }
 
@@ -2030,6 +2104,24 @@ input, select {
         };
       });
 
+      const rules = [];
+      Array.from(surveyBuilderList.children).forEach(card => {
+        const questionId = card.dataset.id ? Number(card.dataset.id) : 0;
+        if (!questionId) return;
+        const rows = card.querySelectorAll('.survey-branch-row');
+        rows.forEach(row => {
+          const optionId = Number(row.getAttribute('data-option-id')) || 0;
+          const targetId = Number(row.querySelector('.survey-branch-select')?.value) || 0;
+          if (optionId && targetId) {
+            rules.push({
+              question_id: questionId,
+              option_id: optionId,
+              target_question_id: targetId
+            });
+          }
+        });
+      });
+
       if (questions.some(q => !q.question_text)) {
         alert('Preencha o texto de todas as perguntas.');
         return;
@@ -2040,7 +2132,7 @@ input, select {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
-          body: JSON.stringify({ survey_id: surveyBuilderSurveyId, questions })
+          body: JSON.stringify({ survey_id: surveyBuilderSurveyId, questions, rules })
         });
         const data = await res.json();
         if (!data.success) throw new Error(data.error || 'Falha ao salvar perguntas.');
