@@ -97,26 +97,6 @@
     return wrapper;
   }
 
-  function applyAnswerToQuestion(q, answer) {
-    if (!answer) return;
-    const qid = q.id;
-    if (q.type === 'short_text' || q.type === 'number') {
-      const input = formEl.querySelector(`input[name="q_${qid}"]`);
-      if (input && answer.value !== undefined) input.value = answer.value;
-    } else if (q.type === 'scale') {
-      const input = formEl.querySelector(`input[name="q_${qid}"][value="${answer.value}"]`);
-      if (input) input.checked = true;
-    } else if (q.type === 'single_choice') {
-      const input = formEl.querySelector(`input[name="q_${qid}"][value="${answer.option_id}"]`);
-      if (input) input.checked = true;
-    } else if (q.type === 'multiple_choice' && Array.isArray(answer.option_ids)) {
-      answer.option_ids.forEach(id => {
-        const input = formEl.querySelector(`input[name="q_${qid}[]"][value="${id}"]`);
-        if (input) input.checked = true;
-      });
-    }
-  }
-
   function getAnswerForQuestion(q) {
     const qid = q.id;
     if (q.type === 'short_text') {
@@ -149,37 +129,93 @@
     return null;
   }
 
-  function validateQuestion(q) {
-    if (!q.required) return true;
-    return !!getAnswerForQuestion(q);
-  }
-
-  function decideNextIndex(q, questions, rulesMap, answer) {
-    if (!answer) return -1;
-    const rules = rulesMap[q.id] || [];
-    if (!rules.length) return -1;
-    if (q.type === 'single_choice' && answer.option_id) {
-      const match = rules.find(r => String(r.option_id) === String(answer.option_id));
-      if (match) return questions.findIndex(item => item.id === match.target_question_id);
-    }
-    if (q.type === 'multiple_choice' && Array.isArray(answer.option_ids)) {
-      for (const rule of rules) {
-        if (answer.option_ids.map(String).includes(String(rule.option_id))) {
-          return questions.findIndex(item => item.id === rule.target_question_id);
-        }
-      }
-    }
-    return -1;
-  }
-
-  function buildAnswersFromState(stateAnswers, visitedSet) {
+  function buildAnswers(questions, visibleSet) {
     const answers = [];
-    Object.keys(stateAnswers).forEach(key => {
-      if (!visitedSet.has(Number(key))) return;
-      const value = stateAnswers[key];
-      if (value) answers.push(value);
-    });
+    for (const q of questions) {
+      if (!visibleSet.has(q.id)) continue;
+      const answer = getAnswerForQuestion(q);
+      if (answer) answers.push(answer);
+    }
     return answers;
+  }
+
+  function validateRequired(questions, visibleSet) {
+    for (const q of questions) {
+      if (!visibleSet.has(q.id)) continue;
+      if (!q.required) continue;
+      const answer = getAnswerForQuestion(q);
+      if (!answer) return false;
+    }
+    return true;
+  }
+
+  function buildRulesMap(questions) {
+    const rulesMap = {};
+    questions.forEach(q => {
+      const rules = [];
+      (q.options || []).forEach(opt => {
+        if (opt.branch_to) {
+          rules.push({ option_id: String(opt.id), target_question_id: opt.branch_to });
+        }
+      });
+      if (rules.length) rulesMap[q.id] = rules;
+    });
+    return rulesMap;
+  }
+
+  function computeVisibleSet(questions, rulesMap) {
+    const idToIndex = new Map();
+    questions.forEach((q, i) => idToIndex.set(q.id, i));
+    const visible = new Set();
+    if (!questions.length) return visible;
+
+    const queue = [0];
+    const processed = new Set();
+
+    while (queue.length) {
+      const index = queue.shift();
+      if (index < 0 || index >= questions.length) continue;
+      if (processed.has(index)) continue;
+      processed.add(index);
+      const q = questions[index];
+      visible.add(q.id);
+
+      let nextIndices = [];
+      const rules = rulesMap[q.id] || [];
+      const answer = getAnswerForQuestion(q);
+
+      if (rules.length && answer) {
+        if (q.type === 'single_choice' && answer.option_id) {
+          const match = rules.find(r => r.option_id === String(answer.option_id));
+          if (match && idToIndex.has(match.target_question_id)) {
+            nextIndices.push(idToIndex.get(match.target_question_id));
+          } else {
+            nextIndices.push(index + 1);
+          }
+        } else if (q.type === 'multiple_choice' && Array.isArray(answer.option_ids)) {
+          const selected = answer.option_ids.map(String);
+          const targets = rules
+            .filter(r => selected.includes(String(r.option_id)))
+            .map(r => idToIndex.get(r.target_question_id))
+            .filter(v => v !== undefined);
+          if (targets.length) {
+            nextIndices = nextIndices.concat(targets);
+          } else {
+            nextIndices.push(index + 1);
+          }
+        } else {
+          nextIndices.push(index + 1);
+        }
+      } else {
+        nextIndices.push(index + 1);
+      }
+
+      nextIndices.forEach(i => {
+        if (i < questions.length) queue.push(i);
+      });
+    }
+
+    return visible;
   }
 
   async function submitAnswers(answers) {
@@ -220,92 +256,51 @@
       descEl.textContent = survey.description || '';
       window.surveyThankYou = survey.thank_you_message || '';
 
-      const rulesMap = {};
+      formEl.innerHTML = '';
+      const questionEls = new Map();
       questions.forEach(q => {
-        const rules = [];
-        (q.options || []).forEach(opt => {
-          if (opt.branch_to) {
-            rules.push({ option_id: opt.id, target_question_id: opt.branch_to });
-          }
-        });
-        if (rules.length) rulesMap[q.id] = rules;
+        const el = renderQuestion(q);
+        formEl.appendChild(el);
+        questionEls.set(q.id, el);
       });
 
-      let currentIndex = 0;
-      const answersState = {};
-      const visited = new Set();
-      const history = [];
-
-      formEl.innerHTML = '';
-      const questionHolder = document.createElement('div');
-      formEl.appendChild(questionHolder);
       const actions = document.createElement('div');
       actions.className = 'actions';
-      const backBtn = document.createElement('button');
-      backBtn.type = 'button';
-      backBtn.className = 'btn-secondary';
-      backBtn.textContent = 'Voltar';
-      const nextBtn = document.createElement('button');
-      nextBtn.type = 'button';
-      nextBtn.className = 'btn';
-      nextBtn.textContent = 'Próximo';
-      actions.appendChild(backBtn);
-      actions.appendChild(nextBtn);
+      const submit = document.createElement('button');
+      submit.type = 'submit';
+      submit.className = 'btn';
+      submit.textContent = 'Enviar respostas';
+      actions.appendChild(submit);
       formEl.appendChild(actions);
 
-      function renderCurrent() {
-        questionHolder.innerHTML = '';
-        const q = questions[currentIndex];
-        if (!q) return;
-        questionHolder.appendChild(renderQuestion(q));
-        applyAnswerToQuestion(q, answersState[q.id] || null);
-        backBtn.style.display = history.length ? '' : 'none';
-        nextBtn.textContent = currentIndex === questions.length - 1 ? 'Enviar' : 'Próximo';
-      }
+      const rulesMap = buildRulesMap(questions);
 
-      function goToIndex(index) {
-        if (index < 0 || index >= questions.length) return;
-        currentIndex = index;
-        renderCurrent();
-      }
+      const updateVisibility = () => {
+        const visibleSet = computeVisibleSet(questions, rulesMap);
+        questions.forEach(q => {
+          const el = questionEls.get(q.id);
+          if (!el) return;
+          el.style.display = visibleSet.has(q.id) ? '' : 'none';
+        });
+      };
 
-      backBtn.addEventListener('click', () => {
-        if (!history.length) return;
-        const prev = history.pop();
-        currentIndex = prev;
-        renderCurrent();
-      });
+      formEl.addEventListener('input', updateVisibility);
+      formEl.addEventListener('change', updateVisibility);
 
-      nextBtn.addEventListener('click', async () => {
-        const q = questions[currentIndex];
-        if (!validateQuestion(q)) {
+      formEl.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const visibleSet = computeVisibleSet(questions, rulesMap);
+        if (!validateRequired(questions, visibleSet)) {
           showMessage('Responda todas as perguntas obrigatórias.', false);
           return;
         }
-        hideMessage();
-        const ans = getAnswerForQuestion(q);
-        if (ans) answersState[q.id] = ans;
-        else delete answersState[q.id];
-        visited.add(q.id);
-
-        let nextIndex = decideNextIndex(q, questions, rulesMap, ans);
-        if (nextIndex === -1) nextIndex = currentIndex + 1;
-
-        if (nextIndex >= questions.length) {
-          nextBtn.disabled = true;
-          const answersPayload = buildAnswersFromState(answersState, visited);
-          await submitAnswers(answersPayload);
-          nextBtn.disabled = false;
-          return;
-        }
-
-        history.push(currentIndex);
-        goToIndex(nextIndex);
+        const answers = buildAnswers(questions, visibleSet);
+        submitAnswers(answers);
       });
 
       bodyEl.style.display = 'none';
       formEl.style.display = 'block';
-      renderCurrent();
+      updateVisibility();
     } catch (err) {
       bodyEl.textContent = 'Erro ao carregar questionário.';
     }
