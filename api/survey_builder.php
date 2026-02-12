@@ -125,6 +125,8 @@ try {
   $insertOptionStmt = $pdo->prepare('INSERT INTO survey_options (question_id, label, value, order_index) VALUES (:qid, :label, :value, :ord)');
   $deleteRulesStmt = $pdo->prepare('DELETE FROM survey_branch_rules WHERE survey_id = :sid');
   $insertRuleStmt = $pdo->prepare('INSERT INTO survey_branch_rules (survey_id, question_id, option_id, target_question_id) VALUES (:sid, :qid, :oid, :tid)');
+  $questionIdMap = [];
+  $optionIdMap = [];
 
   foreach ($questions as $idx => $q) {
     $text = trim((string) ($q['question_text'] ?? ''));
@@ -138,6 +140,7 @@ try {
     $numberMin = ($q['number_min'] ?? null);
     $numberMax = ($q['number_max'] ?? null);
     $qid = !empty($q['id']) ? (int) $q['id'] : 0;
+    $tempKey = isset($q['temp_key']) ? (string) $q['temp_key'] : null;
 
     if ($qid > 0) {
       $updateStmt->execute([
@@ -166,6 +169,9 @@ try {
       ]);
       $qid = (int) $pdo->lastInsertId();
     }
+    if ($tempKey) {
+      $questionIdMap[$tempKey] = $qid;
+    }
 
     $deleteOptionsStmt->execute([':qid' => $qid]);
     $options = is_array($q['options'] ?? null) ? $q['options'] : [];
@@ -173,20 +179,36 @@ try {
       $label = trim((string) ($opt['label'] ?? ''));
       if ($label === '') continue;
       $value = trim((string) ($opt['value'] ?? $label));
+      $orderIndex = (int) ($opt['order_index'] ?? ($optIdx + 1));
       $insertOptionStmt->execute([
         ':qid' => $qid,
         ':label' => $label,
         ':value' => $value,
-        ':ord' => (int) ($opt['order_index'] ?? ($optIdx + 1))
+        ':ord' => $orderIndex
       ]);
+      $optId = (int) $pdo->lastInsertId();
+      if (!isset($optionIdMap[$qid])) $optionIdMap[$qid] = [];
+      $optionIdMap[$qid][$orderIndex] = $optId;
     }
   }
 
   $deleteRulesStmt->execute([':sid' => $surveyId]);
   foreach ($rules as $rule) {
     $qid = (int) ($rule['question_id'] ?? 0);
-    $oid = (int) ($rule['option_id'] ?? 0);
+    if ($qid <= 0 && !empty($rule['question_temp_key'])) {
+      $qid = (int) ($questionIdMap[$rule['question_temp_key']] ?? 0);
+    }
     $tid = (int) ($rule['target_question_id'] ?? 0);
+    if ($tid <= 0 && !empty($rule['target_temp_key'])) {
+      $tid = (int) ($questionIdMap[$rule['target_temp_key']] ?? 0);
+    }
+    $oid = (int) ($rule['option_id'] ?? 0);
+    if ($qid > 0) {
+      $orderIndex = (int) ($rule['option_order'] ?? 0);
+      if ($orderIndex > 0 && isset($optionIdMap[$qid][$orderIndex])) {
+        $oid = (int) $optionIdMap[$qid][$orderIndex];
+      }
+    }
     if ($qid <= 0 || $oid <= 0 || $tid <= 0) continue;
     $insertRuleStmt->execute([
       ':sid' => $surveyId,

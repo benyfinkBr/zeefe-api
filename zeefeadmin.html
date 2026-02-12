@@ -1903,6 +1903,16 @@ input, select {
         </select>
       `;
 
+      const branchToggleField = document.createElement('div');
+      branchToggleField.className = 'field';
+      branchToggleField.innerHTML = `
+        <label>Ramificada?</label>
+        <select class="survey-question-branch-toggle">
+          <option value="0">Não</option>
+          <option value="1">Sim</option>
+        </select>
+      `;
+
       const numberField = document.createElement('div');
       numberField.className = 'field survey-number-fields';
       numberField.innerHTML = `
@@ -1941,6 +1951,7 @@ input, select {
       row.appendChild(questionField);
       row.appendChild(typeField);
       row.appendChild(requiredField);
+      row.appendChild(branchToggleField);
       row.appendChild(numberField);
       row.appendChild(scaleField);
       row.appendChild(optionsField);
@@ -1958,24 +1969,35 @@ input, select {
       if (q.number_min !== null && q.number_min !== undefined) numMin.value = q.number_min;
       if (q.number_max !== null && q.number_max !== undefined) numMax.value = q.number_max;
 
+      if (!card.dataset.tempKey) {
+        card.dataset.tempKey = q.id ? `id_${q.id}` : `tmp_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+      }
       card._surveyOptions = Array.isArray(q.options) ? q.options.map(opt => ({
         id: opt.id,
         label: opt.label,
+        order_index: opt.order_index || null,
         target_question_id: opt.target_question_id || null
       })) : [];
 
+      const branchToggle = card.querySelector('.survey-question-branch-toggle');
+      const hasBranch = card._surveyOptions.some(opt => opt.target_question_id);
+      branchToggle.value = hasBranch ? '1' : '0';
       typeSelect.addEventListener('change', () => {
         atualizarSurveyQuestionVisibilidade(card);
         atualizarSurveyBranchFields(card);
       });
+      branchToggle.addEventListener('change', () => {
+        atualizarSurveyBranchFields(card);
+      });
       const optionsArea = card.querySelector('.survey-options-area');
       if (optionsArea) {
-        optionsArea.addEventListener('blur', () => {
+        optionsArea.addEventListener('input', () => {
           const lines = optionsArea.value.split(/\r?\n/).map(v => v.trim()).filter(Boolean);
+          const prevMap = new Map((card._surveyOptions || []).map(opt => [opt.label, opt.target_question_id]));
           card._surveyOptions = lines.map((label, idx) => ({
             id: null,
             label,
-            target_question_id: null,
+            target_question_id: prevMap.get(label) || null,
             order_index: idx + 1
           }));
           atualizarSurveyBranchFields(card);
@@ -2006,18 +2028,30 @@ input, select {
       const scaleBlock = card.querySelector('.survey-scale-fields');
       const numberBlock = card.querySelector('.survey-number-fields');
       const branchBlock = card.querySelector('.survey-branch-fields');
+      const branchToggle = card.querySelector('.survey-question-branch-toggle');
       optionsBlock.style.display = (type === 'single_choice' || type === 'multiple_choice') ? '' : 'none';
       scaleBlock.style.display = type === 'scale' ? '' : 'none';
       numberBlock.style.display = type === 'number' ? '' : 'none';
       branchBlock.style.display = (type === 'single_choice' || type === 'multiple_choice') ? '' : 'none';
+      if (branchToggle) {
+        const enabled = (type === 'single_choice' || type === 'multiple_choice');
+        branchToggle.disabled = !enabled;
+        if (!enabled) branchToggle.value = '0';
+      }
     }
 
     function atualizarSurveyBranchFields(card) {
       const branchBlock = card.querySelector('.survey-branch-fields');
       if (!branchBlock) return;
       const type = card.querySelector('.survey-question-type').value;
+      const branchToggle = card.querySelector('.survey-question-branch-toggle');
+      const branchEnabled = branchToggle ? branchToggle.value === '1' : false;
       if (type !== 'single_choice' && type !== 'multiple_choice') {
         branchBlock.innerHTML = `<label>Ramificação</label><div class="survey-inline-note">Disponível apenas para múltipla escolha/checkbox.</div>`;
+        return;
+      }
+      if (!branchEnabled) {
+        branchBlock.innerHTML = `<label>Ramificação</label><div class="survey-inline-note">Defina como \"Sim\" para ativar a ramificação.</div>`;
         return;
       }
       const questionId = card.dataset.id ? Number(card.dataset.id) : 0;
@@ -2026,10 +2060,12 @@ input, select {
         branchBlock.innerHTML = `<label>Ramificação</label><div class="survey-inline-note">Salve e reabra para configurar ramificação por opção.</div>`;
         return;
       }
+      const currentTemp = card.dataset.tempKey || null;
       const targets = Array.from(surveyBuilderList.children).map(c => ({
         id: c.dataset.id ? Number(c.dataset.id) : 0,
+        temp: c.dataset.tempKey || null,
         label: c.querySelector('.survey-question-text')?.value || ''
-      })).filter(t => t.id && t.id !== questionId);
+      })).filter(t => (t.id || t.temp) && t.id !== questionId && t.temp !== currentTemp);
       if (!targets.length) {
         branchBlock.innerHTML = `<label>Ramificação</label><div class="survey-inline-note">Não há perguntas de destino.</div>`;
         return;
@@ -2037,10 +2073,15 @@ input, select {
       const rows = options.map(opt => {
         const selected = opt.target_question_id ? String(opt.target_question_id) : '';
         const optionsHtml = ['<option value=\"\">Sem ramificação</option>']
-          .concat(targets.map(t => `<option value=\"${t.id}\"${selected === String(t.id) ? ' selected' : ''}>${escapeHtml(t.label || ('Pergunta #' + t.id))}</option>`))
+          .concat(targets.map(t => {
+            const value = t.id ? String(t.id) : `temp:${t.temp}`;
+            const isSelected = selected && (selected === String(t.id) || selected === String(t.temp));
+            const label = t.label || (t.id ? `Pergunta #${t.id}` : 'Pergunta nova');
+            return `<option value=\"${escapeHtml(value)}\"${isSelected ? ' selected' : ''}>${escapeHtml(label)}</option>`;
+          }))
           .join('');
         return `
-          <div class=\"survey-branch-row\" data-option-id=\"${opt.id}\">
+          <div class=\"survey-branch-row\" data-option-id=\"${opt.id || ''}\" data-option-order=\"${opt.order_index || ''}\" data-option-label=\"${escapeHtml(opt.label)}\">
             <div class=\"survey-inline-note\">${escapeHtml(opt.label)}</div>
             <select class=\"survey-branch-select\">${optionsHtml}</select>
           </div>
@@ -2083,6 +2124,7 @@ input, select {
         const text = card.querySelector('.survey-question-text').value.trim();
         const type = card.querySelector('.survey-question-type').value;
         const required = card.querySelector('.survey-question-required').value === '1';
+        const branchEnabled = card.querySelector('.survey-question-branch-toggle')?.value === '1';
         const numberMin = card.querySelector('.survey-number-min').value;
         const numberMax = card.querySelector('.survey-number-max').value;
         const scaleMin = card.querySelector('.survey-scale-min').value;
@@ -2092,9 +2134,11 @@ input, select {
           .map((label, idx) => ({ label, value: label, order_index: idx + 1 }));
         return {
           id: card.dataset.id ? Number(card.dataset.id) : null,
+          temp_key: card.dataset.tempKey || null,
           question_text: text,
           type,
           required,
+          branch_enabled: branchEnabled ? 1 : 0,
           order_index: index + 1,
           number_min: numberMin !== '' ? Number(numberMin) : null,
           number_max: numberMax !== '' ? Number(numberMax) : null,
@@ -2106,19 +2150,37 @@ input, select {
 
       const rules = [];
       Array.from(surveyBuilderList.children).forEach(card => {
+        const branchEnabled = card.querySelector('.survey-question-branch-toggle')?.value === '1';
+        if (!branchEnabled) return;
         const questionId = card.dataset.id ? Number(card.dataset.id) : 0;
-        if (!questionId) return;
+        const questionTemp = card.dataset.tempKey || null;
         const rows = card.querySelectorAll('.survey-branch-row');
         rows.forEach(row => {
           const optionId = Number(row.getAttribute('data-option-id')) || 0;
-          const targetId = Number(row.querySelector('.survey-branch-select')?.value) || 0;
-          if (optionId && targetId) {
-            rules.push({
-              question_id: questionId,
-              option_id: optionId,
-              target_question_id: targetId
-            });
+          const optionOrder = Number(row.getAttribute('data-option-order')) || 0;
+          const optionLabel = row.getAttribute('data-option-label') || '';
+          const targetRaw = row.querySelector('.survey-branch-select')?.value || '';
+          if (!targetRaw) return;
+          let targetId = 0;
+          let targetTemp = null;
+          if (targetRaw.startsWith('temp:')) {
+            targetTemp = targetRaw.replace('temp:', '');
+          } else {
+            targetId = Number(targetRaw) || 0;
           }
+          if (targetId && !targetTemp) {
+            const targetCard = Array.from(surveyBuilderList.children).find(c => String(c.dataset.id) === String(targetId));
+            targetTemp = targetCard ? (targetCard.dataset.tempKey || null) : null;
+          }
+          rules.push({
+            question_id: questionId || null,
+            question_temp_key: questionTemp,
+            option_id: optionId || null,
+            option_order: optionOrder || null,
+            option_label: optionLabel,
+            target_question_id: targetId || null,
+            target_temp_key: targetTemp
+          });
         });
       });
 
