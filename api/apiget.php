@@ -184,6 +184,18 @@ try {
       echo json_encode(['success' => true, 'data' => $rows]);
       break;
 
+    case 'surveys':
+      $sql = "
+        SELECT s.*,
+               (SELECT COUNT(*) FROM survey_responses r WHERE r.survey_id = s.id) AS responses_count
+        FROM surveys s
+        ORDER BY s.id DESC
+      ";
+      $stmt = $pdo->query($sql);
+      $rows = $stmt->fetchAll();
+      echo json_encode(['success' => true, 'data' => $rows]);
+      break;
+
     case 'visitors':
       $sql = "
         SELECT v.*,

@@ -1,0 +1,53 @@
+CREATE TABLE IF NOT EXISTS surveys (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  title VARCHAR(200) NOT NULL,
+  description TEXT,
+  status VARCHAR(20) DEFAULT 'ativo',
+  thank_you_message TEXT,
+  token VARCHAR(64) UNIQUE,
+  public_link TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS survey_questions (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  survey_id INT NOT NULL,
+  question_text TEXT NOT NULL,
+  type VARCHAR(40) NOT NULL,
+  required TINYINT(1) DEFAULT 0,
+  order_index INT DEFAULT 0,
+  scale_min INT DEFAULT 1,
+  scale_max INT DEFAULT 5,
+  number_min DECIMAL(10,2) NULL,
+  number_max DECIMAL(10,2) NULL,
+  is_active TINYINT(1) DEFAULT 1,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS survey_options (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  question_id INT NOT NULL,
+  label VARCHAR(255) NOT NULL,
+  value VARCHAR(120) DEFAULT NULL,
+  order_index INT DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS survey_responses (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  survey_id INT NOT NULL,
+  submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  ip_address VARCHAR(64) NULL,
+  user_agent VARCHAR(255) NULL
+);
+
+CREATE TABLE IF NOT EXISTS survey_answers (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  response_id INT NOT NULL,
+  question_id INT NOT NULL,
+  answer_text TEXT NULL,
+  answer_number DECIMAL(10,2) NULL,
+  answer_option_id INT NULL,
+  answer_options_json TEXT NULL
+);

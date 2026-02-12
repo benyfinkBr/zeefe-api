@@ -26,7 +26,7 @@ if (!$payload || !isset($payload['table']) || !isset($payload['record'])) {
   echo json_encode(['error'=>'Formato inválido']); exit;
 }
 
-$allowed = ['companies','clients','rooms','reservations','visitors','amenities','campaigns','vouchers','workshops','posts','admin_profiles','admins','inventory_items'];
+$allowed = ['companies','clients','rooms','reservations','visitors','amenities','campaigns','vouchers','workshops','posts','admin_profiles','admins','inventory_items','surveys'];
 $table   = $payload['table'];
 $rawRecord = $payload['record'];
 $record = $rawRecord;
@@ -135,6 +135,23 @@ try {
       $base = $host ? ($scheme . '://' . $host) : '';
       $token = $hasToken ? $record['qr_token'] : '';
       $record['link_qr'] = $token ? ($base . '/inventario_auth.php?token=' . $token) : '';
+    }
+    unset($record['updated_at'], $record['created_at']);
+  }
+
+  if ($table === 'surveys') {
+    $tokenColExists = in_array('token', $validCols, true);
+    $linkColExists = in_array('public_link', $validCols, true);
+    $isInsert = empty($rawRecord['id']);
+    if ($isInsert && $tokenColExists && empty($record['token'])) {
+      $record['token'] = bin2hex(random_bytes(16));
+    }
+    if ($isInsert && $linkColExists && empty($record['public_link'])) {
+      $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+      $host = $_SERVER['HTTP_HOST'] ?? '';
+      $base = $host ? ($scheme . '://' . $host) : '';
+      $token = $record['token'] ?? '';
+      $record['public_link'] = $token ? ($base . '/survey.html?token=' . $token) : '';
     }
     unset($record['updated_at'], $record['created_at']);
   }

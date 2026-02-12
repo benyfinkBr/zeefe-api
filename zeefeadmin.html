@@ -127,6 +127,15 @@
     .column-selector-body{margin-top:8px;display:flex;flex-wrap:wrap;gap:8px 12px;max-width:560px}
     .column-option{display:flex;align-items:center;gap:6px;font-size:12px;color:#1D413A}
     .column-selector-actions{display:flex;gap:8px;margin-top:8px}
+    .survey-builder-list{display:flex;flex-direction:column;gap:12px}
+    .survey-question-card{border:1px solid #E0DAD1;border-radius:10px;padding:12px;background:#FFF}
+    .survey-question-header{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:10px}
+    .survey-question-actions{display:flex;gap:8px}
+    .survey-question-row{display:flex;gap:10px;flex-wrap:wrap}
+    .survey-question-row .field{flex:1;min-width:180px}
+    .survey-question-row input[type="text"], .survey-question-row input[type="number"], .survey-question-row select, .survey-question-row textarea{width:100%;border:1px solid #CCC;border-radius:8px;padding:8px 10px;font-size:13px}
+    .survey-options-area{width:100%;min-height:90px}
+    .survey-inline-note{font-size:12px;color:#6B5D50}
 .btn{background:#1D413A;color:#F5F0E9;border:none;padding:8px 14px;border-radius:6px;cursor:pointer;font-size:14px}
 .btn-warning{background:#B54A3A;color:#F5F0E9;border:none;padding:8px 14px;border-radius:6px;cursor:pointer;font-size:14px}
 .btn-warning:hover{background:#9c3f32}
@@ -379,6 +388,7 @@ input, select {
           <li data-section="vouchers">Vouchers</li>
           <li data-section="messages">Mensagens</li>
           <li class="menu-group">Administração</li>
+          <li data-section="surveys">Questionários</li>
           <li data-section="admin_profiles">Perfis</li>
           <li data-section="admins">Usuários Admin</li>
         </ul>
@@ -526,6 +536,45 @@ input, select {
     </div>
   </div>
 
+  <div class="modal" id="surveyBuilderModal">
+    <div class="modal-content" style="max-width:980px">
+      <div class="modal-header">
+        <h3 id="surveyBuilderTitle">Perguntas do questionário</h3>
+        <button class="modal-close" onclick="fecharSurveyBuilder()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="survey-builder-list" id="surveyBuilderList"></div>
+        <div class="box-message" id="surveyBuilderEmpty" style="display:none">Nenhuma pergunta cadastrada.</div>
+        <div style="margin-top:12px">
+          <button type="button" class="btn-secondary" onclick="adicionarSurveyPergunta()">+ Nova pergunta</button>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <span class="survey-inline-note">Tipos: texto curto, número, múltipla escolha, checkbox e escala.</span>
+        <div style="margin-left:auto;display:flex;gap:8px">
+          <button type="button" class="btn-secondary" onclick="fecharSurveyBuilder()">Cancelar</button>
+          <button type="button" class="btn" onclick="salvarSurveyBuilder()">Salvar perguntas</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="surveyResultsModal">
+    <div class="modal-content" style="max-width:1100px">
+      <div class="modal-header">
+        <h3 id="surveyResultsTitle">Resultados do questionário</h3>
+        <button class="modal-close" onclick="fecharSurveyResults()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div id="surveyResultsBody"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" onclick="fecharSurveyResults()">Fechar</button>
+        <button type="button" class="btn" onclick="exportarSurveyCSV()">Exportar CSV</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     const API_BASE = '../api';
     function showToast(msg) {
@@ -565,6 +614,7 @@ input, select {
       vouchers: 'Voucher',
       campaigns: 'Campanha',
       inventory_items: 'Item de Inventário',
+      surveys: 'Questionário',
       workshops: 'Workshop',
       workshop_participants: 'Participante de Workshop',
       workshop_enrollments: 'Inscrição de Workshop',
@@ -588,6 +638,7 @@ input, select {
       { key: 'campaigns', label: 'Campanhas' },
       { key: 'vouchers', label: 'Vouchers' },
       { key: 'messages', label: 'Mensagens' },
+      { key: 'surveys', label: 'Questionários' },
       { key: 'admin_profiles', label: 'Perfis Admin' },
       { key: 'admins', label: 'Usuários Admin' }
     ];
@@ -701,6 +752,13 @@ input, select {
     const emailModalStatus = document.getElementById('emailModalStatus');
     let reservationEmailTarget = null;
     const adminMessageInput = document.getElementById('adminMessageInput');
+    const surveyBuilderModal = document.getElementById('surveyBuilderModal');
+    const surveyBuilderList = document.getElementById('surveyBuilderList');
+    const surveyBuilderEmpty = document.getElementById('surveyBuilderEmpty');
+    const surveyResultsModal = document.getElementById('surveyResultsModal');
+    const surveyResultsBody = document.getElementById('surveyResultsBody');
+    let surveyBuilderSurveyId = null;
+    let surveyResultsCache = null;
 
     function escapeHtml(value) {
       return String(value ?? '')
@@ -1128,6 +1186,15 @@ input, select {
           { key: 'responsavel', label: 'Responsável' }
         ]
       },
+      surveys: {
+        columns: [
+          { key: 'id', label: 'ID' },
+          { key: 'title', label: 'Título' },
+          { key: 'status', label: 'Status', formatter: statusFormatter },
+          { key: 'responses_count', label: 'Respostas' },
+          { key: 'public_link', label: 'Link público' }
+        ]
+      },
       reservations: {
         columns: [
           { key: 'id', label: 'ID' },
@@ -1483,6 +1550,7 @@ input, select {
           label: 'Administração',
           items: [
             { id: 'inventory_items', title: 'Inventário', desc: 'Gestão de bens e patrimônio.' },
+            { id: 'surveys', title: 'Questionários', desc: 'Criação e coleta de pesquisas.' },
             { id: 'admin_profiles', title: 'Perfis', desc: 'Permissões e acessos por perfil.' },
             { id: 'admins', title: 'Usuários Admin', desc: 'Gestão de usuários administrativos.' }
           ]
@@ -1607,6 +1675,12 @@ input, select {
           actionButtons.push(`<button class="btn-ghost" onclick="abrirChamadaReservas(${rowId})">Reservas</button>`);
           actionButtons.push(`<button class="btn-ghost" onclick="abrirAnuncianteSala(${rowId})">Anunciante</button>`);
         }
+        if (sec === 'surveys' && canUpdate) {
+          actionButtons.push(`<button class="btn-ghost" onclick="abrirSurveyBuilder(${rowId})">Perguntas</button>`);
+          actionButtons.push(`<button class="btn-ghost" onclick="abrirSurveyResults(${rowId})">Resultados</button>`);
+          const link = row.public_link || '';
+          actionButtons.push(`<button class="btn" onclick="copiarLinkSurvey('${escapeHtml(link).replace(/'/g, "\\'")}')">Copiar Link</button>`);
+        }
         if (sec === 'companies' && canUpdate) {
           const nomeEmpresa = escapeHtml(row.nome_fantasia || row.razao_social || `Empresa #${rowId}`).replace(/'/g, "\\'");
           actionButtons.push(`<button class="btn-ghost" onclick="listarClientesEmpresa(${rowId}, '${nomeEmpresa}')">Clientes</button>`);
@@ -1703,6 +1777,352 @@ input, select {
       } catch (err) {
         showToast('Não foi possível copiar o link.');
       }
+    }
+
+    async function copiarLinkSurvey(link) {
+      if (!link) {
+        showToast('Link indisponível.');
+        return;
+      }
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(link);
+        } else {
+          const temp = document.createElement('textarea');
+          temp.value = link;
+          temp.style.position = 'fixed';
+          temp.style.opacity = '0';
+          document.body.appendChild(temp);
+          temp.focus();
+          temp.select();
+          document.execCommand('copy');
+          document.body.removeChild(temp);
+        }
+        showToast('Link copiado.');
+      } catch (err) {
+        showToast('Não foi possível copiar o link.');
+      }
+    }
+
+    function abrirSurveyBuilder(id) {
+      if (!id) {
+        alert('Salve o questionário antes de adicionar perguntas.');
+        return;
+      }
+      surveyBuilderSurveyId = id;
+      surveyBuilderList.innerHTML = '';
+      surveyBuilderEmpty.style.display = 'none';
+      document.getElementById('surveyBuilderTitle').textContent = `Perguntas do questionário #${id}`;
+      surveyBuilderModal.classList.add('show');
+      carregarSurveyBuilder();
+    }
+
+    function fecharSurveyBuilder() {
+      surveyBuilderModal.classList.remove('show');
+      surveyBuilderSurveyId = null;
+      surveyBuilderList.innerHTML = '';
+      surveyBuilderEmpty.style.display = 'none';
+    }
+
+    async function carregarSurveyBuilder() {
+      if (!surveyBuilderSurveyId) return;
+      try {
+        const res = await fetch(`${API_BASE}/survey_builder.php?survey_id=${surveyBuilderSurveyId}`, { credentials: 'include' });
+        const data = await res.json();
+        if (!data.success) throw new Error(data.error || 'Falha ao carregar perguntas.');
+        renderSurveyBuilder(data.questions || []);
+      } catch (err) {
+        console.error(err);
+        surveyBuilderList.innerHTML = '<div class="box-message">Erro ao carregar perguntas.</div>';
+      }
+    }
+
+    function renderSurveyBuilder(questions) {
+      surveyBuilderList.innerHTML = '';
+      if (!questions.length) {
+        surveyBuilderEmpty.style.display = 'block';
+        return;
+      }
+      surveyBuilderEmpty.style.display = 'none';
+      questions.forEach(q => {
+        const card = criarSurveyQuestionCard(q);
+        surveyBuilderList.appendChild(card);
+      });
+      atualizarTitulosPerguntas();
+    }
+
+    function criarSurveyQuestionCard(question) {
+      const q = question || {};
+      const card = document.createElement('div');
+      card.className = 'survey-question-card';
+      if (q.id) card.dataset.id = q.id;
+
+      const header = document.createElement('div');
+      header.className = 'survey-question-header';
+      header.innerHTML = `<strong class="survey-question-title">Pergunta</strong>`;
+
+      const actions = document.createElement('div');
+      actions.className = 'survey-question-actions';
+      actions.innerHTML = `
+        <button type="button" class="btn-secondary" data-action="up">↑</button>
+        <button type="button" class="btn-secondary" data-action="down">↓</button>
+        <button type="button" class="btn-warning" data-action="remove">Remover</button>
+      `;
+      header.appendChild(actions);
+
+      const row = document.createElement('div');
+      row.className = 'survey-question-row';
+
+      const questionField = document.createElement('div');
+      questionField.className = 'field';
+      questionField.innerHTML = `<label>Pergunta</label><input type="text" class="survey-question-text" value="${escapeHtml(q.question_text || '')}">`;
+
+      const typeField = document.createElement('div');
+      typeField.className = 'field';
+      typeField.innerHTML = `
+        <label>Tipo</label>
+        <select class="survey-question-type">
+          <option value="short_text">Texto curto</option>
+          <option value="number">Número</option>
+          <option value="single_choice">Múltipla escolha</option>
+          <option value="multiple_choice">Checkbox</option>
+          <option value="scale">Escala</option>
+        </select>
+      `;
+
+      const requiredField = document.createElement('div');
+      requiredField.className = 'field';
+      requiredField.innerHTML = `
+        <label>Obrigatória</label>
+        <select class="survey-question-required">
+          <option value="0">Não</option>
+          <option value="1">Sim</option>
+        </select>
+      `;
+
+      const numberField = document.createElement('div');
+      numberField.className = 'field survey-number-fields';
+      numberField.innerHTML = `
+        <label>Número (min / max)</label>
+        <div style="display:flex;gap:8px">
+          <input type="number" class="survey-number-min" placeholder="Min">
+          <input type="number" class="survey-number-max" placeholder="Max">
+        </div>
+      `;
+
+      const scaleField = document.createElement('div');
+      scaleField.className = 'field survey-scale-fields';
+      scaleField.innerHTML = `
+        <label>Escala (min / max)</label>
+        <div style="display:flex;gap:8px">
+          <input type="number" class="survey-scale-min" placeholder="Min" value="${q.scale_min || 1}">
+          <input type="number" class="survey-scale-max" placeholder="Max" value="${q.scale_max || 5}">
+        </div>
+      `;
+
+      const optionsField = document.createElement('div');
+      optionsField.className = 'field survey-options-fields';
+      const optionsText = Array.isArray(q.options) ? q.options.map(opt => opt.label).join('\n') : '';
+      optionsField.innerHTML = `
+        <label>Opções (uma por linha)</label>
+        <textarea class="survey-options-area" placeholder="Opção 1\nOpção 2">${escapeHtml(optionsText)}</textarea>
+      `;
+
+      row.appendChild(questionField);
+      row.appendChild(typeField);
+      row.appendChild(requiredField);
+      row.appendChild(numberField);
+      row.appendChild(scaleField);
+      row.appendChild(optionsField);
+
+      card.appendChild(header);
+      card.appendChild(row);
+
+      const typeSelect = card.querySelector('.survey-question-type');
+      if (q.type) typeSelect.value = q.type;
+      const requiredSelect = card.querySelector('.survey-question-required');
+      requiredSelect.value = String(q.required ? 1 : 0);
+      const numMin = card.querySelector('.survey-number-min');
+      const numMax = card.querySelector('.survey-number-max');
+      if (q.number_min !== null && q.number_min !== undefined) numMin.value = q.number_min;
+      if (q.number_max !== null && q.number_max !== undefined) numMax.value = q.number_max;
+
+      typeSelect.addEventListener('change', () => atualizarSurveyQuestionVisibilidade(card));
+      card.querySelectorAll('[data-action]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const action = btn.getAttribute('data-action');
+          if (action === 'remove') {
+            card.remove();
+            atualizarTitulosPerguntas();
+            if (!surveyBuilderList.children.length) surveyBuilderEmpty.style.display = 'block';
+            return;
+          }
+          if (action === 'up') moverSurveyPergunta(card, -1);
+          if (action === 'down') moverSurveyPergunta(card, 1);
+        });
+      });
+
+      atualizarSurveyQuestionVisibilidade(card);
+      return card;
+    }
+
+    function atualizarSurveyQuestionVisibilidade(card) {
+      const type = card.querySelector('.survey-question-type').value;
+      const optionsBlock = card.querySelector('.survey-options-fields');
+      const scaleBlock = card.querySelector('.survey-scale-fields');
+      const numberBlock = card.querySelector('.survey-number-fields');
+      optionsBlock.style.display = (type === 'single_choice' || type === 'multiple_choice') ? '' : 'none';
+      scaleBlock.style.display = type === 'scale' ? '' : 'none';
+      numberBlock.style.display = type === 'number' ? '' : 'none';
+    }
+
+    function atualizarTitulosPerguntas() {
+      Array.from(surveyBuilderList.children).forEach((card, index) => {
+        const title = card.querySelector('.survey-question-title');
+        if (title) title.textContent = `Pergunta ${index + 1}`;
+      });
+    }
+
+    function moverSurveyPergunta(card, dir) {
+      const sibling = dir < 0 ? card.previousElementSibling : card.nextElementSibling;
+      if (!sibling) return;
+      if (dir < 0) surveyBuilderList.insertBefore(card, sibling);
+      else surveyBuilderList.insertBefore(sibling, card);
+      atualizarTitulosPerguntas();
+    }
+
+    function adicionarSurveyPergunta() {
+      surveyBuilderEmpty.style.display = 'none';
+      const card = criarSurveyQuestionCard({
+        type: 'short_text',
+        required: 0,
+        scale_min: 1,
+        scale_max: 5
+      });
+      surveyBuilderList.appendChild(card);
+      atualizarTitulosPerguntas();
+    }
+
+    async function salvarSurveyBuilder() {
+      if (!surveyBuilderSurveyId) return;
+      const questions = Array.from(surveyBuilderList.children).map((card, index) => {
+        const text = card.querySelector('.survey-question-text').value.trim();
+        const type = card.querySelector('.survey-question-type').value;
+        const required = card.querySelector('.survey-question-required').value === '1';
+        const numberMin = card.querySelector('.survey-number-min').value;
+        const numberMax = card.querySelector('.survey-number-max').value;
+        const scaleMin = card.querySelector('.survey-scale-min').value;
+        const scaleMax = card.querySelector('.survey-scale-max').value;
+        const optionsText = card.querySelector('.survey-options-area').value || '';
+        const options = optionsText.split(/\r?\n/).map(v => v.trim()).filter(Boolean)
+          .map((label, idx) => ({ label, value: label, order_index: idx + 1 }));
+        return {
+          id: card.dataset.id ? Number(card.dataset.id) : null,
+          question_text: text,
+          type,
+          required,
+          order_index: index + 1,
+          number_min: numberMin !== '' ? Number(numberMin) : null,
+          number_max: numberMax !== '' ? Number(numberMax) : null,
+          scale_min: scaleMin !== '' ? Number(scaleMin) : 1,
+          scale_max: scaleMax !== '' ? Number(scaleMax) : 5,
+          options
+        };
+      });
+
+      if (questions.some(q => !q.question_text)) {
+        alert('Preencha o texto de todas as perguntas.');
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API_BASE}/survey_builder.php`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ survey_id: surveyBuilderSurveyId, questions })
+        });
+        const data = await res.json();
+        if (!data.success) throw new Error(data.error || 'Falha ao salvar perguntas.');
+        showToast('Perguntas salvas.');
+        fecharSurveyBuilder();
+      } catch (err) {
+        console.error(err);
+        alert('Erro ao salvar perguntas.');
+      }
+    }
+
+    async function abrirSurveyResults(id) {
+      if (!id) return;
+      surveyResultsBody.innerHTML = '<div class="box-message">Carregando...</div>';
+      surveyResultsModal.classList.add('show');
+      try {
+        const res = await fetch(`${API_BASE}/survey_results.php?survey_id=${id}`, { credentials: 'include' });
+        const data = await res.json();
+        if (!data.success) throw new Error(data.error || 'Falha ao carregar resultados.');
+        surveyResultsCache = data;
+        renderSurveyResults(data);
+      } catch (err) {
+        console.error(err);
+        surveyResultsBody.innerHTML = '<div class="box-message">Erro ao carregar resultados.</div>';
+      }
+    }
+
+    function fecharSurveyResults() {
+      surveyResultsModal.classList.remove('show');
+      surveyResultsBody.innerHTML = '';
+      surveyResultsCache = null;
+    }
+
+    function renderSurveyResults(data) {
+      const questions = data.questions || [];
+      const responses = data.responses || [];
+      if (!responses.length) {
+        surveyResultsBody.innerHTML = '<div class="box-message">Nenhuma resposta encontrada.</div>';
+        return;
+      }
+      let html = '<div class="table-container"><table><thead><tr><th>Enviado em</th>';
+      questions.forEach(q => { html += `<th>${escapeHtml(q.question_text)}</th>`; });
+      html += '</tr></thead><tbody>';
+      responses.forEach(resp => {
+        html += `<tr><td>${escapeHtml(resp.submitted_at || '')}</td>`;
+        questions.forEach(q => {
+          const ans = resp.answers && resp.answers[q.id] ? resp.answers[q.id] : null;
+          const value = ans ? ans.display : '-';
+          html += `<td>${escapeHtml(value)}</td>`;
+        });
+        html += '</tr>';
+      });
+      html += '</tbody></table></div>';
+      surveyResultsBody.innerHTML = html;
+    }
+
+    function exportarSurveyCSV() {
+      if (!surveyResultsCache) return;
+      const questions = surveyResultsCache.questions || [];
+      const responses = surveyResultsCache.responses || [];
+      if (!responses.length) {
+        alert('Nada para exportar.');
+        return;
+      }
+      const headers = ['Enviado em'].concat(questions.map(q => q.question_text));
+      const esc = s => '"' + String(s == null ? '' : s).replace(/"/g, '""') + '"';
+      const lines = responses.map(resp => {
+        const row = [resp.submitted_at || ''];
+        questions.forEach(q => {
+          const ans = resp.answers && resp.answers[q.id] ? resp.answers[q.id] : null;
+          row.push(ans ? ans.display : '');
+        });
+        return row.map(esc).join(',');
+      });
+      const csv = [headers.map(esc).join(',')].concat(lines).join('\n');
+      const blob = new Blob([csv], { type:'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `survey_${surveyResultsCache.survey?.id || 'resultados'}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
     }
 
     // ===== Modal Anunciante (vínculo de sala) =====
@@ -2172,6 +2592,18 @@ input, select {
         { type: 'break' },
         { name: 'created_at', label: 'Criado em', span: 1, cls: 'sm', type: 'date', readonly: true },
         { name: 'updated_at', label: 'Atualizado em', span: 1, cls: 'sm', type: 'date', readonly: true }
+      ],
+      surveys: [
+        { name: 'title', label: 'Título', span: 3, required: true },
+        { name: 'status', label: 'Status', span: 1, cls: 'sm', type: 'select', includeEmpty: false, options: [
+          { value: 'ativo', label: 'Ativo' },
+          { value: 'inativo', label: 'Inativo' }
+        ] },
+        { type: 'break' },
+        { name: 'description', label: 'Descrição', span: 4, type: 'textarea' },
+        { name: 'thank_you_message', label: 'Mensagem de agradecimento', span: 4, type: 'textarea' },
+        { type: 'break' },
+        { name: 'public_link', label: 'Link público', span: 4, readonly: true }
       ],
       reservations: [
         { name: 'title', label: 'Título', span: 3 },

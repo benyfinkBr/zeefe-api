@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ze.EFE · Questionário</title>
+  <link rel="icon" href="favicon.ico">
+  <style>
+    :root{
+      --green:#1D413A;
+      --green-2:#2D5B51;
+      --bg:#F5F0E9;
+      --paper:#FFFFFF;
+      --line:#E0DAD1;
+      --muted:#6B5D50;
+      --accent:#B54A3A;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--green)}
+    .shell{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:32px}
+    .card{width:100%;max-width:820px;background:var(--paper);border-radius:18px;box-shadow:0 12px 30px rgba(0,0,0,.08);padding:28px 32px;border:1px solid var(--line)}
+    .header{display:flex;align-items:center;gap:14px;margin-bottom:8px}
+    .logo{width:44px;height:44px;border-radius:12px;background:var(--green);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700}
+    .title{font-size:26px;margin:0}
+    .desc{color:var(--muted);margin:6px 0 18px}
+    .divider{height:1px;background:var(--line);margin:18px 0}
+    .question{margin-bottom:18px}
+    .question label{display:block;font-weight:600;margin-bottom:8px}
+    .question .required{color:var(--accent);margin-left:4px}
+    input[type="text"], input[type="number"], textarea, select{
+      width:100%;padding:10px 12px;border:1px solid #CCC;border-radius:10px;font-size:15px
+    }
+    textarea{min-height:96px;resize:vertical}
+    .options{display:flex;flex-direction:column;gap:8px}
+    .option-item{display:flex;gap:8px;align-items:flex-start}
+    .scale{display:flex;gap:10px;flex-wrap:wrap}
+    .scale label{font-weight:500}
+    .actions{display:flex;gap:12px;justify-content:flex-end;margin-top:18px}
+    .btn{background:var(--green);color:#fff;border:none;border-radius:10px;padding:10px 16px;font-weight:600;cursor:pointer}
+    .btn:disabled{opacity:.6;cursor:default}
+    .msg{padding:12px 14px;border-radius:10px;background:#FDF7F3;border:1px solid #EAD9D0;color:#5E2D23;margin:10px 0;display:none}
+    .msg.success{background:#EFF8F4;border-color:#CFE6DC;color:var(--green)}
+    .loading{text-align:center;color:var(--muted);padding:18px}
+    @media (max-width:720px){
+      .card{padding:22px}
+      .title{font-size:22px}
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <div class="card">
+      <div class="header">
+        <div class="logo">Z</div>
+        <div>
+          <h1 class="title" id="surveyTitle">Questionário</h1>
+          <p class="desc" id="surveyDesc"></p>
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div class="msg" id="surveyMsg"></div>
+      <div id="surveyBody" class="loading">Carregando questionário...</div>
+      <form id="surveyForm" style="display:none"></form>
+    </div>
+  </div>
+  <script src="scripts/survey.js"></script>
+</body>
+</html>

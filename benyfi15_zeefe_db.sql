@@ -2337,3 +2337,73 @@ COMMIT;
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+
+-- Estrutura para tabela `surveys`
+CREATE TABLE `surveys` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `title` varchar(200) NOT NULL,
+  `description` text,
+  `status` varchar(20) DEFAULT 'ativo',
+  `thank_you_message` text,
+  `token` varchar(64) DEFAULT NULL,
+  `public_link` text,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `token` (`token`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Estrutura para tabela `survey_questions`
+CREATE TABLE `survey_questions` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `survey_id` int NOT NULL,
+  `question_text` text NOT NULL,
+  `type` varchar(40) NOT NULL,
+  `required` tinyint(1) DEFAULT '0',
+  `order_index` int DEFAULT '0',
+  `scale_min` int DEFAULT '1',
+  `scale_max` int DEFAULT '5',
+  `number_min` decimal(10,2) DEFAULT NULL,
+  `number_max` decimal(10,2) DEFAULT NULL,
+  `is_active` tinyint(1) DEFAULT '1',
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `survey_id` (`survey_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Estrutura para tabela `survey_options`
+CREATE TABLE `survey_options` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `question_id` int NOT NULL,
+  `label` varchar(255) NOT NULL,
+  `value` varchar(120) DEFAULT NULL,
+  `order_index` int DEFAULT '0',
+  PRIMARY KEY (`id`),
+  KEY `question_id` (`question_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Estrutura para tabela `survey_responses`
+CREATE TABLE `survey_responses` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `survey_id` int NOT NULL,
+  `submitted_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `ip_address` varchar(64) DEFAULT NULL,
+  `user_agent` varchar(255) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `survey_id` (`survey_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Estrutura para tabela `survey_answers`
+CREATE TABLE `survey_answers` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `response_id` int NOT NULL,
+  `question_id` int NOT NULL,
+  `answer_text` text,
+  `answer_number` decimal(10,2) DEFAULT NULL,
+  `answer_option_id` int DEFAULT NULL,
+  `answer_options_json` text,
+  PRIMARY KEY (`id`),
+  KEY `response_id` (`response_id`),
+  KEY `question_id` (`question_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
