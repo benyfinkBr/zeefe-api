@@ -119,7 +119,8 @@ if ($method === 'GET') {
     foreach ($opts as &$opt) {
       $optId = (int) $opt['id'];
       $ruleData = $rulesByOption[$optId] ?? null;
-      if (!$ruleData && !empty($rulesByQuestion[$qid])) {
+      $hasDirectRuleTarget = is_array($ruleData) && (!empty($ruleData['end_survey']) || !empty($ruleData['target_question_id']));
+      if ((!$ruleData || !$hasDirectRuleTarget) && !empty($rulesByQuestion[$qid])) {
         $candidateOrder = isset($opt['order_index']) ? (int) $opt['order_index'] : null;
         $candidateLabel = (string) ($opt['label'] ?? '');
         foreach ($rulesByQuestion[$qid] as $r) {
