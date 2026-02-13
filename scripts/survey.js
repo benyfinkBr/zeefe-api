@@ -23,6 +23,80 @@
     msgEl.style.display = 'none';
   }
 
+  function sanitizeQuestionHtml(value) {
+    const template = document.createElement('template');
+    template.innerHTML = String(value ?? '');
+    const allowedTags = new Set(['B', 'STRONG', 'I', 'EM', 'U', 'BR', 'P', 'DIV', 'UL', 'OL', 'LI', 'A', 'IMG', 'SPAN']);
+    const allowedAttrs = {
+      A: new Set(['href', 'target', 'rel']),
+      IMG: new Set(['src', 'alt', 'title']),
+      SPAN: new Set([]),
+      P: new Set([]),
+      DIV: new Set([]),
+      B: new Set([]),
+      STRONG: new Set([]),
+      I: new Set([]),
+      EM: new Set([]),
+      U: new Set([]),
+      BR: new Set([]),
+      UL: new Set([]),
+      OL: new Set([]),
+      LI: new Set([])
+    };
+    const cleanUrl = (url, allowDataImage = false) => {
+      const raw = String(url || '').trim();
+      if (!raw) return '';
+      if (/^https?:\/\//i.test(raw)) return raw;
+      if (/^mailto:/i.test(raw)) return raw;
+      if (/^tel:/i.test(raw)) return raw;
+      if (allowDataImage && /^data:image\//i.test(raw)) return raw;
+      return '';
+    };
+    const walk = (node) => {
+      Array.from(node.childNodes).forEach((child) => {
+        if (child.nodeType === Node.ELEMENT_NODE) {
+          const tag = child.tagName.toUpperCase();
+          if (!allowedTags.has(tag)) {
+            child.replaceWith(...Array.from(child.childNodes));
+            return;
+          }
+          Array.from(child.attributes).forEach((attr) => {
+            const attrName = attr.name.toLowerCase();
+            const allowed = allowedAttrs[tag] || new Set();
+            if (!allowed.has(attr.name) || attrName.startsWith('on') || attrName === 'style') {
+              child.removeAttribute(attr.name);
+              return;
+            }
+            if (tag === 'A' && attrName === 'href') {
+              const clean = cleanUrl(attr.value, false);
+              if (!clean) child.removeAttribute('href');
+              else child.setAttribute('href', clean);
+            }
+            if (tag === 'A' && attrName === 'target') {
+              if (child.getAttribute('target') !== '_blank') child.removeAttribute('target');
+            }
+            if (tag === 'A' && attrName === 'rel') {
+              child.setAttribute('rel', 'noopener noreferrer');
+            }
+            if (tag === 'IMG' && attrName === 'src') {
+              const clean = cleanUrl(attr.value, true);
+              if (!clean) child.removeAttribute('src');
+              else child.setAttribute('src', clean);
+            }
+          });
+          if (tag === 'A' && child.getAttribute('target') === '_blank') {
+            child.setAttribute('rel', 'noopener noreferrer');
+          }
+          walk(child);
+        } else if (child.nodeType === Node.COMMENT_NODE) {
+          child.remove();
+        }
+      });
+    };
+    walk(template.content);
+    return template.innerHTML.trim();
+  }
+
   function renderQuestion(q) {
     const wrapper = document.createElement('div');
     wrapper.className = 'question';
@@ -30,8 +104,9 @@
     wrapper.dataset.type = q.type;
     wrapper.dataset.required = q.required ? '1' : '0';
 
-    const label = document.createElement('label');
-    label.textContent = q.question_text || 'Pergunta';
+    const label = document.createElement('div');
+    label.className = 'question-label';
+    label.innerHTML = sanitizeQuestionHtml(q.question_text || 'Pergunta');
     if (q.required) {
       const req = document.createElement('span');
       req.className = 'required';

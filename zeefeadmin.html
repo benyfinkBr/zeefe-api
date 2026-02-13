@@ -846,6 +846,96 @@ input, select {
         .replace(/'/g, '&#039;');
     }
 
+    function stripHtmlToText(value) {
+      const div = document.createElement('div');
+      div.innerHTML = String(value ?? '');
+      return (div.textContent || div.innerText || '').replace(/\s+/g, ' ').trim();
+    }
+
+    function sanitizeSurveyQuestionHtml(value) {
+      const template = document.createElement('template');
+      template.innerHTML = String(value ?? '');
+      const allowedTags = new Set(['B', 'STRONG', 'I', 'EM', 'U', 'BR', 'P', 'DIV', 'UL', 'OL', 'LI', 'A', 'IMG', 'SPAN']);
+      const allowedAttrs = {
+        A: new Set(['href', 'target', 'rel']),
+        IMG: new Set(['src', 'alt', 'title']),
+        SPAN: new Set([]),
+        P: new Set([]),
+        DIV: new Set([]),
+        B: new Set([]),
+        STRONG: new Set([]),
+        I: new Set([]),
+        EM: new Set([]),
+        U: new Set([]),
+        BR: new Set([]),
+        UL: new Set([]),
+        OL: new Set([]),
+        LI: new Set([])
+      };
+      const cleanUrl = (url, allowDataImage = false) => {
+        const raw = String(url || '').trim();
+        if (!raw) return '';
+        if (/^https?:\/\//i.test(raw)) return raw;
+        if (/^mailto:/i.test(raw)) return raw;
+        if (/^tel:/i.test(raw)) return raw;
+        if (allowDataImage && /^data:image\//i.test(raw)) return raw;
+        return '';
+      };
+      const walk = (node) => {
+        Array.from(node.childNodes).forEach((child) => {
+          if (child.nodeType === Node.ELEMENT_NODE) {
+            const tag = child.tagName.toUpperCase();
+            if (!allowedTags.has(tag)) {
+              child.replaceWith(...Array.from(child.childNodes));
+              return;
+            }
+            Array.from(child.attributes).forEach((attr) => {
+              const attrName = attr.name.toLowerCase();
+              const allowed = allowedAttrs[tag] || new Set();
+              if (!allowed.has(attr.name)) {
+                child.removeAttribute(attr.name);
+                return;
+              }
+              if (attrName.startsWith('on') || attrName === 'style') {
+                child.removeAttribute(attr.name);
+                return;
+              }
+              if (tag === 'A' && attrName === 'href') {
+                const clean = cleanUrl(attr.value, false);
+                if (!clean) child.removeAttribute('href');
+                else child.setAttribute('href', clean);
+              }
+              if (tag === 'A' && attrName === 'target') {
+                if (child.getAttribute('target') !== '_blank') child.removeAttribute('target');
+              }
+              if (tag === 'A' && attrName === 'rel') {
+                child.setAttribute('rel', 'noopener noreferrer');
+              }
+              if (tag === 'IMG' && attrName === 'src') {
+                const clean = cleanUrl(attr.value, true);
+                if (!clean) child.removeAttribute('src');
+                else child.setAttribute('src', clean);
+              }
+            });
+            if (tag === 'A' && child.getAttribute('target') === '_blank') {
+              child.setAttribute('rel', 'noopener noreferrer');
+            }
+            walk(child);
+          } else if (child.nodeType === Node.COMMENT_NODE) {
+            child.remove();
+          }
+        });
+      };
+      walk(template.content);
+      return template.innerHTML.trim();
+    }
+
+    function surveyQuestionHasContent(value) {
+      const html = sanitizeSurveyQuestionHtml(value);
+      if (stripHtmlToText(html)) return true;
+      return /<img\b/i.test(html);
+    }
+
     async function loadBanksCSV() {
       if (cachedBanks) return cachedBanks;
       try {
@@ -1974,7 +2064,52 @@ input, select {
 
       const questionField = document.createElement('div');
       questionField.className = 'field';
-      questionField.innerHTML = `<label>Pergunta</label><input type="text" class="survey-question-text" value="${escapeHtml(q.question_text || '')}">`;
+      questionField.innerHTML = `<label>Pergunta</label>`;
+      const editorToolbar = document.createElement('div');
+      editorToolbar.className = 'editor-toolbar';
+      editorToolbar.innerHTML = `
+        <button type="button" class="editor-btn" data-action="bold"><span>B</span></button>
+        <button type="button" class="editor-btn" data-action="italic"><span>I</span></button>
+        <button type="button" class="editor-btn" data-action="underline"><span>U</span></button>
+        <button type="button" class="editor-btn" data-action="linebreak"><span>A▾</span></button>
+        <button type="button" class="editor-btn" data-action="link"><span>Link</span></button>
+        <button type="button" class="editor-btn" data-action="image"><span>Img</span></button>
+      `;
+      const questionEditor = document.createElement('div');
+      questionEditor.className = 'rich-editor survey-question-editor';
+      questionEditor.contentEditable = 'true';
+      questionEditor.innerHTML = sanitizeSurveyQuestionHtml(q.question_text || '');
+      const questionHidden = document.createElement('textarea');
+      questionHidden.className = 'survey-question-text';
+      questionHidden.hidden = true;
+      questionHidden.value = sanitizeSurveyQuestionHtml(q.question_text || '');
+      const syncQuestionEditor = () => {
+        questionHidden.value = sanitizeSurveyQuestionHtml(questionEditor.innerHTML || '');
+        questionHidden.dispatchEvent(new Event('input', { bubbles: true }));
+      };
+      editorToolbar.addEventListener('mousedown', (e) => {
+        const btn = e.target.closest('[data-action]');
+        if (!btn) return;
+        const action = btn.getAttribute('data-action') || '';
+        e.preventDefault();
+        questionEditor.focus();
+        if (action === 'bold') document.execCommand('bold', false, null);
+        else if (action === 'italic') document.execCommand('italic', false, null);
+        else if (action === 'underline') document.execCommand('underline', false, null);
+        else if (action === 'linebreak') document.execCommand('insertLineBreak', false, null);
+        else if (action === 'link') {
+          const href = window.prompt('URL do link (https://...)');
+          if (href) document.execCommand('createLink', false, href.trim());
+        } else if (action === 'image') {
+          const src = window.prompt('URL da imagem (https://...)');
+          if (src) document.execCommand('insertImage', false, src.trim());
+        }
+        syncQuestionEditor();
+      });
+      questionEditor.addEventListener('input', syncQuestionEditor);
+      questionField.appendChild(editorToolbar);
+      questionField.appendChild(questionEditor);
+      questionField.appendChild(questionHidden);
 
       const typeField = document.createElement('div');
       typeField.className = 'field';
@@ -2239,7 +2374,7 @@ input, select {
       const targets = Array.from(surveyBuilderList.children).map((c, idx) => ({
         id: c.dataset.id ? Number(c.dataset.id) : 0,
         temp: c.dataset.tempKey || null,
-        text: c.querySelector('.survey-question-text')?.value?.trim() || `Pergunta ${idx + 1}`
+        text: stripHtmlToText(c.querySelector('.survey-question-text')?.value || '') || `Pergunta ${idx + 1}`
       })).filter(t => (t.id || t.temp) && t.id !== currentId && t.temp !== currentTemp);
       const selectedId = targetSelect.dataset.selectedId || '';
       const selectedTemp = targetSelect.dataset.selectedTemp || '';
@@ -2336,7 +2471,7 @@ input, select {
       const targets = Array.from(surveyBuilderList.children).map(c => ({
         id: c.dataset.id ? Number(c.dataset.id) : 0,
         temp: c.dataset.tempKey || null,
-        label: c.querySelector('.survey-question-text')?.value || ''
+        label: stripHtmlToText(c.querySelector('.survey-question-text')?.value || '')
       })).filter(t => (t.id || t.temp) && t.temp !== currentTemp);
       const rows = options.map(opt => {
         const selected = opt.end_survey ? '__END__' : (opt.target_question_id ? String(opt.target_question_id) : '');
@@ -2571,7 +2706,7 @@ input, select {
       atualizarSurveyBranchUIAll();
       Array.from(surveyBuilderList.children).forEach(card => persistSurveyBranchSelection(card));
       const questions = Array.from(surveyBuilderList.children).map((card, index) => {
-        const text = card.querySelector('.survey-question-text').value.trim();
+        const text = sanitizeSurveyQuestionHtml(card.querySelector('.survey-question-text').value || '');
         const type = card.querySelector('.survey-question-type').value;
         const required = card.querySelector('.survey-question-required').value === '1';
         const branchEnabled = card.querySelector('.survey-question-branch-toggle')?.value === '1';
@@ -2663,7 +2798,7 @@ input, select {
         });
       });
 
-      if (questions.some(q => !q.question_text)) {
+      if (questions.some(q => !surveyQuestionHasContent(q.question_text))) {
         alert('Preencha o texto de todas as perguntas.');
         return null;
       }
@@ -2764,7 +2899,7 @@ input, select {
         return;
       }
       let html = '<div class="table-container"><table><thead><tr><th>Enviado em</th>';
-      questions.forEach(q => { html += `<th>${escapeHtml(q.question_text)}</th>`; });
+      questions.forEach(q => { html += `<th>${escapeHtml(stripHtmlToText(q.question_text))}</th>`; });
       html += '</tr></thead><tbody>';
       responses.forEach(resp => {
         html += `<tr><td>${escapeHtml(resp.submitted_at || '')}</td>`;
@@ -2787,7 +2922,7 @@ input, select {
         alert('Nada para exportar.');
         return;
       }
-      const headers = ['Enviado em'].concat(questions.map(q => q.question_text));
+      const headers = ['Enviado em'].concat(questions.map(q => stripHtmlToText(q.question_text)));
       const esc = s => '"' + String(s == null ? '' : s).replace(/"/g, '""') + '"';
       const lines = responses.map(resp => {
         const row = [resp.submitted_at || ''];

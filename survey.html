@@ -25,7 +25,12 @@
     .desc{color:var(--muted);margin:6px 0 18px}
     .divider{height:1px;background:var(--line);margin:18px 0}
     .question{margin-bottom:18px}
-    .question label{display:block;font-weight:600;margin-bottom:8px}
+    .question .question-label{display:block;font-weight:600;margin-bottom:8px}
+    .question .question-label p,
+    .question .question-label div{margin:0 0 6px}
+    .question .question-label p:last-child,
+    .question .question-label div:last-child{margin-bottom:0}
+    .question .question-label img{max-width:100%;height:auto;border-radius:10px;display:block;margin:8px 0}
     .question .required{color:var(--accent);margin-left:4px}
     input[type="text"], input[type="number"], textarea, select{
       width:100%;padding:10px 12px;border:1px solid #CCC;border-radius:10px;font-size:15px
