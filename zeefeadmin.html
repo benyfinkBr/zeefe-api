@@ -2020,7 +2020,7 @@ input, select {
       const optionsText = Array.isArray(q.options) ? q.options.map(opt => opt.label).join('\n') : '';
       optionsField.innerHTML = `
         <label>Opções (uma por linha)</label>
-        <textarea class="survey-options-area" placeholder="Opção 1\nOpção 2">${escapeHtml(optionsText)}</textarea>
+        <textarea class="survey-options-area" placeholder="Digite uma opção por linha">${escapeHtml(optionsText)}</textarea>
       `;
 
       const branchField = document.createElement('div');
@@ -2077,10 +2077,14 @@ input, select {
       if (q.default_next_question_id) defaultTarget.dataset.selectedId = String(q.default_next_question_id);
 
       typeSelect.addEventListener('change', () => {
+        ensureDefaultSurveyOptions(card);
         atualizarSurveyQuestionVisibilidade(card);
         atualizarSurveyBranchUIAll();
       });
-      branchToggle.addEventListener('change', atualizarSurveyBranchUIAll);
+      branchToggle.addEventListener('change', () => {
+        ensureDefaultSurveyOptions(card);
+        atualizarSurveyBranchUIAll();
+      });
       defaultMode.addEventListener('change', atualizarSurveyBranchUIAll);
       const optionsArea = card.querySelector('.survey-options-area');
       if (optionsArea) {
@@ -2135,6 +2139,20 @@ input, select {
         .split(/\r?\n/)
         .map(v => v.trim())
         .filter(Boolean);
+    }
+
+    function ensureDefaultSurveyOptions(card) {
+      const type = card.querySelector('.survey-question-type')?.value || '';
+      const branchable = (type === 'single_choice' || type === 'multiple_choice');
+      if (!branchable) return;
+      const branchEnabled = card.querySelector('.survey-question-branch-toggle')?.value === '1';
+      if (!branchEnabled) return;
+      const area = card.querySelector('.survey-options-area');
+      if (!area) return;
+      const hasOptions = getSurveyOptionLines(card).length > 0;
+      if (hasOptions) return;
+      area.value = 'Opção 1\nOpção 2';
+      syncSurveyOptionsFromTextarea(card);
     }
 
     function syncSurveyOptionsFromTextarea(card) {
