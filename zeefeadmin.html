@@ -138,6 +138,11 @@
     .survey-flow-svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
     .survey-flow-node{position:absolute;transform:translate(-50%,-50%);display:flex;align-items:center;justify-content:center;cursor:grab;user-select:none}
     .survey-flow-node:active{cursor:grabbing}
+    #surveyFlowModal .modal-content{width:96vw;max-width:1400px;max-height:94vh}
+    #surveyFlowModal .modal-body{padding:16px 20px;overflow:hidden;display:flex}
+    #surveyFlowPreview{width:100%;height:100%;max-height:none;overflow:hidden;display:flex;flex-direction:column}
+    #surveyFlowPreview .survey-flow-diagram{flex:1 1 auto;display:flex;min-height:0}
+    #surveyFlowPreview .survey-flow-canvas{flex:1 1 auto;height:calc(100vh - 290px);min-height:520px}
     .survey-flow-branches{display:flex;flex-wrap:wrap;gap:6px}
     .survey-flow-branch-line{border:1px dashed #D7CCBE;border-radius:999px;padding:5px 10px;font-size:13px;font-weight:600;color:#2A4D45;background:#FFFEFC}
     .survey-question-card{overflow:hidden;width:100%}
@@ -586,7 +591,7 @@ input, select {
   </div>
 
   <div class="modal" id="surveyFlowModal">
-    <div class="modal-content" style="max-width:780px">
+    <div class="modal-content">
       <div class="modal-header">
         <h3>Fluxograma do questionário</h3>
         <button class="modal-close" onclick="fecharSurveyFlowModal()">&times;</button>
@@ -2329,14 +2334,25 @@ input, select {
       canvas.innerHTML = `<svg class="survey-flow-svg" id="surveyFlowSvg"><defs><marker id="surveyArrowHead" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#1D6A92"></path></marker></defs></svg>`;
       const svg = document.getElementById('surveyFlowSvg');
 
-      const endNode = { x: canvas.clientWidth / 2, y: canvas.clientHeight - 40 };
+      const gridSize = 24;
+      const snap = (v) => Math.round(v / gridSize) * gridSize;
+      const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
+      const width = Math.max(canvas.clientWidth, 320);
+      const height = Math.max(canvas.clientHeight, 320);
+      const endNode = { x: snap(width / 2), y: snap(height - 40) };
       const domNodes = [];
       nodes.forEach(node => {
+        const x = snap(clamp(node.x, 24, width - 24));
+        const y = snap(clamp(node.y, 24, height - 24));
+        node.x = x;
+        node.y = y;
+        node.card.dataset.flowX = String(x);
+        node.card.dataset.flowY = String(y);
         const el = document.createElement('div');
         el.className = 'survey-flow-node';
         el.dataset.key = node.key;
-        el.style.left = `${node.x}px`;
-        el.style.top = `${node.y}px`;
+        el.style.left = `${x}px`;
+        el.style.top = `${y}px`;
         el.innerHTML = `<div class="survey-flow-badge">${node.n}</div>`;
         canvas.appendChild(el);
         domNodes.push({ node, el });
@@ -2376,7 +2392,6 @@ input, select {
         });
       };
 
-      const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
       domNodes.forEach(item => {
         let dx = 0;
         let dy = 0;
@@ -2389,8 +2404,8 @@ input, select {
         item.el.onpointermove = (ev) => {
           if (!item.el.hasPointerCapture(ev.pointerId)) return;
           const rect = canvas.getBoundingClientRect();
-          const x = clamp(ev.clientX - rect.left - dx, 20, rect.width - 20);
-          const y = clamp(ev.clientY - rect.top - dy, 20, rect.height - 20);
+          const x = snap(clamp(ev.clientX - rect.left - dx, 24, rect.width - 24));
+          const y = snap(clamp(ev.clientY - rect.top - dy, 24, rect.height - 24));
           item.el.style.left = `${x}px`;
           item.el.style.top = `${y}px`;
           item.node.card.dataset.flowX = String(Math.round(x));
