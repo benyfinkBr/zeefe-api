@@ -584,7 +584,10 @@ input, select {
         <div style="margin-left:auto;display:flex;gap:8px">
           <button type="button" class="btn-secondary" onclick="fecharSurveyBuilder()">Cancelar</button>
           <button type="button" class="btn-secondary" onclick="abrirSurveyFlowModal()">Fluxograma</button>
-          <button type="button" class="btn" onclick="salvarSurveyBuilder()">Salvar perguntas</button>
+          <button type="button" class="btn-secondary" onclick="salvarSurveyBuilderLocal()">Salvar</button>
+          <button type="button" class="btn-secondary" onclick="atualizarSurveyBuilder()">Atualizar</button>
+          <button type="button" class="btn-secondary" onclick="salvarSurveyBuilderBanco()">Salvar no banco</button>
+          <button type="button" class="btn" onclick="salvarSurveyBuilderFechar()">Salvar e Fechar</button>
         </div>
       </div>
     </div>
@@ -811,6 +814,7 @@ input, select {
     let surveyBuilderSurveyId = null;
     let surveyResultsCache = null;
     const surveyFlowPositions = {};
+    const surveyBuilderDraftBySurvey = {};
 
     function escapeHtml(value) {
       return String(value ?? '')
@@ -2529,7 +2533,7 @@ input, select {
       redraw();
     }
 
-    async function salvarSurveyBuilder() {
+    function montarSurveyBuilderPayload() {
       if (!surveyBuilderSurveyId) return;
       atualizarSurveyBranchUIAll();
       Array.from(surveyBuilderList.children).forEach(card => persistSurveyBranchSelection(card));
@@ -2628,15 +2632,39 @@ input, select {
 
       if (questions.some(q => !q.question_text)) {
         alert('Preencha o texto de todas as perguntas.');
-        return;
+        return null;
       }
+      return { survey_id: surveyBuilderSurveyId, questions, rules };
+    }
+
+    function salvarSurveyBuilderLocal() {
+      const payload = montarSurveyBuilderPayload();
+      if (!payload) return;
+      surveyBuilderDraftBySurvey[surveyBuilderSurveyId] = payload;
+      showToast('Rascunho salvo na tela.');
+    }
+
+    async function atualizarSurveyBuilder() {
+      if (!surveyBuilderSurveyId) return;
+      if (surveyBuilderDraftBySurvey[surveyBuilderSurveyId]) {
+        const ok = window.confirm('Atualizar vai descartar alterações salvas em tela que ainda não foram enviadas ao banco. Continuar?');
+        if (!ok) return;
+      }
+      delete surveyBuilderDraftBySurvey[surveyBuilderSurveyId];
+      await carregarSurveyBuilder();
+      showToast('Dados atualizados do banco.');
+    }
+
+    async function salvarSurveyBuilder(closeAfter = true) {
+      const payload = montarSurveyBuilderPayload();
+      if (!payload) return;
 
       try {
         const res = await fetch(`${API_BASE}/survey_builder.php`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
-          body: JSON.stringify({ survey_id: surveyBuilderSurveyId, questions, rules })
+          body: JSON.stringify(payload)
         });
         const data = await res.json();
         if (!data.success) throw new Error(data.error || 'Falha ao salvar perguntas.');
@@ -2652,12 +2680,25 @@ input, select {
           alert(`Algumas ramificações foram ignoradas por destino inválido (${skippedNoTarget}). Salvas: regras=${saved}, caminhos=${savedPaths}.`);
           return;
         }
-        showToast('Perguntas salvas.');
-        fecharSurveyBuilder();
+        delete surveyBuilderDraftBySurvey[surveyBuilderSurveyId];
+        if (closeAfter) {
+          showToast('Perguntas salvas.');
+          fecharSurveyBuilder();
+        } else {
+          showToast('Perguntas salvas no banco.');
+        }
       } catch (err) {
         console.error(err);
         alert(`Erro ao salvar perguntas: ${err.message || 'falha desconhecida'}`);
       }
+    }
+
+    async function salvarSurveyBuilderFechar() {
+      await salvarSurveyBuilder(true);
+    }
+
+    async function salvarSurveyBuilderBanco() {
+      await salvarSurveyBuilder(false);
     }
 
     async function abrirSurveyResults(id) {
