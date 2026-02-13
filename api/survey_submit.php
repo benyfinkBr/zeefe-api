@@ -31,20 +31,41 @@ try {
   $qStmt->execute([':sid' => $survey['id']]);
   $questions = $qStmt->fetchAll(PDO::FETCH_ASSOC);
   $questionMap = [];
+  $orderedQuestions = [];
   foreach ($questions as $q) {
-    $questionMap[(int) $q['id']] = $q;
+    $qid = (int) $q['id'];
+    $questionMap[$qid] = $q;
+    $orderedQuestions[] = $qid;
   }
   $questionIds = array_keys($questionMap);
   $optionsByQuestion = [];
   if ($questionIds) {
     $in = implode(',', array_fill(0, count($questionIds), '?'));
-    $oStmt = $pdo->prepare("SELECT id, question_id FROM survey_options WHERE question_id IN ($in)");
+    $oStmt = $pdo->prepare("SELECT id, question_id FROM survey_options WHERE question_id IN ($in) ORDER BY question_id ASC, order_index ASC, id ASC");
     $oStmt->execute($questionIds);
     $options = $oStmt->fetchAll(PDO::FETCH_ASSOC);
     foreach ($options as $opt) {
       $qid = (int) $opt['question_id'];
       if (!isset($optionsByQuestion[$qid])) $optionsByQuestion[$qid] = [];
       $optionsByQuestion[$qid][] = (int) $opt['id'];
+    }
+  }
+
+  $ruleMapByQuestion = [];
+  if ($questionIds) {
+    $in = implode(',', array_fill(0, count($questionIds), '?'));
+    $rStmt = $pdo->prepare("SELECT question_id, option_id, target_question_id, end_survey FROM survey_branch_rules WHERE survey_id = ? AND question_id IN ($in) ORDER BY id ASC");
+    $params = array_merge([(int) $survey['id']], $questionIds);
+    $rStmt->execute($params);
+    $rows = $rStmt->fetchAll(PDO::FETCH_ASSOC);
+    foreach ($rows as $r) {
+      $qid = (int) $r['question_id'];
+      if (!isset($ruleMapByQuestion[$qid])) $ruleMapByQuestion[$qid] = [];
+      $ruleMapByQuestion[$qid][] = [
+        'option_id' => (int) $r['option_id'],
+        'target_question_id' => isset($r['target_question_id']) ? (int) $r['target_question_id'] : null,
+        'end_survey' => !empty($r['end_survey']) ? 1 : 0
+      ];
     }
   }
 
@@ -55,8 +76,70 @@ try {
     if ($qid > 0) $answersByQuestion[$qid] = $ans;
   }
 
+  $orderedIndexById = [];
+  foreach ($orderedQuestions as $i => $qid) $orderedIndexById[$qid] = $i;
+  $reachable = [];
+  if ($orderedQuestions) {
+    $visited = [];
+    $currentQid = $orderedQuestions[0];
+    while ($currentQid && isset($questionMap[$currentQid]) && empty($visited[$currentQid])) {
+      $visited[$currentQid] = 1;
+      $reachable[] = $currentQid;
+      $q = $questionMap[$currentQid];
+      $ans = $answersByQuestion[$currentQid] ?? null;
+      $nextQid = null;
+      $end = false;
+
+      $rules = $ruleMapByQuestion[$currentQid] ?? [];
+      if ($ans && $rules) {
+        if ($q['type'] === 'single_choice') {
+          $selected = (int) ($ans['option_id'] ?? 0);
+          foreach ($rules as $rule) {
+            if ((int) $rule['option_id'] === $selected) {
+              if (!empty($rule['end_survey'])) $end = true;
+              else $nextQid = (int) ($rule['target_question_id'] ?? 0);
+              break;
+            }
+          }
+        } elseif ($q['type'] === 'multiple_choice') {
+          $selectedList = array_map('intval', (array) ($ans['option_ids'] ?? []));
+          $optionOrder = $optionsByQuestion[$currentQid] ?? [];
+          foreach ($optionOrder as $optId) {
+            if (!in_array((int) $optId, $selectedList, true)) continue;
+            foreach ($rules as $rule) {
+              if ((int) $rule['option_id'] === (int) $optId) {
+                if (!empty($rule['end_survey'])) $end = true;
+                else $nextQid = (int) ($rule['target_question_id'] ?? 0);
+                break 2;
+              }
+            }
+          }
+        }
+      }
+
+      if ($end) break;
+      if (!$nextQid) {
+        if (!empty($q['end_if_no_branch'])) {
+          break;
+        }
+        $defaultNext = (int) ($q['default_next_question_id'] ?? 0);
+        if ($defaultNext > 0 && isset($questionMap[$defaultNext])) {
+          $nextQid = $defaultNext;
+        } else {
+          $idx = $orderedIndexById[$currentQid] ?? null;
+          if ($idx !== null) {
+            $nextQid = $orderedQuestions[$idx + 1] ?? null;
+          }
+        }
+      }
+      if (!$nextQid || !isset($questionMap[$nextQid])) break;
+      $currentQid = $nextQid;
+    }
+  }
+
   foreach ($questions as $q) {
     $qid = (int) $q['id'];
+    if (!in_array($qid, $reachable, true)) continue;
     $required = !empty($q['required']);
     if (!$required) continue;
     $ans = $answersByQuestion[$qid] ?? null;

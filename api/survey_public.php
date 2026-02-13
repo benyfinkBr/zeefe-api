@@ -47,9 +47,11 @@ try {
     $opts = $optionsByQuestion[$qid] ?? [];
     foreach ($opts as &$opt) {
       $opt['branch_to'] = null;
+      $opt['branch_end'] = 0;
       foreach ($rules as $rule) {
         if ((int) $rule['option_id'] === (int) $opt['id']) {
-          $opt['branch_to'] = (int) $rule['target_question_id'];
+          $opt['branch_to'] = isset($rule['target_question_id']) ? (int) $rule['target_question_id'] : null;
+          $opt['branch_end'] = !empty($rule['end_survey']) ? 1 : 0;
           break;
         }
       }

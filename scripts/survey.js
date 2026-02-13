@@ -139,7 +139,12 @@
     questions.forEach(q => {
       const inner = {};
       (q.options || []).forEach(opt => {
-        if (opt.branch_to) inner[String(opt.id)] = Number(opt.branch_to);
+        if (opt.branch_to || opt.branch_end) {
+          inner[String(opt.id)] = {
+            target: opt.branch_to ? Number(opt.branch_to) : null,
+            end: Number(opt.branch_end || 0) === 1
+          };
+        }
       });
       map[q.id] = inner;
     });
@@ -151,8 +156,13 @@
   }
 
   function getDefaultNextQuestionId(index) {
+    const q = surveyQuestions[index];
+    if (!q) return null;
+    if (Number(q.end_if_no_branch || 0) === 1) return '__END__';
+    const configured = Number(q.default_next_question_id || 0);
+    if (configured > 0) return configured;
     const next = surveyQuestions[index + 1];
-    return next ? Number(next.id) : null;
+    return next ? Number(next.id) : '__END__';
   }
 
   function getNextQuestionIdByAnswer(index) {
@@ -163,18 +173,20 @@
     const branchRules = rulesMap[q.id] || {};
 
     if (answer && q.type === 'single_choice' && answer.option_id) {
-      const target = branchRules[String(answer.option_id)];
-      if (target) return target;
+      const rule = branchRules[String(answer.option_id)];
+      if (rule?.end) return '__END__';
+      if (rule?.target) return rule.target;
     }
 
     if (answer && q.type === 'multiple_choice' && Array.isArray(answer.option_ids)) {
       const orderedSelected = (q.options || [])
         .map(opt => String(opt.id))
         .filter(id => answer.option_ids.map(String).includes(id));
-      const firstTarget = orderedSelected
+      const firstRule = orderedSelected
         .map(id => branchRules[id])
         .find(Boolean);
-      if (firstTarget) return firstTarget;
+      if (firstRule?.end) return '__END__';
+      if (firstRule?.target) return firstRule.target;
     }
 
     return getDefaultNextQuestionId(index);
@@ -196,7 +208,7 @@
       path.push(qid);
 
       const nextId = getNextQuestionIdByAnswer(index);
-      if (!nextId) break;
+      if (!nextId || nextId === '__END__') break;
       index = getQuestionIndexById(nextId);
       if (index < 0) break;
     }
@@ -242,7 +254,7 @@
     const pathIndex = path.indexOf(currentQuestionId);
     const isFirst = pathIndex <= 0;
     const nextQuestionId = getNextQuestionIdByAnswer(currentQuestionIndex);
-    const hasNext = !!nextQuestionId && getQuestionIndexById(nextQuestionId) >= 0;
+    const hasNext = !!nextQuestionId && nextQuestionId !== '__END__' && getQuestionIndexById(nextQuestionId) >= 0;
 
     const actions = document.createElement('div');
     actions.className = 'actions';

@@ -132,10 +132,12 @@
     .survey-branch-preview h4{margin:0 0 8px;font-size:14px}
     .survey-branch-preview .empty{font-size:12px;color:#6B5D50}
     .survey-flow-diagram{border:1px solid #EEE4D8;border-radius:8px;padding:10px;background:#FAF8F5;margin-bottom:10px}
-    .survey-flow-node{display:flex;justify-content:center;align-items:center}
     .survey-flow-badge{width:34px;height:34px;border-radius:999px;background:#1D413A;color:#fff;font-weight:700;display:flex;align-items:center;justify-content:center}
     .survey-flow-end{width:auto;padding:0 10px;border-radius:999px;background:#EDE7DF;color:#1D413A;font-size:12px;font-weight:700;height:30px;display:flex;align-items:center;justify-content:center}
-    .survey-flow-arrow{display:flex;justify-content:center;align-items:center;color:#7D6E5E;font-size:16px;line-height:1;margin:2px 0}
+    .survey-flow-canvas{position:relative;width:100%;height:460px;border:1px solid #E7DCCD;border-radius:10px;background:#FFFDF9;overflow:hidden}
+    .survey-flow-svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+    .survey-flow-node{position:absolute;transform:translate(-50%,-50%);display:flex;align-items:center;justify-content:center;cursor:grab;user-select:none}
+    .survey-flow-node:active{cursor:grabbing}
     .survey-flow-branches{display:flex;flex-wrap:wrap;gap:6px}
     .survey-flow-branch-line{border:1px dashed #D7CCBE;border-radius:999px;padding:5px 10px;font-size:13px;font-weight:600;color:#2A4D45;background:#FFFEFC}
     .survey-question-card{overflow:hidden;width:100%}
@@ -1968,6 +1970,24 @@ input, select {
         </select>
       `;
 
+      const defaultModeField = document.createElement('div');
+      defaultModeField.className = 'field';
+      defaultModeField.innerHTML = `
+        <label>Sem ramificação</label>
+        <select class="survey-default-next-mode">
+          <option value="sequential">Próxima pergunta</option>
+          <option value="question">Ir para pergunta</option>
+          <option value="end">Encerrar questionário</option>
+        </select>
+      `;
+
+      const defaultTargetField = document.createElement('div');
+      defaultTargetField.className = 'field survey-default-target-field';
+      defaultTargetField.innerHTML = `
+        <label>Destino padrão</label>
+        <select class="survey-default-next-target"></select>
+      `;
+
       const numberField = document.createElement('div');
       numberField.className = 'field survey-number-fields';
       numberField.innerHTML = `
@@ -2007,6 +2027,8 @@ input, select {
       row.appendChild(typeField);
       row.appendChild(requiredField);
       row.appendChild(branchToggleField);
+      row.appendChild(defaultModeField);
+      row.appendChild(defaultTargetField);
       row.appendChild(numberField);
       row.appendChild(scaleField);
       row.appendChild(optionsField);
@@ -2031,30 +2053,44 @@ input, select {
         id: opt.id,
         label: opt.label,
         order_index: opt.order_index || null,
-        target_question_id: opt.target_question_id || null
+        target_question_id: opt.target_question_id || null,
+        end_survey: opt.end_survey ? 1 : 0
       })) : [];
 
       const branchToggle = card.querySelector('.survey-question-branch-toggle');
-      const hasBranch = card._surveyOptions.some(opt => opt.target_question_id);
+      const hasBranch = card._surveyOptions.some(opt => opt.target_question_id || opt.end_survey);
       branchToggle.value = hasBranch ? '1' : '0';
+      const defaultMode = card.querySelector('.survey-default-next-mode');
+      const defaultTarget = card.querySelector('.survey-default-next-target');
+      if (String(q.end_if_no_branch || '0') === '1') defaultMode.value = 'end';
+      else if (q.default_next_question_id) defaultMode.value = 'question';
+      else defaultMode.value = 'sequential';
+      if (q.default_next_question_id) defaultTarget.dataset.selectedId = String(q.default_next_question_id);
+
       typeSelect.addEventListener('change', () => {
         atualizarSurveyQuestionVisibilidade(card);
         atualizarSurveyBranchFields(card);
+        atualizarSurveyDefaultTargetField(card);
         renderSurveyBranchPreview();
       });
       branchToggle.addEventListener('change', () => {
         atualizarSurveyBranchFields(card);
         renderSurveyBranchPreview();
       });
+      defaultMode.addEventListener('change', () => {
+        atualizarSurveyDefaultTargetField(card);
+        renderSurveyBranchPreview();
+      });
       const optionsArea = card.querySelector('.survey-options-area');
       if (optionsArea) {
         optionsArea.addEventListener('input', () => {
           const lines = optionsArea.value.split(/\r?\n/).map(v => v.trim()).filter(Boolean);
-          const prevMap = new Map((card._surveyOptions || []).map(opt => [opt.label, opt.target_question_id]));
+          const prevMap = new Map((card._surveyOptions || []).map(opt => [opt.label, { target_question_id: opt.target_question_id, end_survey: opt.end_survey ? 1 : 0 }]));
           card._surveyOptions = lines.map((label, idx) => ({
             id: null,
             label,
-            target_question_id: prevMap.get(label) || null,
+            target_question_id: prevMap.get(label)?.target_question_id || null,
+            end_survey: prevMap.get(label)?.end_survey ? 1 : 0,
             order_index: idx + 1
           }));
           atualizarSurveyBranchFields(card);
@@ -2078,6 +2114,7 @@ input, select {
       });
 
       atualizarSurveyQuestionVisibilidade(card);
+      atualizarSurveyDefaultTargetField(card);
       atualizarSurveyBranchFields(card);
       return card;
     }
@@ -2098,6 +2135,36 @@ input, select {
         branchToggle.disabled = !enabled;
         if (!enabled) branchToggle.value = '0';
       }
+    }
+
+    function atualizarSurveyDefaultTargetField(card) {
+      const modeEl = card.querySelector('.survey-default-next-mode');
+      const targetWrap = card.querySelector('.survey-default-target-field');
+      const targetSelect = card.querySelector('.survey-default-next-target');
+      if (!modeEl || !targetWrap || !targetSelect) return;
+      const mode = modeEl.value || 'sequential';
+      if (mode !== 'question') {
+        targetWrap.style.display = 'none';
+        return;
+      }
+      targetWrap.style.display = '';
+      const currentTemp = card.dataset.tempKey || null;
+      const currentId = card.dataset.id ? Number(card.dataset.id) : 0;
+      const targets = Array.from(surveyBuilderList.children).map((c, idx) => ({
+        id: c.dataset.id ? Number(c.dataset.id) : 0,
+        temp: c.dataset.tempKey || null,
+        text: c.querySelector('.survey-question-text')?.value?.trim() || `Pergunta ${idx + 1}`
+      })).filter(t => (t.id || t.temp) && t.id !== currentId && t.temp !== currentTemp);
+      const selectedId = targetSelect.dataset.selectedId || '';
+      const selectedTemp = targetSelect.dataset.selectedTemp || '';
+      const html = ['<option value="">Selecione...</option>']
+        .concat(targets.map(t => {
+          const value = t.id ? String(t.id) : `temp:${t.temp}`;
+          const selected = (selectedId && value === selectedId) || (selectedTemp && value === `temp:${selectedTemp}`);
+          return `<option value="${escapeHtml(value)}"${selected ? ' selected' : ''}>${escapeHtml(t.text)}</option>`;
+        })).join('');
+      targetSelect.innerHTML = html;
+      targetSelect.onchange = renderSurveyBranchPreview;
     }
 
     function atualizarSurveyBranchFields(card) {
@@ -2126,13 +2193,9 @@ input, select {
         temp: c.dataset.tempKey || null,
         label: c.querySelector('.survey-question-text')?.value || ''
       })).filter(t => (t.id || t.temp) && t.id !== questionId && t.temp !== currentTemp);
-      if (!targets.length) {
-        branchBlock.innerHTML = `<label>Ramificação</label><div class="survey-inline-note">Não há perguntas de destino.</div>`;
-        return;
-      }
       const rows = options.map(opt => {
-        const selected = opt.target_question_id ? String(opt.target_question_id) : '';
-        const optionsHtml = ['<option value=\"\">Sem ramificação</option>']
+        const selected = opt.end_survey ? '__END__' : (opt.target_question_id ? String(opt.target_question_id) : '');
+        const optionsHtml = ['<option value=\"\">Sem ramificação</option>', `<option value="__END__"${selected === '__END__' ? ' selected' : ''}>Encerrar questionário</option>`]
           .concat(targets.map(t => {
             const value = t.id ? String(t.id) : `temp:${t.temp}`;
             const isSelected = selected && (selected === String(t.id) || selected === String(t.temp));
@@ -2157,6 +2220,7 @@ input, select {
       Array.from(surveyBuilderList.children).forEach((card, index) => {
         const title = card.querySelector('.survey-question-title');
         if (title) title.textContent = `Pergunta ${index + 1}`;
+        atualizarSurveyDefaultTargetField(card);
         atualizarSurveyBranchFields(card);
       });
       renderSurveyBranchPreview();
@@ -2190,14 +2254,41 @@ input, select {
         surveyFlowPreview.innerHTML = '<h4>Fluxo (números)</h4><div class="empty">Sem perguntas para exibir.</div>';
         return;
       }
-      const cardToNumber = new Map(cards.map((c, i) => [c, i + 1]));
-      const idToNumber = new Map(cards.filter(c => c.dataset.id).map(c => [String(c.dataset.id), cardToNumber.get(c)]));
-      const tempToNumber = new Map(cards.filter(c => c.dataset.tempKey).map(c => [String(c.dataset.tempKey), cardToNumber.get(c)]));
+      const nodes = cards.map((card, index) => {
+        const key = card.dataset.tempKey || (card.dataset.id ? `id_${card.dataset.id}` : `idx_${index + 1}`);
+        const x = card.dataset.flowX ? Number(card.dataset.flowX) : (240 + (index % 3) * 120);
+        const y = card.dataset.flowY ? Number(card.dataset.flowY) : (70 + Math.floor(index / 3) * 95);
+        return { key, card, n: index + 1, x, y };
+      });
+      const nodeByKey = new Map(nodes.map(n => [n.key, n]));
+      const nodeById = new Map(cards.filter(c => c.dataset.id).map(c => [String(c.dataset.id), c.dataset.tempKey || `id_${c.dataset.id}`]));
 
-      const branchLines = [];
+      const edges = [];
+      const labels = [];
+      const pushEdge = (fromKey, toKey, label = '') => {
+        if (!fromKey || !toKey) return;
+        const key = `${fromKey}->${toKey}->${label}`;
+        if (labels.includes(key)) return;
+        labels.push(key);
+        edges.push({ from: fromKey, to: toKey, label });
+      };
 
-      cards.forEach((card, index) => {
-        const from = index + 1;
+      nodes.forEach((node, idx) => {
+        const card = node.card;
+        const mode = card.querySelector('.survey-default-next-mode')?.value || 'sequential';
+        if (mode === 'end') {
+          pushEdge(node.key, '__END__', 'padrao');
+        } else if (mode === 'question') {
+          const raw = card.querySelector('.survey-default-next-target')?.value || '';
+          let targetKey = null;
+          if (raw.startsWith('temp:')) targetKey = raw.replace('temp:', '');
+          else if (raw) targetKey = nodeById.get(raw) || null;
+          if (targetKey) pushEdge(node.key, targetKey, 'padrao');
+          else pushEdge(node.key, (nodes[idx + 1]?.key || '__END__'), 'padrao');
+        } else {
+          pushEdge(node.key, (nodes[idx + 1]?.key || '__END__'), 'padrao');
+        }
+
         const type = card.querySelector('.survey-question-type')?.value || '';
         const branchEnabled = card.querySelector('.survey-question-branch-toggle')?.value === '1';
         if ((type !== 'single_choice' && type !== 'multiple_choice') || !branchEnabled) return;
@@ -2205,36 +2296,115 @@ input, select {
         rows.forEach(row => {
           const select = row.querySelector('.survey-branch-select');
           if (!select || !select.value) return;
-          const raw = String(select.value);
-          let targetNumber = null;
-          if (raw.startsWith('temp:')) {
-            targetNumber = tempToNumber.get(raw.replace('temp:', '')) || null;
-          } else {
-            targetNumber = idToNumber.get(raw) || null;
+          if (select.value === '__END__') {
+            pushEdge(node.key, '__END__');
+            return;
           }
-          if (!targetNumber) return;
-          branchLines.push(`${from} \u2192 ${targetNumber}`);
+          let targetKey = null;
+          if (select.value.startsWith('temp:')) targetKey = select.value.replace('temp:', '');
+          else targetKey = nodeById.get(select.value) || null;
+          if (targetKey) pushEdge(node.key, targetKey);
         });
       });
 
+      const branchLines = edges
+        .filter(e => e.label !== 'padrao')
+        .map(e => `${nodeByKey.get(e.from)?.n || '?'} \u2192 ${e.to === '__END__' ? 'Fim' : (nodeByKey.get(e.to)?.n || '?')}`);
       const uniqueBranchLines = Array.from(new Set(branchLines));
       const branchHtml = uniqueBranchLines.length
         ? uniqueBranchLines.map(line => `<div class="survey-flow-branch-line">${line}</div>`).join('')
         : '<div class="empty">Sem desvio configurado.</div>';
 
-      const mainFlowHtml = cards.map((_, i) => `
-        <div class="survey-flow-node"><div class="survey-flow-badge">${i + 1}</div></div>
-        <div class="survey-flow-arrow">\u2193</div>
-      `).join('') + `<div class="survey-flow-node"><div class="survey-flow-end">Fim</div></div>`;
-
       surveyFlowPreview.innerHTML = `
         <h4>Fluxo (números)</h4>
         <div class="survey-flow-diagram">
-          ${mainFlowHtml}
+          <div class="survey-flow-canvas" id="surveyFlowCanvas"></div>
         </div>
         <h4 style="margin-top:0">Desvios</h4>
         <div class="survey-flow-branches">${branchHtml}</div>
       `;
+
+      const canvas = document.getElementById('surveyFlowCanvas');
+      if (!canvas) return;
+      canvas.innerHTML = `<svg class="survey-flow-svg" id="surveyFlowSvg"><defs><marker id="surveyArrowHead" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#1D6A92"></path></marker></defs></svg>`;
+      const svg = document.getElementById('surveyFlowSvg');
+
+      const endNode = { x: canvas.clientWidth / 2, y: canvas.clientHeight - 40 };
+      const domNodes = [];
+      nodes.forEach(node => {
+        const el = document.createElement('div');
+        el.className = 'survey-flow-node';
+        el.dataset.key = node.key;
+        el.style.left = `${node.x}px`;
+        el.style.top = `${node.y}px`;
+        el.innerHTML = `<div class="survey-flow-badge">${node.n}</div>`;
+        canvas.appendChild(el);
+        domNodes.push({ node, el });
+      });
+      const endEl = document.createElement('div');
+      endEl.className = 'survey-flow-node';
+      endEl.style.left = `${endNode.x}px`;
+      endEl.style.top = `${endNode.y}px`;
+      endEl.innerHTML = '<div class="survey-flow-end">Fim</div>';
+      canvas.appendChild(endEl);
+
+      const getCenter = (key) => {
+        if (key === '__END__') return endNode;
+        const found = domNodes.find(n => n.node.key === key);
+        if (!found) return null;
+        return { x: parseFloat(found.el.style.left), y: parseFloat(found.el.style.top) };
+      };
+
+      const redraw = () => {
+        const defs = svg.querySelector('defs');
+        svg.innerHTML = '';
+        if (defs) svg.appendChild(defs);
+        edges.forEach(edge => {
+          const from = getCenter(edge.from);
+          const to = getCenter(edge.to);
+          if (!from || !to) return;
+          const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+          line.setAttribute('x1', String(from.x));
+          line.setAttribute('y1', String(from.y));
+          line.setAttribute('x2', String(to.x));
+          line.setAttribute('y2', String(to.y));
+          line.setAttribute('stroke', edge.label === 'padrao' ? '#8A7A68' : '#1D6A92');
+          line.setAttribute('stroke-width', edge.label === 'padrao' ? '1.6' : '2');
+          line.setAttribute('marker-end', 'url(#surveyArrowHead)');
+          line.setAttribute('opacity', edge.label === 'padrao' ? '0.7' : '1');
+          svg.appendChild(line);
+        });
+      };
+
+      const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
+      domNodes.forEach(item => {
+        let dx = 0;
+        let dy = 0;
+        item.el.onpointerdown = (ev) => {
+          const rect = item.el.getBoundingClientRect();
+          dx = ev.clientX - rect.left - rect.width / 2;
+          dy = ev.clientY - rect.top - rect.height / 2;
+          item.el.setPointerCapture(ev.pointerId);
+        };
+        item.el.onpointermove = (ev) => {
+          if (!item.el.hasPointerCapture(ev.pointerId)) return;
+          const rect = canvas.getBoundingClientRect();
+          const x = clamp(ev.clientX - rect.left - dx, 20, rect.width - 20);
+          const y = clamp(ev.clientY - rect.top - dy, 20, rect.height - 20);
+          item.el.style.left = `${x}px`;
+          item.el.style.top = `${y}px`;
+          item.node.card.dataset.flowX = String(Math.round(x));
+          item.node.card.dataset.flowY = String(Math.round(y));
+          redraw();
+        };
+        item.el.onpointerup = (ev) => {
+          if (item.el.hasPointerCapture(ev.pointerId)) {
+            item.el.releasePointerCapture(ev.pointerId);
+          }
+        };
+      });
+
+      redraw();
     }
 
     async function salvarSurveyBuilder() {
@@ -2244,6 +2414,14 @@ input, select {
         const type = card.querySelector('.survey-question-type').value;
         const required = card.querySelector('.survey-question-required').value === '1';
         const branchEnabled = card.querySelector('.survey-question-branch-toggle')?.value === '1';
+        const defaultNextMode = card.querySelector('.survey-default-next-mode')?.value || 'sequential';
+        const defaultTargetRaw = card.querySelector('.survey-default-next-target')?.value || '';
+        let defaultNextQuestionId = null;
+        let defaultNextTempKey = null;
+        if (defaultNextMode === 'question' && defaultTargetRaw) {
+          if (defaultTargetRaw.startsWith('temp:')) defaultNextTempKey = defaultTargetRaw.replace('temp:', '');
+          else defaultNextQuestionId = Number(defaultTargetRaw) || null;
+        }
         const numberMin = card.querySelector('.survey-number-min').value;
         const numberMax = card.querySelector('.survey-number-max').value;
         const scaleMin = card.querySelector('.survey-scale-min').value;
@@ -2258,11 +2436,16 @@ input, select {
           type,
           required,
           branch_enabled: branchEnabled ? 1 : 0,
+          default_next_mode: defaultNextMode,
+          default_next_question_id: defaultNextQuestionId,
+          default_next_temp_key: defaultNextTempKey,
           order_index: index + 1,
           number_min: numberMin !== '' ? Number(numberMin) : null,
           number_max: numberMax !== '' ? Number(numberMax) : null,
           scale_min: scaleMin !== '' ? Number(scaleMin) : 1,
           scale_max: scaleMax !== '' ? Number(scaleMax) : 5,
+          flow_x: card.dataset.flowX ? Number(card.dataset.flowX) : null,
+          flow_y: card.dataset.flowY ? Number(card.dataset.flowY) : null,
           options
         };
       });
@@ -2280,14 +2463,15 @@ input, select {
           const optionLabel = row.getAttribute('data-option-label') || '';
           const targetRaw = row.querySelector('.survey-branch-select')?.value || '';
           if (!targetRaw) return;
+          const endSurvey = targetRaw === '__END__';
           let targetId = 0;
           let targetTemp = null;
-          if (targetRaw.startsWith('temp:')) {
+          if (!endSurvey && targetRaw.startsWith('temp:')) {
             targetTemp = targetRaw.replace('temp:', '');
-          } else {
+          } else if (!endSurvey) {
             targetId = Number(targetRaw) || 0;
           }
-          if (targetId && !targetTemp) {
+          if (!endSurvey && targetId && !targetTemp) {
             const targetCard = Array.from(surveyBuilderList.children).find(c => String(c.dataset.id) === String(targetId));
             targetTemp = targetCard ? (targetCard.dataset.tempKey || null) : null;
           }
@@ -2297,8 +2481,9 @@ input, select {
             option_id: optionId || null,
             option_order: optionOrder || null,
             option_label: optionLabel,
-            target_question_id: targetId || null,
-            target_temp_key: targetTemp
+            target_question_id: endSurvey ? null : (targetId || null),
+            target_temp_key: endSurvey ? null : targetTemp,
+            end_survey: endSurvey ? 1 : 0
           });
         });
       });

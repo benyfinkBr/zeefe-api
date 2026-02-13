@@ -71,7 +71,10 @@ if ($method === 'GET') {
   $rules = $ruleStmt->fetchAll(PDO::FETCH_ASSOC);
   $rulesByOption = [];
   foreach ($rules as $rule) {
-    $rulesByOption[(int) $rule['option_id']] = (int) $rule['target_question_id'];
+    $rulesByOption[(int) $rule['option_id']] = [
+      'target_question_id' => isset($rule['target_question_id']) ? (int) $rule['target_question_id'] : null,
+      'end_survey' => !empty($rule['end_survey']) ? 1 : 0
+    ];
   }
 
   foreach ($questions as &$q) {
@@ -79,7 +82,8 @@ if ($method === 'GET') {
     $opts = $optionsByQuestion[$qid] ?? [];
     foreach ($opts as &$opt) {
       $optId = (int) $opt['id'];
-      $opt['target_question_id'] = $rulesByOption[$optId] ?? null;
+      $opt['target_question_id'] = $rulesByOption[$optId]['target_question_id'] ?? null;
+      $opt['end_survey'] = $rulesByOption[$optId]['end_survey'] ?? 0;
     }
     unset($opt);
     $q['options'] = $opts;
@@ -119,14 +123,16 @@ try {
   $disableStmt = $pdo->prepare('UPDATE survey_questions SET is_active = 0 WHERE survey_id = :sid');
   $disableStmt->execute([':sid' => $surveyId]);
 
-  $updateStmt = $pdo->prepare('UPDATE survey_questions SET question_text = :text, type = :type, required = :required, order_index = :ord, scale_min = :smin, scale_max = :smax, number_min = :nmin, number_max = :nmax, is_active = 1 WHERE id = :id AND survey_id = :sid');
-  $insertStmt = $pdo->prepare('INSERT INTO survey_questions (survey_id, question_text, type, required, order_index, scale_min, scale_max, number_min, number_max, is_active) VALUES (:sid, :text, :type, :required, :ord, :smin, :smax, :nmin, :nmax, 1)');
+  $updateStmt = $pdo->prepare('UPDATE survey_questions SET question_text = :text, type = :type, required = :required, order_index = :ord, scale_min = :smin, scale_max = :smax, number_min = :nmin, number_max = :nmax, flow_x = :flow_x, flow_y = :flow_y, is_active = 1 WHERE id = :id AND survey_id = :sid');
+  $insertStmt = $pdo->prepare('INSERT INTO survey_questions (survey_id, question_text, type, required, order_index, scale_min, scale_max, number_min, number_max, flow_x, flow_y, default_next_question_id, end_if_no_branch, is_active) VALUES (:sid, :text, :type, :required, :ord, :smin, :smax, :nmin, :nmax, :flow_x, :flow_y, NULL, 0, 1)');
+  $updateDefaultStmt = $pdo->prepare('UPDATE survey_questions SET default_next_question_id = :next_id, end_if_no_branch = :end_flag WHERE id = :id AND survey_id = :sid');
   $deleteOptionsStmt = $pdo->prepare('DELETE FROM survey_options WHERE question_id = :qid');
   $insertOptionStmt = $pdo->prepare('INSERT INTO survey_options (question_id, label, value, order_index) VALUES (:qid, :label, :value, :ord)');
   $deleteRulesStmt = $pdo->prepare('DELETE FROM survey_branch_rules WHERE survey_id = :sid');
-  $insertRuleStmt = $pdo->prepare('INSERT INTO survey_branch_rules (survey_id, question_id, option_id, target_question_id) VALUES (:sid, :qid, :oid, :tid)');
+  $insertRuleStmt = $pdo->prepare('INSERT INTO survey_branch_rules (survey_id, question_id, option_id, target_question_id, end_survey) VALUES (:sid, :qid, :oid, :tid, :end_survey)');
   $questionIdMap = [];
   $optionIdMap = [];
+  $pendingDefault = [];
 
   foreach ($questions as $idx => $q) {
     $text = trim((string) ($q['question_text'] ?? ''));
@@ -139,6 +145,8 @@ try {
     $scaleMax = isset($q['scale_max']) ? (int) $q['scale_max'] : 5;
     $numberMin = ($q['number_min'] ?? null);
     $numberMax = ($q['number_max'] ?? null);
+    $flowX = isset($q['flow_x']) && $q['flow_x'] !== '' ? (int) $q['flow_x'] : null;
+    $flowY = isset($q['flow_y']) && $q['flow_y'] !== '' ? (int) $q['flow_y'] : null;
     $qid = !empty($q['id']) ? (int) $q['id'] : 0;
     $tempKey = isset($q['temp_key']) ? (string) $q['temp_key'] : null;
 
@@ -152,6 +160,8 @@ try {
         ':smax' => $scaleMax,
         ':nmin' => ($numberMin !== null && $numberMin !== '') ? $numberMin : null,
         ':nmax' => ($numberMax !== null && $numberMax !== '') ? $numberMax : null,
+        ':flow_x' => $flowX,
+        ':flow_y' => $flowY,
         ':id' => $qid,
         ':sid' => $surveyId
       ]);
@@ -165,13 +175,22 @@ try {
         ':smin' => $scaleMin,
         ':smax' => $scaleMax,
         ':nmin' => ($numberMin !== null && $numberMin !== '') ? $numberMin : null,
-        ':nmax' => ($numberMax !== null && $numberMax !== '') ? $numberMax : null
+        ':nmax' => ($numberMax !== null && $numberMax !== '') ? $numberMax : null,
+        ':flow_x' => $flowX,
+        ':flow_y' => $flowY
       ]);
       $qid = (int) $pdo->lastInsertId();
     }
     if ($tempKey) {
       $questionIdMap[$tempKey] = $qid;
     }
+    $defaultMode = (string) ($q['default_next_mode'] ?? 'sequential');
+    $pendingDefault[] = [
+      'qid' => $qid,
+      'mode' => $defaultMode,
+      'target_question_id' => isset($q['default_next_question_id']) ? (int) $q['default_next_question_id'] : 0,
+      'target_temp_key' => isset($q['default_next_temp_key']) ? (string) $q['default_next_temp_key'] : ''
+    ];
 
     $deleteOptionsStmt->execute([':qid' => $qid]);
     $options = is_array($q['options'] ?? null) ? $q['options'] : [];
@@ -192,6 +211,32 @@ try {
     }
   }
 
+  foreach ($pendingDefault as $pd) {
+    $qid = (int) $pd['qid'];
+    if ($qid <= 0) continue;
+    $nextId = null;
+    $endFlag = 0;
+    if ($pd['mode'] === 'end') {
+      $endFlag = 1;
+      $nextId = null;
+    } elseif ($pd['mode'] === 'question') {
+      $candidate = (int) ($pd['target_question_id'] ?? 0);
+      if ($candidate <= 0 && !empty($pd['target_temp_key'])) {
+        $candidate = (int) ($questionIdMap[$pd['target_temp_key']] ?? 0);
+      }
+      $nextId = $candidate > 0 ? $candidate : null;
+    } else {
+      $nextId = null;
+      $endFlag = 0;
+    }
+    $updateDefaultStmt->execute([
+      ':next_id' => $nextId,
+      ':end_flag' => $endFlag,
+      ':id' => $qid,
+      ':sid' => $surveyId
+    ]);
+  }
+
   $deleteRulesStmt->execute([':sid' => $surveyId]);
   foreach ($rules as $rule) {
     $qid = (int) ($rule['question_id'] ?? 0);
@@ -203,18 +248,22 @@ try {
       $tid = (int) ($questionIdMap[$rule['target_temp_key']] ?? 0);
     }
     $oid = (int) ($rule['option_id'] ?? 0);
+    $endSurvey = !empty($rule['end_survey']) ? 1 : 0;
     if ($qid > 0) {
       $orderIndex = (int) ($rule['option_order'] ?? 0);
       if ($orderIndex > 0 && isset($optionIdMap[$qid][$orderIndex])) {
         $oid = (int) $optionIdMap[$qid][$orderIndex];
       }
     }
-    if ($qid <= 0 || $oid <= 0 || $tid <= 0) continue;
+    if ($qid <= 0 || $oid <= 0) continue;
+    if ($endSurvey !== 1 && $tid <= 0) continue;
+    if ($endSurvey === 1) $tid = null;
     $insertRuleStmt->execute([
       ':sid' => $surveyId,
       ':qid' => $qid,
       ':oid' => $oid,
-      ':tid' => $tid
+      ':tid' => $tid,
+      ':end_survey' => $endSurvey
     ]);
   }
 

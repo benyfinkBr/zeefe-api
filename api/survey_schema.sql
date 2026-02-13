@@ -17,10 +17,14 @@ CREATE TABLE IF NOT EXISTS survey_questions (
   type VARCHAR(40) NOT NULL,
   required TINYINT(1) DEFAULT 0,
   order_index INT DEFAULT 0,
+  default_next_question_id INT NULL,
+  end_if_no_branch TINYINT(1) DEFAULT 0,
   scale_min INT DEFAULT 1,
   scale_max INT DEFAULT 5,
   number_min DECIMAL(10,2) NULL,
   number_max DECIMAL(10,2) NULL,
+  flow_x INT NULL,
+  flow_y INT NULL,
   is_active TINYINT(1) DEFAULT 1,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
@@ -39,7 +43,8 @@ CREATE TABLE IF NOT EXISTS survey_branch_rules (
   survey_id INT NOT NULL,
   question_id INT NOT NULL,
   option_id INT NOT NULL,
-  target_question_id INT NOT NULL,
+  target_question_id INT NULL,
+  end_survey TINYINT(1) DEFAULT 0,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
