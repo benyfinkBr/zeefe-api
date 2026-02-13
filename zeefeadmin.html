@@ -810,6 +810,7 @@ input, select {
     const surveyResultsBody = document.getElementById('surveyResultsBody');
     let surveyBuilderSurveyId = null;
     let surveyResultsCache = null;
+    const surveyFlowPositions = {};
 
     function escapeHtml(value) {
       return String(value ?? '')
@@ -2054,6 +2055,8 @@ input, select {
       if (!card.dataset.tempKey) {
         card.dataset.tempKey = q.id ? `id_${q.id}` : `tmp_${Date.now()}_${Math.random().toString(16).slice(2)}`;
       }
+      if (q.flow_x !== null && q.flow_x !== undefined && q.flow_x !== '') card.dataset.flowX = String(q.flow_x);
+      if (q.flow_y !== null && q.flow_y !== undefined && q.flow_y !== '') card.dataset.flowY = String(q.flow_y);
       card._surveyOptions = Array.isArray(q.options) ? q.options.map(opt => ({
         id: opt.id,
         label: opt.label,
@@ -2163,11 +2166,49 @@ input, select {
     }
 
     function atualizarSurveyBranchUIAll() {
+      // Preserve current branch selections before any re-render of branch blocks.
+      Array.from(surveyBuilderList.children).forEach(card => {
+        persistSurveyBranchSelection(card);
+      });
       Array.from(surveyBuilderList.children).forEach(card => {
         atualizarSurveyDefaultTargetField(card);
         atualizarSurveyBranchFields(card);
       });
       renderSurveyBranchPreview();
+    }
+
+    function persistSurveyBranchSelection(card) {
+      if (!card || !Array.isArray(card._surveyOptions)) return;
+      const rows = Array.from(card.querySelectorAll('.survey-branch-row'));
+      if (!rows.length) return;
+      rows.forEach(row => {
+        const optOrder = Number(row.getAttribute('data-option-order')) || 0;
+        const optLabel = row.getAttribute('data-option-label') || '';
+        const select = row.querySelector('.survey-branch-select');
+        if (!select) return;
+        const raw = String(select.value || '');
+        const target = card._surveyOptions.find(o =>
+          (optOrder > 0 && Number(o.order_index || 0) === optOrder) ||
+          (optOrder <= 0 && String(o.label || '') === String(optLabel))
+        );
+        if (!target) return;
+        if (!raw) {
+          target.end_survey = 0;
+          target.target_question_id = null;
+          return;
+        }
+        if (raw === '__END__') {
+          target.end_survey = 1;
+          target.target_question_id = null;
+          return;
+        }
+        target.end_survey = 0;
+        if (raw.startsWith('temp:')) {
+          target.target_question_id = raw.replace('temp:', '');
+          return;
+        }
+        target.target_question_id = Number(raw) || null;
+      });
     }
 
     function atualizarSurveyBranchFields(card) {
@@ -2214,7 +2255,10 @@ input, select {
       }).join('');
       branchBlock.innerHTML = `<label>Ramificação (opção → pergunta)</label><div class=\"survey-branch-list\">${rows}</div>`;
       branchBlock.querySelectorAll('.survey-branch-select').forEach(select => {
-        select.addEventListener('change', atualizarSurveyBranchUIAll);
+        select.addEventListener('change', () => {
+          persistSurveyBranchSelection(card);
+          renderSurveyBranchPreview();
+        });
       });
     }
 
@@ -2256,8 +2300,9 @@ input, select {
       }
       const nodes = cards.map((card, index) => {
         const key = card.dataset.tempKey || (card.dataset.id ? `id_${card.dataset.id}` : `idx_${index + 1}`);
-        const x = card.dataset.flowX ? Number(card.dataset.flowX) : (240 + (index % 3) * 120);
-        const y = card.dataset.flowY ? Number(card.dataset.flowY) : (70 + Math.floor(index / 3) * 95);
+        const saved = surveyFlowPositions[key] || null;
+        const x = saved?.x ?? (card.dataset.flowX ? Number(card.dataset.flowX) : (240 + (index % 3) * 120));
+        const y = saved?.y ?? (card.dataset.flowY ? Number(card.dataset.flowY) : (70 + Math.floor(index / 3) * 95));
         return { key, card, n: index + 1, x, y };
       });
       const nodeByKey = new Map(nodes.map(n => [n.key, n]));
@@ -2343,6 +2388,7 @@ input, select {
         node.y = y;
         node.card.dataset.flowX = String(x);
         node.card.dataset.flowY = String(y);
+        surveyFlowPositions[node.key] = { x, y };
         const el = document.createElement('div');
         el.className = 'survey-flow-node';
         el.dataset.key = node.key;
@@ -2405,6 +2451,7 @@ input, select {
           item.el.style.top = `${y}px`;
           item.node.card.dataset.flowX = String(Math.round(x));
           item.node.card.dataset.flowY = String(Math.round(y));
+          surveyFlowPositions[item.node.key] = { x: Math.round(x), y: Math.round(y) };
           redraw();
         };
         item.el.onpointerup = (ev) => {
