@@ -127,9 +127,9 @@
     .column-selector-body{margin-top:8px;display:flex;flex-wrap:wrap;gap:8px 12px;max-width:560px}
     .column-option{display:flex;align-items:center;gap:6px;font-size:12px;color:#1D413A}
     .column-selector-actions{display:flex;gap:8px;margin-top:8px}
-    .survey-builder-layout{display:flex;gap:16px;align-items:flex-start;width:100%}
-    .survey-builder-main{flex:0 0 calc(70% - 8px);width:calc(70% - 8px);max-width:calc(70% - 8px);min-width:0;overflow:hidden}
-    .survey-branch-preview{flex:0 0 calc(30% - 8px);width:calc(30% - 8px);max-width:calc(30% - 8px);margin-left:auto}
+    .survey-builder-layout{display:grid;grid-template-columns:minmax(0,7fr) minmax(280px,3fr);gap:16px;align-items:start;width:100%}
+    .survey-builder-main{min-width:0;overflow:hidden}
+    .survey-branch-preview{min-width:0}
     .survey-builder-list{display:flex;flex-direction:column;gap:12px;width:100%}
     .survey-branch-preview{position:sticky;top:0;background:#FFF;border:1px solid #E0DAD1;border-radius:10px;padding:12px;max-height:70vh;overflow:auto}
     .survey-branch-preview h4{margin:0 0 8px;font-size:14px}
@@ -142,18 +142,19 @@
     .survey-flow-branches{display:flex;flex-wrap:wrap;gap:6px}
     .survey-flow-branch-line{border:1px dashed #D7CCBE;border-radius:999px;padding:5px 10px;font-size:13px;font-weight:600;color:#2A4D45;background:#FFFEFC}
     .survey-question-card{overflow:hidden;width:100%}
-    .survey-question-row .field{flex:1 1 calc(50% - 10px);min-width:0}
-    .survey-question-row .survey-options-fields,.survey-question-row .survey-branch-fields{flex-basis:100%}
     @media (max-width: 1024px){
-      .survey-builder-layout{display:block}
-      .survey-builder-main{max-width:100%;flex:1 1 auto}
-      .survey-branch-preview{max-width:100%;margin-top:12px;position:static;max-height:none}
+      .survey-builder-layout{grid-template-columns:1fr}
+      .survey-branch-preview{margin-top:12px;position:static;max-height:none}
     }
     .survey-question-card{border:1px solid #E0DAD1;border-radius:10px;padding:12px;background:#FFF}
     .survey-question-header{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:10px;flex-wrap:wrap}
     .survey-question-actions{display:flex;gap:8px}
     .survey-question-row{display:flex;gap:10px;flex-wrap:wrap}
     .survey-question-row .field{flex:1;min-width:180px}
+    /* Final overrides for survey builder layout/fields */
+    .survey-question-card .survey-question-row .field{flex:1 1 calc(50% - 10px) !important;min-width:0 !important}
+    .survey-question-card .survey-question-row .survey-options-fields,
+    .survey-question-card .survey-question-row .survey-branch-fields{flex-basis:100% !important}
     .survey-question-row input[type="text"], .survey-question-row input[type="number"], .survey-question-row select, .survey-question-row textarea{width:100%;border:1px solid #CCC;border-radius:8px;padding:8px 10px;font-size:13px}
     .survey-options-area{width:100%;min-height:90px}
     .survey-inline-note{font-size:12px;color:#6B5D50}
