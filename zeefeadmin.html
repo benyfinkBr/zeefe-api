@@ -1977,7 +1977,7 @@ input, select {
       `;
 
       const defaultModeField = document.createElement('div');
-      defaultModeField.className = 'field';
+      defaultModeField.className = 'field survey-default-mode-field';
       defaultModeField.innerHTML = `
         <label>Sem ramificação</label>
         <select class="survey-default-next-mode">
@@ -2136,10 +2136,16 @@ input, select {
     }
 
     function atualizarSurveyDefaultTargetField(card) {
+      atualizarSurveyDefaultModeVisibility(card);
       const modeEl = card.querySelector('.survey-default-next-mode');
+      const modeWrap = card.querySelector('.survey-default-mode-field');
       const targetWrap = card.querySelector('.survey-default-target-field');
       const targetSelect = card.querySelector('.survey-default-next-target');
-      if (!modeEl || !targetWrap || !targetSelect) return;
+      if (!modeEl || !modeWrap || !targetWrap || !targetSelect) return;
+      if (modeWrap.style.display === 'none') {
+        targetWrap.style.display = 'none';
+        return;
+      }
       const mode = modeEl.value || 'sequential';
       if (mode !== 'question') {
         targetWrap.style.display = 'none';
@@ -2163,6 +2169,19 @@ input, select {
         })).join('');
       targetSelect.innerHTML = html;
       targetSelect.onchange = atualizarSurveyBranchUIAll;
+    }
+
+    function atualizarSurveyDefaultModeVisibility(card) {
+      const type = card.querySelector('.survey-question-type')?.value || '';
+      const branchToggle = card.querySelector('.survey-question-branch-toggle');
+      const branchEnabled = branchToggle ? branchToggle.value === '1' : false;
+      const modeWrap = card.querySelector('.survey-default-mode-field');
+      if (!modeWrap) return;
+      if ((type === 'single_choice' || type === 'multiple_choice') && branchEnabled) {
+        modeWrap.style.display = 'none';
+      } else {
+        modeWrap.style.display = '';
+      }
     }
 
     function atualizarSurveyBranchUIAll() {
