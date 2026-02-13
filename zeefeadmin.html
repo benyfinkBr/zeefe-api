@@ -628,6 +628,22 @@ input, select {
     </div>
   </div>
 
+  <div class="modal" id="surveyLeadsModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="surveyLeadsTitle">Leads do questionário</h3>
+        <button type="button" class="close" onclick="fecharSurveyLeads()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div id="surveyLeadsBody"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn" onclick="exportarSurveyLeadsCSV()">Exportar CSV</button>
+        <button type="button" class="btn-secondary" onclick="fecharSurveyLeads()">Fechar</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     const API_BASE = '../api';
     function showToast(msg) {
@@ -812,9 +828,12 @@ input, select {
     const surveyFlowPreview = document.getElementById('surveyFlowPreview');
     const surveyResultsModal = document.getElementById('surveyResultsModal');
     const surveyResultsBody = document.getElementById('surveyResultsBody');
+    const surveyLeadsModal = document.getElementById('surveyLeadsModal');
+    const surveyLeadsBody = document.getElementById('surveyLeadsBody');
     let surveyBuilderSurveyId = null;
     let surveyBuilderIsHydrating = false;
     let surveyResultsCache = null;
+    let surveyLeadsCache = null;
     const surveyFlowPositions = {};
     const surveyBuilderDraftBySurvey = {};
 
@@ -1736,6 +1755,7 @@ input, select {
         if (sec === 'surveys' && canUpdate) {
           actionButtons.push(`<button class="btn-ghost" onclick="abrirSurveyBuilder(${rowId})">Perguntas</button>`);
           actionButtons.push(`<button class="btn-ghost" onclick="abrirSurveyResults(${rowId})">Resultados</button>`);
+          actionButtons.push(`<button class="btn-ghost" onclick="abrirSurveyLeads(${rowId})">Leads</button>`);
           const link = row.public_link || '';
           actionButtons.push(`<button class="btn" onclick="copiarLinkSurvey('${escapeHtml(link).replace(/'/g, "\\'")}')">Copiar Link</button>`);
         }
@@ -2783,6 +2803,72 @@ input, select {
       const a = document.createElement('a');
       a.href = url;
       a.download = `survey_${surveyResultsCache.survey?.id || 'resultados'}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    async function abrirSurveyLeads(id) {
+      if (!id) return;
+      surveyLeadsBody.innerHTML = '<div class="box-message">Carregando...</div>';
+      surveyLeadsModal.classList.add('show');
+      try {
+        const res = await fetch(`${API_BASE}/survey_leads.php?survey_id=${id}`, { credentials: 'include' });
+        const data = await res.json();
+        if (!data.success) throw new Error(data.error || 'Falha ao carregar leads.');
+        surveyLeadsCache = data;
+        renderSurveyLeads(data);
+      } catch (err) {
+        console.error(err);
+        surveyLeadsBody.innerHTML = '<div class="box-message">Erro ao carregar leads.</div>';
+      }
+    }
+
+    function fecharSurveyLeads() {
+      surveyLeadsModal.classList.remove('show');
+      surveyLeadsBody.innerHTML = '';
+      surveyLeadsCache = null;
+    }
+
+    function renderSurveyLeads(data) {
+      const leads = data.leads || [];
+      if (!leads.length) {
+        surveyLeadsBody.innerHTML = '<div class="box-message">Nenhum lead captado até agora.</div>';
+        return;
+      }
+      let html = '<div class="table-container"><table><thead><tr><th>E-mail</th><th>Origem</th><th>Criado em</th><th>Atualizado em</th></tr></thead><tbody>';
+      leads.forEach(lead => {
+        html += `<tr>
+          <td>${escapeHtml(lead.email || '')}</td>
+          <td>${escapeHtml(lead.origin || '')}</td>
+          <td>${escapeHtml(lead.created_at || '')}</td>
+          <td>${escapeHtml(lead.updated_at || '')}</td>
+        </tr>`;
+      });
+      html += '</tbody></table></div>';
+      surveyLeadsBody.innerHTML = html;
+    }
+
+    function exportarSurveyLeadsCSV() {
+      if (!surveyLeadsCache) return;
+      const leads = surveyLeadsCache.leads || [];
+      if (!leads.length) {
+        alert('Nada para exportar.');
+        return;
+      }
+      const headers = ['E-mail', 'Origem', 'Criado em', 'Atualizado em'];
+      const esc = s => '"' + String(s == null ? '' : s).replace(/"/g, '""') + '"';
+      const lines = leads.map(lead => [
+        lead.email || '',
+        lead.origin || '',
+        lead.created_at || '',
+        lead.updated_at || ''
+      ].map(esc).join(','));
+      const csv = [headers.map(esc).join(',')].concat(lines).join('\n');
+      const blob = new Blob([csv], { type:'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `survey_${surveyLeadsCache.survey?.id || 'leads'}_leads.csv`;
       a.click();
       URL.revokeObjectURL(url);
     }
