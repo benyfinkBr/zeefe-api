@@ -2572,22 +2572,34 @@ input, select {
 
       const rules = [];
       Array.from(surveyBuilderList.children).forEach(card => {
+        atualizarSurveyBranchFields(card);
         const branchEnabled = card.querySelector('.survey-question-branch-toggle')?.value === '1';
-        if (!branchEnabled) return;
+        const type = card.querySelector('.survey-question-type')?.value || '';
+        if (!branchEnabled || (type !== 'single_choice' && type !== 'multiple_choice')) return;
         const questionId = card.dataset.id ? Number(card.dataset.id) : 0;
         const questionTemp = card.dataset.tempKey || null;
-        const opts = Array.isArray(card._surveyOptions) ? card._surveyOptions : [];
-        opts.forEach((opt, idx) => {
-          const optionId = Number(opt.id) || 0;
-          const optionOrder = Number(opt.order_index) || (idx + 1);
-          const optionLabel = String(opt.label || '');
-          const endSurvey = Number(opt.end_survey || 0) === 1;
-          const rawTarget = opt.target_question_id;
-          if (!endSurvey && (rawTarget === null || rawTarget === undefined || rawTarget === '')) return;
+        const optionLines = getSurveyOptionLines(card);
+        const rowByOrder = new Map();
+        Array.from(card.querySelectorAll('.survey-branch-row')).forEach(row => {
+          const order = Number(row.getAttribute('data-option-order')) || 0;
+          if (order > 0) rowByOrder.set(order, row);
+        });
+        optionLines.forEach((label, idx) => {
+          const optionOrder = idx + 1;
+          const row = rowByOrder.get(optionOrder) || null;
+          const select = row?.querySelector('.survey-branch-select') || null;
+          const rawSelect = String(select?.value || '').trim();
+          if (!rawSelect) return;
+          const optionId = Number(row?.getAttribute('data-option-id') || 0) || 0;
+          const optionLabel = String(label || '');
+          const endSurvey = rawSelect === '__END__';
+          const rawTarget = endSurvey ? null : rawSelect;
           let targetId = 0;
           let targetTemp = null;
-          if (!endSurvey) {
-            if (typeof rawTarget === 'string' && !/^\d+$/.test(rawTarget)) {
+          if (!endSurvey && rawTarget) {
+            if (rawTarget.startsWith('temp:')) {
+              targetTemp = rawTarget.replace('temp:', '');
+            } else if (!/^\d+$/.test(rawTarget)) {
               targetTemp = rawTarget;
             } else {
               targetId = Number(rawTarget) || 0;
