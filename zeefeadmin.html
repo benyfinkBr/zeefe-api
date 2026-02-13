@@ -1891,7 +1891,8 @@ input, select {
     async function carregarSurveyBuilder() {
       if (!surveyBuilderSurveyId) return;
       try {
-        const res = await fetch(`${API_BASE}/survey_builder.php?survey_id=${surveyBuilderSurveyId}`, { credentials: 'include' });
+        const url = `${API_BASE}/survey_builder.php?survey_id=${surveyBuilderSurveyId}&_ts=${Date.now()}`;
+        const res = await fetch(url, { credentials: 'include', cache: 'no-store' });
         const data = await res.json();
         if (!data.success) throw new Error(data.error || 'Falha ao carregar perguntas.');
         renderSurveyBuilder(data.questions || []);
