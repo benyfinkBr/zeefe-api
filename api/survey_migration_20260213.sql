@@ -1,11 +1,84 @@
-ALTER TABLE survey_questions
-  ADD COLUMN IF NOT EXISTS default_next_question_id INT NULL AFTER order_index,
-  ADD COLUMN IF NOT EXISTS end_if_no_branch TINYINT(1) DEFAULT 0 AFTER default_next_question_id,
-  ADD COLUMN IF NOT EXISTS flow_x INT NULL AFTER number_max,
-  ADD COLUMN IF NOT EXISTS flow_y INT NULL AFTER flow_x;
+-- Compatível com MySQL/MariaDB sem "ADD COLUMN IF NOT EXISTS"
+-- Execute este arquivo inteiro no phpMyAdmin.
 
-ALTER TABLE survey_branch_rules
-  MODIFY COLUMN target_question_id INT NULL,
-  ADD COLUMN IF NOT EXISTS option_order INT NULL AFTER option_id,
-  ADD COLUMN IF NOT EXISTS option_label VARCHAR(255) NULL AFTER option_order,
-  ADD COLUMN IF NOT EXISTS end_survey TINYINT(1) DEFAULT 0 AFTER target_question_id;
+SET @db := DATABASE();
+
+-- survey_questions.default_next_question_id
+SET @exists := (
+  SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+  WHERE TABLE_SCHEMA = @db AND TABLE_NAME = 'survey_questions' AND COLUMN_NAME = 'default_next_question_id'
+);
+SET @sql := IF(@exists = 0,
+  'ALTER TABLE survey_questions ADD COLUMN default_next_question_id INT NULL AFTER order_index',
+  'SELECT "skip default_next_question_id"'
+);
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+-- survey_questions.end_if_no_branch
+SET @exists := (
+  SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+  WHERE TABLE_SCHEMA = @db AND TABLE_NAME = 'survey_questions' AND COLUMN_NAME = 'end_if_no_branch'
+);
+SET @sql := IF(@exists = 0,
+  'ALTER TABLE survey_questions ADD COLUMN end_if_no_branch TINYINT(1) DEFAULT 0 AFTER default_next_question_id',
+  'SELECT "skip end_if_no_branch"'
+);
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+-- survey_questions.flow_x
+SET @exists := (
+  SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+  WHERE TABLE_SCHEMA = @db AND TABLE_NAME = 'survey_questions' AND COLUMN_NAME = 'flow_x'
+);
+SET @sql := IF(@exists = 0,
+  'ALTER TABLE survey_questions ADD COLUMN flow_x INT NULL AFTER number_max',
+  'SELECT "skip flow_x"'
+);
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+-- survey_questions.flow_y
+SET @exists := (
+  SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+  WHERE TABLE_SCHEMA = @db AND TABLE_NAME = 'survey_questions' AND COLUMN_NAME = 'flow_y'
+);
+SET @sql := IF(@exists = 0,
+  'ALTER TABLE survey_questions ADD COLUMN flow_y INT NULL AFTER flow_x',
+  'SELECT "skip flow_y"'
+);
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+-- survey_branch_rules.target_question_id nullable
+ALTER TABLE survey_branch_rules MODIFY COLUMN target_question_id INT NULL;
+
+-- survey_branch_rules.option_order
+SET @exists := (
+  SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+  WHERE TABLE_SCHEMA = @db AND TABLE_NAME = 'survey_branch_rules' AND COLUMN_NAME = 'option_order'
+);
+SET @sql := IF(@exists = 0,
+  'ALTER TABLE survey_branch_rules ADD COLUMN option_order INT NULL AFTER option_id',
+  'SELECT "skip option_order"'
+);
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+-- survey_branch_rules.option_label
+SET @exists := (
+  SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+  WHERE TABLE_SCHEMA = @db AND TABLE_NAME = 'survey_branch_rules' AND COLUMN_NAME = 'option_label'
+);
+SET @sql := IF(@exists = 0,
+  'ALTER TABLE survey_branch_rules ADD COLUMN option_label VARCHAR(255) NULL AFTER option_order',
+  'SELECT "skip option_label"'
+);
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+-- survey_branch_rules.end_survey
+SET @exists := (
+  SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+  WHERE TABLE_SCHEMA = @db AND TABLE_NAME = 'survey_branch_rules' AND COLUMN_NAME = 'end_survey'
+);
+SET @sql := IF(@exists = 0,
+  'ALTER TABLE survey_branch_rules ADD COLUMN end_survey TINYINT(1) DEFAULT 0 AFTER target_question_id',
+  'SELECT "skip end_survey"'
+);
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
