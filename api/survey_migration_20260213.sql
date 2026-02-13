@@ -6,4 +6,6 @@ ALTER TABLE survey_questions
 
 ALTER TABLE survey_branch_rules
   MODIFY COLUMN target_question_id INT NULL,
+  ADD COLUMN IF NOT EXISTS option_order INT NULL AFTER option_id,
+  ADD COLUMN IF NOT EXISTS option_label VARCHAR(255) NULL AFTER option_order,
   ADD COLUMN IF NOT EXISTS end_survey TINYINT(1) DEFAULT 0 AFTER target_question_id;

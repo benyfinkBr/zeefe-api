@@ -2585,7 +2585,7 @@ input, select {
         fecharSurveyBuilder();
       } catch (err) {
         console.error(err);
-        alert('Erro ao salvar perguntas.');
+        alert(`Erro ao salvar perguntas: ${err.message || 'falha desconhecida'}`);
       }
     }
 

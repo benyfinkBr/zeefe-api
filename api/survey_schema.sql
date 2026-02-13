@@ -43,6 +43,8 @@ CREATE TABLE IF NOT EXISTS survey_branch_rules (
   survey_id INT NOT NULL,
   question_id INT NOT NULL,
   option_id INT NOT NULL,
+  option_order INT NULL,
+  option_label VARCHAR(255) NULL,
   target_question_id INT NULL,
   end_survey TINYINT(1) DEFAULT 0,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP

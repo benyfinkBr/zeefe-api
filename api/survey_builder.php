@@ -70,11 +70,23 @@ if ($method === 'GET') {
   $ruleStmt->execute([':sid' => $surveyId]);
   $rules = $ruleStmt->fetchAll(PDO::FETCH_ASSOC);
   $rulesByOption = [];
+  $rulesByQuestion = [];
   foreach ($rules as $rule) {
-    $rulesByOption[(int) $rule['option_id']] = [
+    $ruleData = [
       'target_question_id' => isset($rule['target_question_id']) ? (int) $rule['target_question_id'] : null,
       'end_survey' => !empty($rule['end_survey']) ? 1 : 0
     ];
+    $rulesByOption[(int) $rule['option_id']] = $ruleData;
+    $rqid = (int) ($rule['question_id'] ?? 0);
+    if ($rqid > 0) {
+      if (!isset($rulesByQuestion[$rqid])) $rulesByQuestion[$rqid] = [];
+      $rulesByQuestion[$rqid][] = [
+        'option_order' => isset($rule['option_order']) ? (int) $rule['option_order'] : null,
+        'option_label' => (string) ($rule['option_label'] ?? ''),
+        'target_question_id' => $ruleData['target_question_id'],
+        'end_survey' => $ruleData['end_survey']
+      ];
+    }
   }
 
   foreach ($questions as &$q) {
@@ -82,8 +94,19 @@ if ($method === 'GET') {
     $opts = $optionsByQuestion[$qid] ?? [];
     foreach ($opts as &$opt) {
       $optId = (int) $opt['id'];
-      $opt['target_question_id'] = $rulesByOption[$optId]['target_question_id'] ?? null;
-      $opt['end_survey'] = $rulesByOption[$optId]['end_survey'] ?? 0;
+      $ruleData = $rulesByOption[$optId] ?? null;
+      if (!$ruleData && !empty($rulesByQuestion[$qid])) {
+        $candidateOrder = isset($opt['order_index']) ? (int) $opt['order_index'] : null;
+        $candidateLabel = (string) ($opt['label'] ?? '');
+        foreach ($rulesByQuestion[$qid] as $r) {
+          if (($candidateOrder && $r['option_order'] && $candidateOrder === (int) $r['option_order']) || ($candidateLabel !== '' && $candidateLabel === (string) $r['option_label'])) {
+            $ruleData = $r;
+            break;
+          }
+        }
+      }
+      $opt['target_question_id'] = $ruleData['target_question_id'] ?? null;
+      $opt['end_survey'] = $ruleData['end_survey'] ?? 0;
     }
     unset($opt);
     $q['options'] = $opts;
@@ -129,7 +152,7 @@ try {
   $deleteOptionsStmt = $pdo->prepare('DELETE FROM survey_options WHERE question_id = :qid');
   $insertOptionStmt = $pdo->prepare('INSERT INTO survey_options (question_id, label, value, order_index) VALUES (:qid, :label, :value, :ord)');
   $deleteRulesStmt = $pdo->prepare('DELETE FROM survey_branch_rules WHERE survey_id = :sid');
-  $insertRuleStmt = $pdo->prepare('INSERT INTO survey_branch_rules (survey_id, question_id, option_id, target_question_id, end_survey) VALUES (:sid, :qid, :oid, :tid, :end_survey)');
+  $insertRuleStmt = $pdo->prepare('INSERT INTO survey_branch_rules (survey_id, question_id, option_id, option_order, option_label, target_question_id, end_survey) VALUES (:sid, :qid, :oid, :oord, :olbl, :tid, :end_survey)');
   $questionIdMap = [];
   $optionIdMap = [];
   $pendingDefault = [];
@@ -262,6 +285,8 @@ try {
       ':sid' => $surveyId,
       ':qid' => $qid,
       ':oid' => $oid,
+      ':oord' => (int) ($rule['option_order'] ?? 0) ?: null,
+      ':olbl' => (string) ($rule['option_label'] ?? ''),
       ':tid' => $tid,
       ':end_survey' => $endSurvey
     ]);
