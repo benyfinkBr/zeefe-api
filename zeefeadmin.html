@@ -127,22 +127,28 @@
     .column-selector-body{margin-top:8px;display:flex;flex-wrap:wrap;gap:8px 12px;max-width:560px}
     .column-option{display:flex;align-items:center;gap:6px;font-size:12px;color:#1D413A}
     .column-selector-actions{display:flex;gap:8px;margin-top:8px}
-    .survey-builder-layout{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:14px;align-items:start}
-    .survey-builder-main{min-width:0}
+    .survey-builder-layout{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:16px;align-items:start}
+    .survey-builder-main{min-width:0;overflow:hidden}
     .survey-builder-list{display:flex;flex-direction:column;gap:12px}
     .survey-branch-preview{position:sticky;top:0;background:#FFF;border:1px solid #E0DAD1;border-radius:10px;padding:12px;max-height:70vh;overflow:auto}
     .survey-branch-preview h4{margin:0 0 8px;font-size:14px}
     .survey-branch-preview .empty{font-size:12px;color:#6B5D50}
-    .survey-flow-main{border:1px solid #EEE4D8;border-radius:8px;padding:10px;background:#FAF8F5;margin-bottom:10px}
-    .survey-flow-main-line{font-size:16px;font-weight:700;letter-spacing:.3px;color:#1D413A}
-    .survey-flow-branches{display:flex;flex-direction:column;gap:6px}
-    .survey-flow-branch-line{border:1px dashed #D7CCBE;border-radius:8px;padding:6px 8px;font-size:14px;font-weight:600;color:#2A4D45;background:#FFFEFC}
+    .survey-flow-diagram{border:1px solid #EEE4D8;border-radius:8px;padding:10px;background:#FAF8F5;margin-bottom:10px}
+    .survey-flow-node{display:flex;justify-content:center;align-items:center}
+    .survey-flow-badge{width:34px;height:34px;border-radius:999px;background:#1D413A;color:#fff;font-weight:700;display:flex;align-items:center;justify-content:center}
+    .survey-flow-end{width:auto;padding:0 10px;border-radius:999px;background:#EDE7DF;color:#1D413A;font-size:12px;font-weight:700;height:30px;display:flex;align-items:center;justify-content:center}
+    .survey-flow-arrow{display:flex;justify-content:center;align-items:center;color:#7D6E5E;font-size:16px;line-height:1;margin:2px 0}
+    .survey-flow-branches{display:flex;flex-wrap:wrap;gap:6px}
+    .survey-flow-branch-line{border:1px dashed #D7CCBE;border-radius:999px;padding:5px 10px;font-size:13px;font-weight:600;color:#2A4D45;background:#FFFEFC}
+    .survey-question-card{overflow:hidden}
+    .survey-question-row .field{flex:1 1 calc(50% - 10px);min-width:0}
+    .survey-question-row .survey-options-fields,.survey-question-row .survey-branch-fields{flex-basis:100%}
     @media (max-width: 1024px){
       .survey-builder-layout{grid-template-columns:1fr}
       .survey-branch-preview{position:static;max-height:none}
     }
     .survey-question-card{border:1px solid #E0DAD1;border-radius:10px;padding:12px;background:#FFF}
-    .survey-question-header{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:10px}
+    .survey-question-header{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:10px;flex-wrap:wrap}
     .survey-question-actions{display:flex;gap:8px}
     .survey-question-row{display:flex;gap:10px;flex-wrap:wrap}
     .survey-question-row .field{flex:1;min-width:180px}
@@ -553,7 +559,7 @@ input, select {
   </div>
 
   <div class="modal" id="surveyBuilderModal">
-    <div class="modal-content" style="max-width:980px">
+    <div class="modal-content" style="max-width:1200px">
       <div class="modal-header">
         <h3 id="surveyBuilderTitle">Perguntas do questionário</h3>
         <button class="modal-close" onclick="fecharSurveyBuilder()">&times;</button>
@@ -2166,7 +2172,6 @@ input, select {
       const idToNumber = new Map(cards.filter(c => c.dataset.id).map(c => [String(c.dataset.id), cardToNumber.get(c)]));
       const tempToNumber = new Map(cards.filter(c => c.dataset.tempKey).map(c => [String(c.dataset.tempKey), cardToNumber.get(c)]));
 
-      const mainFlow = cards.map((_, i) => String(i + 1)).join(' \u2192 ') + ' \u2192 Fim';
       const branchLines = [];
 
       cards.forEach((card, index) => {
@@ -2195,10 +2200,15 @@ input, select {
         ? uniqueBranchLines.map(line => `<div class="survey-flow-branch-line">${line}</div>`).join('')
         : '<div class="empty">Sem desvio configurado.</div>';
 
+      const mainFlowHtml = cards.map((_, i) => `
+        <div class="survey-flow-node"><div class="survey-flow-badge">${i + 1}</div></div>
+        <div class="survey-flow-arrow">\u2193</div>
+      `).join('') + `<div class="survey-flow-node"><div class="survey-flow-end">Fim</div></div>`;
+
       surveyBranchPreview.innerHTML = `
         <h4>Fluxo (números)</h4>
-        <div class="survey-flow-main">
-          <div class="survey-flow-main-line">${mainFlow}</div>
+        <div class="survey-flow-diagram">
+          ${mainFlowHtml}
         </div>
         <h4 style="margin-top:0">Desvios</h4>
         <div class="survey-flow-branches">${branchHtml}</div>
