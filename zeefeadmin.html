@@ -2485,6 +2485,7 @@ input, select {
 
     async function salvarSurveyBuilder() {
       if (!surveyBuilderSurveyId) return;
+      Array.from(surveyBuilderList.children).forEach(card => persistSurveyBranchSelection(card));
       const questions = Array.from(surveyBuilderList.children).map((card, index) => {
         const text = card.querySelector('.survey-question-text').value.trim();
         const type = card.querySelector('.survey-question-type').value;
@@ -2532,24 +2533,26 @@ input, select {
         if (!branchEnabled) return;
         const questionId = card.dataset.id ? Number(card.dataset.id) : 0;
         const questionTemp = card.dataset.tempKey || null;
-        const rows = card.querySelectorAll('.survey-branch-row');
-        rows.forEach(row => {
-          const optionId = Number(row.getAttribute('data-option-id')) || 0;
-          const optionOrder = Number(row.getAttribute('data-option-order')) || 0;
-          const optionLabel = row.getAttribute('data-option-label') || '';
-          const targetRaw = row.querySelector('.survey-branch-select')?.value || '';
-          if (!targetRaw) return;
-          const endSurvey = targetRaw === '__END__';
+        const opts = Array.isArray(card._surveyOptions) ? card._surveyOptions : [];
+        opts.forEach((opt, idx) => {
+          const optionId = Number(opt.id) || 0;
+          const optionOrder = Number(opt.order_index) || (idx + 1);
+          const optionLabel = String(opt.label || '');
+          const endSurvey = Number(opt.end_survey || 0) === 1;
+          const rawTarget = opt.target_question_id;
+          if (!endSurvey && (rawTarget === null || rawTarget === undefined || rawTarget === '')) return;
           let targetId = 0;
           let targetTemp = null;
-          if (!endSurvey && targetRaw.startsWith('temp:')) {
-            targetTemp = targetRaw.replace('temp:', '');
-          } else if (!endSurvey) {
-            targetId = Number(targetRaw) || 0;
-          }
-          if (!endSurvey && targetId && !targetTemp) {
-            const targetCard = Array.from(surveyBuilderList.children).find(c => String(c.dataset.id) === String(targetId));
-            targetTemp = targetCard ? (targetCard.dataset.tempKey || null) : null;
+          if (!endSurvey) {
+            if (typeof rawTarget === 'string' && !/^\d+$/.test(rawTarget)) {
+              targetTemp = rawTarget;
+            } else {
+              targetId = Number(rawTarget) || 0;
+            }
+            if (targetId && !targetTemp) {
+              const targetCard = Array.from(surveyBuilderList.children).find(c => String(c.dataset.id) === String(targetId));
+              targetTemp = targetCard ? (targetCard.dataset.tempKey || null) : null;
+            }
           }
           rules.push({
             question_id: questionId || null,
