@@ -2085,15 +2085,7 @@ input, select {
       const optionsArea = card.querySelector('.survey-options-area');
       if (optionsArea) {
         optionsArea.addEventListener('input', () => {
-          const lines = optionsArea.value.split(/\r?\n/).map(v => v.trim()).filter(Boolean);
-          const prevMap = new Map((card._surveyOptions || []).map(opt => [opt.label, { target_question_id: opt.target_question_id, end_survey: opt.end_survey ? 1 : 0 }]));
-          card._surveyOptions = lines.map((label, idx) => ({
-            id: null,
-            label,
-            target_question_id: prevMap.get(label)?.target_question_id || null,
-            end_survey: prevMap.get(label)?.end_survey ? 1 : 0,
-            order_index: idx + 1
-          }));
+          syncSurveyOptionsFromTextarea(card);
           atualizarSurveyBranchUIAll();
         });
       }
@@ -2134,6 +2126,37 @@ input, select {
         branchToggle.disabled = !enabled;
         if (!enabled) branchToggle.value = '0';
       }
+    }
+
+    function getSurveyOptionLines(card) {
+      const area = card.querySelector('.survey-options-area');
+      if (!area) return [];
+      return String(area.value || '')
+        .split(/\r?\n/)
+        .map(v => v.trim())
+        .filter(Boolean);
+    }
+
+    function syncSurveyOptionsFromTextarea(card) {
+      const lines = getSurveyOptionLines(card);
+      const previous = Array.isArray(card._surveyOptions) ? card._surveyOptions : [];
+      const prevByOrderAndLabel = new Map(previous.map(opt => [`${Number(opt.order_index || 0)}::${String(opt.label || '')}`, opt]));
+      const prevByLabel = new Map(previous.map(opt => [String(opt.label || ''), opt]));
+      const next = [];
+      lines.forEach((label, idx) => {
+        const order = idx + 1;
+        const key = `${order}::${label}`;
+        const matched = prevByOrderAndLabel.get(key) || prevByLabel.get(label) || null;
+        next.push({
+          id: matched?.id || null,
+          label,
+          order_index: order,
+          target_question_id: matched?.target_question_id || null,
+          end_survey: matched?.end_survey ? 1 : 0
+        });
+      });
+      card._surveyOptions = next;
+      return next;
     }
 
     function atualizarSurveyDefaultTargetField(card) {
@@ -2245,7 +2268,7 @@ input, select {
         branchBlock.innerHTML = `<label>Ramificação</label><div class="survey-inline-note">Defina como \"Sim\" para ativar a ramificação.</div>`;
         return;
       }
-      const options = (card._surveyOptions || []);
+      const options = syncSurveyOptionsFromTextarea(card);
       if (!options.length) {
         branchBlock.innerHTML = `<label>Ramificação</label><div class="survey-inline-note">Preencha as opções para configurar a ramificação.</div>`;
         return;
@@ -2486,6 +2509,7 @@ input, select {
 
     async function salvarSurveyBuilder() {
       if (!surveyBuilderSurveyId) return;
+      atualizarSurveyBranchUIAll();
       Array.from(surveyBuilderList.children).forEach(card => persistSurveyBranchSelection(card));
       const questions = Array.from(surveyBuilderList.children).map((card, index) => {
         const text = card.querySelector('.survey-question-text').value.trim();
