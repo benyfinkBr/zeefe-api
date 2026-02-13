@@ -127,7 +127,20 @@
     .column-selector-body{margin-top:8px;display:flex;flex-wrap:wrap;gap:8px 12px;max-width:560px}
     .column-option{display:flex;align-items:center;gap:6px;font-size:12px;color:#1D413A}
     .column-selector-actions{display:flex;gap:8px;margin-top:8px}
+    .survey-builder-layout{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:14px;align-items:start}
+    .survey-builder-main{min-width:0}
     .survey-builder-list{display:flex;flex-direction:column;gap:12px}
+    .survey-branch-preview{position:sticky;top:0;background:#FFF;border:1px solid #E0DAD1;border-radius:10px;padding:12px;max-height:70vh;overflow:auto}
+    .survey-branch-preview h4{margin:0 0 8px;font-size:14px}
+    .survey-branch-preview .empty{font-size:12px;color:#6B5D50}
+    .survey-flow-item{border:1px solid #EEE4D8;border-radius:8px;padding:8px;margin-bottom:8px}
+    .survey-flow-item strong{display:block;font-size:13px;margin-bottom:4px}
+    .survey-flow-item ul{margin:0;padding-left:16px}
+    .survey-flow-item li{font-size:12px;color:#4E433A;margin:2px 0}
+    @media (max-width: 1024px){
+      .survey-builder-layout{grid-template-columns:1fr}
+      .survey-branch-preview{position:static;max-height:none}
+    }
     .survey-question-card{border:1px solid #E0DAD1;border-radius:10px;padding:12px;background:#FFF}
     .survey-question-header{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:10px}
     .survey-question-actions{display:flex;gap:8px}
@@ -546,10 +559,18 @@ input, select {
         <button class="modal-close" onclick="fecharSurveyBuilder()">&times;</button>
       </div>
       <div class="modal-body">
-        <div class="survey-builder-list" id="surveyBuilderList"></div>
-        <div class="box-message" id="surveyBuilderEmpty" style="display:none">Nenhuma pergunta cadastrada.</div>
-        <div style="margin-top:12px">
-          <button type="button" class="btn-secondary" onclick="adicionarSurveyPergunta()">+ Nova pergunta</button>
+        <div class="survey-builder-layout">
+          <div class="survey-builder-main">
+            <div class="survey-builder-list" id="surveyBuilderList"></div>
+            <div class="box-message" id="surveyBuilderEmpty" style="display:none">Nenhuma pergunta cadastrada.</div>
+            <div style="margin-top:12px">
+              <button type="button" class="btn-secondary" onclick="adicionarSurveyPergunta()">+ Nova pergunta</button>
+            </div>
+          </div>
+          <aside class="survey-branch-preview" id="surveyBranchPreview">
+            <h4>Fluxo de ramificação</h4>
+            <div class="empty">Sem perguntas para exibir.</div>
+          </aside>
         </div>
       </div>
       <div class="modal-footer">
@@ -758,6 +779,7 @@ input, select {
     const surveyBuilderModal = document.getElementById('surveyBuilderModal');
     const surveyBuilderList = document.getElementById('surveyBuilderList');
     const surveyBuilderEmpty = document.getElementById('surveyBuilderEmpty');
+    const surveyBranchPreview = document.getElementById('surveyBranchPreview');
     const surveyResultsModal = document.getElementById('surveyResultsModal');
     const surveyResultsBody = document.getElementById('surveyResultsBody');
     let surveyBuilderSurveyId = null;
@@ -1825,6 +1847,9 @@ input, select {
       surveyBuilderSurveyId = null;
       surveyBuilderList.innerHTML = '';
       surveyBuilderEmpty.style.display = 'none';
+      if (surveyBranchPreview) {
+        surveyBranchPreview.innerHTML = '<h4>Fluxo de ramificação</h4><div class="empty">Sem perguntas para exibir.</div>';
+      }
     }
 
     async function carregarSurveyBuilder() {
@@ -1844,6 +1869,7 @@ input, select {
       surveyBuilderList.innerHTML = '';
       if (!questions.length) {
         surveyBuilderEmpty.style.display = 'block';
+        renderSurveyBranchPreview();
         return;
       }
       surveyBuilderEmpty.style.display = 'none';
@@ -1852,6 +1878,7 @@ input, select {
         surveyBuilderList.appendChild(card);
       });
       atualizarTitulosPerguntas();
+      renderSurveyBranchPreview();
     }
 
     function criarSurveyQuestionCard(question) {
@@ -1985,9 +2012,11 @@ input, select {
       typeSelect.addEventListener('change', () => {
         atualizarSurveyQuestionVisibilidade(card);
         atualizarSurveyBranchFields(card);
+        renderSurveyBranchPreview();
       });
       branchToggle.addEventListener('change', () => {
         atualizarSurveyBranchFields(card);
+        renderSurveyBranchPreview();
       });
       const optionsArea = card.querySelector('.survey-options-area');
       if (optionsArea) {
@@ -2001,8 +2030,10 @@ input, select {
             order_index: idx + 1
           }));
           atualizarSurveyBranchFields(card);
+          renderSurveyBranchPreview();
         });
       }
+      card.querySelector('.survey-question-text')?.addEventListener('input', renderSurveyBranchPreview);
       card.querySelectorAll('[data-action]').forEach(btn => {
         btn.addEventListener('click', () => {
           const action = btn.getAttribute('data-action');
@@ -2010,6 +2041,7 @@ input, select {
             card.remove();
             atualizarTitulosPerguntas();
             if (!surveyBuilderList.children.length) surveyBuilderEmpty.style.display = 'block';
+            renderSurveyBranchPreview();
             return;
           }
           if (action === 'up') moverSurveyPergunta(card, -1);
@@ -2088,6 +2120,9 @@ input, select {
         `;
       }).join('');
       branchBlock.innerHTML = `<label>Ramificação (opção → pergunta)</label><div class=\"survey-branch-list\">${rows}</div>`;
+      branchBlock.querySelectorAll('.survey-branch-select').forEach(select => {
+        select.addEventListener('change', renderSurveyBranchPreview);
+      });
     }
 
     function atualizarTitulosPerguntas() {
@@ -2096,6 +2131,7 @@ input, select {
         if (title) title.textContent = `Pergunta ${index + 1}`;
         atualizarSurveyBranchFields(card);
       });
+      renderSurveyBranchPreview();
     }
 
     function moverSurveyPergunta(card, dir) {
@@ -2116,6 +2152,43 @@ input, select {
       });
       surveyBuilderList.appendChild(card);
       atualizarTitulosPerguntas();
+      renderSurveyBranchPreview();
+    }
+
+    function renderSurveyBranchPreview() {
+      if (!surveyBranchPreview) return;
+      const cards = Array.from(surveyBuilderList.children);
+      if (!cards.length) {
+        surveyBranchPreview.innerHTML = '<h4>Fluxo de ramificação</h4><div class="empty">Sem perguntas para exibir.</div>';
+        return;
+      }
+      const items = cards.map((card, index) => {
+        const questionText = card.querySelector('.survey-question-text')?.value?.trim() || `Pergunta ${index + 1}`;
+        const type = card.querySelector('.survey-question-type')?.value || '';
+        const branchEnabled = card.querySelector('.survey-question-branch-toggle')?.value === '1';
+        const hasBranchType = type === 'single_choice' || type === 'multiple_choice';
+        const nextCard = cards[index + 1];
+        const defaultTarget = nextCard ? (nextCard.querySelector('.survey-question-text')?.value?.trim() || `Pergunta ${index + 2}`) : 'Fim';
+        let lines = [`Padrão: próxima pergunta (${escapeHtml(defaultTarget)})`];
+        if (hasBranchType && branchEnabled) {
+          const rows = Array.from(card.querySelectorAll('.survey-branch-row'));
+          const branchLines = rows.map(row => {
+            const optionLabel = row.getAttribute('data-option-label') || 'Opção';
+            const select = row.querySelector('.survey-branch-select');
+            const selectedText = select?.selectedOptions?.[0]?.textContent?.trim() || '';
+            if (!select || !select.value || !selectedText) return null;
+            return `${escapeHtml(optionLabel)} → ${escapeHtml(selectedText)}`;
+          }).filter(Boolean);
+          if (branchLines.length) lines = lines.concat(branchLines);
+        }
+        return `
+          <div class="survey-flow-item">
+            <strong>${index + 1}. ${escapeHtml(questionText)}</strong>
+            <ul>${lines.map(l => `<li>${l}</li>`).join('')}</ul>
+          </div>
+        `;
+      }).join('');
+      surveyBranchPreview.innerHTML = `<h4>Fluxo de ramificação</h4>${items}`;
     }
 
     async function salvarSurveyBuilder() {

@@ -7,6 +7,11 @@
   const formEl = document.getElementById('surveyForm');
   const msgEl = document.getElementById('surveyMsg');
 
+  let surveyQuestions = [];
+  let rulesMap = {};
+  let currentQuestionIndex = 0;
+  const questionEls = new Map();
+
   function showMessage(text, isSuccess) {
     msgEl.textContent = text;
     msgEl.className = 'msg' + (isSuccess ? ' success' : '');
@@ -129,93 +134,174 @@
     return null;
   }
 
-  function buildAnswers(questions, visibleSet) {
+  function buildRulesMap(questions) {
+    const map = {};
+    questions.forEach(q => {
+      const inner = {};
+      (q.options || []).forEach(opt => {
+        if (opt.branch_to) inner[String(opt.id)] = Number(opt.branch_to);
+      });
+      map[q.id] = inner;
+    });
+    return map;
+  }
+
+  function getQuestionIndexById(questionId) {
+    return surveyQuestions.findIndex(q => Number(q.id) === Number(questionId));
+  }
+
+  function getDefaultNextQuestionId(index) {
+    const next = surveyQuestions[index + 1];
+    return next ? Number(next.id) : null;
+  }
+
+  function getNextQuestionIdByAnswer(index) {
+    const q = surveyQuestions[index];
+    if (!q) return null;
+
+    const answer = getAnswerForQuestion(q);
+    const branchRules = rulesMap[q.id] || {};
+
+    if (answer && q.type === 'single_choice' && answer.option_id) {
+      const target = branchRules[String(answer.option_id)];
+      if (target) return target;
+    }
+
+    if (answer && q.type === 'multiple_choice' && Array.isArray(answer.option_ids)) {
+      const orderedSelected = (q.options || [])
+        .map(opt => String(opt.id))
+        .filter(id => answer.option_ids.map(String).includes(id));
+      const firstTarget = orderedSelected
+        .map(id => branchRules[id])
+        .find(Boolean);
+      if (firstTarget) return firstTarget;
+    }
+
+    return getDefaultNextQuestionId(index);
+  }
+
+  function computePath() {
+    const path = [];
+    if (!surveyQuestions.length) return path;
+
+    let index = 0;
+    const visited = new Set();
+
+    while (index >= 0 && index < surveyQuestions.length) {
+      const q = surveyQuestions[index];
+      if (!q) break;
+      const qid = Number(q.id);
+      if (visited.has(qid)) break;
+      visited.add(qid);
+      path.push(qid);
+
+      const nextId = getNextQuestionIdByAnswer(index);
+      if (!nextId) break;
+      index = getQuestionIndexById(nextId);
+      if (index < 0) break;
+    }
+
+    return path;
+  }
+
+  function isQuestionAnswered(q) {
+    return !!getAnswerForQuestion(q);
+  }
+
+  function validateCurrentQuestion() {
+    const q = surveyQuestions[currentQuestionIndex];
+    if (!q || !q.required) return true;
+    return isQuestionAnswered(q);
+  }
+
+  function validateRequiredInPath(path) {
+    return path.every(qid => {
+      const q = surveyQuestions.find(item => Number(item.id) === Number(qid));
+      if (!q || !q.required) return true;
+      return isQuestionAnswered(q);
+    });
+  }
+
+  function buildAnswersFromPath(path) {
     const answers = [];
-    for (const q of questions) {
-      if (!visibleSet.has(q.id)) continue;
+    path.forEach(qid => {
+      const q = surveyQuestions.find(item => Number(item.id) === Number(qid));
+      if (!q) return;
       const answer = getAnswerForQuestion(q);
       if (answer) answers.push(answer);
-    }
+    });
     return answers;
   }
 
-  function validateRequired(questions, visibleSet) {
-    for (const q of questions) {
-      if (!visibleSet.has(q.id)) continue;
-      if (!q.required) continue;
-      const answer = getAnswerForQuestion(q);
-      if (!answer) return false;
-    }
-    return true;
-  }
+  function renderStepActions() {
+    const old = formEl.querySelector('.actions');
+    if (old) old.remove();
 
-  function buildRulesMap(questions) {
-    const rulesMap = {};
-    questions.forEach(q => {
-      const rules = [];
-      (q.options || []).forEach(opt => {
-        if (opt.branch_to) {
-          rules.push({ option_id: String(opt.id), target_question_id: opt.branch_to });
-        }
-      });
-      if (rules.length) rulesMap[q.id] = rules;
-    });
-    return rulesMap;
-  }
+    const path = computePath();
+    const currentQuestionId = Number(surveyQuestions[currentQuestionIndex]?.id || 0);
+    const pathIndex = path.indexOf(currentQuestionId);
+    const isFirst = pathIndex <= 0;
+    const nextQuestionId = getNextQuestionIdByAnswer(currentQuestionIndex);
+    const hasNext = !!nextQuestionId && getQuestionIndexById(nextQuestionId) >= 0;
 
-  function computeVisibleSet(questions, rulesMap) {
-    const idToIndex = new Map();
-    questions.forEach((q, i) => idToIndex.set(q.id, i));
-    const visible = new Set();
-    if (!questions.length) return visible;
+    const actions = document.createElement('div');
+    actions.className = 'actions';
 
-    const queue = [0];
-    const processed = new Set();
-
-    while (queue.length) {
-      const index = queue.shift();
-      if (index < 0 || index >= questions.length) continue;
-      if (processed.has(index)) continue;
-      processed.add(index);
-      const q = questions[index];
-      visible.add(q.id);
-
-      let nextIndices = [];
-      const rules = rulesMap[q.id] || [];
-      const answer = getAnswerForQuestion(q);
-
-      if (rules.length && answer) {
-        if (q.type === 'single_choice' && answer.option_id) {
-          const match = rules.find(r => r.option_id === String(answer.option_id));
-          if (match && idToIndex.has(match.target_question_id)) {
-            nextIndices.push(idToIndex.get(match.target_question_id));
-          } else {
-            nextIndices.push(index + 1);
-          }
-        } else if (q.type === 'multiple_choice' && Array.isArray(answer.option_ids)) {
-          const selected = answer.option_ids.map(String);
-          const targets = rules
-            .filter(r => selected.includes(String(r.option_id)))
-            .map(r => idToIndex.get(r.target_question_id))
-            .filter(v => v !== undefined);
-          if (targets.length) {
-            nextIndices = nextIndices.concat(targets);
-          } else {
-            nextIndices.push(index + 1);
-          }
-        } else {
-          nextIndices.push(index + 1);
-        }
-      } else {
-        nextIndices.push(index + 1);
+    const prevBtn = document.createElement('button');
+    prevBtn.type = 'button';
+    prevBtn.className = 'btn-secondary';
+    prevBtn.textContent = 'Pergunta anterior';
+    prevBtn.disabled = isFirst;
+    prevBtn.addEventListener('click', () => {
+      if (isFirst) return;
+      const prevId = path[pathIndex - 1];
+      const prevIndex = getQuestionIndexById(prevId);
+      if (prevIndex >= 0) {
+        currentQuestionIndex = prevIndex;
+        renderCurrentQuestion();
       }
+    });
 
-      nextIndices.forEach(i => {
-        if (i < questions.length) queue.push(i);
+    const nextBtn = document.createElement('button');
+    nextBtn.type = hasNext ? 'button' : 'submit';
+    nextBtn.className = 'btn';
+    nextBtn.textContent = hasNext ? 'Próxima pergunta' : 'Enviar respostas';
+    if (hasNext) {
+      nextBtn.addEventListener('click', () => {
+        hideMessage();
+        if (!validateCurrentQuestion()) {
+          showMessage('Responda esta pergunta obrigatória para continuar.', false);
+          return;
+        }
+        const nextIndex = getQuestionIndexById(nextQuestionId);
+        if (nextIndex >= 0) {
+          currentQuestionIndex = nextIndex;
+          renderCurrentQuestion();
+        }
       });
     }
 
-    return visible;
+    actions.appendChild(prevBtn);
+    actions.appendChild(nextBtn);
+    formEl.appendChild(actions);
+  }
+
+  function renderCurrentQuestion() {
+    const path = computePath();
+    const currentQuestionId = Number(surveyQuestions[currentQuestionIndex]?.id || 0);
+    if (!path.includes(currentQuestionId) && path.length) {
+      const correctedIndex = getQuestionIndexById(path[0]);
+      if (correctedIndex >= 0) currentQuestionIndex = correctedIndex;
+    }
+
+    surveyQuestions.forEach(q => {
+      const el = questionEls.get(Number(q.id));
+      if (!el) return;
+      const active = Number(q.id) === Number(surveyQuestions[currentQuestionIndex]?.id);
+      el.style.display = active ? '' : 'none';
+    });
+
+    renderStepActions();
   }
 
   async function submitAnswers(answers) {
@@ -251,56 +337,55 @@
         return;
       }
       const survey = data.survey || {};
-      const questions = data.questions || [];
+      surveyQuestions = data.questions || [];
+      rulesMap = buildRulesMap(surveyQuestions);
+
       titleEl.textContent = survey.title || 'Questionário';
       descEl.textContent = survey.description || '';
       window.surveyThankYou = survey.thank_you_message || '';
 
       formEl.innerHTML = '';
-      const questionEls = new Map();
-      questions.forEach(q => {
+      questionEls.clear();
+
+      surveyQuestions.forEach(q => {
         const el = renderQuestion(q);
         formEl.appendChild(el);
-        questionEls.set(q.id, el);
+        questionEls.set(Number(q.id), el);
       });
 
-      const actions = document.createElement('div');
-      actions.className = 'actions';
-      const submit = document.createElement('button');
-      submit.type = 'submit';
-      submit.className = 'btn';
-      submit.textContent = 'Enviar respostas';
-      actions.appendChild(submit);
-      formEl.appendChild(actions);
+      if (!surveyQuestions.length) {
+        bodyEl.textContent = 'Questionário sem perguntas disponíveis.';
+        return;
+      }
 
-      const rulesMap = buildRulesMap(questions);
-
-      const updateVisibility = () => {
-        const visibleSet = computeVisibleSet(questions, rulesMap);
-        questions.forEach(q => {
-          const el = questionEls.get(q.id);
-          if (!el) return;
-          el.style.display = visibleSet.has(q.id) ? '' : 'none';
-        });
-      };
-
-      formEl.addEventListener('input', updateVisibility);
-      formEl.addEventListener('change', updateVisibility);
+      formEl.addEventListener('input', () => {
+        hideMessage();
+        renderCurrentQuestion();
+      });
+      formEl.addEventListener('change', () => {
+        hideMessage();
+        renderCurrentQuestion();
+      });
 
       formEl.addEventListener('submit', (e) => {
         e.preventDefault();
-        const visibleSet = computeVisibleSet(questions, rulesMap);
-        if (!validateRequired(questions, visibleSet)) {
+        const path = computePath();
+        if (!validateCurrentQuestion()) {
+          showMessage('Responda esta pergunta obrigatória para continuar.', false);
+          return;
+        }
+        if (!validateRequiredInPath(path)) {
           showMessage('Responda todas as perguntas obrigatórias.', false);
           return;
         }
-        const answers = buildAnswers(questions, visibleSet);
+        const answers = buildAnswersFromPath(path);
         submitAnswers(answers);
       });
 
+      currentQuestionIndex = 0;
       bodyEl.style.display = 'none';
       formEl.style.display = 'block';
-      updateVisibility();
+      renderCurrentQuestion();
     } catch (err) {
       bodyEl.textContent = 'Erro ao carregar questionário.';
     }
