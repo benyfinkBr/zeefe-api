@@ -133,10 +133,10 @@
     .survey-branch-preview{position:sticky;top:0;background:#FFF;border:1px solid #E0DAD1;border-radius:10px;padding:12px;max-height:70vh;overflow:auto}
     .survey-branch-preview h4{margin:0 0 8px;font-size:14px}
     .survey-branch-preview .empty{font-size:12px;color:#6B5D50}
-    .survey-flow-item{border:1px solid #EEE4D8;border-radius:8px;padding:8px;margin-bottom:8px}
-    .survey-flow-item strong{display:block;font-size:13px;margin-bottom:4px}
-    .survey-flow-item ul{margin:0;padding-left:16px}
-    .survey-flow-item li{font-size:12px;color:#4E433A;margin:2px 0}
+    .survey-flow-main{border:1px solid #EEE4D8;border-radius:8px;padding:10px;background:#FAF8F5;margin-bottom:10px}
+    .survey-flow-main-line{font-size:16px;font-weight:700;letter-spacing:.3px;color:#1D413A}
+    .survey-flow-branches{display:flex;flex-direction:column;gap:6px}
+    .survey-flow-branch-line{border:1px dashed #D7CCBE;border-radius:8px;padding:6px 8px;font-size:14px;font-weight:600;color:#2A4D45;background:#FFFEFC}
     @media (max-width: 1024px){
       .survey-builder-layout{grid-template-columns:1fr}
       .survey-branch-preview{position:static;max-height:none}
@@ -2162,33 +2162,47 @@ input, select {
         surveyBranchPreview.innerHTML = '<h4>Fluxo de ramificação</h4><div class="empty">Sem perguntas para exibir.</div>';
         return;
       }
-      const items = cards.map((card, index) => {
-        const questionText = card.querySelector('.survey-question-text')?.value?.trim() || `Pergunta ${index + 1}`;
+      const cardToNumber = new Map(cards.map((c, i) => [c, i + 1]));
+      const idToNumber = new Map(cards.filter(c => c.dataset.id).map(c => [String(c.dataset.id), cardToNumber.get(c)]));
+      const tempToNumber = new Map(cards.filter(c => c.dataset.tempKey).map(c => [String(c.dataset.tempKey), cardToNumber.get(c)]));
+
+      const mainFlow = cards.map((_, i) => String(i + 1)).join(' \u2192 ') + ' \u2192 Fim';
+      const branchLines = [];
+
+      cards.forEach((card, index) => {
+        const from = index + 1;
         const type = card.querySelector('.survey-question-type')?.value || '';
         const branchEnabled = card.querySelector('.survey-question-branch-toggle')?.value === '1';
-        const hasBranchType = type === 'single_choice' || type === 'multiple_choice';
-        const nextCard = cards[index + 1];
-        const defaultTarget = nextCard ? (nextCard.querySelector('.survey-question-text')?.value?.trim() || `Pergunta ${index + 2}`) : 'Fim';
-        let lines = [`Padrão: próxima pergunta (${escapeHtml(defaultTarget)})`];
-        if (hasBranchType && branchEnabled) {
-          const rows = Array.from(card.querySelectorAll('.survey-branch-row'));
-          const branchLines = rows.map(row => {
-            const optionLabel = row.getAttribute('data-option-label') || 'Opção';
-            const select = row.querySelector('.survey-branch-select');
-            const selectedText = select?.selectedOptions?.[0]?.textContent?.trim() || '';
-            if (!select || !select.value || !selectedText) return null;
-            return `${escapeHtml(optionLabel)} → ${escapeHtml(selectedText)}`;
-          }).filter(Boolean);
-          if (branchLines.length) lines = lines.concat(branchLines);
-        }
-        return `
-          <div class="survey-flow-item">
-            <strong>${index + 1}. ${escapeHtml(questionText)}</strong>
-            <ul>${lines.map(l => `<li>${l}</li>`).join('')}</ul>
-          </div>
-        `;
-      }).join('');
-      surveyBranchPreview.innerHTML = `<h4>Fluxo de ramificação</h4>${items}`;
+        if ((type !== 'single_choice' && type !== 'multiple_choice') || !branchEnabled) return;
+        const rows = Array.from(card.querySelectorAll('.survey-branch-row'));
+        rows.forEach(row => {
+          const select = row.querySelector('.survey-branch-select');
+          if (!select || !select.value) return;
+          const raw = String(select.value);
+          let targetNumber = null;
+          if (raw.startsWith('temp:')) {
+            targetNumber = tempToNumber.get(raw.replace('temp:', '')) || null;
+          } else {
+            targetNumber = idToNumber.get(raw) || null;
+          }
+          if (!targetNumber) return;
+          branchLines.push(`${from} \u2192 ${targetNumber}`);
+        });
+      });
+
+      const uniqueBranchLines = Array.from(new Set(branchLines));
+      const branchHtml = uniqueBranchLines.length
+        ? uniqueBranchLines.map(line => `<div class="survey-flow-branch-line">${line}</div>`).join('')
+        : '<div class="empty">Sem desvio configurado.</div>';
+
+      surveyBranchPreview.innerHTML = `
+        <h4>Fluxo (números)</h4>
+        <div class="survey-flow-main">
+          <div class="survey-flow-main-line">${mainFlow}</div>
+        </div>
+        <h4 style="margin-top:0">Desvios</h4>
+        <div class="survey-flow-branches">${branchHtml}</div>
+      `;
     }
 
     async function salvarSurveyBuilder() {
