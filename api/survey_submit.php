@@ -39,19 +39,26 @@ try {
   }
   $questionIds = array_keys($questionMap);
   $optionsByQuestion = [];
+  $optionMetaByQuestion = [];
   if ($questionIds) {
     $in = implode(',', array_fill(0, count($questionIds), '?'));
-    $oStmt = $pdo->prepare("SELECT id, question_id FROM survey_options WHERE question_id IN ($in) ORDER BY question_id ASC, order_index ASC, id ASC");
+    $oStmt = $pdo->prepare("SELECT id, question_id, label, order_index FROM survey_options WHERE question_id IN ($in) ORDER BY question_id ASC, order_index ASC, id ASC");
     $oStmt->execute($questionIds);
     $options = $oStmt->fetchAll(PDO::FETCH_ASSOC);
     foreach ($options as $opt) {
       $qid = (int) $opt['question_id'];
       if (!isset($optionsByQuestion[$qid])) $optionsByQuestion[$qid] = [];
       $optionsByQuestion[$qid][] = (int) $opt['id'];
+      if (!isset($optionMetaByQuestion[$qid])) $optionMetaByQuestion[$qid] = [];
+      $optionMetaByQuestion[$qid][(int) $opt['id']] = [
+        'order' => (int) ($opt['order_index'] ?? 0),
+        'label' => (string) ($opt['label'] ?? '')
+      ];
     }
   }
 
   $ruleMapByQuestion = [];
+  $pathMapByQuestion = [];
   if ($questionIds) {
     $in = implode(',', array_fill(0, count($questionIds), '?'));
     $rStmt = $pdo->prepare("SELECT question_id, option_id, target_question_id, end_survey FROM survey_branch_rules WHERE survey_id = ? AND question_id IN ($in) ORDER BY id ASC");
@@ -66,6 +73,23 @@ try {
         'target_question_id' => isset($r['target_question_id']) ? (int) $r['target_question_id'] : null,
         'end_survey' => !empty($r['end_survey']) ? 1 : 0
       ];
+    }
+    try {
+      $pStmt = $pdo->prepare("SELECT question_id, option_order, option_label, target_question_id, end_survey FROM survey_branch_paths WHERE survey_id = ? AND question_id IN ($in) ORDER BY id ASC");
+      $pStmt->execute($params);
+      $paths = $pStmt->fetchAll(PDO::FETCH_ASSOC);
+      foreach ($paths as $p) {
+        $qid = (int) ($p['question_id'] ?? 0);
+        if (!isset($pathMapByQuestion[$qid])) $pathMapByQuestion[$qid] = [];
+        $pathMapByQuestion[$qid][] = [
+          'option_order' => isset($p['option_order']) ? (int) $p['option_order'] : null,
+          'option_label' => (string) ($p['option_label'] ?? ''),
+          'target_question_id' => isset($p['target_question_id']) ? (int) $p['target_question_id'] : null,
+          'end_survey' => !empty($p['end_survey']) ? 1 : 0
+        ];
+      }
+    } catch (Throwable $e) {
+      $pathMapByQuestion = [];
     }
   }
 
@@ -91,9 +115,25 @@ try {
       $end = false;
 
       $rules = $ruleMapByQuestion[$currentQid] ?? [];
+      $pathRules = $pathMapByQuestion[$currentQid] ?? [];
       if ($ans && $rules) {
         if ($q['type'] === 'single_choice') {
           $selected = (int) ($ans['option_id'] ?? 0);
+          $selectedMeta = $optionMetaByQuestion[$currentQid][$selected] ?? null;
+          if ($selectedMeta && $pathRules) {
+            foreach ($pathRules as $pathRule) {
+              $po = (int) ($pathRule['option_order'] ?? 0);
+              $pl = (string) ($pathRule['option_label'] ?? '');
+              if (($po > 0 && $po === (int) ($selectedMeta['order'] ?? 0)) || ($pl !== '' && $pl === (string) ($selectedMeta['label'] ?? ''))) {
+                if (!empty($pathRule['end_survey'])) $end = true;
+                else $nextQid = (int) ($pathRule['target_question_id'] ?? 0);
+                break;
+              }
+            }
+          }
+          if ($end || $nextQid) {
+            // already resolved by survey_branch_paths
+          } else
           foreach ($rules as $rule) {
             if ((int) $rule['option_id'] === $selected) {
               if (!empty($rule['end_survey'])) $end = true;
@@ -104,6 +144,25 @@ try {
         } elseif ($q['type'] === 'multiple_choice') {
           $selectedList = array_map('intval', (array) ($ans['option_ids'] ?? []));
           $optionOrder = $optionsByQuestion[$currentQid] ?? [];
+          if ($pathRules) {
+            foreach ($optionOrder as $optId) {
+              if (!in_array((int) $optId, $selectedList, true)) continue;
+              $selectedMeta = $optionMetaByQuestion[$currentQid][(int) $optId] ?? null;
+              if (!$selectedMeta) continue;
+              foreach ($pathRules as $pathRule) {
+                $po = (int) ($pathRule['option_order'] ?? 0);
+                $pl = (string) ($pathRule['option_label'] ?? '');
+                if (($po > 0 && $po === (int) ($selectedMeta['order'] ?? 0)) || ($pl !== '' && $pl === (string) ($selectedMeta['label'] ?? ''))) {
+                  if (!empty($pathRule['end_survey'])) $end = true;
+                  else $nextQid = (int) ($pathRule['target_question_id'] ?? 0);
+                  break 2;
+                }
+              }
+            }
+          }
+          if ($end || $nextQid) {
+            // already resolved by survey_branch_paths
+          } else
           foreach ($optionOrder as $optId) {
             if (!in_array((int) $optId, $selectedList, true)) continue;
             foreach ($rules as $rule) {

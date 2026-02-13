@@ -2076,6 +2076,10 @@ input, select {
       else defaultMode.value = 'sequential';
       if (q.default_next_question_id) defaultTarget.dataset.selectedId = String(q.default_next_question_id);
 
+      // If branching is enabled but options are empty (common in legacy data),
+      // seed defaults so branch selectors can be configured immediately.
+      ensureDefaultSurveyOptions(card);
+
       typeSelect.addEventListener('change', () => {
         ensureDefaultSurveyOptions(card);
         atualizarSurveyQuestionVisibilidade(card);
@@ -2288,7 +2292,7 @@ input, select {
       }
       const options = syncSurveyOptionsFromTextarea(card);
       if (!options.length) {
-        branchBlock.innerHTML = `<label>Ramificação</label><div class="survey-inline-note">Preencha as opções para configurar a ramificação.</div>`;
+        branchBlock.innerHTML = `<label>Ramificação</label><div class="survey-inline-note">Adicione opções reais no campo acima (uma por linha) para configurar a ramificação.</div>`;
         return;
       }
       const currentTemp = card.dataset.tempKey || null;
@@ -2636,6 +2640,10 @@ input, select {
         });
         const data = await res.json();
         if (!data.success) throw new Error(data.error || 'Falha ao salvar perguntas.');
+        if ((data.rules_requested || 0) > 0 && (data.rules_saved || 0) === 0) {
+          alert('As perguntas foram salvas, mas nenhuma ramificação foi persistida. Verifique se cada opção tem um destino.');
+          return;
+        }
         showToast('Perguntas salvas.');
         fecharSurveyBuilder();
       } catch (err) {

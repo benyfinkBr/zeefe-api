@@ -41,6 +41,21 @@ try {
   $ruleStmt = $pdo->prepare('SELECT * FROM survey_branch_rules WHERE survey_id = :sid ORDER BY id ASC');
   $ruleStmt->execute([':sid' => $survey['id']]);
   $rules = $ruleStmt->fetchAll(PDO::FETCH_ASSOC);
+  $paths = [];
+  try {
+    $pathStmt = $pdo->prepare('SELECT * FROM survey_branch_paths WHERE survey_id = :sid ORDER BY question_id ASC, option_order ASC, id ASC');
+    $pathStmt->execute([':sid' => $survey['id']]);
+    $paths = $pathStmt->fetchAll(PDO::FETCH_ASSOC);
+  } catch (Throwable $e) {
+    $paths = [];
+  }
+  $pathsByQuestion = [];
+  foreach ($paths as $path) {
+    $qid = (int) ($path['question_id'] ?? 0);
+    if ($qid <= 0) continue;
+    if (!isset($pathsByQuestion[$qid])) $pathsByQuestion[$qid] = [];
+    $pathsByQuestion[$qid][] = $path;
+  }
 
   foreach ($questions as &$q) {
     $qid = (int) $q['id'];
@@ -48,6 +63,19 @@ try {
     foreach ($opts as &$opt) {
       $opt['branch_to'] = null;
       $opt['branch_end'] = 0;
+      $optOrder = isset($opt['order_index']) ? (int) $opt['order_index'] : 0;
+      $optLabel = (string) ($opt['label'] ?? '');
+      $pathRules = $pathsByQuestion[$qid] ?? [];
+      foreach ($pathRules as $pathRule) {
+        $pathOrder = isset($pathRule['option_order']) ? (int) $pathRule['option_order'] : 0;
+        $pathLabel = (string) ($pathRule['option_label'] ?? '');
+        if (($optOrder > 0 && $pathOrder > 0 && $optOrder === $pathOrder) || ($optLabel !== '' && $optLabel === $pathLabel)) {
+          $opt['branch_to'] = isset($pathRule['target_question_id']) ? (int) $pathRule['target_question_id'] : null;
+          $opt['branch_end'] = !empty($pathRule['end_survey']) ? 1 : 0;
+          break;
+        }
+      }
+      if ($opt['branch_to'] || $opt['branch_end']) continue;
       foreach ($rules as $rule) {
         if ((int) $rule['option_id'] === (int) $opt['id']) {
           $opt['branch_to'] = isset($rule['target_question_id']) ? (int) $rule['target_question_id'] : null;

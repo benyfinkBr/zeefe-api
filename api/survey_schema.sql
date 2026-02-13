@@ -50,6 +50,19 @@ CREATE TABLE IF NOT EXISTS survey_branch_rules (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS survey_branch_paths (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  survey_id INT NOT NULL,
+  question_id INT NOT NULL,
+  option_order INT NOT NULL,
+  option_label VARCHAR(255) NULL,
+  target_question_id INT NULL,
+  end_survey TINYINT(1) DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_survey_branch_path (survey_id, question_id, option_order)
+);
+
 CREATE TABLE IF NOT EXISTS survey_responses (
   id INT AUTO_INCREMENT PRIMARY KEY,
   survey_id INT NOT NULL,

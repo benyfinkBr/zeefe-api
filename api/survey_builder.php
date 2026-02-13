@@ -72,6 +72,14 @@ if ($method === 'GET') {
   $ruleStmt = $pdo->prepare('SELECT * FROM survey_branch_rules WHERE survey_id = :sid ORDER BY id ASC');
   $ruleStmt->execute([':sid' => $surveyId]);
   $rules = $ruleStmt->fetchAll(PDO::FETCH_ASSOC);
+  $paths = [];
+  try {
+    $pathStmt = $pdo->prepare('SELECT * FROM survey_branch_paths WHERE survey_id = :sid ORDER BY question_id ASC, option_order ASC, id ASC');
+    $pathStmt->execute([':sid' => $surveyId]);
+    $paths = $pathStmt->fetchAll(PDO::FETCH_ASSOC);
+  } catch (Throwable $e) {
+    $paths = [];
+  }
   $rulesByOption = [];
   $rulesByQuestion = [];
   foreach ($rules as $rule) {
@@ -89,6 +97,19 @@ if ($method === 'GET') {
         'target_question_id' => $ruleData['target_question_id'],
         'end_survey' => $ruleData['end_survey']
       ];
+    }
+  }
+  if ($paths) {
+    foreach ($paths as $path) {
+      $rqid = (int) ($path['question_id'] ?? 0);
+      if ($rqid <= 0) continue;
+      if (!isset($rulesByQuestion[$rqid])) $rulesByQuestion[$rqid] = [];
+      array_unshift($rulesByQuestion[$rqid], [
+        'option_order' => isset($path['option_order']) ? (int) $path['option_order'] : null,
+        'option_label' => (string) ($path['option_label'] ?? ''),
+        'target_question_id' => isset($path['target_question_id']) ? (int) $path['target_question_id'] : null,
+        'end_survey' => !empty($path['end_survey']) ? 1 : 0
+      ]);
     }
   }
 
@@ -156,9 +177,20 @@ try {
   $insertOptionStmt = $pdo->prepare('INSERT INTO survey_options (question_id, label, value, order_index) VALUES (:qid, :label, :value, :ord)');
   $deleteRulesStmt = $pdo->prepare('DELETE FROM survey_branch_rules WHERE survey_id = :sid');
   $insertRuleStmt = $pdo->prepare('INSERT INTO survey_branch_rules (survey_id, question_id, option_id, option_order, option_label, target_question_id, end_survey) VALUES (:sid, :qid, :oid, :oord, :olbl, :tid, :end_survey)');
+  $deletePathsStmt = null;
+  $insertPathStmt = null;
+  try {
+    $deletePathsStmt = $pdo->prepare('DELETE FROM survey_branch_paths WHERE survey_id = :sid');
+    $insertPathStmt = $pdo->prepare('INSERT INTO survey_branch_paths (survey_id, question_id, option_order, option_label, target_question_id, end_survey) VALUES (:sid, :qid, :oord, :olbl, :tid, :end_survey)');
+  } catch (Throwable $e) {
+    $deletePathsStmt = null;
+    $insertPathStmt = null;
+  }
   $questionIdMap = [];
   $optionIdMap = [];
   $pendingDefault = [];
+  $savedRulesCount = 0;
+  $rulesRequestedCount = 0;
 
   foreach ($questions as $idx => $q) {
     $text = trim((string) ($q['question_text'] ?? ''));
@@ -264,7 +296,11 @@ try {
   }
 
   $deleteRulesStmt->execute([':sid' => $surveyId]);
+  if ($deletePathsStmt) {
+    $deletePathsStmt->execute([':sid' => $surveyId]);
+  }
   foreach ($rules as $rule) {
+    $rulesRequestedCount++;
     $qid = (int) ($rule['question_id'] ?? 0);
     if ($qid <= 0 && !empty($rule['question_temp_key'])) {
       $qid = (int) ($questionIdMap[$rule['question_temp_key']] ?? 0);
@@ -281,22 +317,38 @@ try {
         $oid = (int) $optionIdMap[$qid][$orderIndex];
       }
     }
-    if ($qid <= 0 || $oid <= 0) continue;
+    if ($qid <= 0) continue;
     if ($endSurvey !== 1 && $tid <= 0) continue;
+    $optionOrder = (int) ($rule['option_order'] ?? 0) ?: null;
+    $optionLabel = (string) ($rule['option_label'] ?? '');
+
+    if ($insertPathStmt && $optionOrder) {
+      $insertPathStmt->execute([
+        ':sid' => $surveyId,
+        ':qid' => $qid,
+        ':oord' => $optionOrder,
+        ':olbl' => $optionLabel,
+        ':tid' => $endSurvey === 1 ? null : $tid,
+        ':end_survey' => $endSurvey
+      ]);
+    }
+
+    if ($oid <= 0) continue;
     if ($endSurvey === 1) $tid = null;
     $insertRuleStmt->execute([
       ':sid' => $surveyId,
       ':qid' => $qid,
       ':oid' => $oid,
-      ':oord' => (int) ($rule['option_order'] ?? 0) ?: null,
-      ':olbl' => (string) ($rule['option_label'] ?? ''),
+      ':oord' => $optionOrder,
+      ':olbl' => $optionLabel,
       ':tid' => $tid,
       ':end_survey' => $endSurvey
     ]);
+    $savedRulesCount++;
   }
 
   $pdo->commit();
-  echo json_encode(['success' => true]);
+  echo json_encode(['success' => true, 'rules_requested' => $rulesRequestedCount, 'rules_saved' => $savedRulesCount]);
 } catch (Throwable $e) {
   if ($pdo->inTransaction()) $pdo->rollBack();
   http_response_code(500);
