@@ -813,6 +813,7 @@ input, select {
     const surveyResultsModal = document.getElementById('surveyResultsModal');
     const surveyResultsBody = document.getElementById('surveyResultsBody');
     let surveyBuilderSurveyId = null;
+    let surveyBuilderIsHydrating = false;
     let surveyResultsCache = null;
     const surveyFlowPositions = {};
     const surveyBuilderDraftBySurvey = {};
@@ -1915,11 +1916,17 @@ input, select {
         return;
       }
       surveyBuilderEmpty.style.display = 'none';
-      questions.forEach(q => {
-        const card = criarSurveyQuestionCard(q);
-        surveyBuilderList.appendChild(card);
-      });
+      surveyBuilderIsHydrating = true;
+      try {
+        questions.forEach(q => {
+          const card = criarSurveyQuestionCard(q);
+          surveyBuilderList.appendChild(card);
+        });
+      } finally {
+        surveyBuilderIsHydrating = false;
+      }
       atualizarTitulosPerguntas();
+      atualizarSurveyBranchUIAll();
       renderSurveyBranchPreview();
     }
 
@@ -2022,7 +2029,7 @@ input, select {
 
       const optionsField = document.createElement('div');
       optionsField.className = 'field survey-options-fields';
-      const optionsText = Array.isArray(q.options) ? q.options.map(opt => opt.label).join('\n') : '';
+      const optionsText = Array.isArray(q.options) ? q.options.map(opt => String(opt.label || '').trim()).join('\n') : '';
       optionsField.innerHTML = `
         <label>Opções (uma por linha)</label>
         <textarea class="survey-options-area" placeholder="Digite uma opção por linha">${escapeHtml(optionsText)}</textarea>
@@ -2065,7 +2072,7 @@ input, select {
       if (q.flow_y !== null && q.flow_y !== undefined && q.flow_y !== '') card.dataset.flowY = String(q.flow_y);
       card._surveyOptions = Array.isArray(q.options) ? q.options.map(opt => ({
         id: opt.id,
-        label: opt.label,
+        label: String(opt.label || '').trim(),
         order_index: opt.order_index || null,
         target_question_id: opt.target_question_id || null,
         end_survey: opt.end_survey ? 1 : 0
@@ -2119,7 +2126,9 @@ input, select {
       });
 
       atualizarSurveyQuestionVisibilidade(card);
-      atualizarSurveyBranchUIAll();
+      if (!surveyBuilderIsHydrating) {
+        atualizarSurveyBranchUIAll();
+      }
       return card;
     }
 
@@ -2167,16 +2176,18 @@ input, select {
     function syncSurveyOptionsFromTextarea(card) {
       const lines = getSurveyOptionLines(card);
       const previous = Array.isArray(card._surveyOptions) ? card._surveyOptions : [];
-      const prevByOrderAndLabel = new Map(previous.map(opt => [`${Number(opt.order_index || 0)}::${String(opt.label || '')}`, opt]));
-      const prevByLabel = new Map(previous.map(opt => [String(opt.label || ''), opt]));
+      const normalizeLabel = (v) => String(v || '').trim();
+      const prevByOrderAndLabel = new Map(previous.map(opt => [`${Number(opt.order_index || 0)}::${normalizeLabel(opt.label)}`, opt]));
+      const prevByLabel = new Map(previous.map(opt => [normalizeLabel(opt.label), opt]));
       const next = [];
       lines.forEach((label, idx) => {
         const order = idx + 1;
-        const key = `${order}::${label}`;
-        const matched = prevByOrderAndLabel.get(key) || prevByLabel.get(label) || null;
+        const normalized = normalizeLabel(label);
+        const key = `${order}::${normalized}`;
+        const matched = prevByOrderAndLabel.get(key) || prevByLabel.get(normalized) || null;
         next.push({
           id: matched?.id || null,
-          label,
+          label: normalized,
           order_index: order,
           target_question_id: matched?.target_question_id || null,
           end_survey: matched?.end_survey ? 1 : 0
@@ -2251,15 +2262,16 @@ input, select {
       if (!card || !Array.isArray(card._surveyOptions)) return;
       const rows = Array.from(card.querySelectorAll('.survey-branch-row'));
       if (!rows.length) return;
+      const normalizeLabel = (v) => String(v || '').trim();
       rows.forEach(row => {
         const optOrder = Number(row.getAttribute('data-option-order')) || 0;
-        const optLabel = row.getAttribute('data-option-label') || '';
+        const optLabel = normalizeLabel(row.getAttribute('data-option-label') || '');
         const select = row.querySelector('.survey-branch-select');
         if (!select) return;
         const raw = String(select.value || '');
         const target = card._surveyOptions.find(o =>
           (optOrder > 0 && Number(o.order_index || 0) === optOrder) ||
-          (optOrder <= 0 && String(o.label || '') === String(optLabel))
+          (optOrder <= 0 && normalizeLabel(o.label) === optLabel)
         );
         if (!target) return;
         if (!raw) {
