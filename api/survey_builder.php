@@ -191,6 +191,10 @@ try {
   $pendingDefault = [];
   $savedRulesCount = 0;
   $rulesRequestedCount = 0;
+  $savedPathsCount = 0;
+  $skippedNoQuestionCount = 0;
+  $skippedNoTargetCount = 0;
+  $skippedNoOptionCount = 0;
 
   foreach ($questions as $idx => $q) {
     $text = trim((string) ($q['question_text'] ?? ''));
@@ -317,8 +321,14 @@ try {
         $oid = (int) $optionIdMap[$qid][$orderIndex];
       }
     }
-    if ($qid <= 0) continue;
-    if ($endSurvey !== 1 && $tid <= 0) continue;
+    if ($qid <= 0) {
+      $skippedNoQuestionCount++;
+      continue;
+    }
+    if ($endSurvey !== 1 && $tid <= 0) {
+      $skippedNoTargetCount++;
+      continue;
+    }
     $optionOrder = (int) ($rule['option_order'] ?? 0) ?: null;
     $optionLabel = (string) ($rule['option_label'] ?? '');
 
@@ -331,9 +341,13 @@ try {
         ':tid' => $endSurvey === 1 ? null : $tid,
         ':end_survey' => $endSurvey
       ]);
+      $savedPathsCount++;
     }
 
-    if ($oid <= 0) continue;
+    if ($oid <= 0) {
+      $skippedNoOptionCount++;
+      continue;
+    }
     if ($endSurvey === 1) $tid = null;
     $insertRuleStmt->execute([
       ':sid' => $surveyId,
@@ -348,7 +362,15 @@ try {
   }
 
   $pdo->commit();
-  echo json_encode(['success' => true, 'rules_requested' => $rulesRequestedCount, 'rules_saved' => $savedRulesCount]);
+  echo json_encode([
+    'success' => true,
+    'rules_requested' => $rulesRequestedCount,
+    'rules_saved' => $savedRulesCount,
+    'paths_saved' => $savedPathsCount,
+    'rules_skipped_no_question' => $skippedNoQuestionCount,
+    'rules_skipped_no_target' => $skippedNoTargetCount,
+    'rules_skipped_no_option' => $skippedNoOptionCount
+  ]);
 } catch (Throwable $e) {
   if ($pdo->inTransaction()) $pdo->rollBack();
   http_response_code(500);

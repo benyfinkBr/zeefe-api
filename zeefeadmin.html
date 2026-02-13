@@ -2640,8 +2640,16 @@ input, select {
         });
         const data = await res.json();
         if (!data.success) throw new Error(data.error || 'Falha ao salvar perguntas.');
-        if ((data.rules_requested || 0) > 0 && (data.rules_saved || 0) === 0) {
-          alert('As perguntas foram salvas, mas nenhuma ramificação foi persistida. Verifique se cada opção tem um destino.');
+        const requested = Number(data.rules_requested || 0);
+        const saved = Number(data.rules_saved || 0);
+        const savedPaths = Number(data.paths_saved || 0);
+        const skippedNoTarget = Number(data.rules_skipped_no_target || 0);
+        if (requested > 0 && savedPaths === 0) {
+          alert('As perguntas foram salvas, mas nenhuma ramificação foi persistida. Verifique se cada opção tem um destino válido.');
+          return;
+        }
+        if (requested > 0 && skippedNoTarget > 0) {
+          alert(`Algumas ramificações foram ignoradas por destino inválido (${skippedNoTarget}). Salvas: regras=${saved}, caminhos=${savedPaths}.`);
           return;
         }
         showToast('Perguntas salvas.');
