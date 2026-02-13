@@ -3265,6 +3265,12 @@ input, select {
         { name: 'description', label: 'Descrição', span: 4, type: 'textarea' },
         { name: 'thank_you_message', label: 'Mensagem de agradecimento', span: 4, type: 'textarea' },
         { type: 'break' },
+        { name: 'closing_page_type', label: 'Página de encerramento', span: 2, type: 'select', includeEmpty: false, options: [
+          { value: 'simple', label: 'Simples (mensagem)' },
+          { value: 'lead_capture', label: 'Ze.EFE com captação de e-mail' }
+        ] },
+        { name: 'lead_origin', label: 'Origem do lead', span: 2, placeholder: 'Ex.: Pesquisa Satisfação NPS' },
+        { type: 'break' },
         { name: 'public_link', label: 'Link público', span: 4, readonly: true }
       ],
       reservations: [

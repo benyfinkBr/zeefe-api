@@ -4,6 +4,8 @@ CREATE TABLE IF NOT EXISTS surveys (
   description TEXT,
   status VARCHAR(20) DEFAULT 'ativo',
   thank_you_message TEXT,
+  closing_page_type VARCHAR(32) DEFAULT 'simple',
+  lead_origin VARCHAR(255) NULL,
   token VARCHAR(64) UNIQUE,
   public_link TEXT,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -79,4 +81,14 @@ CREATE TABLE IF NOT EXISTS survey_answers (
   answer_number DECIMAL(10,2) NULL,
   answer_option_id INT NULL,
   answer_options_json TEXT NULL
+);
+
+CREATE TABLE IF NOT EXISTS survey_leads (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  survey_id INT NOT NULL,
+  email VARCHAR(255) NOT NULL,
+  origin VARCHAR(255) NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_survey_lead (survey_id, email)
 );

@@ -14,6 +14,39 @@ SET @sql := IF(@exists = 0,
 );
 PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
+-- surveys.closing_page_type
+SET @exists := (
+  SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+  WHERE TABLE_SCHEMA = @db AND TABLE_NAME = 'surveys' AND COLUMN_NAME = 'closing_page_type'
+);
+SET @sql := IF(@exists = 0,
+  'ALTER TABLE surveys ADD COLUMN closing_page_type VARCHAR(32) DEFAULT ''simple'' AFTER thank_you_message',
+  'SELECT "skip closing_page_type"'
+);
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+-- surveys.lead_origin
+SET @exists := (
+  SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+  WHERE TABLE_SCHEMA = @db AND TABLE_NAME = 'surveys' AND COLUMN_NAME = 'lead_origin'
+);
+SET @sql := IF(@exists = 0,
+  'ALTER TABLE surveys ADD COLUMN lead_origin VARCHAR(255) NULL AFTER closing_page_type',
+  'SELECT "skip lead_origin"'
+);
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+-- tabela de leads de questionário
+CREATE TABLE IF NOT EXISTS survey_leads (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  survey_id INT NOT NULL,
+  email VARCHAR(255) NOT NULL,
+  origin VARCHAR(255) NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_survey_lead (survey_id, email)
+);
+
 -- tabela auxiliar de ramificação estável por ordem da opção
 CREATE TABLE IF NOT EXISTS survey_branch_paths (
   id INT AUTO_INCREMENT PRIMARY KEY,

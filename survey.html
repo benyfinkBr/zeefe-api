@@ -42,9 +42,23 @@
     .msg{padding:12px 14px;border-radius:10px;background:#FDF7F3;border:1px solid #EAD9D0;color:#5E2D23;margin:10px 0;display:none}
     .msg.success{background:#EFF8F4;border-color:#CFE6DC;color:var(--green)}
     .loading{text-align:center;color:var(--muted);padding:18px}
+    .closing-wrap{display:flex;flex-direction:column;gap:14px}
+    .closing-brand{
+      border:1px solid var(--line);
+      border-radius:14px;
+      padding:18px;
+      background:linear-gradient(135deg,#F7F2EA 0%,#FFFFFF 100%);
+    }
+    .closing-brand h2{margin:0 0 8px;font-size:24px;color:var(--green)}
+    .closing-brand p{margin:0;color:var(--muted)}
+    .lead-form{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap}
+    .lead-form .field{flex:1;min-width:240px}
+    .lead-form label{display:block;font-weight:600;margin-bottom:6px}
+    .lead-note{font-size:13px;color:var(--muted)}
     @media (max-width:720px){
       .card{padding:22px}
       .title{font-size:22px}
+      .closing-brand h2{font-size:21px}
     }
   </style>
 </head>

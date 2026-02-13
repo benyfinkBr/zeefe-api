@@ -8,6 +8,7 @@
   const msgEl = document.getElementById('surveyMsg');
 
   let surveyQuestions = [];
+  let surveyMeta = {};
   let rulesMap = {};
   let currentQuestionIndex = 0;
   const questionEls = new Map();
@@ -330,10 +331,93 @@
         return;
       }
       formEl.style.display = 'none';
-      showMessage((window.surveyThankYou || 'Obrigado por responder.'), true);
+      bodyEl.style.display = 'block';
+      renderClosingPage();
     } catch (err) {
       showMessage('Erro ao enviar respostas.', false);
     }
+  }
+
+  function renderClosingSimple() {
+    bodyEl.className = '';
+    bodyEl.innerHTML = '';
+    showMessage((window.surveyThankYou || 'Obrigado por responder.'), true);
+  }
+
+  async function submitLeadEmail(email, statusEl, submitBtn, skipBtn) {
+    statusEl.className = 'msg';
+    statusEl.style.display = 'none';
+    try {
+      submitBtn.disabled = true;
+      skipBtn.disabled = true;
+      const res = await fetch('/api/survey_lead_capture.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token, email })
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error || 'Falha ao registrar e-mail.');
+      statusEl.className = 'msg success';
+      statusEl.textContent = 'Perfeito. Seu e-mail foi registrado.';
+      statusEl.style.display = 'block';
+    } catch (err) {
+      statusEl.className = 'msg';
+      statusEl.textContent = err.message || 'Erro ao registrar e-mail.';
+      statusEl.style.display = 'block';
+      submitBtn.disabled = false;
+      skipBtn.disabled = false;
+    }
+  }
+
+  function renderClosingLeadCapture() {
+    hideMessage();
+    bodyEl.className = 'closing-wrap';
+    bodyEl.innerHTML = `
+      <div class="closing-brand">
+        <h2>Obrigado por responder</h2>
+        <p>${window.surveyThankYou || 'Sua participação é muito importante para a Ze.EFE.'}</p>
+      </div>
+      <div>
+        <p class="lead-note">Quer receber novidades da Ze.EFE em breve? Deixe seu e-mail.</p>
+        <form id="surveyLeadForm" class="lead-form">
+          <div class="field">
+            <label for="surveyLeadEmail">Seu e-mail</label>
+            <input id="surveyLeadEmail" type="email" placeholder="voce@empresa.com" required>
+          </div>
+          <button type="submit" class="btn" id="surveyLeadSubmit">Quero receber novidades</button>
+          <button type="button" class="btn-secondary" id="surveyLeadSkip">Agora não</button>
+        </form>
+      </div>
+      <div class="msg" id="surveyLeadStatus"></div>
+    `;
+    const leadForm = document.getElementById('surveyLeadForm');
+    const leadEmail = document.getElementById('surveyLeadEmail');
+    const leadStatus = document.getElementById('surveyLeadStatus');
+    const leadSubmit = document.getElementById('surveyLeadSubmit');
+    const leadSkip = document.getElementById('surveyLeadSkip');
+
+    leadForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const email = (leadEmail?.value || '').trim();
+      if (!email) return;
+      submitLeadEmail(email, leadStatus, leadSubmit, leadSkip);
+    });
+
+    leadSkip.addEventListener('click', () => {
+      leadStatus.className = 'msg success';
+      leadStatus.textContent = 'Tudo bem. Obrigado pela participação.';
+      leadStatus.style.display = 'block';
+      leadSkip.disabled = true;
+    });
+  }
+
+  function renderClosingPage() {
+    const closingType = String(surveyMeta.closing_page_type || 'simple');
+    if (closingType === 'lead_capture') {
+      renderClosingLeadCapture();
+      return;
+    }
+    renderClosingSimple();
   }
 
   async function loadSurvey() {
@@ -349,6 +433,7 @@
         return;
       }
       const survey = data.survey || {};
+      surveyMeta = survey;
       surveyQuestions = data.questions || [];
       rulesMap = buildRulesMap(surveyQuestions);
 

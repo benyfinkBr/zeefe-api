@@ -11,7 +11,7 @@ if ($token === '') {
 }
 
 try {
-  $stmt = $pdo->prepare('SELECT id, title, description, thank_you_message FROM surveys WHERE token = :token AND status = "ativo" LIMIT 1');
+  $stmt = $pdo->prepare('SELECT id, title, description, thank_you_message, closing_page_type, lead_origin FROM surveys WHERE token = :token AND status = "ativo" LIMIT 1');
   $stmt->execute([':token' => $token]);
   $survey = $stmt->fetch(PDO::FETCH_ASSOC);
   if (!$survey) {
@@ -102,6 +102,9 @@ try {
   }
   unset($q);
 
+  if (empty($survey['closing_page_type'])) {
+    $survey['closing_page_type'] = 'simple';
+  }
   echo json_encode(['success' => true, 'survey' => $survey, 'questions' => $questions]);
 } catch (Throwable $e) {
   http_response_code(500);
