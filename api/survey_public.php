@@ -50,11 +50,27 @@ try {
     $paths = [];
   }
   $pathsByQuestion = [];
+  $pathsByQuestionOrder = [];
+  $pathsByQuestionLabel = [];
   foreach ($paths as $path) {
     $qid = (int) ($path['question_id'] ?? 0);
     if ($qid <= 0) continue;
     if (!isset($pathsByQuestion[$qid])) $pathsByQuestion[$qid] = [];
     $pathsByQuestion[$qid][] = $path;
+    $o = isset($path['option_order']) ? (int) $path['option_order'] : 0;
+    $l = trim((string) ($path['option_label'] ?? ''));
+    $entry = [
+      'target_question_id' => isset($path['target_question_id']) ? (int) $path['target_question_id'] : null,
+      'end_survey' => !empty($path['end_survey']) ? 1 : 0
+    ];
+    if ($o > 0) {
+      if (!isset($pathsByQuestionOrder[$qid])) $pathsByQuestionOrder[$qid] = [];
+      $pathsByQuestionOrder[$qid][$o] = $entry;
+    }
+    if ($l !== '') {
+      if (!isset($pathsByQuestionLabel[$qid])) $pathsByQuestionLabel[$qid] = [];
+      $pathsByQuestionLabel[$qid][$l] = $entry;
+    }
   }
 
   foreach ($questions as &$q) {
@@ -64,16 +80,13 @@ try {
       $opt['branch_to'] = null;
       $opt['branch_end'] = 0;
       $optOrder = isset($opt['order_index']) ? (int) $opt['order_index'] : 0;
-      $optLabel = (string) ($opt['label'] ?? '');
-      $pathRules = $pathsByQuestion[$qid] ?? [];
-      foreach ($pathRules as $pathRule) {
-        $pathOrder = isset($pathRule['option_order']) ? (int) $pathRule['option_order'] : 0;
-        $pathLabel = (string) ($pathRule['option_label'] ?? '');
-        if (($optOrder > 0 && $pathOrder > 0 && $optOrder === $pathOrder) || ($optLabel !== '' && $optLabel === $pathLabel)) {
-          $opt['branch_to'] = isset($pathRule['target_question_id']) ? (int) $pathRule['target_question_id'] : null;
-          $opt['branch_end'] = !empty($pathRule['end_survey']) ? 1 : 0;
-          break;
-        }
+      $optLabel = trim((string) ($opt['label'] ?? ''));
+      if ($optOrder > 0 && isset($pathsByQuestionOrder[$qid][$optOrder])) {
+        $opt['branch_to'] = $pathsByQuestionOrder[$qid][$optOrder]['target_question_id'] ?? null;
+        $opt['branch_end'] = $pathsByQuestionOrder[$qid][$optOrder]['end_survey'] ?? 0;
+      } elseif ($optLabel !== '' && isset($pathsByQuestionLabel[$qid][$optLabel])) {
+        $opt['branch_to'] = $pathsByQuestionLabel[$qid][$optLabel]['target_question_id'] ?? null;
+        $opt['branch_end'] = $pathsByQuestionLabel[$qid][$optLabel]['end_survey'] ?? 0;
       }
       if ($opt['branch_to'] || $opt['branch_end']) continue;
       foreach ($rules as $rule) {

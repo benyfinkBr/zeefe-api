@@ -82,6 +82,8 @@ if ($method === 'GET') {
   }
   $rulesByOption = [];
   $rulesByQuestion = [];
+  $pathsByQuestionOrder = [];
+  $pathsByQuestionLabel = [];
   foreach ($rules as $rule) {
     $ruleData = [
       'target_question_id' => isset($rule['target_question_id']) ? (int) $rule['target_question_id'] : null,
@@ -103,13 +105,20 @@ if ($method === 'GET') {
     foreach ($paths as $path) {
       $rqid = (int) ($path['question_id'] ?? 0);
       if ($rqid <= 0) continue;
-      if (!isset($rulesByQuestion[$rqid])) $rulesByQuestion[$rqid] = [];
-      array_unshift($rulesByQuestion[$rqid], [
-        'option_order' => isset($path['option_order']) ? (int) $path['option_order'] : null,
-        'option_label' => (string) ($path['option_label'] ?? ''),
+      $o = isset($path['option_order']) ? (int) $path['option_order'] : 0;
+      $l = trim((string) ($path['option_label'] ?? ''));
+      $entry = [
         'target_question_id' => isset($path['target_question_id']) ? (int) $path['target_question_id'] : null,
         'end_survey' => !empty($path['end_survey']) ? 1 : 0
-      ]);
+      ];
+      if ($o > 0) {
+        if (!isset($pathsByQuestionOrder[$rqid])) $pathsByQuestionOrder[$rqid] = [];
+        $pathsByQuestionOrder[$rqid][$o] = $entry;
+      }
+      if ($l !== '') {
+        if (!isset($pathsByQuestionLabel[$rqid])) $pathsByQuestionLabel[$rqid] = [];
+        $pathsByQuestionLabel[$rqid][$l] = $entry;
+      }
     }
   }
 
@@ -119,10 +128,13 @@ if ($method === 'GET') {
     foreach ($opts as &$opt) {
       $optId = (int) $opt['id'];
       $ruleData = $rulesByOption[$optId] ?? null;
-      $hasDirectRuleTarget = is_array($ruleData) && (!empty($ruleData['end_survey']) || !empty($ruleData['target_question_id']));
-      if ((!$ruleData || !$hasDirectRuleTarget) && !empty($rulesByQuestion[$qid])) {
-        $candidateOrder = isset($opt['order_index']) ? (int) $opt['order_index'] : null;
-        $candidateLabel = (string) ($opt['label'] ?? '');
+      $candidateOrder = isset($opt['order_index']) ? (int) $opt['order_index'] : 0;
+      $candidateLabel = trim((string) ($opt['label'] ?? ''));
+      if ($candidateOrder > 0 && isset($pathsByQuestionOrder[$qid][$candidateOrder])) {
+        $ruleData = $pathsByQuestionOrder[$qid][$candidateOrder];
+      } elseif ($candidateLabel !== '' && isset($pathsByQuestionLabel[$qid][$candidateLabel])) {
+        $ruleData = $pathsByQuestionLabel[$qid][$candidateLabel];
+      } elseif (!empty($rulesByQuestion[$qid])) {
         foreach ($rulesByQuestion[$qid] as $r) {
           if (($candidateOrder && $r['option_order'] && $candidateOrder === (int) $r['option_order']) || ($candidateLabel !== '' && $candidateLabel === (string) $r['option_label'])) {
             $ruleData = $r;
