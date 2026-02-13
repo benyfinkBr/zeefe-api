@@ -2074,18 +2074,10 @@ input, select {
 
       typeSelect.addEventListener('change', () => {
         atualizarSurveyQuestionVisibilidade(card);
-        atualizarSurveyBranchFields(card);
-        atualizarSurveyDefaultTargetField(card);
-        renderSurveyBranchPreview();
+        atualizarSurveyBranchUIAll();
       });
-      branchToggle.addEventListener('change', () => {
-        atualizarSurveyBranchFields(card);
-        renderSurveyBranchPreview();
-      });
-      defaultMode.addEventListener('change', () => {
-        atualizarSurveyDefaultTargetField(card);
-        renderSurveyBranchPreview();
-      });
+      branchToggle.addEventListener('change', atualizarSurveyBranchUIAll);
+      defaultMode.addEventListener('change', atualizarSurveyBranchUIAll);
       const optionsArea = card.querySelector('.survey-options-area');
       if (optionsArea) {
         optionsArea.addEventListener('input', () => {
@@ -2098,11 +2090,10 @@ input, select {
             end_survey: prevMap.get(label)?.end_survey ? 1 : 0,
             order_index: idx + 1
           }));
-          atualizarSurveyBranchFields(card);
-          renderSurveyBranchPreview();
+          atualizarSurveyBranchUIAll();
         });
       }
-      card.querySelector('.survey-question-text')?.addEventListener('input', renderSurveyBranchPreview);
+      card.querySelector('.survey-question-text')?.addEventListener('input', atualizarSurveyBranchUIAll);
       card.querySelectorAll('[data-action]').forEach(btn => {
         btn.addEventListener('click', () => {
           const action = btn.getAttribute('data-action');
@@ -2110,7 +2101,7 @@ input, select {
             card.remove();
             atualizarTitulosPerguntas();
             if (!surveyBuilderList.children.length) surveyBuilderEmpty.style.display = 'block';
-            renderSurveyBranchPreview();
+            atualizarSurveyBranchUIAll();
             return;
           }
           if (action === 'up') moverSurveyPergunta(card, -1);
@@ -2119,8 +2110,7 @@ input, select {
       });
 
       atualizarSurveyQuestionVisibilidade(card);
-      atualizarSurveyDefaultTargetField(card);
-      atualizarSurveyBranchFields(card);
+      atualizarSurveyBranchUIAll();
       return card;
     }
 
@@ -2169,7 +2159,15 @@ input, select {
           return `<option value="${escapeHtml(value)}"${selected ? ' selected' : ''}>${escapeHtml(t.text)}</option>`;
         })).join('');
       targetSelect.innerHTML = html;
-      targetSelect.onchange = renderSurveyBranchPreview;
+      targetSelect.onchange = atualizarSurveyBranchUIAll;
+    }
+
+    function atualizarSurveyBranchUIAll() {
+      Array.from(surveyBuilderList.children).forEach(card => {
+        atualizarSurveyDefaultTargetField(card);
+        atualizarSurveyBranchFields(card);
+      });
+      renderSurveyBranchPreview();
     }
 
     function atualizarSurveyBranchFields(card) {
@@ -2186,10 +2184,9 @@ input, select {
         branchBlock.innerHTML = `<label>Ramificação</label><div class="survey-inline-note">Defina como \"Sim\" para ativar a ramificação.</div>`;
         return;
       }
-      const questionId = card.dataset.id ? Number(card.dataset.id) : 0;
       const options = (card._surveyOptions || []);
-      if (!questionId || !options.length) {
-        branchBlock.innerHTML = `<label>Ramificação</label><div class="survey-inline-note">Salve e reabra para configurar ramificação por opção.</div>`;
+      if (!options.length) {
+        branchBlock.innerHTML = `<label>Ramificação</label><div class="survey-inline-note">Preencha as opções para configurar a ramificação.</div>`;
         return;
       }
       const currentTemp = card.dataset.tempKey || null;
@@ -2197,7 +2194,7 @@ input, select {
         id: c.dataset.id ? Number(c.dataset.id) : 0,
         temp: c.dataset.tempKey || null,
         label: c.querySelector('.survey-question-text')?.value || ''
-      })).filter(t => (t.id || t.temp) && t.id !== questionId && t.temp !== currentTemp);
+      })).filter(t => (t.id || t.temp) && t.temp !== currentTemp);
       const rows = options.map(opt => {
         const selected = opt.end_survey ? '__END__' : (opt.target_question_id ? String(opt.target_question_id) : '');
         const optionsHtml = ['<option value=\"\">Sem ramificação</option>', `<option value="__END__"${selected === '__END__' ? ' selected' : ''}>Encerrar questionário</option>`]
@@ -2217,7 +2214,7 @@ input, select {
       }).join('');
       branchBlock.innerHTML = `<label>Ramificação (opção → pergunta)</label><div class=\"survey-branch-list\">${rows}</div>`;
       branchBlock.querySelectorAll('.survey-branch-select').forEach(select => {
-        select.addEventListener('change', renderSurveyBranchPreview);
+        select.addEventListener('change', atualizarSurveyBranchUIAll);
       });
     }
 
@@ -2225,10 +2222,8 @@ input, select {
       Array.from(surveyBuilderList.children).forEach((card, index) => {
         const title = card.querySelector('.survey-question-title');
         if (title) title.textContent = `Pergunta ${index + 1}`;
-        atualizarSurveyDefaultTargetField(card);
-        atualizarSurveyBranchFields(card);
       });
-      renderSurveyBranchPreview();
+      atualizarSurveyBranchUIAll();
     }
 
     function moverSurveyPergunta(card, dir) {
