@@ -5515,9 +5515,11 @@ body.anunciante-page #advChatMessages.chat-messages {
 
 /* Editor simples (B I U A) para descrição de workshop */
 .editor-toolbar {
-  display: inline-flex;
+  display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 4px;
+  width: 100%;
   padding: 4px 6px;
   margin-bottom: 6px;
   border-radius: 8px;
@@ -5579,13 +5581,21 @@ body.anunciante-page #advChatMessages.chat-messages {
   margin: 0.06rem 0;
 }
 .editor-toolbar .editor-select {
-  border: 1px solid rgba(29,65,58,.35);
+  width: auto !important;
+  min-width: 122px;
+  max-width: 170px;
+  flex: 0 0 auto;
+  display: inline-block;
+  border: 1px solid rgba(29,65,58,.35) !important;
   border-radius: 6px;
   background: #fff;
   color: #1D413A;
-  height: 30px;
-  padding: 0 6px;
-  font-size: .85rem;
+  height: 30px !important;
+  padding: 0 8px !important;
+  font-size: .85rem !important;
+  line-height: 1.2 !important;
+  box-sizing: border-box;
+  vertical-align: middle;
 }
 
 #workshopDetailsDescription p,

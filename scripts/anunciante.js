@@ -3349,13 +3349,41 @@ function ensureAdvEditorSelection(editor) {
   return sel;
 }
 
-function normalizeAdvFontTags(editor, sizeValue) {
-  editor.querySelectorAll('font[size]').forEach((fontEl) => {
-    const span = document.createElement('span');
-    span.innerHTML = fontEl.innerHTML;
-    if (sizeValue) span.style.fontSize = sizeValue;
-    fontEl.replaceWith(span);
+function normalizeAdvFontSizeValue(rawValue) {
+  const value = String(rawValue || '').trim().toLowerCase();
+  if (!value) return '';
+  const match = value.match(/^(\d+(?:\.\d+)?)(px|rem|em|%)?$/);
+  if (!match) return '';
+  let numeric = Number(match[1]);
+  if (!Number.isFinite(numeric)) return '';
+  const unit = match[2] || 'px';
+  if (unit === 'px') {
+    numeric = Math.min(40, Math.max(10, numeric));
+    return `${numeric}px`;
+  }
+  if (unit === '%') {
+    numeric = Math.min(250, Math.max(60, numeric));
+    return `${numeric}%`;
+  }
+  numeric = Math.min(2.5, Math.max(0.7, numeric));
+  return `${numeric}${unit}`;
+}
+
+function clampAdvEditorFontSizes(editor) {
+  if (!editor) return;
+  editor.querySelectorAll('[style]').forEach((el) => {
+    const raw = el.style.fontSize || '';
+    if (!raw) return;
+    const normalized = normalizeAdvFontSizeValue(raw);
+    if (!normalized) {
+      el.style.removeProperty('font-size');
+      return;
+    }
+    el.style.setProperty('font-size', normalized);
   });
+  const rootSize = normalizeAdvFontSizeValue(editor.style.fontSize || '');
+  if (editor.style.fontSize && !rootSize) editor.style.removeProperty('font-size');
+  if (rootSize) editor.style.setProperty('font-size', rootSize);
 }
 
 function applyAdvLineHeight(editor, lineHeight) {
@@ -3382,19 +3410,30 @@ function execAdvEditorAction(editor, tag, value = '') {
   else if (tag === 'br') document.execCommand('insertLineBreak', false, null);
   else if (tag === 'ul') document.execCommand('insertUnorderedList', false, null);
   else if (tag === 'fontsize') {
-    if (!value) return;
-    document.execCommand('styleWithCSS', false, true);
-    document.execCommand('fontSize', false, '7');
-    normalizeAdvFontTags(editor, value);
+    const normalized = normalizeAdvFontSizeValue(value);
+    if (!normalized) return;
+    const sel = ensureAdvEditorSelection(editor);
+    if (!sel || !sel.rangeCount) return;
+    const range = sel.getRangeAt(0);
+    let touched = 0;
+    editor.querySelectorAll('p,div,li,span,b,strong,i,em,u,a').forEach((el) => {
+      if (range.intersectsNode(el)) {
+        el.style.setProperty('font-size', normalized);
+        touched += 1;
+      }
+    });
+    if (!touched) editor.style.setProperty('font-size', normalized);
   } else if (tag === 'lineheight') {
     if (!value) return;
     applyAdvLineHeight(editor, value);
   }
+  clampAdvEditorFontSizes(editor);
 }
 
 function bindAdvRichToolbar(toolbar, editor, hiddenField) {
   if (!toolbar || !editor || !hiddenField) return;
   const sync = () => {
+    clampAdvEditorFontSizes(editor);
     hiddenField.value = editor.innerHTML || '';
   };
   toolbar.addEventListener('mousedown', (e) => {

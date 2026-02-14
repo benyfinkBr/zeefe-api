@@ -160,7 +160,7 @@
     .survey-question-card .survey-question-row .survey-question-type-field{flex:1 1 100% !important}
     .survey-question-card .survey-question-row .survey-options-fields,
     .survey-question-card .survey-question-row .survey-branch-fields{flex-basis:100% !important}
-    .survey-question-row input[type="text"], .survey-question-row input[type="number"], .survey-question-row select, .survey-question-row textarea{width:100%;border:1px solid #CCC;border-radius:8px;padding:8px 10px;font-size:13px}
+    .survey-question-row input[type="text"], .survey-question-row input[type="number"], .survey-question-row select:not(.editor-select), .survey-question-row textarea{width:100%;border:1px solid #CCC;border-radius:8px;padding:8px 10px;font-size:13px}
     .survey-options-area{width:100%;min-height:90px}
     .survey-inline-note{font-size:12px;color:#6B5D50}
     .survey-branch-list{display:flex;flex-direction:column;gap:8px;margin-top:8px}
@@ -270,14 +270,33 @@ input, select {
 .rich-editor li {
   margin: 0.06rem 0;
 }
+.editor-toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  width: 100%;
+}
 .editor-toolbar .editor-select {
-  border: 1px solid #1D413A;
+  width: auto !important;
+  min-width: 122px;
+  max-width: 170px;
+  flex: 0 0 auto;
+  display: inline-block;
+  border: 1px solid #1D413A !important;
   border-radius: 4px;
   background: #fff;
   color: #1D413A;
-  height: 32px;
-  padding: 0 6px;
-  font-size: 0.9rem;
+  height: 32px !important;
+  padding: 0 8px !important;
+  font-size: 0.9rem !important;
+  line-height: 1.2 !important;
+  box-sizing: border-box;
+  vertical-align: middle;
+}
+.survey-question-main-field .editor-toolbar,
+.field .editor-toolbar {
+  margin-bottom: 8px;
 }
 
 /* ajusta área interna do modal */
@@ -983,16 +1002,61 @@ input, select {
       return sel;
     }
 
-    function normalizeFontTags(editor, sizeValue) {
-      const targets = editor.querySelectorAll('font[size]');
-      targets.forEach((fontEl) => {
-        const span = document.createElement('span');
-        span.innerHTML = fontEl.innerHTML;
-        if (sizeValue) {
-          span.style.fontSize = sizeValue;
+    function normalizeFontSizeValue(rawValue) {
+      const value = String(rawValue || '').trim().toLowerCase();
+      if (!value) return '';
+      const match = value.match(/^(\d+(?:\.\d+)?)(px|rem|em|%)?$/);
+      if (!match) return '';
+      let numeric = Number(match[1]);
+      if (!Number.isFinite(numeric)) return '';
+      const unit = match[2] || 'px';
+      if (unit === 'px') {
+        numeric = Math.min(40, Math.max(10, numeric));
+        return `${numeric}px`;
+      }
+      if (unit === '%') {
+        numeric = Math.min(250, Math.max(60, numeric));
+        return `${numeric}%`;
+      }
+      numeric = Math.min(2.5, Math.max(0.7, numeric));
+      return `${numeric}${unit}`;
+    }
+
+    function clampEditorFontSizes(editor) {
+      if (!editor) return;
+      editor.querySelectorAll('[style]').forEach((el) => {
+        const raw = el.style.fontSize || '';
+        if (!raw) return;
+        const normalized = normalizeFontSizeValue(raw);
+        if (!normalized) {
+          el.style.removeProperty('font-size');
+          return;
         }
-        fontEl.replaceWith(span);
+        el.style.setProperty('font-size', normalized);
       });
+      const rootSize = normalizeFontSizeValue(editor.style.fontSize || '');
+      if (editor.style.fontSize && !rootSize) editor.style.removeProperty('font-size');
+      if (rootSize) editor.style.setProperty('font-size', rootSize);
+    }
+
+    function applyFontSizeInSelection(editor, fontSize) {
+      const normalized = normalizeFontSizeValue(fontSize);
+      if (!normalized) return;
+      const sel = ensureEditorSelection(editor);
+      if (!sel || !sel.rangeCount) return;
+      const range = sel.getRangeAt(0);
+      const scoped = editor.querySelectorAll('p,div,li,span,b,strong,i,em,u,a');
+      let touched = 0;
+      scoped.forEach((el) => {
+        if (range.intersectsNode(el)) {
+          el.style.setProperty('font-size', normalized);
+          touched += 1;
+        }
+      });
+      if (!touched) {
+        editor.style.setProperty('font-size', normalized);
+      }
+      clampEditorFontSizes(editor);
     }
 
     function applyLineHeightInSelection(editor, lineHeight) {
@@ -1034,13 +1098,12 @@ input, select {
         if (src) document.execCommand('insertImage', false, src.trim());
       } else if (action === 'fontsize') {
         if (!value) return;
-        document.execCommand('styleWithCSS', false, true);
-        document.execCommand('fontSize', false, '7');
-        normalizeFontTags(editor, value);
+        applyFontSizeInSelection(editor, value);
       } else if (action === 'lineheight') {
         if (!value) return;
         applyLineHeightInSelection(editor, value);
       }
+      clampEditorFontSizes(editor);
     }
 
     function surveyQuestionHasContent(value) {
@@ -2214,6 +2277,7 @@ input, select {
       questionHidden.hidden = true;
       questionHidden.value = sanitizeSurveyQuestionHtml(q.question_text || '');
       const syncQuestionEditor = () => {
+        clampEditorFontSizes(questionEditor);
         questionHidden.value = sanitizeSurveyQuestionHtml(questionEditor.innerHTML || '');
         questionHidden.dispatchEvent(new Event('input', { bubbles: true }));
       };
@@ -4024,6 +4088,7 @@ input, select {
           });
 
           editor.addEventListener('input', () => {
+            clampEditorFontSizes(editor);
             hidden.value = editor.innerHTML || '';
           });
 
