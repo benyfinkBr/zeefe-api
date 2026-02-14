@@ -1,8 +1,6 @@
 (() => {
   const params = new URLSearchParams(window.location.search);
   const token = params.get('token') || '';
-  const titleEl = document.getElementById('surveyTitle');
-  const descEl = document.getElementById('surveyDesc');
   const bodyEl = document.getElementById('surveyBody');
   const formEl = document.getElementById('surveyForm');
   const msgEl = document.getElementById('surveyMsg');
@@ -12,6 +10,8 @@
   let rulesMap = {};
   let currentQuestionIndex = 0;
   let finalStepActive = false;
+  let introStepActive = true;
+  let progressWrapEl = null;
   const questionEls = new Map();
 
   function showMessage(text, isSuccess) {
@@ -22,6 +22,34 @@
 
   function hideMessage() {
     msgEl.style.display = 'none';
+  }
+
+  function escapeHtml(v) {
+    return String(v ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  function renderIntroStep() {
+    bodyEl.className = 'intro';
+    bodyEl.innerHTML = `
+      <h1 class="title">${escapeHtml(surveyMeta.title || 'Questionário')}</h1>
+      ${surveyMeta.description ? `<p class="desc">${escapeHtml(surveyMeta.description)}</p>` : ''}
+      <div class="intro-actions">
+        <button type="button" class="btn" id="surveyStartBtn">Começar questionário</button>
+      </div>
+    `;
+    const startBtn = document.getElementById('surveyStartBtn');
+    if (startBtn) {
+      startBtn.addEventListener('click', () => {
+        introStepActive = false;
+        bodyEl.style.display = 'none';
+        formEl.style.display = 'block';
+        renderCurrentQuestion();
+      });
+    }
   }
 
   function sanitizeQuestionHtml(value) {
@@ -414,6 +442,48 @@
     formEl.appendChild(actions);
   }
 
+  function ensureProgressBar() {
+    if (progressWrapEl) return progressWrapEl;
+    progressWrapEl = document.createElement('div');
+    progressWrapEl.className = 'progress-wrap';
+    progressWrapEl.innerHTML = `
+      <div class="progress-top">
+        <span id="progressLabel">Progresso</span>
+        <span id="progressCount">0 de 0</span>
+      </div>
+      <div class="progress-track">
+        <div class="progress-value" id="progressValue"></div>
+      </div>
+    `;
+    formEl.insertBefore(progressWrapEl, formEl.firstChild || null);
+    return progressWrapEl;
+  }
+
+  function updateProgressBar(path) {
+    const wrap = ensureProgressBar();
+    const labelEl = wrap.querySelector('#progressLabel');
+    const countEl = wrap.querySelector('#progressCount');
+    const valueEl = wrap.querySelector('#progressValue');
+    if (!labelEl || !countEl || !valueEl) return;
+
+    if (finalStepActive) {
+      labelEl.textContent = 'Finalização';
+      countEl.textContent = 'Pronto para enviar';
+      valueEl.style.width = '100%';
+      return;
+    }
+
+    const currentQuestionId = Number(surveyQuestions[currentQuestionIndex]?.id || 0);
+    const pathIndex = path.indexOf(currentQuestionId);
+    const total = Math.max(path.length, 1);
+    const current = Math.max(pathIndex + 1, 1);
+    const percent = Math.max(0, Math.min(100, Math.round((current / total) * 100)));
+
+    labelEl.textContent = 'Progresso';
+    countEl.textContent = `${current} de ${total}`;
+    valueEl.style.width = `${percent}%`;
+  }
+
   function renderCurrentQuestion() {
     const path = computePath();
     const currentQuestionId = Number(surveyQuestions[currentQuestionIndex]?.id || 0);
@@ -444,6 +514,7 @@
     });
     finishStep.style.display = finalStepActive ? '' : 'none';
 
+    updateProgressBar(path);
     renderStepActions();
   }
 
@@ -567,11 +638,10 @@
       surveyQuestions = data.questions || [];
       rulesMap = buildRulesMap(surveyQuestions);
 
-      titleEl.textContent = survey.title || 'Questionário';
-      descEl.textContent = survey.description || '';
       window.surveyThankYou = survey.thank_you_message || '';
 
       formEl.innerHTML = '';
+      progressWrapEl = null;
       questionEls.clear();
 
       surveyQuestions.forEach(q => {
@@ -628,9 +698,10 @@
 
       currentQuestionIndex = 0;
       finalStepActive = false;
-      bodyEl.style.display = 'none';
-      formEl.style.display = 'block';
-      renderCurrentQuestion();
+      introStepActive = true;
+      bodyEl.style.display = 'block';
+      formEl.style.display = 'none';
+      renderIntroStep();
     } catch (err) {
       bodyEl.textContent = 'Erro ao carregar questionário.';
     }
