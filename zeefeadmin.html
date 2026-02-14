@@ -156,6 +156,8 @@
     .survey-question-row .field{flex:1;min-width:180px}
     /* Final overrides for survey builder layout/fields */
     .survey-question-card .survey-question-row .field{flex:1 1 calc(50% - 10px) !important;min-width:0 !important}
+    .survey-question-card .survey-question-row .survey-question-main-field{flex:1 1 100% !important}
+    .survey-question-card .survey-question-row .survey-question-type-field{flex:1 1 100% !important}
     .survey-question-card .survey-question-row .survey-options-fields,
     .survey-question-card .survey-question-row .survey-branch-fields{flex-basis:100% !important}
     .survey-question-row input[type="text"], .survey-question-row input[type="number"], .survey-question-row select, .survey-question-row textarea{width:100%;border:1px solid #CCC;border-radius:8px;padding:8px 10px;font-size:13px}
@@ -2063,7 +2065,7 @@ input, select {
       row.className = 'survey-question-row';
 
       const questionField = document.createElement('div');
-      questionField.className = 'field';
+      questionField.className = 'field survey-question-main-field';
       questionField.innerHTML = `<label>Pergunta</label>`;
       const editorToolbar = document.createElement('div');
       editorToolbar.className = 'editor-toolbar';
@@ -2112,7 +2114,7 @@ input, select {
       questionField.appendChild(questionHidden);
 
       const typeField = document.createElement('div');
-      typeField.className = 'field';
+      typeField.className = 'field survey-question-type-field';
       typeField.innerHTML = `
         <label>Tipo</label>
         <select class="survey-question-type">

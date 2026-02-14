@@ -106,7 +106,10 @@
 
     const label = document.createElement('div');
     label.className = 'question-label';
-    label.innerHTML = sanitizeQuestionHtml(q.question_text || 'Pergunta');
+    const rawQuestionHtml = String(q.question_text || 'Pergunta');
+    const hasHtmlTag = /<[^>]+>/.test(rawQuestionHtml);
+    const preparedHtml = hasHtmlTag ? rawQuestionHtml : rawQuestionHtml.replace(/\n/g, '<br>');
+    label.innerHTML = sanitizeQuestionHtml(preparedHtml);
     if (q.required) {
       const req = document.createElement('span');
       req.className = 'required';
