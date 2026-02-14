@@ -11,6 +11,7 @@
   let surveyMeta = {};
   let rulesMap = {};
   let currentQuestionIndex = 0;
+  let finalStepActive = false;
   const questionEls = new Map();
 
   function showMessage(text, isSuccess) {
@@ -52,6 +53,21 @@
       if (allowDataImage && /^data:image\//i.test(raw)) return raw;
       return '';
     };
+    const cleanStyle = (styleValue) => {
+      const safe = [];
+      String(styleValue || '').split(';').forEach((chunk) => {
+        const [rawName, rawValue] = chunk.split(':');
+        if (!rawName || !rawValue) return;
+        const name = rawName.trim().toLowerCase();
+        const value = rawValue.trim().toLowerCase();
+        if (name === 'font-size' && /^(\d+(?:\.\d+)?)(px|rem|em|%)$/.test(value)) {
+          safe.push(`font-size:${value}`);
+        } else if (name === 'line-height' && /^(\d+(?:\.\d+)?)(px|rem|em|%)?$/.test(value)) {
+          safe.push(`line-height:${value}`);
+        }
+      });
+      return safe.join('; ');
+    };
     const walk = (node) => {
       Array.from(node.childNodes).forEach((child) => {
         if (child.nodeType === Node.ELEMENT_NODE) {
@@ -63,7 +79,13 @@
           Array.from(child.attributes).forEach((attr) => {
             const attrName = attr.name.toLowerCase();
             const allowed = allowedAttrs[tag] || new Set();
-            if (!allowed.has(attr.name) || attrName.startsWith('on') || attrName === 'style') {
+            if (attrName === 'style') {
+              const cleaned = cleanStyle(attr.value);
+              if (cleaned) child.setAttribute('style', cleaned);
+              else child.removeAttribute('style');
+              return;
+            }
+            if (!allowed.has(attr.name) || attrName.startsWith('on')) {
               child.removeAttribute(attr.name);
               return;
             }
@@ -331,7 +353,7 @@
     const path = computePath();
     const currentQuestionId = Number(surveyQuestions[currentQuestionIndex]?.id || 0);
     const pathIndex = path.indexOf(currentQuestionId);
-    const isFirst = pathIndex <= 0;
+    const isFirst = finalStepActive ? (path.length === 0) : (pathIndex <= 0);
     const nextQuestionId = getNextQuestionIdByAnswer(currentQuestionIndex);
     const hasNext = !!nextQuestionId && nextQuestionId !== '__END__' && getQuestionIndexById(nextQuestionId) >= 0;
 
@@ -345,6 +367,16 @@
     prevBtn.disabled = isFirst;
     prevBtn.addEventListener('click', () => {
       if (isFirst) return;
+      if (finalStepActive) {
+        const lastQuestionId = path[path.length - 1];
+        const prevIndex = getQuestionIndexById(lastQuestionId);
+        if (prevIndex >= 0) {
+          finalStepActive = false;
+          currentQuestionIndex = prevIndex;
+          renderCurrentQuestion();
+        }
+        return;
+      }
       const prevId = path[pathIndex - 1];
       const prevIndex = getQuestionIndexById(prevId);
       if (prevIndex >= 0) {
@@ -354,21 +386,26 @@
     });
 
     const nextBtn = document.createElement('button');
-    nextBtn.type = hasNext ? 'button' : 'submit';
+    nextBtn.type = finalStepActive ? 'submit' : 'button';
     nextBtn.className = 'btn';
-    nextBtn.textContent = hasNext ? 'Próxima pergunta' : 'Enviar respostas';
-    if (hasNext) {
+    nextBtn.textContent = finalStepActive ? 'Enviar respostas' : 'Próxima pergunta';
+    if (!finalStepActive) {
       nextBtn.addEventListener('click', () => {
         hideMessage();
         if (!validateCurrentQuestion()) {
           showMessage('Responda esta pergunta obrigatória para continuar.', false);
           return;
         }
-        const nextIndex = getQuestionIndexById(nextQuestionId);
-        if (nextIndex >= 0) {
-          currentQuestionIndex = nextIndex;
-          renderCurrentQuestion();
+        if (hasNext) {
+          const nextIndex = getQuestionIndexById(nextQuestionId);
+          if (nextIndex >= 0) {
+            currentQuestionIndex = nextIndex;
+            renderCurrentQuestion();
+          }
+          return;
         }
+        finalStepActive = true;
+        renderCurrentQuestion();
       });
     }
 
@@ -385,12 +422,27 @@
       if (correctedIndex >= 0) currentQuestionIndex = correctedIndex;
     }
 
+    let finishStep = formEl.querySelector('.survey-finish-step');
+    if (!finishStep) {
+      finishStep = document.createElement('div');
+      finishStep.className = 'question survey-finish-step';
+      finishStep.style.display = 'none';
+      finishStep.innerHTML = `
+        <div class="question-label">
+          <p><strong>Pronto para finalizar</strong></p>
+          <p>Clique em <strong>Enviar respostas</strong> para concluir sua pesquisa.</p>
+        </div>
+      `;
+      formEl.appendChild(finishStep);
+    }
+
     surveyQuestions.forEach(q => {
       const el = questionEls.get(Number(q.id));
       if (!el) return;
-      const active = Number(q.id) === Number(surveyQuestions[currentQuestionIndex]?.id);
+      const active = !finalStepActive && Number(q.id) === Number(surveyQuestions[currentQuestionIndex]?.id);
       el.style.display = active ? '' : 'none';
     });
+    finishStep.style.display = finalStepActive ? '' : 'none';
 
     renderStepActions();
   }
@@ -544,6 +596,23 @@
 
       formEl.addEventListener('submit', (e) => {
         e.preventDefault();
+        if (!finalStepActive) {
+          hideMessage();
+          if (!validateCurrentQuestion()) {
+            showMessage('Responda esta pergunta obrigatória para continuar.', false);
+            return;
+          }
+          const nextQuestionId = getNextQuestionIdByAnswer(currentQuestionIndex);
+          const nextIndex = (nextQuestionId && nextQuestionId !== '__END__') ? getQuestionIndexById(nextQuestionId) : -1;
+          if (nextIndex >= 0) {
+            currentQuestionIndex = nextIndex;
+            renderCurrentQuestion();
+            return;
+          }
+          finalStepActive = true;
+          renderCurrentQuestion();
+          return;
+        }
         const path = computePath();
         if (!validateCurrentQuestion()) {
           showMessage('Responda esta pergunta obrigatória para continuar.', false);
@@ -558,6 +627,7 @@
       });
 
       currentQuestionIndex = 0;
+      finalStepActive = false;
       bodyEl.style.display = 'none';
       formEl.style.display = 'block';
       renderCurrentQuestion();

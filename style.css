@@ -5550,7 +5550,7 @@ body.anunciante-page #advChatMessages.chat-messages {
   border: 1px solid rgba(29,65,58,.35);
   padding: 10px 12px;
   font-size: 0.95rem;
-  line-height: 1.5;
+  line-height: 1.25;
   background: #fff;
   outline: none;
   white-space: pre-wrap;
@@ -5564,20 +5564,45 @@ body.anunciante-page #advChatMessages.chat-messages {
 /* Espaçamento entre parágrafos/linhas no editor e na visualização de workshops */
 .rich-editor p,
 .rich-editor div {
-  margin: 0 0 0.75rem;
+  margin: 0 0 0.18rem;
 }
 .rich-editor p:last-child,
 .rich-editor div:last-child {
   margin-bottom: 0;
 }
+.rich-editor ul,
+.rich-editor ol {
+  margin: 0.15rem 0 0.2rem 1.15rem;
+  padding: 0;
+}
+.rich-editor li {
+  margin: 0.06rem 0;
+}
+.editor-toolbar .editor-select {
+  border: 1px solid rgba(29,65,58,.35);
+  border-radius: 6px;
+  background: #fff;
+  color: #1D413A;
+  height: 30px;
+  padding: 0 6px;
+  font-size: .85rem;
+}
 
 #workshopDetailsDescription p,
 #workshopDetailsDescription div {
-  margin: 0 0 0.75rem;
+  margin: 0 0 0.18rem;
 }
 #workshopDetailsDescription p:last-child,
 #workshopDetailsDescription div:last-child {
   margin-bottom: 0;
+}
+#workshopDetailsDescription ul,
+#workshopDetailsDescription ol {
+  margin: 0.15rem 0 0.2rem 1.15rem;
+  padding: 0;
+}
+#workshopDetailsDescription li {
+  margin: 0.06rem 0;
 }
 
 .login-card .auth-form button {

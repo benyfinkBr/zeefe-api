@@ -3336,88 +3336,90 @@ updateWorkshopDateModeUI();
 
 // Toolbar de edição simples para descrição do workshop (B, I, U, quebra de linha)
 // Usamos mousedown para manter a seleção ativa dentro do editor rich-text
-advWorkshopDescToolbar?.addEventListener('mousedown', (e) => {
-  const btn = e.target.closest('[data-tag]');
-  if (!btn || !advWorkshopDescriptionEditor) return;
-  const tag = btn.getAttribute('data-tag');
-  if (!tag) return;
-  e.preventDefault();
-  advWorkshopDescriptionEditor.focus();
-
-  // Garante que o comando seja aplicado somente se a seleção estiver dentro do editor
+function ensureAdvEditorSelection(editor) {
   const sel = window.getSelection();
-  if (!sel || !sel.rangeCount) return;
-  const range = sel.getRangeAt(0);
-  if (!advWorkshopDescriptionEditor.contains(range.commonAncestorContainer)) {
-    // Se a seleção não estiver dentro do editor, posiciona o cursor no final
-    const node = advWorkshopDescriptionEditor;
-    const lastChild = node.lastChild;
+  if (!sel) return null;
+  if (!sel.rangeCount || !editor.contains(sel.getRangeAt(0).commonAncestorContainer)) {
     const newRange = document.createRange();
-    if (lastChild && lastChild.nodeType === Node.TEXT_NODE) {
-      newRange.setStart(lastChild, lastChild.textContent.length);
-    } else {
-      newRange.selectNodeContents(node);
-      newRange.collapse(false);
-    }
+    newRange.selectNodeContents(editor);
+    newRange.collapse(false);
     sel.removeAllRanges();
     sel.addRange(newRange);
   }
+  return sel;
+}
 
-  if (tag === 'b') {
-    document.execCommand('bold', false, null);
-  } else if (tag === 'i') {
-    document.execCommand('italic', false, null);
-  } else if (tag === 'u') {
-    document.execCommand('underline', false, null);
-  } else if (tag === 'br') {
-    document.execCommand('insertLineBreak', false, null);
-  }
+function normalizeAdvFontTags(editor, sizeValue) {
+  editor.querySelectorAll('font[size]').forEach((fontEl) => {
+    const span = document.createElement('span');
+    span.innerHTML = fontEl.innerHTML;
+    if (sizeValue) span.style.fontSize = sizeValue;
+    fontEl.replaceWith(span);
+  });
+}
 
-  // Sincroniza o HTML com o campo oculto
-  if (advWorkshopDescriptionInput) {
-    advWorkshopDescriptionInput.value = advWorkshopDescriptionEditor.innerHTML || '';
-  }
-});
-
-roomDescToolbar?.addEventListener('mousedown', (e) => {
-  const btn = e.target.closest('[data-tag]');
-  if (!btn || !roomDescEditor) return;
-  const tag = btn.getAttribute('data-tag');
-  if (!tag) return;
-  e.preventDefault();
-  roomDescEditor.focus();
-
-  const sel = window.getSelection();
+function applyAdvLineHeight(editor, lineHeight) {
+  const sel = ensureAdvEditorSelection(editor);
   if (!sel || !sel.rangeCount) return;
   const range = sel.getRangeAt(0);
-  if (!roomDescEditor.contains(range.commonAncestorContainer)) {
-    const node = roomDescEditor;
-    const lastChild = node.lastChild;
-    const newRange = document.createRange();
-    if (lastChild && lastChild.nodeType === Node.TEXT_NODE) {
-      newRange.setStart(lastChild, lastChild.textContent.length);
-    } else {
-      newRange.selectNodeContents(node);
-      newRange.collapse(false);
+  let touched = 0;
+  editor.querySelectorAll('p,div,li,span,b,strong,i,em,u').forEach((el) => {
+    if (range.intersectsNode(el)) {
+      el.style.lineHeight = lineHeight;
+      touched += 1;
     }
-    sel.removeAllRanges();
-    sel.addRange(newRange);
-  }
+  });
+  if (!touched) editor.style.lineHeight = lineHeight;
+}
 
-  if (tag === 'b') {
-    document.execCommand('bold', false, null);
-  } else if (tag === 'i') {
-    document.execCommand('italic', false, null);
-  } else if (tag === 'u') {
-    document.execCommand('underline', false, null);
-  } else if (tag === 'br') {
-    document.execCommand('insertLineBreak', false, null);
+function execAdvEditorAction(editor, tag, value = '') {
+  if (!editor || !tag) return;
+  editor.focus();
+  ensureAdvEditorSelection(editor);
+  if (tag === 'b') document.execCommand('bold', false, null);
+  else if (tag === 'i') document.execCommand('italic', false, null);
+  else if (tag === 'u') document.execCommand('underline', false, null);
+  else if (tag === 'br') document.execCommand('insertLineBreak', false, null);
+  else if (tag === 'ul') document.execCommand('insertUnorderedList', false, null);
+  else if (tag === 'fontsize') {
+    if (!value) return;
+    document.execCommand('styleWithCSS', false, true);
+    document.execCommand('fontSize', false, '7');
+    normalizeAdvFontTags(editor, value);
+  } else if (tag === 'lineheight') {
+    if (!value) return;
+    applyAdvLineHeight(editor, value);
   }
+}
 
-  if (roomDesc) {
-    roomDesc.value = roomDescEditor.innerHTML || '';
-  }
-});
+function bindAdvRichToolbar(toolbar, editor, hiddenField) {
+  if (!toolbar || !editor || !hiddenField) return;
+  const sync = () => {
+    hiddenField.value = editor.innerHTML || '';
+  };
+  toolbar.addEventListener('mousedown', (e) => {
+    const btn = e.target.closest('button[data-tag]');
+    if (!btn) return;
+    e.preventDefault();
+    const tag = btn.getAttribute('data-tag') || '';
+    execAdvEditorAction(editor, tag);
+    sync();
+  });
+  toolbar.addEventListener('change', (e) => {
+    const select = e.target.closest('select[data-tag]');
+    if (!select) return;
+    const tag = select.getAttribute('data-tag') || '';
+    const value = select.value || '';
+    if (!tag || !value) return;
+    execAdvEditorAction(editor, tag, value);
+    sync();
+  });
+  editor.addEventListener('input', sync);
+  editor.addEventListener('blur', sync);
+}
+
+bindAdvRichToolbar(advWorkshopDescToolbar, advWorkshopDescriptionEditor, advWorkshopDescriptionInput);
+bindAdvRichToolbar(roomDescToolbar, roomDescEditor, roomDesc);
 
 document.addEventListener('keydown', (event) => {
   if (event.key !== 'Escape') return;
