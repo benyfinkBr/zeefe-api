@@ -11,9 +11,20 @@ if ($token === '') {
 }
 
 try {
-  $stmt = $pdo->prepare('SELECT id, title, description, thank_you_message, closing_page_type, lead_origin FROM surveys WHERE token = :token AND status = "ativo" LIMIT 1');
-  $stmt->execute([':token' => $token]);
-  $survey = $stmt->fetch(PDO::FETCH_ASSOC);
+  $survey = null;
+  try {
+    $stmt = $pdo->prepare('SELECT id, title, description, thank_you_message, closing_page_type, lead_origin FROM surveys WHERE token = :token AND status = "ativo" LIMIT 1');
+    $stmt->execute([':token' => $token]);
+    $survey = $stmt->fetch(PDO::FETCH_ASSOC);
+  } catch (Throwable $e) {
+    $stmt = $pdo->prepare('SELECT id, title, description, thank_you_message FROM surveys WHERE token = :token AND status = "ativo" LIMIT 1');
+    $stmt->execute([':token' => $token]);
+    $survey = $stmt->fetch(PDO::FETCH_ASSOC);
+    if (is_array($survey)) {
+      $survey['closing_page_type'] = 'simple';
+      $survey['lead_origin'] = null;
+    }
+  }
   if (!$survey) {
     http_response_code(404);
     echo json_encode(['success' => false, 'error' => 'Questionário não encontrado.']);
