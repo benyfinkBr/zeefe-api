@@ -3,7 +3,8 @@ require_once 'apiconfig.php';
 
 header('Content-Type: application/json');
 
-$token = preg_replace('/[^a-f0-9]/i', '', $_GET['token'] ?? '');
+$rawToken = $_GET['t'] ?? ($_GET['token'] ?? '');
+$token = preg_replace('/[^a-f0-9]/i', '', (string) $rawToken);
 if ($token === '') {
   http_response_code(400);
   echo json_encode(['success' => false, 'error' => 'Token inválido.']);

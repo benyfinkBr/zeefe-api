@@ -1,6 +1,6 @@
 (() => {
   const params = new URLSearchParams(window.location.search);
-  const token = params.get('token') || '';
+  const token = params.get('t') || params.get('token') || '';
   const bodyEl = document.getElementById('surveyBody');
   const formEl = document.getElementById('surveyForm');
   const msgEl = document.getElementById('surveyMsg');
@@ -627,7 +627,7 @@
       return;
     }
     try {
-      const res = await fetch(`/api/survey_public.php?token=${token}`);
+      const res = await fetch(`/api/survey_public.php?t=${encodeURIComponent(token)}`);
       const data = await res.json();
       if (!data.success) {
         bodyEl.textContent = data.error || 'Questionário indisponível.';

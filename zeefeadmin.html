@@ -2022,7 +2022,7 @@ input, select {
           actionButtons.push(`<button class="btn-ghost" onclick="abrirSurveyBuilder(${rowId})">Perguntas</button>`);
           actionButtons.push(`<button class="btn-ghost" onclick="abrirSurveyResults(${rowId})">Resultados</button>`);
           actionButtons.push(`<button class="btn-ghost" onclick="abrirSurveyLeads(${rowId})">Leads</button>`);
-          const link = row.public_link || '';
+          const link = normalizarLinkSurveyCurto(row.public_link || '', row.token || '');
           actionButtons.push(`<button class="btn" onclick="copiarLinkSurvey('${escapeHtml(link).replace(/'/g, "\\'")}')">Copiar Link</button>`);
         }
         if (sec === 'companies' && canUpdate) {
@@ -2124,16 +2124,17 @@ input, select {
     }
 
     async function copiarLinkSurvey(link) {
-      if (!link) {
+      const linkCurto = normalizarLinkSurveyCurto(link, '');
+      if (!linkCurto) {
         showToast('Link indisponível.');
         return;
       }
       try {
         if (navigator.clipboard && navigator.clipboard.writeText) {
-          await navigator.clipboard.writeText(link);
+          await navigator.clipboard.writeText(linkCurto);
         } else {
           const temp = document.createElement('textarea');
-          temp.value = link;
+          temp.value = linkCurto;
           temp.style.position = 'fixed';
           temp.style.opacity = '0';
           document.body.appendChild(temp);
@@ -2145,6 +2146,22 @@ input, select {
         showToast('Link copiado.');
       } catch (err) {
         showToast('Não foi possível copiar o link.');
+      }
+    }
+
+    function normalizarLinkSurveyCurto(link, token) {
+      const base = `${window.location.origin}/survey.html`;
+      const safeToken = String(token || '').trim();
+      if (safeToken) return `${base}?t=${encodeURIComponent(safeToken)}`;
+      const raw = String(link || '').trim();
+      if (!raw) return '';
+      try {
+        const url = new URL(raw, window.location.origin);
+        const t = url.searchParams.get('t') || url.searchParams.get('token') || '';
+        if (!t) return raw;
+        return `${url.origin}${url.pathname}?t=${encodeURIComponent(t)}`;
+      } catch (_) {
+        return raw.replace('survey.html?token=', 'survey.html?t=');
       }
     }
 

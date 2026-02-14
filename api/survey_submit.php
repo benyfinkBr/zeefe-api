@@ -4,13 +4,14 @@ require_once 'apiconfig.php';
 header('Content-Type: application/json');
 
 $payload = json_decode(file_get_contents('php://input'), true);
-if (!$payload || empty($payload['token']) || !isset($payload['answers'])) {
+$rawToken = $payload['token'] ?? ($payload['t'] ?? '');
+if (!$payload || empty($rawToken) || !isset($payload['answers'])) {
   http_response_code(400);
   echo json_encode(['success' => false, 'error' => 'Payload inválido.']);
   exit;
 }
 
-$token = preg_replace('/[^a-f0-9]/i', '', (string) $payload['token']);
+$token = preg_replace('/[^a-f0-9]/i', '', (string) $rawToken);
 if ($token === '') {
   http_response_code(400);
   echo json_encode(['success' => false, 'error' => 'Token inválido.']);

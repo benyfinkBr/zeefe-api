@@ -19,6 +19,20 @@ require_once __DIR__ . '/lib/reservations.php';
 require_once __DIR__ . '/lib/geocode.php';
 require_once __DIR__ . '/lib/stripe_helpers.php';
 
+function gerarTokenPesquisaUnico(PDO $pdo, int $bytes = 6): string {
+  $tentativas = 0;
+  while ($tentativas < 8) {
+    $tentativas++;
+    $token = bin2hex(random_bytes($bytes));
+    $stmt = $pdo->prepare('SELECT id FROM surveys WHERE token = :token LIMIT 1');
+    $stmt->execute([':token' => $token]);
+    if (!$stmt->fetch(PDO::FETCH_ASSOC)) {
+      return $token;
+    }
+  }
+  return bin2hex(random_bytes(16));
+}
+
 
 $payload = json_decode(file_get_contents('php://input'), true);
 if (!$payload || !isset($payload['table']) || !isset($payload['record'])) {
@@ -144,14 +158,16 @@ try {
     $linkColExists = in_array('public_link', $validCols, true);
     $isInsert = empty($rawRecord['id']);
     if ($isInsert && $tokenColExists && empty($record['token'])) {
-      $record['token'] = bin2hex(random_bytes(16));
+      $record['token'] = gerarTokenPesquisaUnico($pdo, 6);
     }
     if ($isInsert && $linkColExists && empty($record['public_link'])) {
       $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
       $host = $_SERVER['HTTP_HOST'] ?? '';
       $base = $host ? ($scheme . '://' . $host) : '';
       $token = $record['token'] ?? '';
-      $record['public_link'] = $token ? ($base . '/survey.html?token=' . $token) : '';
+      $record['public_link'] = $token ? ($base . '/survey.html?t=' . $token) : '';
+    } elseif ($linkColExists && !empty($record['public_link']) && strpos((string)$record['public_link'], 'survey.html?token=') !== false) {
+      $record['public_link'] = str_replace('survey.html?token=', 'survey.html?t=', (string)$record['public_link']);
     }
     unset($record['updated_at'], $record['created_at']);
   }

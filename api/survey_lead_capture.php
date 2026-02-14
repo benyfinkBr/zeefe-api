@@ -13,7 +13,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
 }
 
 $payload = json_decode(file_get_contents('php://input'), true);
-$token = trim((string) ($payload['token'] ?? ''));
+$token = trim((string) (($payload['token'] ?? '') ?: ($payload['t'] ?? '')));
 $email = mb_strtolower(trim((string) ($payload['email'] ?? '')));
 
 if ($token === '' || $email === '') {
@@ -59,4 +59,3 @@ try {
   http_response_code(500);
   echo json_encode(['success' => false, 'error' => 'Erro ao salvar lead.']);
 }
-
