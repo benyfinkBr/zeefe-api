@@ -2022,6 +2022,8 @@ input, select {
           actionButtons.push(`<button class="btn-ghost" onclick="abrirSurveyBuilder(${rowId})">Perguntas</button>`);
           actionButtons.push(`<button class="btn-ghost" onclick="abrirSurveyResults(${rowId})">Resultados</button>`);
           actionButtons.push(`<button class="btn-ghost" onclick="abrirSurveyLeads(${rowId})">Leads</button>`);
+          const surveyTitle = escapeHtml(row.title || `Pesquisa #${rowId}`).replace(/'/g, "\\'");
+          actionButtons.push(`<button class="btn danger" onclick="limparRespostasSurvey(${rowId}, '${surveyTitle}')">Apagar respostas</button>`);
           const link = normalizarLinkSurveyCurto(row.public_link || '', row.token || '');
           actionButtons.push(`<button class="btn" onclick="copiarLinkSurvey('${escapeHtml(link).replace(/'/g, "\\'")}')">Copiar Link</button>`);
         }
@@ -2146,6 +2148,31 @@ input, select {
         showToast('Link copiado.');
       } catch (err) {
         showToast('Não foi possível copiar o link.');
+      }
+    }
+
+    async function limparRespostasSurvey(id, surveyTitle) {
+      const surveyId = Number(id) || 0;
+      if (!surveyId) return;
+      const nome = String(surveyTitle || `Pesquisa #${surveyId}`);
+      const ok = window.confirm(`Apagar todas as respostas da pesquisa "${nome}"?\n\nA estrutura da pesquisa sera mantida.`);
+      if (!ok) return;
+      try {
+        const res = await fetch(`${API_BASE}/survey_clear_responses.php`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ survey_id: surveyId })
+        });
+        const data = await res.json();
+        if (!data.success) {
+          throw new Error(data.error || 'Falha ao apagar respostas.');
+        }
+        const total = Number(data.deleted_responses || 0);
+        showToast(`Respostas apagadas (${total}).`);
+        await loadSection('surveys');
+      } catch (err) {
+        alert(`Erro ao apagar respostas: ${err.message || 'falha desconhecida'}`);
       }
     }
 
