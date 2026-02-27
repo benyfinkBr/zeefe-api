@@ -147,6 +147,26 @@ if ($homeLiveEnabled) {
       box-shadow: 0 0 0 4px rgba(29, 138, 92, 0.16);
     }
 
+    .home-launch-contacts {
+      margin-top: 18px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 8px 14px;
+      font-size: 0.92rem;
+      color: #3f4b47;
+    }
+
+    .home-launch-contacts a {
+      color: var(--brand-green);
+      font-weight: 600;
+      text-decoration: none;
+    }
+
+    .home-launch-contacts a:hover {
+      text-decoration: underline;
+    }
+
     @media (max-width: 700px) {
       .home-launch-card {
         padding: 36px 24px 32px;
@@ -166,6 +186,15 @@ if ($homeLiveEnabled) {
       <h1>A Ze.EFE esta nascendo.</h1>
       <p class="home-launch-sub">Em breve mais informacoes.</p>
       <div class="home-launch-pill">Lançamento em preparacao</div>
+      <div class="home-launch-contacts">
+        <a href="mailto:contato@zeefe.com.br">contato@zeefe.com.br</a>
+        <span>|</span>
+        <a href="https://wa.me/11922293332?text=Ola,%20gostaria%20de%20mais%20informacoes.">(11) 9.2229-3332</a>
+        <span>|</span>
+        <a href="https://www.linkedin.com/company/ze-efe" target="_blank" rel="noopener">LinkedIn</a>
+        <span>|</span>
+        <a href="https://www.instagram.com/zeefe_brasil/" target="_blank" rel="noopener">Instagram</a>
+      </div>
     </section>
   </main>
 </body>
