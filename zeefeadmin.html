@@ -103,6 +103,42 @@
       font-size:11px;
       min-width: 58px;
     }
+    .home-control-card{
+      background:#FFF;
+      border:1px solid #E0DAD1;
+      border-radius:12px;
+      padding:18px 20px;
+      max-width:620px;
+      margin:20px;
+      box-shadow:0 8px 18px rgba(0,0,0,.05);
+    }
+    .home-control-card h3{
+      margin:0 0 8px;
+      font-size:18px;
+      color:#1D413A;
+    }
+    .home-control-card p{
+      margin:0 0 12px;
+      color:#6B5D50;
+    }
+    .home-control-status{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      font-size:14px;
+      margin-bottom:14px;
+      color:#1D413A;
+    }
+    .home-control-dot{
+      width:10px;
+      height:10px;
+      border-radius:50%;
+      background:#B54A3A;
+      display:inline-block;
+    }
+    .home-control-dot.live{
+      background:#1D8A5C;
+    }
     @media (min-width: 1200px){
       .cockpit-columns{ grid-template-columns: repeat(4, minmax(220px, 1fr)); }
     }
@@ -453,6 +489,7 @@ input, select {
           <li data-section="amenities">Comodidades</li>
           <li data-section="campaigns">Campanhas</li>
           <li data-section="vouchers">Vouchers</li>
+          <li data-section="home_control">Home</li>
           <li data-section="messages">Mensagens</li>
           <li class="menu-group">Administração</li>
           <li data-section="surveys">Questionários</li>
@@ -720,6 +757,7 @@ input, select {
       amenities: 'Comodidade',
       vouchers: 'Voucher',
       campaigns: 'Campanha',
+      home_control: 'Controle da Home',
       inventory_items: 'Item de Inventário',
       surveys: 'Questionário',
       workshops: 'Workshop',
@@ -744,6 +782,7 @@ input, select {
       { key: 'amenities', label: 'Comodidades' },
       { key: 'campaigns', label: 'Campanhas' },
       { key: 'vouchers', label: 'Vouchers' },
+      { key: 'home_control', label: 'Home' },
       { key: 'messages', label: 'Mensagens' },
       { key: 'surveys', label: 'Questionários' },
       { key: 'admin_profiles', label: 'Perfis Admin' },
@@ -843,6 +882,7 @@ input, select {
     let cachedRooms = null;
     let cachedClients = null;
     let cachedBanks = null;
+    let homeLiveEnabled = false;
     let currentAdmin = null;
     let currentAdminPermissions = {};
     let currentAdminIsMaster = false;
@@ -1791,7 +1831,7 @@ input, select {
       sec = section;
       const filters = document.getElementById('search-filters');
       if (filters) {
-        filters.style.display = section === 'cockpit' ? 'none' : 'flex';
+        filters.style.display = (section === 'cockpit' || section === 'home_control') ? 'none' : 'flex';
       }
       if (section !== 'cockpit' && !can(section, 'read')) {
         const body = document.getElementById('content-body');
@@ -1802,6 +1842,10 @@ input, select {
       }
       if (section === 'cockpit') {
         renderCockpit();
+        return;
+      }
+      if (section === 'home_control') {
+        await renderHomeControl();
         return;
       }
       if (section === 'rooms') cachedRooms = null;
@@ -1886,6 +1930,7 @@ input, select {
             { id: 'amenities', title: 'Comodidades', desc: 'Itens de comodidade disponíveis.' },
             { id: 'campaigns', title: 'Campanhas', desc: 'Campanhas e promoções.' },
             { id: 'vouchers', title: 'Vouchers', desc: 'Cupons e descontos.' },
+            { id: 'home_control', title: 'Home', desc: 'Ativa ou desativa a home principal.' },
             { id: 'messages', title: 'Mensagens', desc: 'Central de mensagens e suporte.' }
           ]
         },
@@ -1938,6 +1983,62 @@ input, select {
           }
         });
       });
+    }
+
+    async function renderHomeControl() {
+      const body = document.getElementById('content-body');
+      if (!body) return;
+      body.innerHTML = '<div class="box-message">Carregando controle da home...</div>';
+      try {
+        const res = await fetch(`${API_BASE}/home_control.php`, { credentials: 'include' });
+        const data = await res.json();
+        if (!data.success) throw new Error(data.error || 'Falha ao carregar configuração.');
+        homeLiveEnabled = !!data.enabled;
+        body.innerHTML = `
+          <div class="home-control-card">
+            <h3>Controle da Home</h3>
+            <p>Ative para exibir a home atual (<code>index2</code>) no endereço principal. Desative para exibir a página de aviso.</p>
+            <div class="home-control-status">
+              <span class="home-control-dot ${homeLiveEnabled ? 'live' : ''}"></span>
+              <strong>Status:</strong> ${homeLiveEnabled ? 'Home ativa' : 'Página de aviso ativa'}
+            </div>
+            <div style="display:flex; gap:10px; flex-wrap:wrap;">
+              <button class="btn" type="button" id="homeToggleBtn">${homeLiveEnabled ? 'Desativar Home' : 'Ativar Home'}</button>
+              <a class="btn btn-secondary" href="/index.php" target="_blank" rel="noopener">Abrir Home</a>
+              <a class="btn btn-secondary" href="/index2.php" target="_blank" rel="noopener">Abrir index2</a>
+            </div>
+          </div>
+        `;
+        const btn = document.getElementById('homeToggleBtn');
+        if (btn) btn.addEventListener('click', toggleHomeControl);
+      } catch (err) {
+        console.error(err);
+        body.innerHTML = `<div class="box-message">Erro: ${escapeHtml(err.message || 'Não foi possível carregar.')}</div>`;
+      }
+    }
+
+    async function toggleHomeControl() {
+      const btn = document.getElementById('homeToggleBtn');
+      if (!btn) return;
+      const next = !homeLiveEnabled;
+      btn.disabled = true;
+      try {
+        const res = await fetch(`${API_BASE}/home_control.php`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ enabled: next })
+        });
+        const data = await res.json();
+        if (!data.success) throw new Error(data.error || 'Não foi possível salvar.');
+        homeLiveEnabled = !!data.enabled;
+        showToast(homeLiveEnabled ? 'Home ativada.' : 'Home desativada.');
+        await renderHomeControl();
+      } catch (err) {
+        console.error(err);
+        showToast(err.message || 'Erro ao alternar home.');
+        btn.disabled = false;
+      }
     }
 
     function buscar(valor) {
